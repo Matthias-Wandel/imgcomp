@@ -37,7 +37,9 @@ typedef unsigned char boolean;
 #define TARGA_SUPPORTED		/* Targa image file format */
 
 #define TWO_FILE_COMMANDLINE	/* optional */
-#define USE_SETMODE		/* Microsoft has setmode() */
+#ifdef _WIN32
+    #define USE_SETMODE		/* Microsoft has setmode() */
+#endif
 #undef NEED_SIGNAL_CATCHER
 #undef DONT_USE_B_MODE
 #undef PROGRESS_REPORT		/* optional */
