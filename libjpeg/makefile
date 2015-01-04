@@ -47,7 +47,7 @@ LIBSOURCES= jcapimin.c jcapistd.c jccoefct.c jccolor.c jcdctmgr.c jchuff.c \
         jfdctint.c jidctflt.c jidctfst.c jidctint.c jidctred.c jquant1.c \
         jquant2.c jutils.c jmemmgr.c
 # memmgr back ends: compile only one of these into a working library
-SYSDEPSOURCES= jmemansi.c jmemname.c jmemnobs.c jmemdos.c jmemmac.c
+SYSDEPSOURCES= jmemansi.c jmemname.c jmemnobs.c
 # source files: cjpeg/djpeg/jpegtran applications, also rdjpgcom/wrjpgcom
 APPSOURCES= cjpeg.c djpeg.c jpegtran.c rdjpgcom.c wrjpgcom.c cdjpeg.c \
         rdcolmap.c rdswitch.c transupp.c rdppm.c wrppm.c rdgif.c wrgif.c \
@@ -69,7 +69,7 @@ CONFIGFILES= jconfig.cfg jconfig.bcc jconfig.mc6 jconfig.dj jconfig.wat \
         jconfig.vc jconfig.mac jconfig.st jconfig.manx jconfig.sas \
         jconfig.vms
 CONFIGUREFILES= config.guess config.sub install-sh ltconfig ltmain.sh
-OTHERFILES= jconfig.doc ckconfig.c ansi2knr.c ansi2knr.1 jmemdosa.asm
+OTHERFILES= jconfig.doc ckconfig.c ansi2knr.c ansi2knr.1 
 TESTFILES= testorig.jpg testimg.ppm testimg.bmp testimg.jpg testprog.jpg \
         testimgp.jpg
 DISTFILES= $(DOCS) $(MKFILES) $(CONFIGFILES) $(SOURCES) $(INCLUDES) \
@@ -191,8 +191,6 @@ jmemmgr.o: jmemmgr.c jinclude.h jconfig.h jpeglib.h jmorecfg.h jpegint.h jerror.
 jmemansi.o: jmemansi.c jinclude.h jconfig.h jpeglib.h jmorecfg.h jpegint.h jerror.h jmemsys.h
 jmemname.o: jmemname.c jinclude.h jconfig.h jpeglib.h jmorecfg.h jpegint.h jerror.h jmemsys.h
 jmemnobs.o: jmemnobs.c jinclude.h jconfig.h jpeglib.h jmorecfg.h jpegint.h jerror.h jmemsys.h
-jmemdos.o: jmemdos.c jinclude.h jconfig.h jpeglib.h jmorecfg.h jpegint.h jerror.h jmemsys.h
-jmemmac.o: jmemmac.c jinclude.h jconfig.h jpeglib.h jmorecfg.h jpegint.h jerror.h jmemsys.h
 cjpeg.o: cjpeg.c cdjpeg.h jinclude.h jconfig.h jpeglib.h jmorecfg.h jerror.h cderror.h jversion.h
 djpeg.o: djpeg.c cdjpeg.h jinclude.h jconfig.h jpeglib.h jmorecfg.h jerror.h cderror.h jversion.h
 jpegtran.o: jpegtran.c cdjpeg.h jinclude.h jconfig.h jpeglib.h jmorecfg.h jerror.h cderror.h transupp.h jversion.h
