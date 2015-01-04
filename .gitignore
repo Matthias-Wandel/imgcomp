@@ -1,0 +1,6 @@
+*.bak
+*.obj
+*.o
+*.exe
+*.pdb
+.*.swp
