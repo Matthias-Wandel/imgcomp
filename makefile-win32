@@ -1,0 +1,25 @@
+#--------------------------------
+# jhead makefile for Win32
+#--------------------------------
+
+# Pull in standard variable definitions
+
+CC=cl /nologo
+CFLAGS=-c -Ox -Os -W3 -D _CRT_SECURE_NO_WARNINGS
+
+LINKER=link
+LINKCON = /nologo /NODEFAULTLIB:LIBCMTD
+
+all:djpeg.exe
+
+OBJ = .
+
+OBJECTS_IMGCOMP = $(OBJ)\cdjpeg.obj  \
+                $(OBJ)\djpeg.obj \
+                $(OBJ)\wrppm.obj \
+
+$(OBJECTS_IMGCOMP): $(@B).c 
+    $(CC) /Fo$(OBJ)\ $(CFLAGS) $(@B).c
+
+djpeg.exe: $(OBJECTS_IMGCOMP)
+    $(LINKER) $(LINKCON) -OUT:djpeg.exe libjpeg\libjpeg.lib $(OBJECTS_IMGCOMP)

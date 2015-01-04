@@ -31,12 +31,12 @@
  * definitions or overriding them from the Makefile (eg, -DEMS_SUPPORTED=0).
  */
 
-#ifndef XMS_SUPPORTED
-#define XMS_SUPPORTED  1
-#endif
-#ifndef EMS_SUPPORTED
-#define EMS_SUPPORTED  1
-#endif
+//#ifndef XMS_SUPPORTED
+//#define XMS_SUPPORTED  1
+//#endif
+//#ifndef EMS_SUPPORTED
+//#define EMS_SUPPORTED  1
+//#endif
 
 
 #define JPEG_INTERNALS
