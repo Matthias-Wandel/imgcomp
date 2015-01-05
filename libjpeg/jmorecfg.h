@@ -262,7 +262,7 @@ typedef int boolean;
 
 #define DCT_ISLOW_SUPPORTED	/* slow but accurate integer algorithm */
 #define DCT_IFAST_SUPPORTED	/* faster, less accurate integer method */
-#define DCT_FLOAT_SUPPORTED	/* floating-point: accurate, fast on fast HW */
+#undef  DCT_FLOAT_SUPPORTED	/* floating-point: accurate, fast on fast HW */
 
 /* Encoder capability options: */
 
@@ -290,7 +290,7 @@ typedef int boolean;
 #define IDCT_SCALING_SUPPORTED	    /* Output rescaling via IDCT? */
 #undef  UPSAMPLE_SCALING_SUPPORTED  /* Output rescaling at upsample stage? */
 #define UPSAMPLE_MERGING_SUPPORTED  /* Fast path for sloppy upsampling? */
-#define QUANT_1PASS_SUPPORTED	    /* 1-pass color quantization? */
+//#define QUANT_1PASS_SUPPORTED	    /* 1-pass color quantization? */
 //#define QUANT_2PASS_SUPPORTED	    /* 2-pass color quantization? */
 
 /* more capability options later, no doubt */
