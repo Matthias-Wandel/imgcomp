@@ -125,8 +125,8 @@ int main (int argc, char **argv)
 
     int file_index;
     djpeg_dest_ptr dest_mgr = NULL;
-    FILE * input_file;
-    FILE * output_file;
+    FILE * input_file = NULL;
+    FILE * output_file = NULL;
     JDIMENSION num_scanlines;
 
 printf("hello\n");
@@ -152,22 +152,20 @@ printf("hello\n");
 
     file_index = parse_switches(&cinfo, argc, argv, 0, FALSE);
 
-    /* Must have either -outfile switch or explicit output file name */
     if (outfilename == NULL) {
         if (file_index != argc-2) {
             fprintf(stderr, "%s: must name one input and one output file\n", progname);
             usage();
         }
-      outfilename = argv[file_index+1];
+        outfilename = argv[file_index+1];
     } else {
         if (file_index != argc-1) {
-            fprintf(stderr, "%s: must name one input and one output file\n",
-	            progname);
+            fprintf(stderr, "%s: must name one input and one output file\n", progname);
             usage();
         }
     }
 
-    /* Open the input file. */
+    // Open the input file.
     if (file_index < argc) {
         if ((input_file = fopen(argv[file_index], READ_BINARY)) == NULL) {
             fprintf(stderr, "%s: can't open %s\n", progname, argv[file_index]);
@@ -175,6 +173,7 @@ printf("hello\n");
         }
     } else {
         printf("Must specify input file name\n");
+        usage();
     }
 
     // Open the output file.
@@ -185,15 +184,16 @@ printf("hello\n");
         }
     } else {
         printf("Must specify output file name\n");
+        usage();
     }
 
-    /* Specify data source for decompression */
+    // Specify data source for decompression 
     jpeg_stdio_src(&cinfo, input_file);
 
-    /* Read file header, set default decompression parameters */
+    // Read file header, set default decompression parameters 
     (void) jpeg_read_header(&cinfo, TRUE);
 
-    /* Adjust default decompression parameters by re-parsing the options */
+    // Adjust default decompression parameters by re-parsing the options
     file_index = parse_switches(&cinfo, argc, argv, 0, TRUE);
 
 printf("hello2\n");
@@ -229,5 +229,5 @@ printf("hello4\n");
 
     // All done.
     exit(jerr.num_warnings ? EXIT_WARNING : EXIT_SUCCESS);
-    return 0;			//* suppress no-return-value warnings */
+    return 0; // suppress no-return-value warnings 
 }
