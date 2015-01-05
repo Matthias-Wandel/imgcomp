@@ -1,10 +1,4 @@
 /*
- * djpeg.c
- *
- * Copyright (C) 1991-1997, Thomas G. Lane.
- * This file is part of the Independent JPEG Group's software.
- * For conditions of distribution and use, see the accompanying README file.
- *
  * This file contains a command-line user interface for the JPEG decompressor.
  * It should work on any system with Unix- or MS-DOS-style command lines.
  *
@@ -26,7 +20,7 @@
 #include "libjpeg/cdjpeg.h"		/* Common decls for cjpeg/djpeg applications */
 #include "libjpeg/jversion.h"		/* for version message */
 
-#include <ctype.h>		/* to declare isprint() */
+//#include <ctype.h>		/* to declare isprint() */
 
 #ifdef USE_CCOMMAND		/* command-line reader for Macintosh */
 #ifdef __MWERKS__
@@ -118,9 +112,6 @@ void usage (void)
 #endif
   fprintf(stderr, "Switches for advanced users:\n");
   fprintf(stderr, "  -nosmooth      Don't use high-quality upsampling\n");
-#ifdef QUANT_1PASS_SUPPORTED
-  fprintf(stderr, "  -onepass       Use 1-pass quantization (fast, low quality)\n");
-#endif
   fprintf(stderr, "  -outfile name  Specify name for output file\n");
   fprintf(stderr, "  -verbose  or  -debug   Emit debug output\n");
   exit(EXIT_FAILURE);
@@ -174,34 +165,9 @@ static int parse_switches (j_decompress_ptr cinfo, int argc, char **argv,
       cinfo->dct_method = JDCT_FASTEST;
       cinfo->do_fancy_upsampling = FALSE;
 
-    } else if (keymatch(arg, "gif", 1)) {
-      /* GIF output format. */
-      requested_fmt = FMT_GIF;
-
     } else if (keymatch(arg, "grayscale", 2) || keymatch(arg, "greyscale",2)) {
       /* Force monochrome output. */
       cinfo->out_color_space = JCS_GRAYSCALE;
-
-    } else if (keymatch(arg, "map", 3)) {
-      /* Quantize to a color map taken from an input file. */
-      if (++argn >= argc)	/* advance to next argument */
-	usage();
-      if (for_real) {		/* too expensive to do twice! */
-#ifdef QUANT_2PASS_SUPPORTED	/* otherwise can't quantize to supplied map */
-	FILE * mapfile;
-
-	if ((mapfile = fopen(argv[argn], READ_BINARY)) == NULL) {
-	  fprintf(stderr, "%s: can't open %s\n", progname, argv[argn]);
-	  exit(EXIT_FAILURE);
-	}
-	read_color_map(cinfo, mapfile);
-	fclose(mapfile);
-	cinfo->quantize_colors = TRUE;
-#else
-	ERREXIT(cinfo, JERR_NOT_COMPILED);
-#endif
-      }
-
     } else if (keymatch(arg, "nosmooth", 3)) {
       /* Suppress fancy upsampling */
       cinfo->do_fancy_upsampling = FALSE;
@@ -220,10 +186,6 @@ static int parse_switches (j_decompress_ptr cinfo, int argc, char **argv,
       /* PPM/PGM output format. */
       requested_fmt = FMT_PPM;
 
-    } else if (keymatch(arg, "rle", 1)) {
-      /* RLE output format. */
-      requested_fmt = FMT_RLE;
-
     } else if (keymatch(arg, "scale", 1)) {
       /* Scale the output image by a fraction M/N. */
       if (++argn >= argc)	/* advance to next argument */
@@ -231,10 +193,6 @@ static int parse_switches (j_decompress_ptr cinfo, int argc, char **argv,
       if (sscanf(argv[argn], "%d/%d",
 		 &cinfo->scale_num, &cinfo->scale_denom) != 2)
 	usage();
-
-    } else if (keymatch(arg, "targa", 1)) {
-      /* Targa output format. */
-      requested_fmt = FMT_TARGA;
 
     } else {
       usage();			/* bogus switch */
