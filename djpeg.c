@@ -1,25 +1,15 @@
-/*
- *	djpeg [options]  inputfile outputfile
- * In the second style, output is always to standard output, which you'd
- * normally redirect to a file or pipe to some other program.  Input is
- * either from a named file or from standard input (typically redirected).
- * The second style is convenient on Unix but is unhelpful on systems that
- * don't support pipes.  Also, you MUST use the first style if your system
- * doesn't do binary I/O to stdin/stdout.
- * To simplify script writing, the "-outfile" switch is provided.  The syntax
- *	djpeg [options]  -outfile outputfile  inputfile
- * works regardless of which command line style is used.
- */
+//
+//	djpeg [options]  inputfile outputfile
 #include "jconfig.h"
 #include "libjpeg/cdjpeg.h"		/* Common decls for cjpeg/djpeg applications */
 #include <ctype.h>		// to declare isupper(), tolower() 
+
 
 // Create the add-on message string table.
 static const char * const cdjpeg_message_table[] = {
 #include "libjpeg/cderror.h"
   NULL
 };
-
 
 static const char * progname;  // program name for error messages
 static char * outfilename;	   // for -outfile switch
@@ -31,7 +21,6 @@ void usage (void)// complain about bad command line
   fprintf(stderr, "inputfile outputfile\n");
 
   fprintf(stderr, "Switches (names may be abbreviated):\n");
-  fprintf(stderr, "  -fast          Fast, low-quality processing\n");
   fprintf(stderr, "  -grayscale     Force grayscale output\n");
 #ifdef IDCT_SCALING_SUPPORTED
   fprintf(stderr, "  -scale M/N     Scale output image by fraction M/N, eg, 1/8\n");
@@ -82,13 +71,15 @@ static int parse_switches (j_decompress_ptr cinfo, int argc, char **argv,
     // Set up default JPEG parameters.
     outfilename = NULL;
     cinfo->err->trace_level = 0;
+    cinfo->dct_method = JDCT_FASTEST;
+    cinfo->do_fancy_upsampling = FALSE;
 
-    /* Scan command line options, adjust parameters */
+    // Scan command line options, adjust parameters
 
     for (argn = 1; argn < argc; argn++) {
         arg = argv[argn];
         if (*arg != '-') {
-            /* Not a switch, must be a file name argument */
+            // Not a switch, must be a file name argument 
             if (argn <= last_file_arg_seen) {
                 outfilename = NULL;	/* -outfile applies to just one input file */
                 continue;		/* ignore this name if previously processed */
@@ -101,12 +92,6 @@ static int parse_switches (j_decompress_ptr cinfo, int argc, char **argv,
             // Enable debug printouts.  Specify more than once for more detail.
             cinfo->err->trace_level++;
 
-        } else if (keymatch(arg, "fast", 1)) {
-            // Select recommended processing options for quick-and-dirty output.
-            cinfo->two_pass_quantize = FALSE;
-            cinfo->dct_method = JDCT_FASTEST;
-            cinfo->do_fancy_upsampling = FALSE;
-
         } else if (keymatch(arg, "grayscale", 2) || keymatch(arg, "greyscale",2)) {
             // Force monochrome output.
             cinfo->out_color_space = JCS_GRAYSCALE;
@@ -116,7 +101,7 @@ static int parse_switches (j_decompress_ptr cinfo, int argc, char **argv,
 
         } else if (keymatch(arg, "outfile", 4)) {
             // Set output file name.
-            if (++argn >= argc)	/* advance to next argument */
+            if (++argn >= argc)	// advance to next argument
 	           usage();
             outfilename = argv[argn];	// save it away for later use
 
@@ -150,26 +135,19 @@ int main (int argc, char **argv)
     FILE * output_file = NULL;
     unsigned int num_scanlines;
 
-printf("hello\n");
-
     progname = argv[0];
 
-    /* Initialize the JPEG decompression object with default error handling. */
+    // Initialize the JPEG decompression object with default error handling.
     cinfo.err = jpeg_std_error(&jerr);
     jpeg_create_decompress(&cinfo);
-    /* Add some application-specific error messages (from cderror.h) */
+
+    // Add some application-specific error messages (from cderror.h) 
     jerr.addon_message_table = cdjpeg_message_table;
     jerr.first_addon_message = JMSG_FIRSTADDONCODE;
     jerr.last_addon_message = JMSG_LASTADDONCODE;
 
 
-    /* Scan command line to find file names. */
-    /* It is convenient to use just one switch-parsing routine, but the switch
-     * values read here are ignored; we will rescan the switches after opening
-     * the input file.
-     * (Exception: tracing level set here controls verbosity for COM markers
-     * found during jpeg_read_header...)
-     */
+    // Scan command line to find file names.
 
     file_index = parse_switches(&cinfo, argc, argv, 0, FALSE);
 
@@ -217,12 +195,10 @@ printf("hello\n");
     // Adjust default decompression parameters by re-parsing the options
     file_index = parse_switches(&cinfo, argc, argv, 0, TRUE);
 
-printf("hello2\n");
-
     dest_mgr = jinit_write_ppm(&cinfo);
 
     dest_mgr->output_file = output_file;
-printf("hello3\n");
+
     // Start decompressor
     (void) jpeg_start_decompress(&cinfo);
 
@@ -236,7 +212,7 @@ printf("hello3\n");
         (*dest_mgr->put_pixel_rows) (&cinfo, dest_mgr, num_scanlines);
     }
 
-printf("hello4\n");
+
     // Finish decompression and release memory.
     // I must do it in this order because output module has allocated memory
     // of lifespan JPOOL_IMAGE; it needs to finish before releasing memory.

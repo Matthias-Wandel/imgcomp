@@ -29,7 +29,7 @@ static void put_pixel_rows (j_decompress_ptr cinfo, djpeg_dest_ptr dinfo,
 		unsigned int rows_supplied)
 {
     ppm_dest_ptr dest = (ppm_dest_ptr) dinfo;
-    (void) JFWRITE(dest->pub.output_file, dest->iobuffer, dest->buffer_width);
+    fwrite(dest->iobuffer, 1, dest->buffer_width, dest->pub.output_file);
 }
 
 //----------------------------------------------------------------------
