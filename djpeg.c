@@ -1,8 +1,5 @@
 /*
- * Two different command line styles are permitted, depending on the
- * compile-time switch TWO_FILE_COMMANDLINE:
  *	djpeg [options]  inputfile outputfile
- *	djpeg [options]  [inputfile]
  * In the second style, output is always to standard output, which you'd
  * normally redirect to a file or pipe to some other program.  Input is
  * either from a named file or from standard input (typically redirected).
@@ -31,11 +28,7 @@ static char * outfilename;	   // for -outfile switch
 void usage (void)// complain about bad command line 
 {
   fprintf(stderr, "usage: %s [switches] ", progname);
-#ifdef TWO_FILE_COMMANDLINE
   fprintf(stderr, "inputfile outputfile\n");
-#else
-  fprintf(stderr, "[inputfile]\n");
-#endif
 
   fprintf(stderr, "Switches (names may be abbreviated):\n");
   fprintf(stderr, "  -fast          Fast, low-quality processing\n");
@@ -157,9 +150,8 @@ printf("hello\n");
      * found during jpeg_read_header...)
      */
 
-  file_index = parse_switches(&cinfo, argc, argv, 0, FALSE);
+    file_index = parse_switches(&cinfo, argc, argv, 0, FALSE);
 
-#ifdef TWO_FILE_COMMANDLINE
     /* Must have either -outfile switch or explicit output file name */
     if (outfilename == NULL) {
         if (file_index != argc-2) {
@@ -174,13 +166,6 @@ printf("hello\n");
             usage();
         }
     }
-#else
-    // Unix style: expect zero or one file name 
-    if (file_index < argc-1) {
-        fprintf(stderr, "%s: only one input file\n", progname);
-        usage();
-    }
-#endif // TWO_FILE_COMMANDLINE
 
     /* Open the input file. */
     if (file_index < argc) {
@@ -189,8 +174,7 @@ printf("hello\n");
             exit(EXIT_FAILURE);
         }
     } else {
-        /* default input file is stdin */
-        input_file = read_stdin();
+        printf("Must specify input file name\n");
     }
 
     // Open the output file.
@@ -200,8 +184,7 @@ printf("hello\n");
             exit(EXIT_FAILURE);
         }
     } else {
-        // default output file is stdout 
-        output_file = write_stdout();
+        printf("Must specify output file name\n");
     }
 
     /* Specify data source for decompression */
