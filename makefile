@@ -7,7 +7,7 @@ CFLAGS:= $(CFLAGS) -O3 -Wall
 
 all: imgcomp
 
-objs = $(OBJ)/cdjpeg.o $(OBJ)/djpeg.o $(OBJ)/wrppm.o 
+objs = $(OBJ)/djpeg.o $(OBJ)/wrppm.o 
 
 $(OBJ)/%.o:$(SRC)/%.c
 	${CC} $(CFLAGS) -c $< -o $@

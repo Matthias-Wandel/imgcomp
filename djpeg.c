@@ -12,7 +12,7 @@
  */
 #include "jconfig.h"
 #include "libjpeg/cdjpeg.h"		/* Common decls for cjpeg/djpeg applications */
-
+#include <ctype.h>		// to declare isupper(), tolower() 
 
 // Create the add-on message string table.
 static const char * const cdjpeg_message_table[] = {
@@ -41,6 +41,27 @@ void usage (void)// complain about bad command line
   fprintf(stderr, "  -outfile name  Specify name for output file\n");
   fprintf(stderr, "  -verbose  or  -debug   Emit debug output\n");
   exit(EXIT_FAILURE);
+}
+
+//----------------------------------------------------------------------
+// Case-insensitive matching of possibly-abbreviated keyword switches.
+// keyword is the constant keyword (must be lower case already),
+// minchars is length of minimum legal abbreviation.
+//----------------------------------------------------------------------
+boolean keymatch (char * arg, const char * keyword, int minchars)
+{
+    int ca, ck, nmatched = 0;
+
+    while ((ca = *arg++) != '\0') {
+        if ((ck = *keyword++) == '\0')
+          return FALSE;		                 // arg longer than keyword, no good */
+        if (isupper(ca))  ca = tolower(ca);	 // force arg to lcase (assume ck is already)
+        if (ca != ck)  return FALSE;         // no good 
+        nmatched++;			                 // count matched characters 
+    }
+    // reached end of argument; fail if it's too short for unique abbrev 
+    if (nmatched < minchars) return FALSE;
+    return TRUE; // A-OK
 }
 
 
@@ -127,7 +148,7 @@ int main (int argc, char **argv)
     djpeg_dest_ptr dest_mgr = NULL;
     FILE * input_file = NULL;
     FILE * output_file = NULL;
-    JDIMENSION num_scanlines;
+    unsigned int num_scanlines;
 
 printf("hello\n");
 

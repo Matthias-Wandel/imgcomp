@@ -14,9 +14,7 @@ all:djpeg.exe
 
 OBJ = .
 
-OBJECTS_IMGCOMP = $(OBJ)\cdjpeg.obj  \
-                $(OBJ)\djpeg.obj \
-                $(OBJ)\wrppm.obj \
+OBJECTS_IMGCOMP = $(OBJ)\djpeg.obj $(OBJ)\wrppm.obj
 
 $(OBJECTS_IMGCOMP): $(@B).c 
     $(CC) /Fo$(OBJ)\ $(CFLAGS) $(@B).c
