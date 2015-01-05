@@ -10,7 +10,7 @@ CFLAGS=-c -Ox -Os -W3 -D _CRT_SECURE_NO_WARNINGS
 LINKER=link
 LINKCON = /nologo /NODEFAULTLIB:LIBCMTD
 
-all:djpeg.exe
+all:imgcomp.exe
 
 OBJ = .
 
@@ -19,5 +19,5 @@ OBJECTS_IMGCOMP = $(OBJ)\djpeg.obj $(OBJ)\wrppm.obj
 $(OBJECTS_IMGCOMP): $(@B).c 
     $(CC) /Fo$(OBJ)\ $(CFLAGS) $(@B).c
 
-djpeg.exe: $(OBJECTS_IMGCOMP)
-    $(LINKER) $(LINKCON) -OUT:djpeg.exe libjpeg\libjpeg.lib $(OBJECTS_IMGCOMP)
+imgcomp.exe: $(OBJECTS_IMGCOMP)
+    $(LINKER) $(LINKCON) -OUT:imgcomp.exe libjpeg\libjpeg.lib $(OBJECTS_IMGCOMP)
