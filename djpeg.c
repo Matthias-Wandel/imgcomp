@@ -14,6 +14,8 @@ static const char * const cdjpeg_message_table[] = {
 static const char * progname;  // program name for error messages
 static char * outfilename;	   // for -outfile switch
 
+static boolean compare_mode = FALSE;
+
 
 void usage (void)// complain about bad command line 
 {
@@ -81,7 +83,7 @@ static int parse_switches (j_decompress_ptr cinfo, int argc, char **argv,
         if (*arg != '-') {
             // Not a switch, must be a file name argument 
             if (argn <= last_file_arg_seen) {
-                outfilename = NULL;	/* -outfile applies to just one input file */
+                outfilename = NULL;	
                 continue;		/* ignore this name if previously processed */
             }
             break;			/* else done parsing switches */
@@ -112,6 +114,9 @@ static int parse_switches (j_decompress_ptr cinfo, int argc, char **argv,
             if (sscanf(argv[argn], "%d/%d", &cinfo->scale_num, &cinfo->scale_denom) != 2)
                usage();
 
+        } else if (keymatch(arg, "compare", 1)) {
+            // Force monochrome output.
+            compare_mode = TRUE;
         } else {
             usage();	   // bogus switch
         }
@@ -120,6 +125,30 @@ static int parse_switches (j_decompress_ptr cinfo, int argc, char **argv,
     return argn;		   // return index of next arg (file name)
 }
 
+
+//-----------------------------------------------------------------------------------
+// Run comparison mode.
+//-----------------------------------------------------------------------------------
+extern djpeg_dest_ptr jinit_jpeg2mem (j_decompress_ptr cinfo);
+extern int LoadJPEG(char* FileName);
+
+static void do_file_compare(int num, char ** names)
+{
+    struct jpeg_decompress_struct cinfo;
+    djpeg_dest_ptr dest_mgr = NULL;
+    unsigned int num_scanlines;
+    int a;
+    FILE * input_file;
+
+    for (a=0;a<num;a++){
+
+        printf("input file %s\n",names[a]);
+        // Load file into memory.
+
+        LoadJPEG(names[a]);
+
+    }
+}
 
 //-----------------------------------------------------------------------------------
 // The main program.
@@ -150,6 +179,11 @@ int main (int argc, char **argv)
     // Scan command line to find file names.
 
     file_index = parse_switches(&cinfo, argc, argv, 0, FALSE);
+
+    if (compare_mode){
+        do_file_compare(argc-file_index, argv+file_index);
+        exit(0);
+    }
 
     if (outfilename == NULL) {
         if (file_index != argc-2) {
