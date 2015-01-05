@@ -3,4 +3,5 @@
 *.o
 *.exe
 *.pdb
+*.jpg
 .*.swp
