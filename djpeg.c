@@ -4,6 +4,7 @@
 #include "libjpeg/cdjpeg.h"		/* Common decls for cjpeg/djpeg applications */
 #include <ctype.h>		// to declare isupper(), tolower() 
 
+#include "imgcomp.h"
 
 // Create the add-on message string table.
 static const char * const cdjpeg_message_table[] = {
@@ -44,8 +45,7 @@ static boolean keymatch (char * arg, const char * keyword, int minchars)
     int ca, ck, nmatched = 0;
 
     while ((ca = *arg++) != '\0') {
-        if ((ck = *keyword++) == '\0')
-          return FALSE;		                 // arg longer than keyword, no good */
+        if ((ck = *keyword++) == '\0') return FALSE;  // arg longer than keyword, no good */
         if (isupper(ca))  ca = tolower(ca);	 // force arg to lcase (assume ck is already)
         if (ca != ck)  return FALSE;         // no good 
         nmatched++;			                 // count matched characters 
@@ -125,9 +125,6 @@ static int parse_switches (j_decompress_ptr cinfo, int argc, char **argv,
 //-----------------------------------------------------------------------------------
 // Run comparison mode.
 //-----------------------------------------------------------------------------------
-extern djpeg_dest_ptr jinit_jpeg2mem (j_decompress_ptr cinfo);
-extern int LoadJPEG(char* FileName);
-
 static void do_file_compare(int num, char ** names)
 {
 //    struct jpeg_decompress_struct cinfo;
@@ -140,7 +137,7 @@ static void do_file_compare(int num, char ** names)
         printf("input file %s\n",names[a]);
         // Load file into memory.
 
-        LoadJPEG(names[a]);
+        LoadJPEG(names[a], 4, TRUE);
 
     }
 }
