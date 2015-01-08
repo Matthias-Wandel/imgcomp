@@ -1,6 +1,6 @@
 //
 //	djpeg [options]  inputfile outputfile
-#include "jconfig.h"
+#include "libjpeg/jconfig.h"
 #include "libjpeg/cdjpeg.h"		/* Common decls for cjpeg/djpeg applications */
 #include <ctype.h>		// to declare isupper(), tolower() 
 
@@ -39,7 +39,7 @@ void usage (void)// complain about bad command line
 // keyword is the constant keyword (must be lower case already),
 // minchars is length of minimum legal abbreviation.
 //----------------------------------------------------------------------
-boolean keymatch (char * arg, const char * keyword, int minchars)
+static boolean keymatch (char * arg, const char * keyword, int minchars)
 {
     int ca, ck, nmatched = 0;
 
@@ -56,16 +56,12 @@ boolean keymatch (char * arg, const char * keyword, int minchars)
 }
 
 
+//-----------------------------------------------------------------------------------
+// Parse command line switches
+// Returns argv[] index of first file-name argument (== argc if none).
+//-----------------------------------------------------------------------------------
 static int parse_switches (j_decompress_ptr cinfo, int argc, char **argv,
 		int last_file_arg_seen, boolean for_real)
-/* Parse optional switches.
- * Returns argv[] index of first file-name argument (== argc if none).
- * Any file names with indexes <= last_file_arg_seen are ignored;
- * they have presumably been processed in a previous iteration.
- * (Pass 0 for last_file_arg_seen on the first or only iteration.)
- * for_real is FALSE on the first (dummy) pass; we may skip any expensive
- * processing.
- */
 {
     int argn;
     char * arg;
@@ -134,11 +130,10 @@ extern int LoadJPEG(char* FileName);
 
 static void do_file_compare(int num, char ** names)
 {
-    struct jpeg_decompress_struct cinfo;
+//    struct jpeg_decompress_struct cinfo;
     djpeg_dest_ptr dest_mgr = NULL;
-    unsigned int num_scanlines;
     int a;
-    FILE * input_file;
+//    FILE * input_file;
 
     for (a=0;a<num;a++){
 
