@@ -99,9 +99,5 @@ printf("r");
     jpeg_finish_decompress(&info);   //finish decompressing
 
     fclose(file);                    //close the file
-
-
-    WritePpmFile("out.ppm", MemImage);
-
     return MemImage;
 }

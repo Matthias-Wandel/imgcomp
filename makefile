@@ -7,9 +7,9 @@ CFLAGS:= $(CFLAGS) -O3 -Wall
 
 all: imgcomp
 
-objs = $(OBJ)/djpeg.o $(OBJ)/wrppm.o 
+objs = $(OBJ)/djpeg.o $(OBJ)/compare.o $(OBJ)/jpeg2mem.o 
 
-$(OBJ)/%.o:$(SRC)/%.c
+$(OBJ)/%.o:$(SRC)/%.c imgcomp.h
 	${CC} $(CFLAGS) -c $< -o $@
 
 imgcomp: $(objs) libjpeg/libjpeg.a jconfig.h

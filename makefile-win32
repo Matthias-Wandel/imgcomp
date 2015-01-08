@@ -14,9 +14,9 @@ all:imgcomp.exe
 
 OBJ = .
 
-OBJECTS_IMGCOMP = $(OBJ)\djpeg.obj $(OBJ)\wrppm.obj $(OBJ)\jpeg2mem.obj
+OBJECTS_IMGCOMP = $(OBJ)\djpeg.obj $(OBJ)\compare.obj $(OBJ)\jpeg2mem.obj
 
-$(OBJECTS_IMGCOMP): $(@B).c 
+$(OBJECTS_IMGCOMP): $(@B).c imgcomp.h
     $(CC) /Fo$(OBJ)\ $(CFLAGS) $(@B).c
 
 imgcomp.exe: $(OBJECTS_IMGCOMP)
