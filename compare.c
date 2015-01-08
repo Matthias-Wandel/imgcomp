@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <malloc.h>
 #include <stddef.h>
+#include <memory.h>
 #include "imgcomp.h"
 
 
@@ -44,7 +45,12 @@ int ComparePix(MemImage_t * pic1, MemImage_t * pic2, char * DebugImgName)
         unsigned char * p1, *p2, *pd;
         p1 = pic1->pixels+width*comp*row;
         p2 = pic2->pixels+width*comp*row;
-        pd = DiffOut->pixels+width*comp*row;
+
+        pd = NULL;
+        if (DebugImgName){
+            pd = DiffOut->pixels+width*comp*row;
+        }
+
         for (col=0;col<width;col++){
             // Data is in order red, green, blue.
             int dr,dg,db, dcomp;
@@ -101,13 +107,14 @@ int ComparePix(MemImage_t * pic1, MemImage_t * pic2, char * DebugImgName)
         
         cumsum = 0;
         for (a=threshold;a<256;a++){
-            printf("hist %d %d\n",a,DiffHist[a]);
+            if (a < threshold+10) printf("hist %d %d\n",a,DiffHist[a]);
             cumsum += DiffHist[a] * (a-threshold);
         }
         printf("Above threshold: %d pixels\n",cumsum);
+
+        cumsum = (cumsum * 100) / width / height;
+        printf("Normalized diff: %d\n",cumsum);
     }
-
-
 
     return 0;
 }
