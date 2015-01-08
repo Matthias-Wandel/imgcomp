@@ -4,12 +4,6 @@
 
 #include "imgcomp.h"
 
-// Create the add-on message string table.
-static const char * const cdjpeg_message_table[] = {
-#include "libjpeg/cderror.h"
-  NULL
-};
-
 static const char * progname;  // program name for error messages
 static char * outfilename;	   // for -outfile switch
 
@@ -120,7 +114,16 @@ int main (int argc, char **argv)
 
     // Scan command line to find file names.
     file_index = parse_switches(argc, argv, 0, FALSE);
-    {
+
+    if (argc-file_index == 2){
+        MemImage_t *pic1, *pic2;
+        
+        pic1 = LoadJPEG(argv[file_index], 4, TRUE);
+        pic2 = LoadJPEG(argv[file_index+1], 4, TRUE);
+        ComparePix(pic1, pic2);
+        free(pic1);
+        free(pic2);
+    }else{
         int a;
         MemImage_t * pic;
 

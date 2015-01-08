@@ -12,4 +12,6 @@ typedef struct {
 MemImage_t MemImage;
 
 void WritePpmFile(char * FileName, MemImage_t *MemImage);
-MemImage_t * LoadJPEG(char* FileName, int scale_denom, boolean discard_colors);
+MemImage_t * LoadJPEG(char* FileName, int scale_denom, int discard_colors);
+
+int ComparePix(MemImage_t * pic1, MemImage_t * pic2);
