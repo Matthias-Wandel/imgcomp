@@ -114,9 +114,11 @@ int main (int argc, char **argv)
     if (argc-file_index == 2){
         MemImage_t *pic1, *pic2;
         
-        pic1 = LoadJPEG(argv[file_index], 4, 1);
-        pic2 = LoadJPEG(argv[file_index+1], 4, 1);
-        ComparePix(pic1, pic2);
+        printf("load %s\n",argv[file_index]);
+        pic1 = LoadJPEG(argv[file_index], 4, 0);
+        printf("\nload %s\n",argv[file_index+1]);
+        pic2 = LoadJPEG(argv[file_index+1], 4, 0);
+        ComparePix(pic1, pic2, "diff.ppm");
         free(pic1);
         free(pic2);
     }else{
@@ -128,7 +130,7 @@ int main (int argc, char **argv)
             printf("input file %s\n",argv[a]);
             // Load file into memory.
 
-            pic = LoadJPEG(argv[a], 4, 1);
+            pic = LoadJPEG(argv[a], 4, 0);
             WritePpmFile("out.ppm",pic);
         }
     }

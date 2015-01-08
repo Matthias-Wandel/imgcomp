@@ -16,7 +16,7 @@
 void WritePpmFile(char * FileName, MemImage_t *MemImage)
 {
     FILE * outfile;
-    outfile = fopen("out.ppm","wb");
+    outfile = fopen(FileName,"wb");
     if (outfile == NULL){
         printf("could not open outfile\n");
         return;
