@@ -21,7 +21,7 @@ void WritePpmFile(char * FileName, MemImage_t *MemImage)
         printf("could not open outfile\n");
         return;
     }
-    fprintf(outfile, "P%c\n%ld %ld\n%d\n", MemImage->components == 3 ? '6' : '5',  
+    fprintf(outfile, "P%c\n%d %d\n%d\n", MemImage->components == 3 ? '6' : '5',  
             MemImage->width, MemImage->height, 255);
     fwrite(MemImage->pixels, 1, MemImage->width * MemImage->height*MemImage->components, outfile);
     fclose(outfile);
@@ -32,7 +32,7 @@ void WritePpmFile(char * FileName, MemImage_t *MemImage)
 //----------------------------------------------------------------------------------------
 // Use libjpeg to load an image into memory, optionally scale it.
 //----------------------------------------------------------------------------------------
-MemImage_t * LoadJPEG(char* FileName, int scale_denom, boolean discard_colors)
+MemImage_t * LoadJPEG(char* FileName, int scale_denom, int discard_colors)
 {
     unsigned long data_size;    // length of the file
     struct jpeg_decompress_struct info; //for our jpeg info

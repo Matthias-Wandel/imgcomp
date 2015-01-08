@@ -1,6 +1,6 @@
-#include "libjpeg/jconfig.h"
-#include "libjpeg/cdjpeg.h"		/* Common decls for cjpeg/djpeg applications */
+#include <stdio.h>
 #include <ctype.h>		// to declare isupper(), tolower() 
+#include <stdlib.h>
 
 #include "imgcomp.h"
 
@@ -21,7 +21,7 @@ void usage (void)// complain about bad command line
   fprintf(stderr, "  -nosmooth      Don't use high-quality upsampling\n");
   fprintf(stderr, "  -outfile name  Specify name for output file\n");
   fprintf(stderr, "  -verbose  or  -debug   Emit debug output\n");
-  exit(EXIT_FAILURE);
+  exit(-1);
 }
 
 //----------------------------------------------------------------------
@@ -29,19 +29,19 @@ void usage (void)// complain about bad command line
 // keyword is the constant keyword (must be lower case already),
 // minchars is length of minimum legal abbreviation.
 //----------------------------------------------------------------------
-static boolean keymatch (char * arg, const char * keyword, int minchars)
+static int keymatch (char * arg, const char * keyword, int minchars)
 {
     int ca, ck, nmatched = 0;
 
     while ((ca = *arg++) != '\0') {
-        if ((ck = *keyword++) == '\0') return FALSE;  // arg longer than keyword, no good */
+        if ((ck = *keyword++) == '\0') return 0;  // arg longer than keyword, no good */
         if (isupper(ca))  ca = tolower(ca);	 // force arg to lcase (assume ck is already)
-        if (ca != ck)  return FALSE;         // no good 
+        if (ca != ck)  return 0;             // no good 
         nmatched++;			                 // count matched characters 
     }
     // reached end of argument; fail if it's too short for unique abbrev 
-    if (nmatched < minchars) return FALSE;
-    return TRUE;
+    if (nmatched < minchars) return 0;
+    return 1;
 }
 
 
@@ -49,7 +49,7 @@ static boolean keymatch (char * arg, const char * keyword, int minchars)
 // Parse command line switches
 // Returns argv[] index of first file-name argument (== argc if none).
 //-----------------------------------------------------------------------------------
-static int parse_switches (int argc, char **argv, int last_file_arg_seen, boolean for_real)
+static int parse_switches (int argc, char **argv, int last_file_arg_seen, int for_real)
 {
     int argn;
     char * arg;
@@ -106,20 +106,16 @@ static int parse_switches (int argc, char **argv, int last_file_arg_seen, boolea
 int main (int argc, char **argv)
 {
     int file_index;
-    djpeg_dest_ptr dest_mgr = NULL;
-    FILE * input_file = NULL;
-    FILE * output_file = NULL;
-
     progname = argv[0];
 
     // Scan command line to find file names.
-    file_index = parse_switches(argc, argv, 0, FALSE);
+    file_index = parse_switches(argc, argv, 0, 0);
 
     if (argc-file_index == 2){
         MemImage_t *pic1, *pic2;
         
-        pic1 = LoadJPEG(argv[file_index], 4, TRUE);
-        pic2 = LoadJPEG(argv[file_index+1], 4, TRUE);
+        pic1 = LoadJPEG(argv[file_index], 4, 1);
+        pic2 = LoadJPEG(argv[file_index+1], 4, 1);
         ComparePix(pic1, pic2);
         free(pic1);
         free(pic2);
@@ -132,7 +128,7 @@ int main (int argc, char **argv)
             printf("input file %s\n",argv[a]);
             // Load file into memory.
 
-            pic = LoadJPEG(argv[a], 4, TRUE);
+            pic = LoadJPEG(argv[a], 4, 1);
             WritePpmFile("out.ppm",pic);
         }
     }
