@@ -10,7 +10,7 @@
 //----------------------------------------------------------------------------------------
 // Compare two images in memory
 //----------------------------------------------------------------------------------------
-int ComparePix(MemImage_t * pic1, MemImage_t * pic2, char * DebugImgName)
+int ComparePix(MemImage_t * pic1, MemImage_t * pic2, char * DebugImgName, int Verbosity)
 {
     int width, height, comp;
     int row, col;
@@ -18,12 +18,14 @@ int ComparePix(MemImage_t * pic1, MemImage_t * pic2, char * DebugImgName)
     int DiffHist[256];
     int a;
 
-    printf("\ncompare pictures %dx%d %d\n", pic1->width, pic1->height, pic1->components);
+    if (Verbosity){
+        printf("\ncompare pictures %dx%d %d\n", pic1->width, pic1->height, pic1->components);
+    }
     
     if (pic1->width != pic2->width || pic1->height != pic2->height 
         || pic1->components != pic2->components){
         fprintf(stderr, "pic types mismatch!\n");
-        return 0;
+        return -1;
     }
 
     width = pic1->width;
@@ -77,7 +79,6 @@ int ComparePix(MemImage_t * pic1, MemImage_t * pic2, char * DebugImgName)
                 pd += comp;
             }
 
-
             p1 += comp;
             p2 += comp;
         }
@@ -88,10 +89,12 @@ int ComparePix(MemImage_t * pic1, MemImage_t * pic2, char * DebugImgName)
 
     }
 
-    
-    for (a=0;a<30;a++){
-        printf("%3d: %d\n",a,DiffHist[a]);
+    if (Verbosity > 1){
+        for (a=0;a<30;a++){
+            printf("%3d: %d\n",a,DiffHist[a]);
+        }
     }
+
     {
         int totpix, cumsum;
         int threshold;
@@ -102,19 +105,18 @@ int ComparePix(MemImage_t * pic1, MemImage_t * pic2, char * DebugImgName)
             cumsum += DiffHist[a];
             if (cumsum >= totpix/2) break;
         }
-        printf("half of image is below %d diff\n",a);
+        if (Verbosity) printf("half of image is below %d diff\n",a);
         threshold = a*3+10;
         
         cumsum = 0;
         for (a=threshold;a<256;a++){
-            if (a < threshold+10) printf("hist %d %d\n",a,DiffHist[a]);
+            if (a < threshold+10 && Verbosity > 1) printf("hist %d %d\n",a,DiffHist[a]);
             cumsum += DiffHist[a] * (a-threshold);
         }
-        printf("Above threshold: %d pixels\n",cumsum);
+        if (Verbosity) printf("Above threshold: %d pixels\n",cumsum);
 
         cumsum = (cumsum * 100) / width / height;
-        printf("Normalized diff: %d\n",cumsum);
+        if (Verbosity) printf("Normalized diff: %d\n",cumsum);
+        return cumsum;
     }
-
-    return 0;
 }

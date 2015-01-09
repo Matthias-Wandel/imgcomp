@@ -116,15 +116,6 @@ static int parse_switches (int argc, char **argv, int last_file_arg_seen, int fo
 
 
 //-----------------------------------------------------------------------------------
-// Compare file names to sort directory.
-//-----------------------------------------------------------------------------------
-static int fncmpfunc (const void * a, const void * b)
-{
-    return strcmp(*(char **)a, *(char **)b);
-}
-
-
-//-----------------------------------------------------------------------------------
 // Concatenate dir name and file name.  Not thread safe!
 //-----------------------------------------------------------------------------------
 static char * CatPath(char *Dir, char * FileName)
@@ -144,6 +135,14 @@ static char * CatPath(char *Dir, char * FileName)
     }
     strncpy(catpath+pathlen, FileName,200);
     return catpath;
+}
+
+//-----------------------------------------------------------------------------------
+// Compare file names to sort directory.
+//-----------------------------------------------------------------------------------
+static int fncmpfunc (const void * a, const void * b)
+{
+    return strcmp(*(char **)a, *(char **)b);
 }
 
 //-----------------------------------------------------------------------------------
@@ -215,17 +214,37 @@ int DoDirectory(char * Directory)
     char ** FileNames;
     int NumEntries;
     int a;
-    char catpath[500];
     MemImage_t *pic1, *pic2;
+    char * name1, * name2;
 
 
     FileNames = GetSortedDir(Directory, &NumEntries);
     if (FileNames == NULL) return 0;
 
-
+    pic1 = pic2 = NULL;
     for (a=0;a<NumEntries;a++){
-        printf("sorted dir: %s\n",FileNames[a]);
+        //printf("sorted dir: %s\n",FileNames[a]);
+        if (pic1 != NULL) free(pic1);
+        if (pic2 != NULL){
+            pic1 = pic2;
+            name1 = name2;
+        }
+        name2 = FileNames[a];
+        pic2 = LoadJPEG(CatPath(Directory, name2), ScaleDenom, 0);
+        if (pic2 == NULL){
+            fprintf(stderr, "Failed to load %s\n",CatPath(Directory, name2));
+            continue;
+        }
+        if (pic1 != NULL && pic2 != NULL){
+            int diff;
+            printf("Pix %s vs %s:",name1, name2);
+            diff = ComparePix(pic1, pic2, NULL, 0);
+            printf(" %d\n",diff);
+        }
+        
     }
+    if (pic1 != NULL) free(pic1);
+    if (pic2 != NULL) free(pic2);
 
 
     // Free it up again.
@@ -263,7 +282,7 @@ int main (int argc, char **argv)
         printf("\nload %s\n",argv[file_index+1]);
         pic2 = LoadJPEG(argv[file_index+1], ScaleDenom, 0);
         if (pic1 && pic2){
-            ComparePix(pic1, pic2, "diff.ppm");
+            ComparePix(pic1, pic2, "diff.ppm", 2);
         }
         free(pic1);
         free(pic2);

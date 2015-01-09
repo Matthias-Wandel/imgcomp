@@ -68,8 +68,7 @@ MemImage_t * LoadJPEG(char* FileName, int scale_denom, int discard_colors)
 
     data_size = info.output_width 
               * info.output_height * components;
-
-    
+   
 
     MemImage = malloc(data_size+offsetof(MemImage_t, pixels));
     if (!MemImage){
@@ -80,8 +79,6 @@ MemImage_t * LoadJPEG(char* FileName, int scale_denom, int discard_colors)
     MemImage->height = info.output_height;
     MemImage->components = components;
 
-
-
     //--------------------------------------------
     // read scanlines one at a time. Assumes an RGB image
     //--------------------------------------------
@@ -91,7 +88,6 @@ MemImage_t * LoadJPEG(char* FileName, int scale_denom, int discard_colors)
         // Enable jpeg_read_scanlines() to fill our jdata array
         rowptr[0] = MemImage->pixels + 
             components * info.output_width * info.output_scanline; 
-printf("r");
         jpeg_read_scanlines(&info, rowptr, 1);
     }
     //---------------------------------------------------
