@@ -9,6 +9,7 @@
     #define S_ISREG(m) (((m) & S_IFMT) == S_IFREG)
     #define strdup(a) _strdup(a) 
 #else
+    #include <dirent.h>
 #endif
 
 #include "imgcomp.h"
@@ -122,7 +123,6 @@ static int parse_switches (int argc, char **argv, int last_file_arg_seen, int fo
 //-----------------------------------------------------------------------------------
 static int fncmpfunc (const void * a, const void * b)
 {
-    printf("compare %s %s\n",*(char **)a,*(char **)b);
     return strcmp(*(char **)a, *(char **)b);
 }
 
@@ -159,10 +159,9 @@ int DoDirectory(char * Directory)
         struct dirent * dp;
         struct stat buf;
         int l;
-        errno = 0;
         dp = readdir(dirp);
         if (dp == NULL) break;
-        printf("name: %s %d %d\n",dp->d_name, dp->d_off, dp->d_reclen);
+        //printf("name: %s %d %d\n",dp->d_name, (int)dp->d_off, (int)dp->d_reclen);
 
         // Check that it's a regular file.
         strncpy(catpath+pathlen, dp->d_name,100);
@@ -177,7 +176,7 @@ int DoDirectory(char * Directory)
         if (dp->d_name[l-2] != 'p' && dp->d_name[l-2] != 'P') continue;
         if (dp->d_name[l-3] != 'j' && dp->d_name[l-3] != 'J') continue;
         if (dp->d_name[l-4] != '.') continue;
-        printf("use: %s %d %d\n",dp->d_name, dp->d_off, dp->d_reclen);
+        printf("use: %s\n",dp->d_name);
 
         if (NumFileNames >= NumAllocated){
             printf("realloc\n");
