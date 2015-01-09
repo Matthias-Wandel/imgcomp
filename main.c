@@ -18,6 +18,8 @@ static const char * progname;  // program name for error messages
 static char * outfilename;	   // for -outfile switch
 static char * DoDirName = NULL;
 static int ScaleDenom;
+static Region_t DetectReg;
+
 
 
 void usage (void)// complain about bad command line 
@@ -27,7 +29,10 @@ void usage (void)// complain about bad command line
 
     fprintf(stderr, "Switches (names may be abbreviated):\n");
 //  fprintf(stderr, "  -grayscale     Force grayscale output\n");
-    fprintf(stderr, "  -scale N     Scale output image by fraction 1/N, eg, 1/8.  Default 1/4\n");
+    fprintf(stderr, "  -scale         N     Scale output image by fraction 1/N, eg, 1/8.  Default 1/4\n");
+    fprintf(stderr, "  -region  x1-x2,y1-y2 Specify region of interest\n");
+    fprintf(stderr, "  -exclude x1-x2,y1-y2 Exclude part of region\n");
+
     fprintf(stderr, "  -outfile name  Specify name for output file\n");
 //  fprintf(stderr, "  -verbose  or  -debug   Emit debug output\n");
     exit(-1);
@@ -62,14 +67,19 @@ static int parse_switches (int argc, char **argv, int last_file_arg_seen, int fo
 {
     int argn;
     char * arg;
+    char * s;
 
     ScaleDenom = 4;
     DoDirName = NULL;
+    DetectReg.x1 = 0;
+    DetectReg.x2 = 1000000;
+    DetectReg.y1 = 0;
+    DetectReg.y2 = 1000000;
 
     // Scan command line options, adjust parameters
 
     for (argn = 1; argn < argc; argn++) {
-        printf("argn = %d\n",argn);
+        //printf("argn = %d\n",argn);
         arg = argv[argn];
         if (*arg != '-') {
             // Not a switch, must be a file name argument 
@@ -101,6 +111,27 @@ static int parse_switches (int argc, char **argv, int last_file_arg_seen, int fo
             if (sscanf(argv[argn], "%d", &ScaleDenom) != 1)
                usage();
 
+        } else if (keymatch(arg, "region", 1)) {
+            // Specify region of interest
+            if (++argn >= argc)	// advance to next argument
+                 usage();
+
+            printf("region %s\n",argv[argn]);
+            s = strstr(argv[argn], ",");
+            if (s == NULL || s != argv[argn]){
+                // No comma, or comma not in first position.  Parse X parameters.
+                if (sscanf(argv[argn], "%d-%d", &DetectReg.x1, &DetectReg.x2) != 2) usage();
+            }
+            if (s != NULL){
+                // Y parameters come after the comma.
+                if (sscanf(s+1, "%d-%d", &DetectReg.y1, &DetectReg.y2) != 2) usage();
+            }
+            if (DetectReg.y2-DetectReg.y1 < 8 || DetectReg.x2-DetectReg.x1 < 8){
+                fprintf(stderr,"Detect region is too small\n");
+                exit(-1);
+            }
+            printf("Region is %d-%d, %d-%d\n",DetectReg.x1, DetectReg.x2, DetectReg.y1, DetectReg.y2);
+
         } else if (keymatch(arg, "dodir", 1)) {
             // Scale the output image by a fraction M/N. */
             if (++argn >= argc)	// advance to next argument
@@ -110,6 +141,12 @@ static int parse_switches (int argc, char **argv, int last_file_arg_seen, int fo
             usage();	   // bogus switch
         }
     }
+
+    // Adjust region of interest to scale.
+    DetectReg.x1 /= ScaleDenom;
+    DetectReg.x2 /= ScaleDenom;
+    DetectReg.y1 /= ScaleDenom;
+    DetectReg.y2 /= ScaleDenom;
 
     return argn;		   // return index of next arg (file name)
 }
@@ -239,7 +276,7 @@ int DoDirectory(char * Directory)
         if (pic1 != NULL && pic2 != NULL){
             int diff;
             printf("Pix %s vs %s:",name1, name2);
-            diff = ComparePix(pic1, pic2, NULL, 0);
+            diff = ComparePix(pic1, pic2, DetectReg, NULL, 0);
             printf(" %d\n",diff);
         }
         
@@ -283,7 +320,7 @@ int main (int argc, char **argv)
         printf("\nload %s\n",argv[file_index+1]);
         pic2 = LoadJPEG(argv[file_index+1], ScaleDenom, 0);
         if (pic1 && pic2){
-            ComparePix(pic1, pic2, "diff.ppm", 2);
+            ComparePix(pic1, pic2, DetectReg, "diff.ppm", 2);
         }
         free(pic1);
         free(pic2);

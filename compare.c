@@ -5,18 +5,17 @@
 #include <memory.h>
 #include "imgcomp.h"
 
-
-
 //----------------------------------------------------------------------------------------
 // Compare two images in memory
 //----------------------------------------------------------------------------------------
-int ComparePix(MemImage_t * pic1, MemImage_t * pic2, char * DebugImgName, int Verbosity)
+int ComparePix(MemImage_t * pic1, MemImage_t * pic2, Region_t Region, char * DebugImgName, int Verbosity)
 {
     int width, height, comp;
     int row, col;
     MemImage_t * DiffOut;
     int DiffHist[256];
     int a;
+    int totpix;
 
     if (Verbosity){
         printf("\ncompare pictures %dx%d %d\n", pic1->width, pic1->height, pic1->components);
@@ -37,23 +36,40 @@ int ComparePix(MemImage_t * pic1, MemImage_t * pic2, char * DebugImgName, int Ve
         data_size = width * height * comp;
         DiffOut = malloc(data_size+offsetof(MemImage_t, pixels));
         memcpy(DiffOut, pic1, offsetof(MemImage_t, pixels));
+        memset(DiffOut->pixels, 0, data_size);
     }
     memset(DiffHist, 0, sizeof(DiffHist));
 
     // todo: scale brightness.
 
+    if (Region.y2 > height) Region.y2 = height;
+    if (Region.x2 > width) Region.x2 = width;
+    if (Region.x2 < Region.x1 || Region.x2 < Region.x1){
+        fprintf(stderr, "Negative region, or region outside of image\n");
+        return -1;
+    }
+    totpix = (Region.x2-Region.x1) * (Region.y2-Region.y1);
+    if (totpix < 1000){
+        fprintf(stderr, "Too few pixels in region\n");
+        return -1;
+    }
+
     // Compute differences
-    for (row=0;row<height;row++){
+    if (Verbosity > 0){
+        printf("Detection region is %d-%d, %d-%d\n",Region.x1, Region.x2, Region.y1, Region.y2);
+    }
+
+    for (row=Region.y1;row<Region.y2;row++){
         unsigned char * p1, *p2, *pd;
-        p1 = pic1->pixels+width*comp*row;
-        p2 = pic2->pixels+width*comp*row;
+        p1 = pic1->pixels+width*comp*row+Region.x1*comp;
+        p2 = pic2->pixels+width*comp*row+Region.x1*comp;
 
         pd = NULL;
         if (DebugImgName){
-            pd = DiffOut->pixels+width*comp*row;
+            pd = DiffOut->pixels+width*comp*row+Region.x1*comp;
         }
 
-        for (col=0;col<width;col++){
+        for (col=Region.x1;col<Region.x2;col++){
             // Data is in order red, green, blue.
             int dr,dg,db, dcomp;
             dr = p1[0] - p2[0];
@@ -96,11 +112,9 @@ int ComparePix(MemImage_t * pic1, MemImage_t * pic2, char * DebugImgName, int Ve
     }
 
     {
-        int totpix, cumsum;
+        int cumsum = 0;
         int threshold;
 
-        totpix = width * height;
-        cumsum = 0;
         for (a=0;a<256;a++){
             cumsum += DiffHist[a];
             if (cumsum >= totpix/2) break;
