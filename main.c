@@ -222,6 +222,7 @@ int DoDirectory(char * Directory)
     if (FileNames == NULL) return 0;
 
     pic1 = pic2 = NULL;
+    name1 = name2 = NULL;
     for (a=0;a<NumEntries;a++){
         //printf("sorted dir: %s\n",FileNames[a]);
         if (pic1 != NULL) free(pic1);
