@@ -116,6 +116,16 @@ static int parse_switches (int argc, char **argv, int last_file_arg_seen, int fo
     return argn;		   // return index of next arg (file name)
 }
 
+
+//-----------------------------------------------------------------------------------
+// Compare file names to sort directory.
+//-----------------------------------------------------------------------------------
+static int fncmpfunc (const void * a, const void * b)
+{
+    printf("compare %s %s\n",*(char **)a,*(char **)b);
+    return strcmp(*(char **)a, *(char **)b);
+}
+
 //-----------------------------------------------------------------------------------
 // Process a whole directory.
 //-----------------------------------------------------------------------------------
@@ -176,12 +186,20 @@ int DoDirectory(char * Directory)
         }
 
         FileNames[NumFileNames++] = strdup(dp->d_name);
-
     }
     closedir(dirp);
 
+    // Now sort the names (could be in random order)
+    qsort(FileNames, NumFileNames, sizeof(char **), fncmpfunc);
+
+    {
+        int a;
+        for (a=0;a<NumFileNames;a++){
+            printf("sorted: %s\n",FileNames[a]);
+        }
+    }
+
     return -1;
-    
 }
 
 //-----------------------------------------------------------------------------------
