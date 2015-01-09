@@ -1,11 +1,23 @@
 #include <stdio.h>
 #include <ctype.h>		// to declare isupper(), tolower() 
 #include <stdlib.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <string.h>
+#ifdef _WIN32
+    #include "readdir.h"
+    #define S_ISREG(m) (((m) & S_IFMT) == S_IFREG)
+    #define strdup(a) _strdup(a) 
+#else
+#endif
 
 #include "imgcomp.h"
 
 static const char * progname;  // program name for error messages
 static char * outfilename;	   // for -outfile switch
+static char * DoDirName = NULL;
+static int ScaleDenom;
+
 
 void usage (void)// complain about bad command line 
 {
@@ -15,10 +27,9 @@ void usage (void)// complain about bad command line
   fprintf(stderr, "Switches (names may be abbreviated):\n");
   fprintf(stderr, "  -grayscale     Force grayscale output\n");
 #ifdef IDCT_SCALING_SUPPORTED
-  fprintf(stderr, "  -scale M/N     Scale output image by fraction M/N, eg, 1/8\n");
+  fprintf(stderr, "  -scale N     Scale output image by fraction 1/N, eg, 1/8.  Default 1/4\n");
 #endif
   fprintf(stderr, "Switches for advanced users:\n");
-  fprintf(stderr, "  -nosmooth      Don't use high-quality upsampling\n");
   fprintf(stderr, "  -outfile name  Specify name for output file\n");
   fprintf(stderr, "  -verbose  or  -debug   Emit debug output\n");
   exit(-1);
@@ -54,6 +65,9 @@ static int parse_switches (int argc, char **argv, int last_file_arg_seen, int fo
     int argn;
     char * arg;
 
+    ScaleDenom = 4;
+    DoDirName = NULL;
+
     // Scan command line options, adjust parameters
 
     for (argn = 1; argn < argc; argn++) {
@@ -76,10 +90,6 @@ static int parse_switches (int argc, char **argv, int last_file_arg_seen, int fo
         } else if (keymatch(arg, "grayscale", 2) || keymatch(arg, "greyscale",2)) {
             // Force monochrome output.
             //cinfo->out_color_space = JCS_GRAYSCALE;
-        } else if (keymatch(arg, "nosmooth", 3)) {
-            // Suppress fancy upsampling
-            //cinfo->do_fancy_upsampling = FALSE;
-
         } else if (keymatch(arg, "outfile", 4)) {
             // Set output file name.
             if (++argn >= argc)	// advance to next argument
@@ -87,17 +97,91 @@ static int parse_switches (int argc, char **argv, int last_file_arg_seen, int fo
             outfilename = argv[argn];	// save it away for later use
 
         } else if (keymatch(arg, "scale", 1)) {
-            // Scale the output image by a fraction M/N. */
-            if (++argn >= argc)	/* advance to next argument */
+            // Scale the output image by a fraction M/N.
+            if (++argn >= argc)	// advance to next argument
                  usage();
-            //if (sscanf(argv[argn], "%d/%d", &cinfo->scale_num, &cinfo->scale_denom) != 2)
-            //   usage();
+            if (sscanf(argv[argn], "%d", &ScaleDenom) != 1)
+               usage();
+
+        } else if (keymatch(arg, "dodir", 1)) {
+            // Scale the output image by a fraction M/N. */
+            if (++argn >= argc)	// advance to next argument
+                 usage();
+            DoDirName = argv[argn];
         } else {
             usage();	   // bogus switch
         }
     }
 
     return argn;		   // return index of next arg (file name)
+}
+
+//-----------------------------------------------------------------------------------
+// Process a whole directory.
+//-----------------------------------------------------------------------------------
+int DoDirectory(char * Directory)
+{
+    char ** FileNames;
+    int NumFileNames;
+    int NumAllocated;
+    DIR * dirp;
+    char catpath[500];
+    int pathlen;
+
+    NumAllocated = 5;
+    FileNames = malloc(sizeof (char *) * NumAllocated);
+
+    NumFileNames = 0;
+  
+    dirp = opendir(Directory);
+    if (dirp == NULL){
+        fprintf(stderr, "could not open dir\n");
+        return -1;
+    }
+    strncpy(catpath, Directory,300);
+    pathlen = strlen(catpath);
+    if (catpath[pathlen-1] != '/' && catpath[pathlen-1] != '\\'){
+        catpath[pathlen] = '/';
+        pathlen += 1;
+    }
+
+    for (;;){
+        struct dirent * dp;
+        struct stat buf;
+        int l;
+        errno = 0;
+        dp = readdir(dirp);
+        if (dp == NULL) break;
+        printf("name: %s %d %d\n",dp->d_name, dp->d_off, dp->d_reclen);
+
+        // Check that it's a regular file.
+        strncpy(catpath+pathlen, dp->d_name,100);
+        stat(catpath, &buf);
+        if (!S_ISREG(buf.st_mode)) continue; // not a file.
+
+        // Check that name ends in ".jpg", ".jpeg", or ".JPG", etc...
+        l = strlen(dp->d_name);
+        if (l < 5) continue;
+        if (dp->d_name[l-1] != 'g' && dp->d_name[l-1] != 'G') continue;
+        if (dp->d_name[l-2] == 'e' || dp->d_name[l-2] == 'E') l-= 1;
+        if (dp->d_name[l-2] != 'p' && dp->d_name[l-2] != 'P') continue;
+        if (dp->d_name[l-3] != 'j' && dp->d_name[l-3] != 'J') continue;
+        if (dp->d_name[l-4] != '.') continue;
+        printf("use: %s %d %d\n",dp->d_name, dp->d_off, dp->d_reclen);
+
+        if (NumFileNames >= NumAllocated){
+            printf("realloc\n");
+            NumAllocated *= 2;
+            FileNames = realloc(FileNames, sizeof (char *) * NumAllocated);
+        }
+
+        FileNames[NumFileNames++] = strdup(dp->d_name);
+
+    }
+    closedir(dirp);
+
+    return -1;
+    
 }
 
 //-----------------------------------------------------------------------------------
@@ -110,15 +194,22 @@ int main (int argc, char **argv)
 
     // Scan command line to find file names.
     file_index = parse_switches(argc, argv, 0, 0);
+    
+    if (DoDirName){
+        return DoDirectory(DoDirName);
+    }
+
 
     if (argc-file_index == 2){
         MemImage_t *pic1, *pic2;
         
         printf("load %s\n",argv[file_index]);
-        pic1 = LoadJPEG(argv[file_index], 4, 0);
+        pic1 = LoadJPEG(argv[file_index], ScaleDenom, 0);
         printf("\nload %s\n",argv[file_index+1]);
-        pic2 = LoadJPEG(argv[file_index+1], 4, 0);
-        ComparePix(pic1, pic2, "diff.ppm");
+        pic2 = LoadJPEG(argv[file_index+1], ScaleDenom, 0);
+        if (pic1 && pic2){
+            ComparePix(pic1, pic2, "diff.ppm");
+        }
         free(pic1);
         free(pic2);
     }else{
@@ -131,7 +222,7 @@ int main (int argc, char **argv)
             // Load file into memory.
 
             pic = LoadJPEG(argv[a], 4, 0);
-            WritePpmFile("out.ppm",pic);
+            if (pic) WritePpmFile("out.ppm",pic);
         }
     }
 
