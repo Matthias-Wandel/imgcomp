@@ -22,18 +22,15 @@ static int ScaleDenom;
 
 void usage (void)// complain about bad command line 
 {
-  fprintf(stderr, "usage: %s [switches] ", progname);
-  fprintf(stderr, "inputfile outputfile\n");
+    fprintf(stderr, "usage: %s [switches] ", progname);
+    fprintf(stderr, "inputfile outputfile\n");
 
-  fprintf(stderr, "Switches (names may be abbreviated):\n");
-  fprintf(stderr, "  -grayscale     Force grayscale output\n");
-#ifdef IDCT_SCALING_SUPPORTED
-  fprintf(stderr, "  -scale N     Scale output image by fraction 1/N, eg, 1/8.  Default 1/4\n");
-#endif
-  fprintf(stderr, "Switches for advanced users:\n");
-  fprintf(stderr, "  -outfile name  Specify name for output file\n");
-  fprintf(stderr, "  -verbose  or  -debug   Emit debug output\n");
-  exit(-1);
+    fprintf(stderr, "Switches (names may be abbreviated):\n");
+//  fprintf(stderr, "  -grayscale     Force grayscale output\n");
+    fprintf(stderr, "  -scale N     Scale output image by fraction 1/N, eg, 1/8.  Default 1/4\n");
+    fprintf(stderr, "  -outfile name  Specify name for output file\n");
+//  fprintf(stderr, "  -verbose  or  -debug   Emit debug output\n");
+    exit(-1);
 }
 
 //----------------------------------------------------------------------
@@ -126,17 +123,38 @@ static int fncmpfunc (const void * a, const void * b)
     return strcmp(*(char **)a, *(char **)b);
 }
 
+
 //-----------------------------------------------------------------------------------
-// Process a whole directory.
+// Concatenate dir name and file name.  Not thread safe!
 //-----------------------------------------------------------------------------------
-int DoDirectory(char * Directory)
+static char * CatPath(char *Dir, char * FileName)
+{
+    static char catpath[502];
+    int pathlen;
+
+    pathlen = strlen(Dir);
+    if (pathlen > 300){
+        fprintf(stderr, "path too long!");
+        exit(-1);
+    }
+    memcpy(catpath, Dir, pathlen+1);
+    if (catpath[pathlen-1] != '/' && catpath[pathlen-1] != '\\'){
+        catpath[pathlen] = '/';
+        pathlen += 1;
+    }
+    strncpy(catpath+pathlen, FileName,200);
+    return catpath;
+}
+
+//-----------------------------------------------------------------------------------
+// Read a directory and sort it.
+//-----------------------------------------------------------------------------------
+char ** GetSortedDir(char * Directory, int * NumFiles)
 {
     char ** FileNames;
     int NumFileNames;
     int NumAllocated;
     DIR * dirp;
-    char catpath[500];
-    int pathlen;
 
     NumAllocated = 5;
     FileNames = malloc(sizeof (char *) * NumAllocated);
@@ -146,13 +164,7 @@ int DoDirectory(char * Directory)
     dirp = opendir(Directory);
     if (dirp == NULL){
         fprintf(stderr, "could not open dir\n");
-        return -1;
-    }
-    strncpy(catpath, Directory,300);
-    pathlen = strlen(catpath);
-    if (catpath[pathlen-1] != '/' && catpath[pathlen-1] != '\\'){
-        catpath[pathlen] = '/';
-        pathlen += 1;
+        return NULL;
     }
 
     for (;;){
@@ -163,10 +175,6 @@ int DoDirectory(char * Directory)
         if (dp == NULL) break;
         //printf("name: %s %d %d\n",dp->d_name, (int)dp->d_off, (int)dp->d_reclen);
 
-        // Check that it's a regular file.
-        strncpy(catpath+pathlen, dp->d_name,100);
-        stat(catpath, &buf);
-        if (!S_ISREG(buf.st_mode)) continue; // not a file.
 
         // Check that name ends in ".jpg", ".jpeg", or ".JPG", etc...
         l = strlen(dp->d_name);
@@ -176,10 +184,14 @@ int DoDirectory(char * Directory)
         if (dp->d_name[l-2] != 'p' && dp->d_name[l-2] != 'P') continue;
         if (dp->d_name[l-3] != 'j' && dp->d_name[l-3] != 'J') continue;
         if (dp->d_name[l-4] != '.') continue;
-        printf("use: %s\n",dp->d_name);
+        //printf("use: %s\n",dp->d_name);
+
+        // Check that it's a regular file.
+        stat(CatPath(Directory, dp->d_name), &buf);
+        if (!S_ISREG(buf.st_mode)) continue; // not a file.
 
         if (NumFileNames >= NumAllocated){
-            printf("realloc\n");
+            //printf("realloc\n");
             NumAllocated *= 2;
             FileNames = realloc(FileNames, sizeof (char *) * NumAllocated);
         }
@@ -191,14 +203,40 @@ int DoDirectory(char * Directory)
     // Now sort the names (could be in random order)
     qsort(FileNames, NumFileNames, sizeof(char **), fncmpfunc);
 
-    {
-        int a;
-        for (a=0;a<NumFileNames;a++){
-            printf("sorted: %s\n",FileNames[a]);
-        }
+    *NumFiles = NumFileNames;
+    return FileNames;
+}
+
+//-----------------------------------------------------------------------------------
+// Process a whole directory of files.
+//-----------------------------------------------------------------------------------
+int DoDirectory(char * Directory)
+{
+    char ** FileNames;
+    int NumEntries;
+    int a;
+    char catpath[500];
+    MemImage_t *pic1, *pic2;
+
+
+    FileNames = GetSortedDir(Directory, &NumEntries);
+    if (FileNames == NULL) return 0;
+
+
+    for (a=0;a<NumEntries;a++){
+        printf("sorted dir: %s\n",FileNames[a]);
     }
 
-    return -1;
+
+    // Free it up again.
+    for (a=0;a<NumEntries;a++){
+        free(FileNames[a]);
+        FileNames[a] = NULL;
+    }
+    free(FileNames);
+    FileNames = NULL;
+
+    return 1;
 }
 
 //-----------------------------------------------------------------------------------
