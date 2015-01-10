@@ -5,9 +5,9 @@
 #include <sys/stat.h>
 #include <string.h>
 #include <fcntl.h>
-#include <io.h>
 
 #ifdef _WIN32
+    #include <io.h>
     #define S_IRUSR 0
     #define S_IWUSR 0
     #define S_IRGRP 0
@@ -16,6 +16,9 @@
     #define read(a,b,c) _read(a,b,c)
     #define write(a,b,c) _write(a,b,c)
     #define close(a) _close(a)
+#else
+    #include <unistd.h> 
+    #define O_BINARY 0
 #endif
 #include "imgcomp.h"
 
