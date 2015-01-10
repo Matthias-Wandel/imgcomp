@@ -43,7 +43,7 @@ int CopyFile(char * src, char * dest)
  
     openFlags = O_CREAT | O_WRONLY | O_TRUNC | O_BINARY;
 
-    filePerms = 0x1ff;//S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP;
+    filePerms = 0x1ff;
 
     outputFd = open(dest, openFlags, filePerms);
     if (outputFd == -1){

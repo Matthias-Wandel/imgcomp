@@ -371,6 +371,7 @@ int main (int argc, char **argv)
 
 
 // Features to consider adding:
+// Ignore regions
+//
+// Follow directory, delete or move.
 // 
-// Copy / move interesting pictures to another directory.
-// Follow directory
