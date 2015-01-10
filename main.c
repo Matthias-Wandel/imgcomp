@@ -17,6 +17,7 @@
 static const char * progname;  // program name for error messages
 static char * outfilename;	   // for -outfile switch
 static char * DoDirName = NULL;
+static char * SaveDir = NULL;
 static int ScaleDenom;
 static Region_t DetectReg;
 
@@ -28,12 +29,13 @@ void usage (void)// complain about bad command line
     fprintf(stderr, "inputfile outputfile\n");
 
     fprintf(stderr, "Switches (names may be abbreviated):\n");
-//  fprintf(stderr, "  -grayscale     Force grayscale output\n");
-    fprintf(stderr, "  -scale         N     Scale output image by fraction 1/N, eg, 1/8.  Default 1/4\n");
-    fprintf(stderr, "  -region  x1-x2,y1-y2 Specify region of interest\n");
-    fprintf(stderr, "  -exclude x1-x2,y1-y2 Exclude part of region\n");
+    fprintf(stderr, " -scale   N           Scale before detection by 1/N.  Default 1/4\n");
+    fprintf(stderr, " -region  x1-x2,y1-y2 Specify region of interest\n");
+    fprintf(stderr, " -exclude x1-x2,y1-y2 Exclude part of region\n");
+    fprintf(stderr, " -savedir dirname     Where to save images with changes\n");
 
-    fprintf(stderr, "  -outfile name  Specify name for output file\n");
+
+    fprintf(stderr, " -outfile name  Specify name for output file\n");
 //  fprintf(stderr, "  -verbose  or  -debug   Emit debug output\n");
     exit(-1);
 }
@@ -103,6 +105,11 @@ static int parse_switches (int argc, char **argv, int last_file_arg_seen, int fo
             if (++argn >= argc)	// advance to next argument
 	           usage();
             outfilename = argv[argn];	// save it away for later use
+        } else if (keymatch(arg, "savedir", 4)) {
+            // Set output file name.
+            if (++argn >= argc)	// advance to next argument
+	           usage();
+            SaveDir = argv[argn];
 
         } else if (keymatch(arg, "scale", 1)) {
             // Scale the output image by a fraction M/N.
@@ -243,10 +250,12 @@ char ** GetSortedDir(char * Directory, int * NumFiles)
     return FileNames;
 }
 
+
+
 //-----------------------------------------------------------------------------------
 // Process a whole directory of files.
 //-----------------------------------------------------------------------------------
-int DoDirectory(char * Directory)
+int DoDirectory(char * Directory, char * KeepPixDir, int Threshold)
 {
     char ** FileNames;
     int NumEntries;
@@ -254,12 +263,15 @@ int DoDirectory(char * Directory)
     MemImage_t *pic1, *pic2;
     char * name1, * name2;
 
+    int pic1copied = 0;
+
 
     FileNames = GetSortedDir(Directory, &NumEntries);
     if (FileNames == NULL) return 0;
 
     pic1 = pic2 = NULL;
     name1 = name2 = NULL;
+
     for (a=0;a<NumEntries;a++){
         //printf("sorted dir: %s\n",FileNames[a]);
         if (pic1 != NULL) free(pic1);
@@ -275,9 +287,25 @@ int DoDirectory(char * Directory)
         }
         if (pic1 != NULL && pic2 != NULL){
             int diff;
+            char SrcPath[500];
             printf("Pix %s vs %s:",name1, name2);
             diff = ComparePix(pic1, pic2, DetectReg, NULL, 0);
             printf(" %d\n",diff);
+
+            if (diff > Threshold){
+                if (KeepPixDir){
+                    if (!pic1copied){
+                        strcpy(SrcPath, CatPath(Directory, name1));
+                        CopyFile(SrcPath, CatPath(KeepPixDir, name1));
+                    }
+                    strcpy(SrcPath, CatPath(Directory, name2));
+                    CopyFile(SrcPath, CatPath(KeepPixDir, name2));
+                }
+
+                pic1copied = 1;
+            }else{
+                pic1copied = 0;
+            }
         }
         
     }
@@ -308,7 +336,7 @@ int main (int argc, char **argv)
     file_index = parse_switches(argc, argv, 0, 0);
     
     if (DoDirName){
-        return DoDirectory(DoDirName);
+        return DoDirectory(DoDirName, SaveDir, 100);
     }
 
 
@@ -340,3 +368,9 @@ int main (int argc, char **argv)
 
     return 0;
 }
+
+
+// Features to consider adding:
+// 
+// Copy / move interesting pictures to another directory.
+// Follow directory

@@ -15,7 +15,7 @@ int ComparePix(MemImage_t * pic1, MemImage_t * pic2, Region_t Region, char * Deb
     MemImage_t * DiffOut;
     int DiffHist[256];
     int a;
-    int totpix;
+    int DetectionPixels;
 
     if (Verbosity){
         printf("\ncompare pictures %dx%d %d\n", pic1->width, pic1->height, pic1->components);
@@ -48,8 +48,8 @@ int ComparePix(MemImage_t * pic1, MemImage_t * pic2, Region_t Region, char * Deb
         fprintf(stderr, "Negative region, or region outside of image\n");
         return -1;
     }
-    totpix = (Region.x2-Region.x1) * (Region.y2-Region.y1);
-    if (totpix < 1000){
+    DetectionPixels = (Region.x2-Region.x1) * (Region.y2-Region.y1);
+    if (DetectionPixels < 1000){
         fprintf(stderr, "Too few pixels in region\n");
         return -1;
     }
@@ -117,7 +117,7 @@ int ComparePix(MemImage_t * pic1, MemImage_t * pic2, Region_t Region, char * Deb
 
         for (a=0;a<256;a++){
             cumsum += DiffHist[a];
-            if (cumsum >= totpix/2) break;
+            if (cumsum >= DetectionPixels/2) break;
         }
         if (Verbosity) printf("half of image is below %d diff\n",a);
         threshold = a*3+10;
@@ -129,7 +129,7 @@ int ComparePix(MemImage_t * pic1, MemImage_t * pic2, Region_t Region, char * Deb
         }
         if (Verbosity) printf("Above threshold: %d pixels\n",cumsum);
 
-        cumsum = (cumsum * 100) / width / height;
+        cumsum = (cumsum * 100) / DetectionPixels;
         if (Verbosity) printf("Normalized diff: %d\n",cumsum);
         return cumsum;
     }
