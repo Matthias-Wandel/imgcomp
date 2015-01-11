@@ -138,3 +138,10 @@ void rewinddir(DIR *dir_Info)
 	free(filespec);
 }
 
+
+#include <windows.h>
+void sleep(int a)
+{
+    printf("Pretending to sleep for %d seconds\n",a);
+    getchar();
+}

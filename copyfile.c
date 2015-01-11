@@ -34,10 +34,11 @@ int CopyFile(char * src, char * dest)
     char buf[BUF_SIZE];
 
     // Open input and output files 
+    printf("Copy %s --> %s\n",src,dest);
  
     inputFd = open(src, O_RDONLY | O_BINARY, 0);
     if (inputFd == -1){
-        fprintf(stderr,"CopyFile coult not open src %s\n",src);
+        fprintf(stderr,"CopyFile could not open src %s\n",src);
         exit(-1);
     }
  
@@ -65,7 +66,6 @@ int CopyFile(char * src, char * dest)
     if (numRead == -1){
         fprintf(stderr,"CopyFile read error from %s\n",src);
         exit(-1);
-
     }
 
     close(inputFd);

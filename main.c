@@ -8,6 +8,8 @@
     #include "readdir.h"
     #define S_ISREG(m) (((m) & S_IFMT) == S_IFREG)
     #define strdup(a) _strdup(a) 
+    extern void sleep(int);
+    #define unlink(n) _unlink(n)
 #else
     #include <dirent.h>
 #endif
@@ -18,6 +20,7 @@ static const char * progname;  // program name for error messages
 static char * outfilename;	   // for -outfile switch
 static char * DoDirName = NULL;
 static char * SaveDir = NULL;
+static int FollowDir = 0;
 static int ScaleDenom;
 static Region_t DetectReg;
 
@@ -32,7 +35,9 @@ void usage (void)// complain about bad command line
     fprintf(stderr, " -scale   N           Scale before detection by 1/N.  Default 1/4\n");
     fprintf(stderr, " -region  x1-x2,y1-y2 Specify region of interest\n");
     fprintf(stderr, " -exclude x1-x2,y1-y2 Exclude part of region\n");
-    fprintf(stderr, " -savedir dirname     Where to save images with changes\n");
+    fprintf(stderr, " -dodir   <srcdir>    Compare images in dir, in order\n");
+    fprintf(stderr, " -f                   Do dir and monitor for new images\n");
+    fprintf(stderr, " -savedir <saveto>    Where to save images with changes\n");
 
 
     fprintf(stderr, " -outfile name  Specify name for output file\n");
@@ -97,7 +102,7 @@ static int parse_switches (int argc, char **argv, int last_file_arg_seen, int fo
             // Enable debug printouts.  Specify more than once for more detail.
             //cinfo->err->trace_level++;
 
-        } else if (keymatch(arg, "grayscale", 2) || keymatch(arg, "greyscale",2)) {
+        } else if (keymatch(arg, "grayscale", 2)) {
             // Force monochrome output.
             //cinfo->out_color_space = JCS_GRAYSCALE;
         } else if (keymatch(arg, "outfile", 4)) {
@@ -144,6 +149,9 @@ static int parse_switches (int argc, char **argv, int last_file_arg_seen, int fo
             if (++argn >= argc)	// advance to next argument
                  usage();
             DoDirName = argv[argn];
+        } else if (keymatch(arg, "f", 1)) {
+            printf("followdir\n");
+            FollowDir = 1;
         } else {
             usage();	   // bogus switch
         }
@@ -155,7 +163,7 @@ static int parse_switches (int argc, char **argv, int last_file_arg_seen, int fo
     DetectReg.y1 /= ScaleDenom;
     DetectReg.y2 /= ScaleDenom;
 
-    return argn;		   // return index of next arg (file name)
+    return argn;  // return index of next arg (file name)
 }
 
 
@@ -263,13 +271,13 @@ void FreeDir(char ** FileNames, int NumEntries)
 
 
 static MemImage_t *LastPic;
-static char * LastPicName;
+static char LastPicName[500];
 static int LastPiccopied = 0;
 
 //-----------------------------------------------------------------------------------
 // Process a whole directory of files.
 //-----------------------------------------------------------------------------------
-int DoDirectoryFunc(char * Directory, char * KeepPixDir, int Threshold)
+static int DoDirectoryFunc(char * Directory, char * KeepPixDir, int Delete, int Threshold)
 {
     char ** FileNames;
     int NumEntries;
@@ -313,9 +321,13 @@ int DoDirectoryFunc(char * Directory, char * KeepPixDir, int Threshold)
         }
 
         if (LastPic != NULL) free(LastPic);
+        if (Delete){
+            unlink(LastPicName);
+        }
+
         if (CurrentPic != NULL){
             LastPic = CurrentPic;
-            LastPicName = CurrentPicName;
+            strcpy(LastPicName, CurrentPicName);
             CurrentPic = NULL;
         }
     }
@@ -332,13 +344,17 @@ int DoDirectoryFunc(char * Directory, char * KeepPixDir, int Threshold)
 int DoDirectory(char * Directory, char * KeepPixDir, int Threshold)
 {
     int a;
-
-    a = DoDirectoryFunc(Directory, KeepPixDir, Threshold);
+    for (;;){
+        a = DoDirectoryFunc(Directory, KeepPixDir, 0, Threshold);
+        if (FollowDir){
+            sleep(1);
+        }else{
+            break;
+        }
+    }
     if (LastPic != NULL) free(LastPic);
     return a;
 }
-
-
 
 
 //-----------------------------------------------------------------------------------
@@ -348,14 +364,20 @@ int main (int argc, char **argv)
 {
     int file_index;
     progname = argv[0];
-
+printf("get switches\n");
     // Scan command line to find file names.
     file_index = parse_switches(argc, argv, 0, 0);
-    
-    if (DoDirName){
-        return DoDirectory(DoDirName, SaveDir, 100);
-    }
+printf("got switches\n");
 
+    if (FollowDir && DoDirName == NULL){
+        fprintf(stderr, "Must specify directory to do and monitor with -dodir\n");
+        usage();
+    }
+   
+    if (DoDirName){
+        printf("do dir\n");
+        DoDirectory(DoDirName, SaveDir, 100);
+    }
 
     if (argc-file_index == 2){
         MemImage_t *pic1, *pic2;
@@ -388,7 +410,10 @@ int main (int argc, char **argv)
 
 
 // Features to consider adding:
-// Ignore regions
-//
-// Follow directory, delete or move.
-// 
+//--------------------------------------------------------
+// Ignore regions (Threshold an image for this)
+// Rename images to date on move?
+// Delete oldes images if too many saved.
+// Dynamic thresholding?
+// Interval - save image ever N regardless.
+
