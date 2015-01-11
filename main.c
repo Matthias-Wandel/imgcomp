@@ -250,79 +250,96 @@ char ** GetSortedDir(char * Directory, int * NumFiles)
     return FileNames;
 }
 
-
-
-//-----------------------------------------------------------------------------------
-// Process a whole directory of files.
-//-----------------------------------------------------------------------------------
-int DoDirectory(char * Directory, char * KeepPixDir, int Threshold)
+void FreeDir(char ** FileNames, int NumEntries)
 {
-    char ** FileNames;
-    int NumEntries;
     int a;
-    MemImage_t *pic1, *pic2;
-    char * name1, * name2;
-
-    int pic1copied = 0;
-
-
-    FileNames = GetSortedDir(Directory, &NumEntries);
-    if (FileNames == NULL) return 0;
-
-    pic1 = pic2 = NULL;
-    name1 = name2 = NULL;
-
-    for (a=0;a<NumEntries;a++){
-        //printf("sorted dir: %s\n",FileNames[a]);
-        if (pic1 != NULL) free(pic1);
-        if (pic2 != NULL){
-            pic1 = pic2;
-            name1 = name2;
-        }
-        name2 = FileNames[a];
-        pic2 = LoadJPEG(CatPath(Directory, name2), ScaleDenom, 0);
-        if (pic2 == NULL){
-            fprintf(stderr, "Failed to load %s\n",CatPath(Directory, name2));
-            continue;
-        }
-        if (pic1 != NULL && pic2 != NULL){
-            int diff;
-            char SrcPath[500];
-            printf("Pix %s vs %s:",name1, name2);
-            diff = ComparePix(pic1, pic2, DetectReg, NULL, 0);
-            printf(" %d\n",diff);
-
-            if (diff > Threshold){
-                if (KeepPixDir){
-                    if (!pic1copied){
-                        strcpy(SrcPath, CatPath(Directory, name1));
-                        CopyFile(SrcPath, CatPath(KeepPixDir, name1));
-                    }
-                    strcpy(SrcPath, CatPath(Directory, name2));
-                    CopyFile(SrcPath, CatPath(KeepPixDir, name2));
-                }
-
-                pic1copied = 1;
-            }else{
-                pic1copied = 0;
-            }
-        }
-        
-    }
-    if (pic1 != NULL) free(pic1);
-    if (pic2 != NULL) free(pic2);
-
-
     // Free it up again.
     for (a=0;a<NumEntries;a++){
         free(FileNames[a]);
         FileNames[a] = NULL;
     }
     free(FileNames);
+}
+
+
+static MemImage_t *LastPic;
+static char * LastPicName;
+static int LastPiccopied = 0;
+
+//-----------------------------------------------------------------------------------
+// Process a whole directory of files.
+//-----------------------------------------------------------------------------------
+int DoDirectoryFunc(char * Directory, char * KeepPixDir, int Threshold)
+{
+    char ** FileNames;
+    int NumEntries;
+    int a;
+
+    static MemImage_t *CurrentPic;
+    static char * CurrentPicName;
+
+    FileNames = GetSortedDir(Directory, &NumEntries);
+    if (FileNames == NULL) return 0;
+
+    for (a=0;a<NumEntries;a++){
+        //printf("sorted dir: %s\n",FileNames[a]);
+        CurrentPicName = FileNames[a];
+        CurrentPic = LoadJPEG(CatPath(Directory, CurrentPicName), ScaleDenom, 0);
+        if (CurrentPic == NULL){
+            fprintf(stderr, "Failed to load %s\n",CatPath(Directory, CurrentPicName));
+            continue;
+        }
+        if (LastPic != NULL && CurrentPic != NULL){
+            int diff;
+            char SrcPath[500];
+            printf("Pix %s vs %s:",LastPicName, CurrentPicName);
+            diff = ComparePix(LastPic, CurrentPic, DetectReg, NULL, 0);
+            printf(" %d\n",diff);
+
+            if (diff > Threshold){
+                if (KeepPixDir){
+                    if (!LastPiccopied){
+                        strcpy(SrcPath, CatPath(Directory, LastPicName));
+                        CopyFile(SrcPath, CatPath(KeepPixDir, LastPicName));
+                    }
+                    strcpy(SrcPath, CatPath(Directory, CurrentPicName));
+                    CopyFile(SrcPath, CatPath(KeepPixDir, CurrentPicName));
+                }
+
+                LastPiccopied = 1;
+            }else{
+                LastPiccopied = 0;
+            }
+        }
+
+        if (LastPic != NULL) free(LastPic);
+        if (CurrentPic != NULL){
+            LastPic = CurrentPic;
+            LastPicName = CurrentPicName;
+            CurrentPic = NULL;
+        }
+    }
+
+    FreeDir(FileNames, NumEntries); // Free up the whole directory structure.
     FileNames = NULL;
 
     return 1;
 }
+
+//-----------------------------------------------------------------------------------
+// Process a whole directory of files.
+//-----------------------------------------------------------------------------------
+int DoDirectory(char * Directory, char * KeepPixDir, int Threshold)
+{
+    int a;
+
+    a = DoDirectoryFunc(Directory, KeepPixDir, Threshold);
+    if (LastPic != NULL) free(LastPic);
+    return a;
+}
+
+
+
 
 //-----------------------------------------------------------------------------------
 // The main program.
