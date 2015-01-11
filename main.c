@@ -12,6 +12,7 @@
     #define unlink(n) _unlink(n)
 #else
     #include <dirent.h>
+    #include <unistd.h>
 #endif
 
 #include "imgcomp.h"
@@ -288,8 +289,15 @@ static int DoDirectoryFunc(char * Directory, char * KeepPixDir, int Delete, int 
 
     FileNames = GetSortedDir(Directory, &NumEntries);
     if (FileNames == NULL) return 0;
+    if (NumEntries == 0) return 1;
 
-    for (a=0;a<NumEntries;a++){
+    a=0;
+    if (strcmp(LastPicName, FileNames[0]) == 0){
+        // Don't redo the last picture.
+        a += 1;
+    }
+
+    for (;a<NumEntries;a++){\
         //printf("sorted dir: %s\n",FileNames[a]);
         CurrentPicName = FileNames[a];
         CurrentPic = LoadJPEG(CatPath(Directory, CurrentPicName), ScaleDenom, 0);
@@ -322,7 +330,7 @@ static int DoDirectoryFunc(char * Directory, char * KeepPixDir, int Delete, int 
 
         if (LastPic != NULL) free(LastPic);
         if (Delete){
-            unlink(LastPicName);
+            unlink(CatPath(Directory, LastPicName));
         }
 
         if (CurrentPic != NULL){
@@ -345,7 +353,7 @@ int DoDirectory(char * Directory, char * KeepPixDir, int Threshold)
 {
     int a;
     for (;;){
-        a = DoDirectoryFunc(Directory, KeepPixDir, 0, Threshold);
+        a = DoDirectoryFunc(Directory, KeepPixDir, FollowDir, Threshold);
         if (FollowDir){
             sleep(1);
         }else{
@@ -376,7 +384,7 @@ printf("got switches\n");
    
     if (DoDirName){
         printf("do dir\n");
-        DoDirectory(DoDirName, SaveDir, 100);
+        DoDirectory(DoDirName, SaveDir, 20);
     }
 
     if (argc-file_index == 2){
