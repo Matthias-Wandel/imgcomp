@@ -25,9 +25,11 @@ static char * SaveDir = NULL;
 static int FollowDir = 0;
 static int ScaleDenom;
 static Region_t DetectReg;
+int Verbosity = 0;
 
 
 //-----------------------------------------------------------------------------------
+// Indicate command line usage.
 //-----------------------------------------------------------------------------------
 void usage (void)// complain about bad command line 
 {
@@ -42,9 +44,8 @@ void usage (void)// complain about bad command line
     fprintf(stderr, " -f                   Do dir and monitor for new images\n");
     fprintf(stderr, " -savedir <saveto>    Where to save images with changes\n");
 
-
     fprintf(stderr, " -outfile name  Specify name for output file\n");
-//  fprintf(stderr, "  -verbose  or  -debug   Emit debug output\n");
+    fprintf(stderr, "  -verbose  or  -debug   Emit debug output\n");
     exit(-1);
 }
 
@@ -103,7 +104,7 @@ static int parse_switches (int argc, char **argv, int last_file_arg_seen, int fo
 
         if (keymatch(arg, "debug", 1) || keymatch(arg, "verbose", 1)) {
             // Enable debug printouts.  Specify more than once for more detail.
-            //cinfo->err->trace_level++;
+            Verbosity += 1;
 
         } else if (keymatch(arg, "grayscale", 2)) {
             // Force monochrome output.
@@ -284,7 +285,7 @@ void BackupPicture(char * Directory, char * KeepPixDir, char * Name, int Thresho
     char DstPath[500];
     struct stat statbuf;
     static char ABCChar = ' ';
-    static int LastSaveTime;
+    static time_t LastSaveTime;
 
     strcpy(SrcPath, CatPath(Directory, Name));
 
@@ -301,6 +302,7 @@ void BackupPicture(char * Directory, char * KeepPixDir, char * Name, int Thresho
         }else{
             // New time. No need for a suffix.
             ABCChar = ' ';
+            LastSaveTime = statbuf.st_mtime;
         }
 
         tm = *localtime(&statbuf.st_mtime);
@@ -353,7 +355,7 @@ static int DoDirectoryFunc(char * Directory, char * KeepPixDir, int Delete, int 
         }
         if (LastPic != NULL && CurrentPic != NULL){
             printf("Pix %s vs %s:",LastPicName, CurrentPicName);
-            diff = ComparePix(LastPic, CurrentPic, DetectReg, NULL, 0);
+            diff = ComparePix(LastPic, CurrentPic, DetectReg, NULL, Verbosity);
             printf(" %d\n",diff);
 
             if (diff > Threshold){
@@ -425,7 +427,7 @@ int main (int argc, char **argv)
    
     if (DoDirName){
         printf("do dir\n");
-        DoDirectory(DoDirName, SaveDir, 20);
+        DoDirectory(DoDirName, SaveDir, 3);
     }
 
     if (argc-file_index == 2){
