@@ -4,6 +4,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <string.h>
+#include <time.h>
 #ifdef _WIN32
     #include "readdir.h"
     #define S_ISREG(m) (((m) & S_IFMT) == S_IFREG)
@@ -26,7 +27,8 @@ static int ScaleDenom;
 static Region_t DetectReg;
 
 
-
+//-----------------------------------------------------------------------------------
+//-----------------------------------------------------------------------------------
 void usage (void)// complain about bad command line 
 {
     fprintf(stderr, "usage: %s [switches] ", progname);
@@ -46,11 +48,11 @@ void usage (void)// complain about bad command line
     exit(-1);
 }
 
-//----------------------------------------------------------------------
+//-----------------------------------------------------------------------------------
 // Case-insensitive matching of possibly-abbreviated keyword switches.
 // keyword is the constant keyword (must be lower case already),
 // minchars is length of minimum legal abbreviation.
-//----------------------------------------------------------------------
+//-----------------------------------------------------------------------------------
 static int keymatch (char * arg, const char * keyword, int minchars)
 {
     int ca, ck, nmatched = 0;
@@ -259,6 +261,9 @@ char ** GetSortedDir(char * Directory, int * NumFiles)
     return FileNames;
 }
 
+//-----------------------------------------------------------------------------------
+// Unallocate directory structure
+//-----------------------------------------------------------------------------------
 void FreeDir(char ** FileNames, int NumEntries)
 {
     int a;
@@ -270,9 +275,49 @@ void FreeDir(char ** FileNames, int NumEntries)
     free(FileNames);
 }
 
+//-----------------------------------------------------------------------------------
+// Back up a photo that is of interest.
+//-----------------------------------------------------------------------------------
+void BackupPicture(char * Directory, char * KeepPixDir, char * Name, int Threshold)
+{
+    char SrcPath[500];
+    char DstPath[500];
+    struct stat statbuf;
+    static char ABCChar = ' ';
+    static int LastSaveTime;
+
+    strcpy(SrcPath, CatPath(Directory, Name));
+
+    if (FollowDir){
+        // In followdir mode, rename according to date.
+        struct tm tm;
+        if (stat(SrcPath, &statbuf) == -1) {
+            perror(SrcPath);
+            exit(1);
+        }
+        if (LastSaveTime == statbuf.st_mtime){
+            // If it's the same second, cycle through suffixes a-z
+            ABCChar = (ABCChar >= 'a' && ABCChar <'z') ? ABCChar+1 : 'a';
+        }else{
+            // New time. No need for a suffix.
+            ABCChar = ' ';
+        }
+
+        tm = *localtime(&statbuf.st_mtime);
+        sprintf(DstPath, "%s/%02d%02d-%02d%02d%02d%c%04d.jpg",KeepPixDir,
+             tm.tm_mon+1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec, 
+             ABCChar, Threshold);
+
+        CopyFile(SrcPath, DstPath);
+    }else{
+        // In test mode, just reuse the name.
+        CopyFile(SrcPath, CatPath(KeepPixDir, Name));
+    }
+}
 
 static MemImage_t *LastPic;
 static char LastPicName[500];
+static int LastDiffMag;
 static int LastPiccopied = 0;
 
 //-----------------------------------------------------------------------------------
@@ -297,7 +342,8 @@ static int DoDirectoryFunc(char * Directory, char * KeepPixDir, int Delete, int 
         a += 1;
     }
 
-    for (;a<NumEntries;a++){\
+    for (;a<NumEntries;a++){
+        int diff;
         //printf("sorted dir: %s\n",FileNames[a]);
         CurrentPicName = FileNames[a];
         CurrentPic = LoadJPEG(CatPath(Directory, CurrentPicName), ScaleDenom, 0);
@@ -306,8 +352,6 @@ static int DoDirectoryFunc(char * Directory, char * KeepPixDir, int Delete, int 
             continue;
         }
         if (LastPic != NULL && CurrentPic != NULL){
-            int diff;
-            char SrcPath[500];
             printf("Pix %s vs %s:",LastPicName, CurrentPicName);
             diff = ComparePix(LastPic, CurrentPic, DetectReg, NULL, 0);
             printf(" %d\n",diff);
@@ -315,13 +359,10 @@ static int DoDirectoryFunc(char * Directory, char * KeepPixDir, int Delete, int 
             if (diff > Threshold){
                 if (KeepPixDir){
                     if (!LastPiccopied){
-                        strcpy(SrcPath, CatPath(Directory, LastPicName));
-                        CopyFile(SrcPath, CatPath(KeepPixDir, LastPicName));
+                        BackupPicture(Directory, KeepPixDir, LastPicName, LastDiffMag);
                     }
-                    strcpy(SrcPath, CatPath(Directory, CurrentPicName));
-                    CopyFile(SrcPath, CatPath(KeepPixDir, CurrentPicName));
+                    BackupPicture(Directory, KeepPixDir, CurrentPicName, diff);
                 }
-
                 LastPiccopied = 1;
             }else{
                 LastPiccopied = 0;
@@ -336,6 +377,7 @@ static int DoDirectoryFunc(char * Directory, char * KeepPixDir, int Delete, int 
         if (CurrentPic != NULL){
             LastPic = CurrentPic;
             strcpy(LastPicName, CurrentPicName);
+            LastDiffMag = diff;
             CurrentPic = NULL;
         }
     }
@@ -372,10 +414,9 @@ int main (int argc, char **argv)
 {
     int file_index;
     progname = argv[0];
-printf("get switches\n");
+
     // Scan command line to find file names.
     file_index = parse_switches(argc, argv, 0, 0);
-printf("got switches\n");
 
     if (FollowDir && DoDirName == NULL){
         fprintf(stderr, "Must specify directory to do and monitor with -dodir\n");
@@ -420,8 +461,7 @@ printf("got switches\n");
 // Features to consider adding:
 //--------------------------------------------------------
 // Ignore regions (Threshold an image for this)
-// Rename images to date on move?
-// Delete oldes images if too many saved.
+// Interval - save image every N minutes regardless (for timelapse)
+// Delete old saved images if too many saved.
 // Dynamic thresholding?
-// Interval - save image ever N regardless.
 
