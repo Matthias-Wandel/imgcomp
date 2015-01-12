@@ -25,7 +25,8 @@ static char * SaveDir = NULL;
 static int FollowDir = 0;
 static int ScaleDenom;
 static Region_t DetectReg;
-int Verbosity = 0;
+static int Verbosity = 0;
+static int Sensitivity;
 
 
 //-----------------------------------------------------------------------------------
@@ -43,6 +44,7 @@ void usage (void)// complain about bad command line
     fprintf(stderr, " -dodir   <srcdir>    Compare images in dir, in order\n");
     fprintf(stderr, " -f                   Do dir and monitor for new images\n");
     fprintf(stderr, " -savedir <saveto>    Where to save images with changes\n");
+    fprintf(stderr, " -sens N                Set sensitivity\n");
 
     fprintf(stderr, " -outfile name  Specify name for output file\n");
     fprintf(stderr, "  -verbose  or  -debug   Emit debug output\n");
@@ -82,6 +84,7 @@ static int parse_switches (int argc, char **argv, int last_file_arg_seen, int fo
 
     ScaleDenom = 4;
     DoDirName = NULL;
+    Sensitivity = 5;
     DetectReg.x1 = 0;
     DetectReg.x2 = 1000000;
     DetectReg.y1 = 0;
@@ -125,6 +128,12 @@ static int parse_switches (int argc, char **argv, int last_file_arg_seen, int fo
             if (++argn >= argc)	// advance to next argument
                  usage();
             if (sscanf(argv[argn], "%d", &ScaleDenom) != 1)
+               usage();
+        } else if (keymatch(arg, "sens", 1)) {
+            // Scale the output image by a fraction M/N.
+            if (++argn >= argc)	// advance to next argument
+                 usage();
+            if (sscanf(argv[argn], "%d", &Sensitivity) != 1)
                usage();
 
         } else if (keymatch(arg, "region", 1)) {
@@ -358,7 +367,7 @@ static int DoDirectoryFunc(char * Directory, char * KeepPixDir, int Delete, int 
             diff = ComparePix(LastPic, CurrentPic, DetectReg, NULL, Verbosity);
             printf(" %d\n",diff);
 
-            if (diff > Threshold){
+            if (diff >= Threshold){
                 if (KeepPixDir){
                     if (!LastPiccopied){
                         BackupPicture(Directory, KeepPixDir, LastPicName, LastDiffMag);
@@ -427,7 +436,7 @@ int main (int argc, char **argv)
    
     if (DoDirName){
         printf("do dir\n");
-        DoDirectory(DoDirName, SaveDir, 3);
+        DoDirectory(DoDirName, SaveDir, Sensitivity);
     }
 
     if (argc-file_index == 2){
