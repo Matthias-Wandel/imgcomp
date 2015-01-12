@@ -343,7 +343,7 @@ static int DoDirectoryFunc(char * Directory, char * KeepPixDir, int Delete, int 
     }
 
     for (;a<NumEntries;a++){
-        int diff;
+        int diff = 0;
         //printf("sorted dir: %s\n",FileNames[a]);
         CurrentPicName = FileNames[a];
         CurrentPic = LoadJPEG(CatPath(Directory, CurrentPicName), ScaleDenom, 0);
