@@ -69,7 +69,7 @@ CONFIGFILES= jconfig.cfg jconfig.bcc jconfig.mc6 jconfig.dj jconfig.wat \
         jconfig.vc jconfig.mac jconfig.st jconfig.manx jconfig.sas \
         jconfig.vms
 CONFIGUREFILES= config.guess config.sub install-sh ltconfig ltmain.sh
-OTHERFILES= jconfig.doc ckconfig.c ansi2knr.c ansi2knr.1 
+OTHERFILES= ckconfig.c ansi2knr.c ansi2knr.1 
 TESTFILES= testorig.jpg testimg.ppm testimg.bmp testimg.jpg testprog.jpg \
         testimgp.jpg
 DISTFILES= $(DOCS) $(MKFILES) $(CONFIGFILES) $(SOURCES) $(INCLUDES) \
@@ -117,11 +117,6 @@ rdjpgcom: rdjpgcom.o
 
 wrjpgcom: wrjpgcom.o
 	$(LN) $(LDFLAGS) -o wrjpgcom wrjpgcom.o $(LDLIBS)
-
-jconfig.h: jconfig.doc
-	echo You must prepare a system-dependent jconfig.h file.
-	echo Please read the installation directions in install.doc.
-	exit 1
 
 clean:
 	$(RM) *.o cjpeg djpeg jpegtran libjpeg.a rdjpgcom wrjpgcom
