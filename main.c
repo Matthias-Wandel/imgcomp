@@ -20,7 +20,6 @@
 
 // Configuration variables.
 static const char * progname;  // program name for error messages
-static char * outfilename;	   // for -outfile switch
 static char * DoDirName = NULL;
 static char * SaveDir = NULL;
 static int FollowDir = 0;
@@ -102,14 +101,10 @@ static int parse_switches (int argc, char **argv, int last_file_arg_seen, int fo
         //printf("argn = %d\n",argn);
         arg = argv[argn];
         if (*arg != '-') {
-            // Not a switch, must be a file name argument 
-            if (argn <= last_file_arg_seen) {
-                outfilename = NULL;	
-                continue;		/* ignore this name if previously processed */
-            }
-            break;			/* else done parsing switches */
+            fprintf(stderr,"Unknown argument %s\n",arg);
+            usage();
         }
-        arg++;			/* advance past switch marker character */
+        arg++;		// advance past switch marker character
 
         if (keymatch(arg, "debug", 1) || keymatch(arg, "verbose", 1)) {
             // Enable debug printouts.  Specify more than once for more detail.
@@ -118,14 +113,10 @@ static int parse_switches (int argc, char **argv, int last_file_arg_seen, int fo
         } else if (keymatch(arg, "grayscale", 2)) {
             // Force monochrome output.
             //cinfo->out_color_space = JCS_GRAYSCALE;
-        } else if (keymatch(arg, "outfile", 4)) {
-            // Set output file name.
-            if (++argn >= argc) usage();
-            outfilename = argv[argn];	// save it away for later use
         } else if (keymatch(arg, "savedir", 4)) {
             // Set output file name.
-            if (++argn >= argc) usage();            SaveDir = argv[argn];
-
+            if (++argn >= argc) usage();            
+            SaveDir = argv[argn];
         } else if (keymatch(arg, "scale", 1)) {
             // Scale the output image by a fraction M/N.
             if (++argn >= argc) usage();            
@@ -139,7 +130,7 @@ static int parse_switches (int argc, char **argv, int last_file_arg_seen, int fo
         } else if (keymatch(arg, "tl", 1)) {
             // Scale the output image by a fraction M/N.
             if (++argn >= argc) usage();            
-            if (sscanf(argv[argn], "%d", &TimelapseInterval) != 1)
+            if (sscanf(argv[argn], "%d", (int *)&TimelapseInterval) != 1)
                usage();
             if (TimelapseInterval < 1){
                 fprintf(stderr,"timelaps interval must be at least 1 second\n");
@@ -169,7 +160,6 @@ static int parse_switches (int argc, char **argv, int last_file_arg_seen, int fo
             if (++argn >= argc) usage();
             DoDirName = argv[argn];
         } else if (keymatch(arg, "f", 1)) {
-            printf("followdir\n");
             FollowDir = 1;
         } else {
             usage();	   // bogus switch
@@ -303,6 +293,7 @@ int BackupPicture(char * Directory, char * Name, char * KeepPixDir, int Threshol
     static time_t LastSaveTime;
     struct tm tm;
 
+
     if (!KeepPixDir) return 0; // Picture saving not enabled.
 
     strcpy(SrcPath, CatPath(Directory, Name));
@@ -429,7 +420,6 @@ static int DoDirectoryFunc(char * Directory, char * KeepPixDir, int Delete, int 
 int DoDirectory(char * Directory, char * KeepPixDir, int Threshold)
 {
     int a;
-
     for (;;){
         a = DoDirectoryFunc(Directory, KeepPixDir, FollowDir, Threshold);
         if (FollowDir){
@@ -460,7 +450,6 @@ int main (int argc, char **argv)
     }
    
     if (DoDirName){
-        printf("do dir\n");
         DoDirectory(DoDirName, SaveDir, Sensitivity);
     }
 
