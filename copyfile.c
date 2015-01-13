@@ -19,6 +19,7 @@
     #define close(a) _close(a)
 #else
     #include <unistd.h> 
+    #include <utime.h>
     #define O_BINARY 0
 #endif
 #include "imgcomp.h"
@@ -78,11 +79,9 @@ int CopyFile(char * src, char * dest)
 
     {
         struct utimbuf mtime;
-        int a;
         mtime.actime = statbuf.st_ctime;
         mtime.modtime = statbuf.st_mtime;
-        a = utime(dest, &mtime);
-        printf("set to %d ret %d\n",statbuf.st_ctime, a);
+        utime(dest, &mtime);
     }
     
     return 0;
