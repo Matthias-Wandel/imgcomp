@@ -18,6 +18,7 @@
 
 #include "imgcomp.h"
 
+// Configuration variables.
 static const char * progname;  // program name for error messages
 static char * outfilename;	   // for -outfile switch
 static char * DoDirName = NULL;
@@ -27,6 +28,10 @@ static int ScaleDenom;
 static Region_t DetectReg;
 static int Verbosity = 0;
 static int Sensitivity;
+static time_t TimelapseInterval;
+
+
+static time_t NextTimelapsePix;
 
 
 //-----------------------------------------------------------------------------------
@@ -44,7 +49,8 @@ void usage (void)// complain about bad command line
     fprintf(stderr, " -dodir   <srcdir>    Compare images in dir, in order\n");
     fprintf(stderr, " -f                   Do dir and monitor for new images\n");
     fprintf(stderr, " -savedir <saveto>    Where to save images with changes\n");
-    fprintf(stderr, " -sens N                Set sensitivity\n");
+    fprintf(stderr, " -sens N              Set sensitivity\n");
+    fprintf(stderr, " -tl N                Save image every N seconds regardless\n");
 
     fprintf(stderr, " -outfile name  Specify name for output file\n");
     fprintf(stderr, "  -verbose  or  -debug   Emit debug output\n");
@@ -89,9 +95,9 @@ static int parse_switches (int argc, char **argv, int last_file_arg_seen, int fo
     DetectReg.x2 = 1000000;
     DetectReg.y1 = 0;
     DetectReg.y2 = 1000000;
+    TimelapseInterval = 0;
 
     // Scan command line options, adjust parameters
-
     for (argn = 1; argn < argc; argn++) {
         //printf("argn = %d\n",argn);
         arg = argv[argn];
@@ -114,33 +120,34 @@ static int parse_switches (int argc, char **argv, int last_file_arg_seen, int fo
             //cinfo->out_color_space = JCS_GRAYSCALE;
         } else if (keymatch(arg, "outfile", 4)) {
             // Set output file name.
-            if (++argn >= argc)	// advance to next argument
-	           usage();
+            if (++argn >= argc) usage();
             outfilename = argv[argn];	// save it away for later use
         } else if (keymatch(arg, "savedir", 4)) {
             // Set output file name.
-            if (++argn >= argc)	// advance to next argument
-	           usage();
-            SaveDir = argv[argn];
+            if (++argn >= argc) usage();            SaveDir = argv[argn];
 
         } else if (keymatch(arg, "scale", 1)) {
             // Scale the output image by a fraction M/N.
-            if (++argn >= argc)	// advance to next argument
-                 usage();
+            if (++argn >= argc) usage();            
             if (sscanf(argv[argn], "%d", &ScaleDenom) != 1)
                usage();
         } else if (keymatch(arg, "sens", 1)) {
             // Scale the output image by a fraction M/N.
-            if (++argn >= argc)	// advance to next argument
-                 usage();
+            if (++argn >= argc) usage();            
             if (sscanf(argv[argn], "%d", &Sensitivity) != 1)
                usage();
-
+        } else if (keymatch(arg, "tl", 1)) {
+            // Scale the output image by a fraction M/N.
+            if (++argn >= argc) usage();            
+            if (sscanf(argv[argn], "%d", &TimelapseInterval) != 1)
+               usage();
+            if (TimelapseInterval < 1){
+                fprintf(stderr,"timelaps interval must be at least 1 second\n");
+                exit(-1);
+            }
         } else if (keymatch(arg, "region", 1)) {
             // Specify region of interest
-            if (++argn >= argc)	// advance to next argument
-                 usage();
-
+            if (++argn >= argc) usage();
             printf("region %s\n",argv[argn]);
             s = strstr(argv[argn], ",");
             if (s == NULL || s != argv[argn]){
@@ -159,8 +166,7 @@ static int parse_switches (int argc, char **argv, int last_file_arg_seen, int fo
 
         } else if (keymatch(arg, "dodir", 1)) {
             // Scale the output image by a fraction M/N. */
-            if (++argn >= argc)	// advance to next argument
-                 usage();
+            if (++argn >= argc) usage();
             DoDirName = argv[argn];
         } else if (keymatch(arg, "f", 1)) {
             printf("followdir\n");
@@ -286,22 +292,41 @@ void FreeDir(char ** FileNames, int NumEntries)
 }
 
 //-----------------------------------------------------------------------------------
-// Back up a photo that is of interest.
+// Back up a photo that is of interest or applies to tiemelapse.
 //-----------------------------------------------------------------------------------
-void BackupPicture(char * Directory, char * KeepPixDir, char * Name, int Threshold)
+int BackupPicture(char * Directory, char * Name, char * KeepPixDir, int Threshold, int MotionTriggered)
 {
     char SrcPath[500];
     char DstPath[500];
     struct stat statbuf;
     static char ABCChar = ' ';
     static time_t LastSaveTime;
+    struct tm tm;
+
+    if (!KeepPixDir) return 0; // Picture saving not enabled.
 
     strcpy(SrcPath, CatPath(Directory, Name));
+    if (stat(SrcPath, &statbuf) == -1) {
+        perror(SrcPath);
+        exit(1);
+    }
+    if (!MotionTriggered){
+        if (TimelapseInterval < 1) return 0; // timelapse mode off.
+        if (statbuf.st_mtime < NextTimelapsePix){
+            // No motion, not timelapse picture.
+            return 0;
+        }
+    }
+
+    if (TimelapseInterval >= 1){
+        // Figure out when the next timelapse interval should be.
+        NextTimelapsePix = statbuf.st_mtime+TimelapseInterval;
+        NextTimelapsePix -= (NextTimelapsePix % TimelapseInterval);
+    }
 
     if (FollowDir){
         // In followdir mode, rename according to date.
-        struct tm tm;
-        if (stat(SrcPath, &statbuf) == -1) {
+         if (stat(SrcPath, &statbuf) == -1) {
             perror(SrcPath);
             exit(1);
         }
@@ -324,12 +349,13 @@ void BackupPicture(char * Directory, char * KeepPixDir, char * Name, int Thresho
         // In test mode, just reuse the name.
         CopyFile(SrcPath, CatPath(KeepPixDir, Name));
     }
+    return 1;
 }
 
 static MemImage_t *LastPic;
 static char LastPicName[500];
 static int LastDiffMag;
-static int LastPiccopied = 0;
+static int LastPicCopied = 0;
 
 //-----------------------------------------------------------------------------------
 // Process a whole directory of files.
@@ -368,15 +394,12 @@ static int DoDirectoryFunc(char * Directory, char * KeepPixDir, int Delete, int 
             printf(" %d\n",diff);
 
             if (diff >= Threshold){
-                if (KeepPixDir){
-                    if (!LastPiccopied){
-                        BackupPicture(Directory, KeepPixDir, LastPicName, LastDiffMag);
-                    }
-                    BackupPicture(Directory, KeepPixDir, CurrentPicName, diff);
+                if (!LastPicCopied){
+                    BackupPicture(Directory, LastPicName, KeepPixDir, LastDiffMag, 1);
                 }
-                LastPiccopied = 1;
+                LastPicCopied = BackupPicture(Directory, CurrentPicName, KeepPixDir, diff, 1);
             }else{
-                LastPiccopied = 0;
+                LastPicCopied = BackupPicture(Directory, CurrentPicName, KeepPixDir, diff, 0);
             }
         }
 
@@ -399,12 +422,14 @@ static int DoDirectoryFunc(char * Directory, char * KeepPixDir, int Delete, int 
     return 1;
 }
 
+
 //-----------------------------------------------------------------------------------
 // Process a whole directory of files.
 //-----------------------------------------------------------------------------------
 int DoDirectory(char * Directory, char * KeepPixDir, int Threshold)
 {
     int a;
+
     for (;;){
         a = DoDirectoryFunc(Directory, KeepPixDir, FollowDir, Threshold);
         if (FollowDir){
@@ -464,15 +489,13 @@ int main (int argc, char **argv)
             if (pic) WritePpmFile("out.ppm",pic);
         }
     }
-
     return 0;
 }
 
-
 // Features to consider adding:
 //--------------------------------------------------------
-// Ignore regions (Threshold an image for this)
-// Interval - save image every N minutes regardless (for timelapse)
+// Ignore regions, focus regions (Threshold an image for this)
+// Polling same file mode (for use with  uvccapture)
 // Delete old saved images if too many saved.
 // Dynamic thresholding?
 
