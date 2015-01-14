@@ -40,10 +40,10 @@ MemImage_t * LoadJPEG(char* FileName, int scale_denom, int discard_colors)
     MemImage_t *MemImage;
     int components;
 
-    FILE* file = fopen(FileName, "rb");  //open the file
-
     info.err = jpeg_std_error(& err);     
     jpeg_create_decompress(& info);   //fills info structure
+
+    FILE* file = fopen(FileName, "rb");  //open the file
 
     //if the jpeg file doesn't load
     if(!file) {
@@ -93,7 +93,9 @@ MemImage_t * LoadJPEG(char* FileName, int scale_denom, int discard_colors)
     //---------------------------------------------------
 
     jpeg_finish_decompress(&info);   //finish decompressing
-
     fclose(file);                    //close the file
+
+    jpeg_destroy_decompress(&info);
+
     return MemImage;
 }
