@@ -101,7 +101,7 @@ static int parse_switches (int argc, char **argv, int last_file_arg_seen, int fo
         //printf("argn = %d\n",argn);
         arg = argv[argn];
         if (*arg != '-') {
-            fprintf(stderr,"Unknown argument %s\n",arg);
+            return argn;
             usage();
         }
         arg++;		// advance past switch marker character
@@ -377,6 +377,11 @@ static int DoDirectoryFunc(char * Directory, char * KeepPixDir, int Delete, int 
         CurrentPic = LoadJPEG(CatPath(Directory, CurrentPicName), ScaleDenom, 0);
         if (CurrentPic == NULL){
             fprintf(stderr, "Failed to load %s\n",CatPath(Directory, CurrentPicName));
+            if (Delete){
+                // Raspberry pi timelapse mode may at times dump a corrupt
+                // picture at the end of timelapse mode.  Just delete and go on.
+                unlink(CatPath(Directory, CurrentPicName));
+            }
             continue;
         }
         if (LastPic != NULL && CurrentPic != NULL){

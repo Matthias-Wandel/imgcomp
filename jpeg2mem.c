@@ -6,27 +6,31 @@
 #include <stdio.h>
 #include <malloc.h>
 #include <stddef.h>
+#include <setjmp.h>
 #include "libjpeg/jpeglib.h"
 #include "libjpeg/jerror.h"
 #include "imgcomp.h"
 
-//----------------------------------------------------------------------------------------
-// Write an image to disk - for testing.
-//----------------------------------------------------------------------------------------
-void WritePpmFile(char * FileName, MemImage_t *MemImage)
-{
-    FILE * outfile;
-    outfile = fopen(FileName,"wb");
-    if (outfile == NULL){
-        printf("could not open outfile\n");
-        return;
-    }
-    fprintf(outfile, "P%c\n%d %d\n%d\n", MemImage->components == 3 ? '6' : '5',  
-            MemImage->width, MemImage->height, 255);
-    fwrite(MemImage->pixels, 1, MemImage->width * MemImage->height*MemImage->components, outfile);
-    fclose(outfile);
-}
 
+
+struct my_error_mgr {
+  struct jpeg_error_mgr pub; // "public" fields 
+
+  jmp_buf setjmp_buffer;	// for return to caller
+};
+typedef struct my_error_mgr * my_error_ptr;
+
+void my_error_exit (j_common_ptr cinfo)
+{
+    // cinfo->err really points to a my_error_mgr struct, so coerce pointer
+    my_error_ptr myerr = (my_error_ptr) cinfo->err;
+
+    // Always display the message.
+    (*cinfo->err->output_message) (cinfo);
+
+    // Return control to the setjmp point
+    longjmp(myerr->setjmp_buffer, 1);
+}
 
 
 //----------------------------------------------------------------------------------------
@@ -36,14 +40,25 @@ MemImage_t * LoadJPEG(char* FileName, int scale_denom, int discard_colors)
 {
     unsigned long data_size;    // length of the file
     struct jpeg_decompress_struct info; //for our jpeg info
-    struct jpeg_error_mgr err;          //the error handler
+    struct my_error_mgr jerr;
     MemImage_t *MemImage;
     int components;
 
-    info.err = jpeg_std_error(& err);     
-    jpeg_create_decompress(& info);   //fills info structure
+    FILE* file = fopen(FileName, "rb");  // open the file
 
-    FILE* file = fopen(FileName, "rb");  //open the file
+    info.err = jpeg_std_error(& jerr.pub);     
+    jerr.pub.error_exit = my_error_exit; // Override library's default exit on error.
+
+
+    if (setjmp(jerr.setjmp_buffer)) {
+        // If we get here, the JPEG code has signaled an error.
+        // We need to clean up the JPEG object, close the input file, and return.
+        jpeg_destroy_decompress(&info);
+        fclose(file);
+        return NULL;
+    }
+
+    jpeg_create_decompress(& info);   // fills info structure
 
     //if the jpeg file doesn't load
     if(!file) {
@@ -68,7 +83,6 @@ MemImage_t * LoadJPEG(char* FileName, int scale_denom, int discard_colors)
 
     data_size = info.output_width 
               * info.output_height * components;
-   
 
     MemImage = malloc(data_size+offsetof(MemImage_t, pixels));
     if (!MemImage){
@@ -84,7 +98,6 @@ MemImage_t * LoadJPEG(char* FileName, int scale_denom, int discard_colors)
     //--------------------------------------------
     while (info.output_scanline < info.output_height){ // loop
         unsigned char * rowptr[1];  // pointer to an array
-
         // Enable jpeg_read_scanlines() to fill our jdata array
         rowptr[0] = MemImage->pixels + 
             components * info.output_width * info.output_scanline; 
@@ -98,4 +111,23 @@ MemImage_t * LoadJPEG(char* FileName, int scale_denom, int discard_colors)
     jpeg_destroy_decompress(&info);
 
     return MemImage;
+}
+
+
+
+//----------------------------------------------------------------------------------------
+// Write an image to disk - for testing.  Not jpeg (ppm is a much simpler format)
+//----------------------------------------------------------------------------------------
+void WritePpmFile(char * FileName, MemImage_t *MemImage)
+{
+    FILE * outfile;
+    outfile = fopen(FileName,"wb");
+    if (outfile == NULL){
+        printf("could not open outfile\n");
+        return;
+    }
+    fprintf(outfile, "P%c\n%d %d\n%d\n", MemImage->components == 3 ? '6' : '5',  
+            MemImage->width, MemImage->height, 255);
+    fwrite(MemImage->pixels, 1, MemImage->width * MemImage->height*MemImage->components, outfile);
+    fclose(outfile);
 }
