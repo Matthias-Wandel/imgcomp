@@ -374,7 +374,7 @@ static int DoDirectoryFunc(char * Directory, char * KeepPixDir, int Delete, int 
         int diff = 0;
         //printf("sorted dir: %s\n",FileNames[a]);
         CurrentPicName = FileNames[a];
-        CurrentPic = LoadJPEG(CatPath(Directory, CurrentPicName), ScaleDenom, 0);
+        CurrentPic = LoadJPEG(CatPath(Directory, CurrentPicName), ScaleDenom, 0, 0);
         if (CurrentPic == NULL){
             fprintf(stderr, "Failed to load %s\n",CatPath(Directory, CurrentPicName));
             if (Delete){
@@ -462,9 +462,9 @@ int main (int argc, char **argv)
         MemImage_t *pic1, *pic2;
         
         printf("load %s\n",argv[file_index]);
-        pic1 = LoadJPEG(argv[file_index], ScaleDenom, 0);
+        pic1 = LoadJPEG(argv[file_index], ScaleDenom, 0, 0);
         printf("\nload %s\n",argv[file_index+1]);
-        pic2 = LoadJPEG(argv[file_index+1], ScaleDenom, 0);
+        pic2 = LoadJPEG(argv[file_index+1], ScaleDenom, 0, 0);
         if (pic1 && pic2){
             ComparePix(pic1, pic2, DetectReg, "diff.ppm", 2);
         }
@@ -479,7 +479,7 @@ int main (int argc, char **argv)
             printf("input file %s\n",argv[a]);
             // Load file into memory.
 
-            pic = LoadJPEG(argv[a], 4, 0);
+            pic = LoadJPEG(argv[a], 4, 0, 0);
             if (pic) WritePpmFile("out.ppm",pic);
         }
     }

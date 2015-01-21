@@ -10,13 +10,16 @@
 #include "libjpeg/jpeglib.h"
 #include "libjpeg/jerror.h"
 #include "imgcomp.h"
+#include "jhead.h"
 
 
-
+//----------------------------------------------------------------------------------------
+// for libjpeg - don't abort on corrupt jpeg data.
+//----------------------------------------------------------------------------------------
 struct my_error_mgr {
-  struct jpeg_error_mgr pub; // "public" fields 
+    struct jpeg_error_mgr pub; // "public" fields 
 
-  jmp_buf setjmp_buffer;	// for return to caller
+    jmp_buf setjmp_buffer;	// for return to caller
 };
 typedef struct my_error_mgr * my_error_ptr;
 
@@ -36,7 +39,7 @@ void my_error_exit (j_common_ptr cinfo)
 //----------------------------------------------------------------------------------------
 // Use libjpeg to load an image into memory, optionally scale it.
 //----------------------------------------------------------------------------------------
-MemImage_t * LoadJPEG(char* FileName, int scale_denom, int discard_colors)
+MemImage_t * LoadJPEG(char* FileName, int scale_denom, int discard_colors, int ParseExif)
 {
     unsigned long data_size;    // length of the file
     struct jpeg_decompress_struct info; //for our jpeg info
@@ -45,6 +48,17 @@ MemImage_t * LoadJPEG(char* FileName, int scale_denom, int discard_colors)
     int components;
 
     FILE* file = fopen(FileName, "rb");  // open the file
+
+    //if the jpeg file doesn't load
+    if(!file) {
+       fprintf(stderr, "Error reading JPEG file %s!", FileName);
+       return NULL;
+    }
+
+    if (ParseExif){
+        // Get the exif header
+        ReadExifPart(file);
+    }
 
     info.err = jpeg_std_error(& jerr.pub);     
     jerr.pub.error_exit = my_error_exit; // Override library's default exit on error.
@@ -59,12 +73,6 @@ MemImage_t * LoadJPEG(char* FileName, int scale_denom, int discard_colors)
     }
 
     jpeg_create_decompress(& info);   // fills info structure
-
-    //if the jpeg file doesn't load
-    if(!file) {
-       fprintf(stderr, "Error reading JPEG file %s!", FileName);
-       return NULL;
-    }
 
     jpeg_stdio_src(&info, file);    
     jpeg_read_header(&info, TRUE);   // read jpeg file header

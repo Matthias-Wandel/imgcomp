@@ -12,10 +12,11 @@ LINKCON = /nologo /NODEFAULTLIB:LIBCMTD
 
 all:imgcomp.exe
 
-OBJ = .
+OBJ = obj
 
 OBJECTS_IMGCOMP = $(OBJ)\main.obj $(OBJ)\compare.obj $(OBJ)\dir_win.obj \
-                  $(OBJ)\jpeg2mem.obj $(OBJ)\copyfile.obj
+                  $(OBJ)\jpeg2mem.obj $(OBJ)\copyfile.obj \
+                  $(OBJ)\jpgfile.obj $(OBJ)\exif.obj
 
 $(OBJECTS_IMGCOMP): $(@B).c imgcomp.h
     $(CC) /Fo$(OBJ)\ $(CFLAGS) $(@B).c
