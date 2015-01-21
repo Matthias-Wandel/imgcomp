@@ -89,7 +89,7 @@ static int parse_switches (int argc, char **argv, int last_file_arg_seen, int fo
 
     ScaleDenom = 4;
     DoDirName = NULL;
-    Sensitivity = 5;
+    Sensitivity = 10;
     DetectReg.x1 = 0;
     DetectReg.x2 = 1000000;
     DetectReg.y1 = 0;
@@ -153,7 +153,7 @@ static int parse_switches (int argc, char **argv, int last_file_arg_seen, int fo
                 fprintf(stderr,"Detect region is too small\n");
                 exit(-1);
             }
-            printf("Region is %d-%d, %d-%d\n",DetectReg.x1, DetectReg.x2, DetectReg.y1, DetectReg.y2);
+            printf("Region is x:%d-%d, y:%d-%d\n",DetectReg.x1, DetectReg.x2, DetectReg.y1, DetectReg.y2);
 
         } else if (keymatch(arg, "dodir", 1)) {
             // Scale the output image by a fraction M/N. */

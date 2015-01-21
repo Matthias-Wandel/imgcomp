@@ -16,6 +16,8 @@ int ComparePix(MemImage_t * pic1, MemImage_t * pic2, Region_t Region, char * Deb
     int DiffHist[256];
     int a;
     int DetectionPixels;
+    int b1average, b2average;
+    int m1, m2;
 
     if (Verbosity){
         printf("\ncompare pictures %dx%d %d\n", pic1->width, pic1->height, pic1->components);
@@ -40,8 +42,6 @@ int ComparePix(MemImage_t * pic1, MemImage_t * pic2, Region_t Region, char * Deb
     }
     memset(DiffHist, 0, sizeof(DiffHist));
 
-    // todo: scale brightness.
-
     if (Region.y2 > height) Region.y2 = height;
     if (Region.x2 > width) Region.x2 = width;
     if (Region.x2 < Region.x1 || Region.x2 < Region.x1){
@@ -54,11 +54,49 @@ int ComparePix(MemImage_t * pic1, MemImage_t * pic2, Region_t Region, char * Deb
         return -1;
     }
 
-    // Compute differences
     if (Verbosity > 0){
         printf("Detection region is %d-%d, %d-%d\n",Region.x1, Region.x2, Region.y1, Region.y2);
     }
 
+    // Compute average brightnesses.
+    b1average = b2average = 0;
+    for (row=Region.y1;row<Region.y2;row++){
+        unsigned char * p1, *p2;
+        int b1row, b2row;
+        p1 = pic1->pixels+width*comp*row+Region.x1*comp;
+        p2 = pic2->pixels+width*comp*row+Region.x1*comp;
+        b1row = b2row = 0;
+        for (col=Region.x1;col<Region.x2;col++){
+            b1row += p1[0]+p1[1]*2+p1[2];
+            b2row += p2[0]+p2[1]*2+p2[2];
+        }
+        b1average += (b1row >> 4);
+        b2average += (b2row >> 4);
+    }
+    b1average = b1average / (DetectionPixels >> 4);
+    b2average = b2average / (DetectionPixels >> 4);
+    if (Verbosity > 0){
+        printf("average bright: %d %d\n",b1average/4, b2average/4);
+    }
+    if (b1average == 1) b1average = 1; // Avoid possible division by zero.
+    if (b2average == 1) b2average = 1;
+    m1 = 256*110*4/b1average;
+    m2 = 256*110*4/b2average;
+    {
+        // Don't allow multiplier to get bigger than 2.5.  Otherwise, for dark images
+        // we just end up multiplying pixel noise!
+        int mm = m1 > m2 ? m1 : m2;
+        if (mm > 256*5/2){
+            m1 = m1 * (256*5/2) / mm;
+            m2 = m2 * (256*5/2) / mm;
+        }
+    }
+
+    if (Verbosity > 0){
+        printf("Brightness adjust multipliers:  m1 = %5.2f  m2=%5.2f\n",m1/256.,m2/256.);
+    }
+
+    // Compute differences
     for (row=Region.y1;row<Region.y2;row++){
         unsigned char * p1, *p2, *pd;
         p1 = pic1->pixels+width*comp*row+Region.x1*comp;
@@ -72,16 +110,17 @@ int ComparePix(MemImage_t * pic1, MemImage_t * pic2, Region_t Region, char * Deb
         for (col=Region.x1;col<Region.x2;col++){
             // Data is in order red, green, blue.
             int dr,dg,db, dcomp;
-            dr = p1[0] - p2[0];
-            dg = p1[1] - p2[1];
-            db = p1[2] - p2[2];
+            dr = (p1[0]*m1 - p2[0]*m2);
+            dg = (p1[1]*m1 - p2[1]*m2);
+            db = (p1[2]*m1 - p2[2]*m2);
 
             if (dr < 0) dr = -dr;
             if (dg < 0) dg = -dg;
             if (db < 0) db = -db;
-            dcomp = (dr * 2 + dg*4 + db * 2) >> 3; // Put more emphasis on green
-            if (dcomp >= 256) dcomp = 255;
+            dcomp = (dr + dg*2 + db);     // Put more emphasis on green
+            dcomp = dcomp >> 8;           // Remove the *256 from fixed point aritmetic multiply
 
+            if (dcomp >= 256) dcomp = 255;// put it in a histogram.
             DiffHist[dcomp] += 1;
             
             if (DebugImgName){
@@ -106,8 +145,8 @@ int ComparePix(MemImage_t * pic1, MemImage_t * pic2, Region_t Region, char * Deb
     }
 
     if (Verbosity > 1){
-        for (a=0;a<30;a++){
-            printf("%3d: %d\n",a,DiffHist[a]);
+        for (a=0;a<60;a+= 2){
+            printf("%3d:%5d,%5d\n",a,DiffHist[a], DiffHist[a+1]);
         }
     }
 
@@ -120,11 +159,12 @@ int ComparePix(MemImage_t * pic1, MemImage_t * pic2, Region_t Region, char * Deb
             if (cumsum >= DetectionPixels/2) break;
         }
         if (Verbosity) printf("half of image is below %d diff\n",a);
-        threshold = a*3+10;
+
+//printf("half of image is below %d diff %d %d\n",a, b1average, b2average);
+        threshold = a*3+2;
         
         cumsum = 0;
         for (a=threshold;a<256;a++){
-            if (a < threshold+10 && Verbosity > 1) printf("hist %d %d\n",a,DiffHist[a]);
             cumsum += DiffHist[a] * (a-threshold);
         }
         if (Verbosity) printf("Above threshold: %d pixels\n",cumsum);
