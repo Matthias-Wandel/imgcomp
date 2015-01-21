@@ -10,3 +10,8 @@ If image is too dim and shutter is not long:
 
 If no new image in 10 seconds:
 	relaunch!
+
+
+
+Maybe later:
+Make it able to use webcam.
