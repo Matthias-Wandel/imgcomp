@@ -112,8 +112,10 @@ static int FindExifInFile (FILE * infile)
 //--------------------------------------------------------------------------
 int ReadExifPart(FILE * infile)
 {
-    FindExifInFile(infile);
+    int a;
+    a = FindExifInFile(infile);
     rewind(infile); // go back to start for libexif to read the image.
+    return a;
 }
 
 

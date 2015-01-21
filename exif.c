@@ -289,21 +289,6 @@ static const TagTable_t TagTable[] = {
 
 #define TAG_TABLE_SIZE  (sizeof(TagTable) / sizeof(TagTable_t))
 
-
-//--------------------------------------------------------------------------
-// Convert a 16 bit unsigned value to file's native byte order
-//--------------------------------------------------------------------------
-static void Put16u(void * Short, unsigned short PutValue)
-{
-    if (MotorolaOrder){
-        ((uchar *)Short)[0] = (uchar)(PutValue>>8);
-        ((uchar *)Short)[1] = (uchar)PutValue;
-    }else{
-        ((uchar *)Short)[0] = (uchar)PutValue;
-        ((uchar *)Short)[1] = (uchar)(PutValue>>8);
-    }
-}
-
 //--------------------------------------------------------------------------
 // Convert a 16 bit unsigned value from file's native byte order
 //--------------------------------------------------------------------------
@@ -674,6 +659,7 @@ static void ProcessExifDir(unsigned char * DirStart, unsigned char * OffsetBase,
                 ImageInfo.ApertureFNumber = (float)ConvertAnyFormat(ValuePtr, Format);
                 break;
 
+#if 0 // don't pull in extra math stuff.
             case TAG_APERTURE:
             case TAG_MAXAPERTURE:
                 // More relevant info always comes earlier, so only use this field if we don't 
@@ -684,6 +670,15 @@ static void ProcessExifDir(unsigned char * DirStart, unsigned char * OffsetBase,
                 }
                 break;
 
+            case TAG_SHUTTERSPEED:
+                // More complicated way of expressing exposure time, so only use
+                // this value if we don't already have it from somewhere else.
+                if (ImageInfo.ExposureTime == 0){
+                    ImageInfo.ExposureTime 
+                        = (float)(1/exp(ConvertAnyFormat(ValuePtr, Format)*log(2)));
+                }
+                break;
+#endif
             case TAG_FOCALLENGTH:
                 // Nice digital cameras actually save the focal length as a function
                 // of how farthey are zoomed in.
@@ -702,14 +697,6 @@ static void ProcessExifDir(unsigned char * DirStart, unsigned char * OffsetBase,
                 ImageInfo.ExposureTime = (float)ConvertAnyFormat(ValuePtr, Format);
                 break;
 
-            case TAG_SHUTTERSPEED:
-                // More complicated way of expressing exposure time, so only use
-                // this value if we don't already have it from somewhere else.
-                if (ImageInfo.ExposureTime == 0){
-                    ImageInfo.ExposureTime 
-                        = (float)(1/exp(ConvertAnyFormat(ValuePtr, Format)*log(2)));
-                }
-                break;
 
 
             case TAG_FLASH:
