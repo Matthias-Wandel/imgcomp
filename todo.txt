@@ -1,0 +1,12 @@
+To do next:
+Add code to launch raspistill
+Add code to kill raspistill
+
+If image is too bright and shutter speed is not fastest:
+	relaunch!
+
+If image is too dim and shutter is not long:
+	relaunch!
+
+If no new image in 10 seconds:
+	relaunch!
