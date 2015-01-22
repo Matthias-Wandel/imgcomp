@@ -5,8 +5,16 @@
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <errno.h>
+
+#ifdef _WIN32
+    typedef int pid_t;
+    #define execvp(a,b)
+    #define fork() 1
+#else
+    #include <unistd.h>
+#endif
+
 
 #include "imgcomp.h"
 #include "jhead.h"
@@ -97,7 +105,7 @@ int SecondsSinceLaunch = 0;
 int InitialAverageBright;
 int InitialBrSum;
 int InitialNumBr;
-float RunningAverageBright;
+double RunningAverageBright;
 
 void manage_raspistill(int NewImages)
 {
@@ -148,7 +156,7 @@ void manage_raspistill(int NewImages)
 
     // If brightness changes by more than 10%, relaunch.
     if (SecondsSinceLaunch > 15){
-        float Ratio;
+        double Ratio;
         Ratio = RunningAverageBright / InitialAverageBright;
         if (Ratio < 1) Ratio = 1/Ratio;
         if (Ratio > 1.2){
