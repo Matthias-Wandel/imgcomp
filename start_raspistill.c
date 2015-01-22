@@ -12,7 +12,7 @@
 #include "jhead.h"
 
 // Should later read these from a file, maybe.
-static char raspistill_cmd[] =   "raspistill -q 10 -n -bm -th none -p 480,0,800,480 -w 1280 -h 720 -o /ramdisk/out%05d.jpg -t 1800000 -tl 500";
+static char raspistill_cmd[] =   "raspistill -q 10 -n -bm -th none -p 480,0,800,480 -w 1280 -h 720 -o /ramdisk/out%05d.jpg -t 4000000 -tl 300";
 
 static int raspistill_pid = 0;
 
@@ -103,10 +103,14 @@ void manage_raspistill(int NewImages)
 {
     SecondsSinceImage += 1;
     SecondsSinceLaunch += 1;
-    if (NewImages){
+    if (NewImages > 0){
         SecondsSinceImage = 0;
-        printf("Exposure:%5.1fms  Iso:%d  Brightness:%d %5.2f\n",
-            ImageInfo.ExposureTime*1000, ImageInfo.ISOequivalent, NewestAverageBright, RunningAverageBright);
+        printf("Exp:%5.1fms Iso:%d  Bright:%d av=%5.2f\r",
+            ImageInfo.ExposureTime*1000, ImageInfo.ISOequivalent, NewestAverageBright, 
+            RunningAverageBright);
+        fflush(stdout);
+    }else{
+        printf("No new images, %d\n",SecondsSinceImage);
     }
 
     if (raspistill_pid == 0){
@@ -121,8 +125,8 @@ void manage_raspistill(int NewImages)
         goto force_restart;
     }
 
-    if (SecondsSinceLaunch > 18000){
-        printf("30 minute raspistill relaunch\n");
+    if (SecondsSinceLaunch > 36000){
+        printf("1 hour raspistill relaunch\n");
         goto force_restart;
     }
 
@@ -139,7 +143,7 @@ void manage_raspistill(int NewImages)
         }
     }
 
-    // 20 second time constant brightness average.
+    // 20 second time constant brightness averaging.
     RunningAverageBright = RunningAverageBright * 0.95 + NewestAverageBright * 0.05;
 
     // If brightness changes by more than 10%, relaunch.

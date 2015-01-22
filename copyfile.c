@@ -36,12 +36,12 @@ int CopyFile(char * src, char * dest)
     #define BUF_SIZE 8192
     char buf[BUF_SIZE];
 
-    // Open input and output files 
-    printf("Copy %s --> %s\n",src,dest);
+    //printf("Copy %s --> %s\n",src,dest);
 
     // Get file modification time from old file.
     stat(src, &statbuf);
- 
+
+    // Open input and output files  
     inputFd = open(src, O_RDONLY | O_BINARY, 0);
     if (inputFd == -1){
         fprintf(stderr,"CopyFile could not open src %s\n",src);

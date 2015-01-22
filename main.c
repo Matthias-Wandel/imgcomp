@@ -284,17 +284,17 @@ void FreeDir(char ** FileNames, int NumEntries)
 //-----------------------------------------------------------------------------------
 // Back up a photo that is of interest or applies to tiemelapse.
 //-----------------------------------------------------------------------------------
-int BackupPicture(char * Directory, char * Name, char * KeepPixDir, int Threshold, int MotionTriggered)
+char * BackupPicture(char * Directory, char * Name, char * KeepPixDir, int Threshold, int MotionTriggered)
 {
     char SrcPath[500];
-    char DstPath[500];
+    static char DstPath[500];
     struct stat statbuf;
     static char ABCChar = ' ';
     static time_t LastSaveTime;
     struct tm tm;
 
 
-    if (!KeepPixDir) return 0; // Picture saving not enabled.
+    if (!KeepPixDir) return NULL; // Picture saving not enabled.
 
     strcpy(SrcPath, CatPath(Directory, Name));
     if (stat(SrcPath, &statbuf) == -1) {
@@ -305,7 +305,7 @@ int BackupPicture(char * Directory, char * Name, char * KeepPixDir, int Threshol
         if (TimelapseInterval < 1) return 0; // timelapse mode off.
         if (statbuf.st_mtime < NextTimelapsePix){
             // No motion, not timelapse picture.
-            return 0;
+            return NULL;
         }
     }
 
@@ -340,13 +340,13 @@ int BackupPicture(char * Directory, char * Name, char * KeepPixDir, int Threshol
         // In test mode, just reuse the name.
         CopyFile(SrcPath, CatPath(KeepPixDir, Name));
     }
-    return 1;
+    return DstPath;
 }
 
 static MemImage_t *LastPic;
 static char LastPicName[500];
 static int LastDiffMag;
-static int LastPicCopied = 0;
+static char * LastPicSaveName = NULL;
 
 //-----------------------------------------------------------------------------------
 // Process a whole directory of files.
@@ -358,6 +358,7 @@ static int DoDirectoryFunc(char * Directory, char * KeepPixDir, int Delete)
     int NumEntries;
     int a;
     int ReadExif;
+    int NumProcessed;
 
     static MemImage_t *CurrentPic;
     static char * CurrentPicName;
@@ -373,6 +374,7 @@ static int DoDirectoryFunc(char * Directory, char * KeepPixDir, int Delete)
     }
 
     ReadExif = 1;
+    NumProcessed = 0;
     for (;a<NumEntries;a++){
         int diff = 0;
         //printf("sorted dir: %s\n",FileNames[a]);
@@ -388,19 +390,25 @@ static int DoDirectoryFunc(char * Directory, char * KeepPixDir, int Delete)
             }
             continue;
         }
+        NumProcessed += 1;
         if (LastPic != NULL && CurrentPic != NULL){
             printf("Pix %s vs %s:",LastPicName, CurrentPicName);
             diff = ComparePix(LastPic, CurrentPic, DetectReg, NULL, Verbosity);
-            printf(" %d\n",diff);
+            printf(" %d ",diff);
 
             if (diff >= Sensitivity){
-                if (!LastPicCopied){
+                if (!LastPicSaveName){
+                    // Save the pre-motion pic if it wasn't already saved.
                     BackupPicture(Directory, LastPicName, KeepPixDir, LastDiffMag, 1);
                 }
-                LastPicCopied = BackupPicture(Directory, CurrentPicName, KeepPixDir, diff, 1);
+                LastPicSaveName = BackupPicture(Directory, CurrentPicName, KeepPixDir, diff, 1);
+                if (LastPicSaveName) printf("  Motion pic %s",LastPicSaveName);
             }else{
-                LastPicCopied = BackupPicture(Directory, CurrentPicName, KeepPixDir, diff, 0);
+                LastPicSaveName = BackupPicture(Directory, CurrentPicName, KeepPixDir, diff, 0);
+                if (LastPicSaveName) printf("  Timelapse pic %s",LastPicSaveName);
             }
+            if (!LastPicSaveName) printf("                ");
+            printf("\n");
         }
 
         if (LastPic != NULL) free(LastPic);
@@ -419,7 +427,7 @@ static int DoDirectoryFunc(char * Directory, char * KeepPixDir, int Delete)
     FreeDir(FileNames, NumEntries); // Free up the whole directory structure.
     FileNames = NULL;
 
-    return 1;
+    return NumProcessed;
 }
 
 
