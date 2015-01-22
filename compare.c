@@ -86,12 +86,12 @@ int ComparePix(MemImage_t * pic1, MemImage_t * pic2, Region_t Region, char * Deb
     m1 = 256*110*4/b1average;
     m2 = 256*110*4/b2average;
     {
-        // Don't allow multiplier to get bigger than 2.5.  Otherwise, for dark images
+        // Don't allow multiplier to get bigger than 2.  Otherwise, for dark images
         // we just end up multiplying pixel noise!
         int mm = m1 > m2 ? m1 : m2;
-        if (mm > 256*3){
-            m1 = m1 * (256*3) / mm;
-            m2 = m2 * (256*3) / mm;
+        if (mm > 256*2){
+            m1 = m1 * (256*2) / mm;
+            m2 = m2 * (256*2) / mm;
         }
     }
 

@@ -126,13 +126,13 @@ void manage_raspistill(int NewImages)
         goto force_restart;
     }
 
-    if (SecondsSinceLaunch > 3 && InitialNumBr < 4 && NewImages){
+    if (SecondsSinceLaunch > 5 && InitialNumBr < 5 && NewImages){
         printf("Average in %d\n",NewestAverageBright);
         InitialBrSum += NewestAverageBright;
         InitialNumBr += 1;
         // Save average brightness and reset averaging.
-        if (InitialNumBr == 4){
-            InitialAverageBright = (InitialBrSum+2) / 4;
+        if (InitialNumBr == 5){
+            InitialAverageBright = (InitialBrSum+2) / 5;
             if (InitialAverageBright == 0) InitialAverageBright = 1; // Avoid division by zero.
             RunningAverageBright = InitialAverageBright;
             printf("Initial rightness average = %d\n",InitialAverageBright);
@@ -147,8 +147,8 @@ void manage_raspistill(int NewImages)
         float Ratio;
         Ratio = RunningAverageBright / InitialAverageBright;
         if (Ratio < 1) Ratio = 1/Ratio;
-        if (Ratio > 1.15){
-            printf("Brightness change by 15%%.  Force restart\n");
+        if (Ratio > 1.2){
+            printf("Brightness change by 20%%.  Force restart\n");
             goto force_restart;
         }
     }
