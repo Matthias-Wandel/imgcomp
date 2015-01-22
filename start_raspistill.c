@@ -12,7 +12,7 @@
 #include "jhead.h"
 
 // Should later read these from a file, maybe.
-static char raspistill_cmd[] =   "raspistill -q 10 -n -bm -th none -p 480,0,800,480 -w 1280 -h 720 -o /ramdisk/out%05d.jpg -t 1800000 -tl 300";
+static char raspistill_cmd[] =   "raspistill -q 10 -n -bm -th none -p 480,0,800,480 -w 1280 -h 720 -o /ramdisk/out%05d.jpg -t 1800000 -tl 500";
 
 static int raspistill_pid = 0;
 
@@ -95,6 +95,8 @@ int launch_raspistill(void)
 int SecondsSinceImage = 0;
 int SecondsSinceLaunch = 0;
 int InitialAverageBright;
+int InitialBrSum;
+int InitialNumBr;
 float RunningAverageBright;
 
 void manage_raspistill(int NewImages)
@@ -103,7 +105,8 @@ void manage_raspistill(int NewImages)
     SecondsSinceLaunch += 1;
     if (NewImages){
         SecondsSinceImage = 0;
-        printf("Exposure:%5.1fms  Iso:%d  Brightness:%d\n",ImageInfo.ExposureTime*1000, ImageInfo.ISOequivalent, NewestAverageBright);
+        printf("Exposure:%5.1fms  Iso:%d  Brightness:%d %5.2f\n",
+            ImageInfo.ExposureTime*1000, ImageInfo.ISOequivalent, NewestAverageBright, RunningAverageBright);
     }
 
     if (raspistill_pid == 0){
@@ -123,23 +126,29 @@ void manage_raspistill(int NewImages)
         goto force_restart;
     }
 
-    if (SecondsSinceLaunch == 4){
+    if (SecondsSinceLaunch > 3 && InitialNumBr < 4 && NewImages){
+        printf("Average in %d\n",NewestAverageBright);
+        InitialBrSum += NewestAverageBright;
+        InitialNumBr += 1;
         // Save average brightness and reset averaging.
-        InitialAverageBright = NewestAverageBright;
-        if (InitialAverageBright == 0) InitialAverageBright = 1; // Avoid division by zero.
-        RunningAverageBright = InitialAverageBright;
+        if (InitialNumBr == 4){
+            InitialAverageBright = (InitialBrSum+2) / 4;
+            if (InitialAverageBright == 0) InitialAverageBright = 1; // Avoid division by zero.
+            RunningAverageBright = InitialAverageBright;
+            printf("Initial rightness average = %d\n",InitialAverageBright);
+        }
     }
 
     // 20 second time constant brightness average.
-    RunningAverageBright = RunningAverageBright * 0.95 + NewestAverageBright * 0.5;
+    RunningAverageBright = RunningAverageBright * 0.95 + NewestAverageBright * 0.05;
 
     // If brightness changes by more than 10%, relaunch.
     if (SecondsSinceLaunch > 15){
         float Ratio;
         Ratio = RunningAverageBright / InitialAverageBright;
         if (Ratio < 1) Ratio = 1/Ratio;
-        if (Ratio > 1.1){
-            printf("Brightness change by 20%%.  Force restart\n");
+        if (Ratio > 1.15){
+            printf("Brightness change by 15%%.  Force restart\n");
             goto force_restart;
         }
     }
@@ -153,4 +162,6 @@ force_restart:
     launch_raspistill();
     SecondsSinceImage = 0;
     SecondsSinceLaunch = 0;
+    InitialBrSum = InitialNumBr = 0;
+
 }
