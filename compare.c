@@ -89,9 +89,9 @@ int ComparePix(MemImage_t * pic1, MemImage_t * pic2, Region_t Region, char * Deb
         // Don't allow multiplier to get bigger than 2.5.  Otherwise, for dark images
         // we just end up multiplying pixel noise!
         int mm = m1 > m2 ? m1 : m2;
-        if (mm > 256*2){
-            m1 = m1 * (256*2) / mm;
-            m2 = m2 * (256*2) / mm;
+        if (mm > 256*3){
+            m1 = m1 * (256*3) / mm;
+            m2 = m2 * (256*3) / mm;
         }
     }
 
@@ -164,7 +164,7 @@ int ComparePix(MemImage_t * pic1, MemImage_t * pic2, Region_t Region, char * Deb
         if (Verbosity) printf("half of image is below %d diff\n",a);
 
 //printf("half of image is below %d diff %d %d\n",a, b1average, b2average);
-        threshold = a*3+2;
+        threshold = a*4+2;
         
         cumsum = 0;
         for (a=threshold;a<256;a++){
