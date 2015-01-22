@@ -12,9 +12,7 @@
 #include "jhead.h"
 
 // Should later read these from a file, maybe.
-//static char raspistill_cmd[] = "raspistill -q 10 -n -bm -th none -p 480,0,800,480 -awb off -w 1280 -h 720 -o /ramdisk/out%05d.jpg -t 1800000 -tl 300";
-
-static char raspistill_cmd[] = "raspistill -q 10 -th none -w 1280 -h 720 -o /ramdisk/out%05d.jpg -t 1800000 -tl 300";
+static char raspistill_cmd[] =   "raspistill -q 10 -n -bm -th none -p 480,0,800,480 -w 1280 -h 720 -o /ramdisk/out%05d.jpg -t 1800000 -tl 300";
 
 static int raspistill_pid = 0;
 
@@ -84,10 +82,6 @@ int launch_raspistill(void)
         do_launch_program();
     }else{
         raspistill_pid = pid;
-        printf("must have worked!!! %d\n", pid);
-        printf("must have worked!!!\n");
-        printf("must have worked!!!\n");
-        printf("must have worked!!!\n");
     }
     return 0;
 }
@@ -100,6 +94,8 @@ int launch_raspistill(void)
 //-----------------------------------------------------------------------------------
 int SecondsSinceImage = 0;
 int SecondsSinceLaunch = 0;
+int InitialAverageBright;
+float RunningAverageBright;
 
 void manage_raspistill(int NewImages)
 {
@@ -107,7 +103,7 @@ void manage_raspistill(int NewImages)
     SecondsSinceLaunch += 1;
     if (NewImages){
         SecondsSinceImage = 0;
-        printf("Shutter speed:%5.1f ms\n",ImageInfo.ExposureTime*1000);
+        printf("Exposure:%5.1fms  Iso:%d  Brightness:%d\n",ImageInfo.ExposureTime*1000, ImageInfo.ISOequivalent, NewestAverageBright);
     }
 
     if (raspistill_pid == 0){
@@ -117,14 +113,35 @@ void manage_raspistill(int NewImages)
     }
 
     if (SecondsSinceImage > 10){
-        // Not getting any images for 10 seconds.  Probably somethign went wrong with raspistill.
+        // Not getting any images for 10 seconds.  Probably something went wrong with raspistill.
         printf("No images timeout.  Relaunch  raspistill\n");
         goto force_restart;
     }
 
-    if (SecondsSinceLaunch > 20){
-        printf("Periodic raspistill relaunch\n");
+    if (SecondsSinceLaunch > 18000){
+        printf("30 minute raspistill relaunch\n");
         goto force_restart;
+    }
+
+    if (SecondsSinceLaunch == 4){
+        // Save average brightness and reset averaging.
+        InitialAverageBright = NewestAverageBright;
+        if (InitialAverageBright == 0) InitialAverageBright = 1; // Avoid division by zero.
+        RunningAverageBright = InitialAverageBright;
+    }
+
+    // 20 second time constant brightness average.
+    RunningAverageBright = RunningAverageBright * 0.95 + NewestAverageBright * 0.5;
+
+    // If brightness changes by more than 10%, relaunch.
+    if (SecondsSinceLaunch > 15){
+        float Ratio;
+        Ratio = RunningAverageBright / InitialAverageBright;
+        if (Ratio < 1) Ratio = 1/Ratio;
+        if (Ratio > 1.1){
+            printf("Brightness change by 20%%.  Force restart\n");
+            goto force_restart;
+        }
     }
 
     // If image too bright and shutter speed is not fastest, launch raspistill

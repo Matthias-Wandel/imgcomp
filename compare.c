@@ -5,6 +5,8 @@
 #include <memory.h>
 #include "imgcomp.h"
 
+int NewestAverageBright;
+
 //----------------------------------------------------------------------------------------
 // Compare two images in memory
 //----------------------------------------------------------------------------------------
@@ -75,6 +77,7 @@ int ComparePix(MemImage_t * pic1, MemImage_t * pic2, Region_t Region, char * Deb
     }
     b1average = b1average / (DetectionPixels >> 4);
     b2average = b2average / (DetectionPixels >> 4);
+    NewestAverageBright = b2average / 4;
     if (Verbosity > 0){
         printf("average bright: %d %d\n",b1average/4, b2average/4);
     }

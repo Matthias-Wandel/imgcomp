@@ -356,6 +356,7 @@ static int DoDirectoryFunc(char * Directory, char * KeepPixDir, int Delete)
     char ** FileNames;
     int NumEntries;
     int a;
+    int ReadExif;
 
     static MemImage_t *CurrentPic;
     static char * CurrentPicName;
@@ -370,11 +371,13 @@ static int DoDirectoryFunc(char * Directory, char * KeepPixDir, int Delete)
         a += 1;
     }
 
+    ReadExif = 1;
     for (;a<NumEntries;a++){
         int diff = 0;
         //printf("sorted dir: %s\n",FileNames[a]);
         CurrentPicName = FileNames[a];
-        CurrentPic = LoadJPEG(CatPath(Directory, CurrentPicName), ScaleDenom, 0, 1);
+        CurrentPic = LoadJPEG(CatPath(Directory, CurrentPicName), ScaleDenom, 0, ReadExif);
+        ReadExif = 0; // Only read exif for first image.
         if (CurrentPic == NULL){
             fprintf(stderr, "Failed to load %s\n",CatPath(Directory, CurrentPicName));
             if (Delete){
