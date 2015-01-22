@@ -44,7 +44,7 @@ void usage (void)// complain about bad command line
     fprintf(stderr, "Switches (names may be abbreviated):\n");
     fprintf(stderr, " -scale   N           Scale before detection by 1/N.  Default 1/4\n");
     fprintf(stderr, " -region  x1-x2,y1-y2 Specify region of interest\n");
-    fprintf(stderr, " -exclude x1-x2,y1-y2 Exclude part of region\n");
+//    fprintf(stderr, " -exclude x1-x2,y1-y2 Exclude part of region\n");
     fprintf(stderr, " -dodir   <srcdir>    Compare images in dir, in order\n");
     fprintf(stderr, " -f                   Do dir and monitor for new images\n");
     fprintf(stderr, " -savedir <saveto>    Where to save images with changes\n");
@@ -351,7 +351,7 @@ static int LastPicCopied = 0;
 //-----------------------------------------------------------------------------------
 // Process a whole directory of files.
 //-----------------------------------------------------------------------------------
-static int DoDirectoryFunc(char * Directory, char * KeepPixDir, int Delete, int Threshold)
+static int DoDirectoryFunc(char * Directory, char * KeepPixDir, int Delete)
 {
     char ** FileNames;
     int NumEntries;
@@ -374,7 +374,7 @@ static int DoDirectoryFunc(char * Directory, char * KeepPixDir, int Delete, int 
         int diff = 0;
         //printf("sorted dir: %s\n",FileNames[a]);
         CurrentPicName = FileNames[a];
-        CurrentPic = LoadJPEG(CatPath(Directory, CurrentPicName), ScaleDenom, 0, 0);
+        CurrentPic = LoadJPEG(CatPath(Directory, CurrentPicName), ScaleDenom, 0, 1);
         if (CurrentPic == NULL){
             fprintf(stderr, "Failed to load %s\n",CatPath(Directory, CurrentPicName));
             if (Delete){
@@ -389,7 +389,7 @@ static int DoDirectoryFunc(char * Directory, char * KeepPixDir, int Delete, int 
             diff = ComparePix(LastPic, CurrentPic, DetectReg, NULL, Verbosity);
             printf(" %d\n",diff);
 
-            if (diff >= Threshold){
+            if (diff >= Sensitivity){
                 if (!LastPicCopied){
                     BackupPicture(Directory, LastPicName, KeepPixDir, LastDiffMag, 1);
                 }
@@ -422,12 +422,14 @@ static int DoDirectoryFunc(char * Directory, char * KeepPixDir, int Delete, int 
 //-----------------------------------------------------------------------------------
 // Process a whole directory of files.
 //-----------------------------------------------------------------------------------
-int DoDirectory(char * Directory, char * KeepPixDir, int Threshold)
+int DoDirectory(char * Directory, char * KeepPixDir)
 {
     int a;
+
     for (;;){
-        a = DoDirectoryFunc(Directory, KeepPixDir, FollowDir, Threshold);
+        a = DoDirectoryFunc(Directory, KeepPixDir, FollowDir);
         if (FollowDir){
+            manage_raspistill(a);
             sleep(1);
         }else{
             break;
@@ -441,7 +443,7 @@ int DoDirectory(char * Directory, char * KeepPixDir, int Threshold)
 //-----------------------------------------------------------------------------------
 // The main program.
 //-----------------------------------------------------------------------------------
-int main (int argc, char **argv)
+int main(int argc, char **argv)
 {
     int file_index;
     progname = argv[0];
@@ -455,7 +457,7 @@ int main (int argc, char **argv)
     }
    
     if (DoDirName){
-        DoDirectory(DoDirName, SaveDir, Sensitivity);
+        DoDirectory(DoDirName, SaveDir);
     }
 
     if (argc-file_index == 2){

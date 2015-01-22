@@ -8,7 +8,7 @@
 // Storage for simplified info extracted from file.
 ImageInfo_t ImageInfo;
 
-int ShowTags = 1;
+int ShowTags = 0;
 int SupressNonFatalErrors = 0;
 
 //--------------------------------------------------------------------------
@@ -36,9 +36,6 @@ static int FindExifInFile (FILE * infile)
     if (a != 0xff || fgetc(infile) != M_SOI){
         return FALSE;
     }
-
-    ImageInfo.JfifHeader.XDensity = ImageInfo.JfifHeader.YDensity = 300;
-    ImageInfo.JfifHeader.ResolutionUnits = 1;
 
     for(;;){
         int itemlen;

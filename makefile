@@ -1,14 +1,16 @@
 #--------------------------------
 # imgcomp makefile for Linux (raspberry pi)
 #--------------------------------
-OBJ=.
+OBJ=obj
 SRC=.
 CFLAGS:= $(CFLAGS) -O3 -Wall
 
 all: imgcomp
 
 objs = $(OBJ)/main.o $(OBJ)/compare.o $(OBJ)/jpeg2mem.o $(OBJ)/copyfile.o \
-       $(OBJ)/jpgfile.o $(OBJ)/exif.o
+       $(OBJ)/jpgfile.o $(OBJ)/exif.o $(OBJ)/start_raspistill.o 
+
+$(OBJ)/jpgfile.o $(OBJ)/exif.o $(OBJ)/start_raspistill.o: jhead.h
 
 $(OBJ)/%.o:$(SRC)/%.c imgcomp.h
 	${CC} $(CFLAGS) -c $< -o $@
