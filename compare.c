@@ -158,8 +158,8 @@ int ComparePix(MemImage_t * pic1, MemImage_t * pic2, Region_t Region, char * Deb
         int threshold;
 
         for (a=0;a<256;a++){
-            cumsum += DiffHist[a];
             if (cumsum >= DetectionPixels/2) break;
+            cumsum += DiffHist[a];
         }
         if (Verbosity) printf("half of image is below %d diff\n",a);
 
