@@ -350,6 +350,7 @@ static int LastPicCopied = 0;
 
 //-----------------------------------------------------------------------------------
 // Process a whole directory of files.
+// Return 
 //-----------------------------------------------------------------------------------
 static int DoDirectoryFunc(char * Directory, char * KeepPixDir, int Delete)
 {
@@ -363,7 +364,7 @@ static int DoDirectoryFunc(char * Directory, char * KeepPixDir, int Delete)
 
     FileNames = GetSortedDir(Directory, &NumEntries);
     if (FileNames == NULL) return 0;
-    if (NumEntries == 0) return 1;
+    if (NumEntries == 0) return 0;
 
     a=0;
     if (strcmp(LastPicName, FileNames[0]) == 0){
