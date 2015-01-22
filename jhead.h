@@ -63,17 +63,6 @@ extern int DumpExifMap;
 // stored in an exif header
 typedef struct {
     char  FileName     [PATH_MAX+1];
-    time_t FileDateTime;
-
-    struct {
-        // Info in the jfif header.
-        // This info is not used much - jhead used to just replace it with default
-        // values, and over 10 years, only two people pointed this out.
-        char  Present;
-        char  ResolutionUnits;
-        short XDensity;
-        short YDensity;
-    }JfifHeader;
 
     unsigned FileSize;
     char  CameraMake   [32];
@@ -81,14 +70,11 @@ typedef struct {
     char  DateTime     [20];
     unsigned Height, Width;
     int   Orientation;
-    int   IsColor;
-    int   Process;
     int   FlashUsed;
     float FocalLength;
     float ExposureTime;
     float ApertureFNumber;
     float Distance;
-    float CCDWidth;
     float ExposureBias;
     float DigitalZoomRatio;
     int   FocalLength35mmEquiv; // Exif 2.2 tag - usually not present.
@@ -104,26 +90,13 @@ typedef struct {
     float yResolution;
     int   ResolutionUnit;
 
-    char  Comments[MAX_COMMENT_SIZE];
-    int   CommentWidthchars; // If nonzero, widechar comment, indicates number of chars.
+//    unsigned ThumbnailOffset;          // Exif offset to thumbnail
+//    unsigned ThumbnailSize;            // Size of thumbnail.
+//    unsigned LargestExifOffset;        // Last exif data referenced (to check if thumbnail is at end)
 
-    unsigned ThumbnailOffset;          // Exif offset to thumbnail
-    unsigned ThumbnailSize;            // Size of thumbnail.
-    unsigned LargestExifOffset;        // Last exif data referenced (to check if thumbnail is at end)
-
-    char  ThumbnailAtEnd;              // Exif header ends with the thumbnail
+//    char  ThumbnailAtEnd;              // Exif header ends with the thumbnail
                                        // (we can only modify the thumbnail if its at the end)
-    int   ThumbnailSizeOffset;
-
-    int  DateTimeOffsets[MAX_DATE_COPIES];
-    int  numDateTimeTags;
-
-    int GpsInfoPresent;
-    char GpsLat[31];
-    char GpsLong[31];
-    char GpsAlt[20];
-
-    int  QualityGuess;
+//    int   ThumbnailSizeOffset;
 }ImageInfo_t;
 
 

@@ -437,8 +437,6 @@ static void ProcessExifDir(unsigned char * DirStart, unsigned char * OffsetBase,
     int de;
     int a;
     int NumDirEntries;
-    unsigned ThumbnailOffset = 0;
-    unsigned ThumbnailSize = 0;
     char IndentString[25];
 
     if (NestingLevel > 4){
@@ -505,10 +503,6 @@ static void ProcessExifDir(unsigned char * DirStart, unsigned char * OffsetBase,
                 continue;
             }
             ValuePtr = OffsetBase+OffsetVal;
-
-            if (OffsetVal > ImageInfo.LargestExifOffset){
-                ImageInfo.LargestExifOffset = OffsetVal;
-            }
         }else{
             // 4 bytes or less and value is in the dir entry itself
             ValuePtr = DirEntry+8;
@@ -592,64 +586,6 @@ static void ProcessExifDir(unsigned char * DirStart, unsigned char * OffsetBase,
                     // If we don't already have a DATETIME_ORIGINAL, use whatever
                     // time fields we may have.
                     strncpy(ImageInfo.DateTime, (char *)ValuePtr, 19);
-                }
-
-                if (ImageInfo.numDateTimeTags >= MAX_DATE_COPIES){
-                    ErrNonfatal("More than %d date fields in Exif.  This is nuts", MAX_DATE_COPIES, 0);
-                    break;
-                }
-                ImageInfo.DateTimeOffsets[ImageInfo.numDateTimeTags++] = 
-                    (char *)ValuePtr - (char *)OffsetBase;
-                break;
-
-            case TAG_WINXP_COMMENT:
-                if (ImageInfo.Comments[0]){ // We already have a jpeg comment.
-                    // Already have a comment (probably windows comment), skip this one.
-                    if (ShowTags) printf("Windows XP commend and other comment in header\n");
-                    break; // Already have a windows comment, skip this one.
-                }
-
-                if (ByteCount > 1){
-                    if (ByteCount > MAX_COMMENT_SIZE) ByteCount = MAX_COMMENT_SIZE;
-                    memcpy(ImageInfo.Comments, ValuePtr, ByteCount);
-                    ImageInfo.CommentWidthchars = ByteCount/2;
-                }
-                break;
-
-            case TAG_USERCOMMENT:
-                if (ImageInfo.Comments[0]){ // We already have a jpeg comment.
-                    // Already have a comment (probably windows comment), skip this one.
-                    if (ShowTags) printf("Multiple comments in exif header\n");
-                    break; // Already have a windows comment, skip this one.
-                }
-
-                // Comment is often padded with trailing spaces.  Remove these first.
-                for (a=ByteCount;;){
-                    a--;
-                    if ((ValuePtr)[a] == ' '){
-                        (ValuePtr)[a] = '\0';
-                    }else{
-                        break;
-                    }
-                    if (a == 0) break;
-                }
-
-                // Copy the comment
-                {
-                    int msiz = ExifLength - (ValuePtr-OffsetBase);
-                    if (msiz > ByteCount) msiz = ByteCount;
-                    if (msiz > MAX_COMMENT_SIZE-1) msiz = MAX_COMMENT_SIZE-1;
-                    if (msiz > 5 && memcmp(ValuePtr, "ASCII",5) == 0){
-                        for (a=5;a<10 && a < msiz;a++){
-                            int c = (ValuePtr)[a];
-                            if (c != '\0' && c != ' '){
-                                strncpy(ImageInfo.Comments, (char *)ValuePtr+a, msiz-a);
-                                break;
-                            }
-                        }
-                    }else{
-                        strncpy(ImageInfo.Comments, (char *)ValuePtr, msiz);
-                    }
                 }
                 break;
 
@@ -776,16 +712,6 @@ static void ProcessExifDir(unsigned char * DirStart, unsigned char * OffsetBase,
                 ImageInfo.DigitalZoomRatio = (float)ConvertAnyFormat(ValuePtr, Format);
                 break;
 
-            case TAG_THUMBNAIL_OFFSET:
-                ThumbnailOffset = (unsigned)ConvertAnyFormat(ValuePtr, Format);
-                DirWithThumbnailPtrs = DirStart;
-                break;
-
-            case TAG_THUMBNAIL_LENGTH:
-                ThumbnailSize = (unsigned)ConvertAnyFormat(ValuePtr, Format);
-                ImageInfo.ThumbnailSizeOffset = ValuePtr-OffsetBase;
-                break;
-
             case TAG_EXIF_OFFSET:
                 if (ShowTags) printf("%s    Exif Dir:",IndentString);
 
@@ -870,34 +796,9 @@ static void ProcessExifDir(unsigned char * DirStart, unsigned char * OffsetBase,
                         ProcessExifDir(SubdirStart, OffsetBase, ExifLength, NestingLevel+1);
                     }
                 }
-                if (Offset > ImageInfo.LargestExifOffset){
-                    ImageInfo.LargestExifOffset = Offset;
-                }
             }
         }else{
             // The exif header ends before the last next directory pointer.
-        }
-    }
-
-    if (ThumbnailOffset){
-        ImageInfo.ThumbnailAtEnd = FALSE;
-
-        if (ThumbnailOffset <= ExifLength){
-            if (ThumbnailSize > ExifLength-ThumbnailOffset){
-                // If thumbnail extends past exif header, only save the part that
-                // actually exists.  Canon's EOS viewer utility will do this - the
-                // thumbnail extracts ok with this hack.
-                ThumbnailSize = ExifLength-ThumbnailOffset;
-                if (ShowTags) printf("Thumbnail incorrectly placed in header\n");
-
-            }
-            // The thumbnail pointer appears to be valid.  Store it.
-            ImageInfo.ThumbnailOffset = ThumbnailOffset;
-            ImageInfo.ThumbnailSize = ThumbnailSize;
-
-            if (ShowTags){
-                printf("Thumbnail size: %u bytes\n",ThumbnailSize);
-            }
         }
     }
 }
@@ -958,26 +859,8 @@ void process_EXIF (unsigned char * ExifSection, unsigned int length)
 
     DirWithThumbnailPtrs = NULL;
 
-
     // First directory starts 16 bytes in.  All offset are relative to 8 bytes in.
     ProcessExifDir(ExifSection+8+FirstOffset, ExifSection+8, length-8, 0);
-
-    ImageInfo.ThumbnailAtEnd = ImageInfo.ThumbnailOffset >= ImageInfo.LargestExifOffset ? TRUE : FALSE;
-
-    // Compute the CCD width, in millimeters.
-    if (FocalplaneXRes != 0 && ExifImageWidth != 0){
-        // Note: With some cameras, its not possible to compute this correctly because
-        // they don't adjust the indicated focal plane resolution units when using less
-        // than maximum resolution, so the CCDWidth value comes out too small.  Nothing
-        // that Jhad can do about it - its a camera problem.
-        ImageInfo.CCDWidth = (float)(ExifImageWidth * FocalplaneUnits / FocalplaneXRes);
-
-        if (ImageInfo.FocalLength && ImageInfo.FocalLength35mmEquiv == 0){
-            // Compute 35 mm equivalent focal length based on sensor geometry if we haven't
-            // already got it explicitly from a tag.
-            ImageInfo.FocalLength35mmEquiv = (int)(ImageInfo.FocalLength/ImageInfo.CCDWidth*36 + 0.5);
-        }
-    }
 }
 
 
@@ -1049,10 +932,6 @@ void ShowImageInfo(int ShowFileInfo)
         printf("Orientation  : %s\n", OrientTab[ImageInfo.Orientation]);
     }
 
-    if (ImageInfo.IsColor == 0){
-        printf("Color/bw     : Black and white\n");
-    }
-
     if (ImageInfo.FlashUsed >= 0){
         if (ImageInfo.FlashUsed & 1){    
             printf("Flash used   : Yes");
@@ -1096,10 +975,6 @@ void ShowImageInfo(int ShowFileInfo)
     if (ImageInfo.DigitalZoomRatio > 1){
         // Digital zoom used.  Shame on you!
         printf("Digital Zoom : %1.3fx\n", (double)ImageInfo.DigitalZoomRatio);
-    }
-
-    if (ImageInfo.CCDWidth){
-        printf("CCD width    : %4.2fmm\n",(double)ImageInfo.CCDWidth);
     }
 
     if (ImageInfo.ExposureTime){
@@ -1236,60 +1111,6 @@ void ShowImageInfo(int ShowFileInfo)
         }
         printf("\n");
     }
-
-
-
-    if (ImageInfo.Process != M_SOF0){
-        // don't show it if its the plain old boring 'baseline' process, but do
-        // show it if its something else, like 'progressive' (used on web sometimes)
-        unsigned a;
-        for (a=0;;a++){
-            if (a >= PROCESS_TABLE_SIZE){
-                // ran off the end of the table.
-                printf("Jpeg process : Unknown\n");
-                break;
-            }
-            if (ProcessTable[a].Tag == ImageInfo.Process){
-                printf("Jpeg process : %s\n",ProcessTable[a].Desc);
-                break;
-            }
-        }
-    }
-
-    if (ImageInfo.GpsInfoPresent){
-        printf("GPS Latitude : %s\n",ImageInfo.GpsLat);
-        printf("GPS Longitude: %s\n",ImageInfo.GpsLong);
-        if (ImageInfo.GpsAlt[0]) printf("GPS Altitude : %s\n",ImageInfo.GpsAlt);
-    }
-
-    if (ImageInfo.QualityGuess){
-        printf("JPEG Quality : %d\n", ImageInfo.QualityGuess);
-    }
-
-    // Print the comment. Print 'Comment:' for each new line of comment.
-    if (ImageInfo.Comments[0]){
-        int a,c;
-        printf("Comment      : ");
-        if (!ImageInfo.CommentWidthchars){
-            for (a=0;a<MAX_COMMENT_SIZE;a++){
-                c = ImageInfo.Comments[a];
-                if (c == '\0') break;
-                if (c == '\n'){
-                    // Do not start a new line if the string ends with a carriage return.
-                    if (ImageInfo.Comments[a+1] != '\0'){
-                        printf("\nComment      : ");
-                    }else{
-                        printf("\n");
-                    }
-                }else{
-                    putchar(c);
-                }
-            }
-            printf("\n");
-        }else{
-            printf("%.*ls\n", ImageInfo.CommentWidthchars, (wchar_t *)ImageInfo.Comments);
-        }
-    }
 }
 
 
@@ -1320,10 +1141,6 @@ void ShowConciseImageInfo(void)
 
     if (ImageInfo.FlashUsed >= 0 && ImageInfo.FlashUsed & 1){
         printf(" (flash)");
-    }
-
-    if (ImageInfo.IsColor == 0){
-        printf(" (bw)");
     }
 
     printf("\n");
