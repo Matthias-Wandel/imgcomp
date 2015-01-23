@@ -128,12 +128,12 @@ int ComparePix(MemImage_t * pic1, MemImage_t * pic2, Region_t Region, char * Deb
             
             if (DebugImgName){
                 // Save the difference image, scaled 4x.
-                if (dr > 63) dr = 63;
-                if (dg > 63) dg = 63;
-                if (db > 63) db = 63;
-                pd[0] = dr*4;
-                pd[1] = dg*4;
-                pd[2] = db*4;
+                if (dr > 256) dr = 256;
+                if (dg > 256) dg = 256;
+                if (db > 256) db = 256;
+                pd[0] = dr;
+                pd[1] = dg;
+                pd[2] = db;;
                 pd += comp;
             }
 
@@ -156,15 +156,18 @@ int ComparePix(MemImage_t * pic1, MemImage_t * pic2, Region_t Region, char * Deb
     {
         int cumsum = 0;
         int threshold;
+        int twothirds = DetectionPixels*2/3;
 
         for (a=0;a<256;a++){
-            if (cumsum >= DetectionPixels/2) break;
+            if (cumsum >= twothirds) break;
             cumsum += DiffHist[a];
         }
-        if (Verbosity) printf("half of image is below %d diff\n",a);
+        if (Verbosity) printf("2/3 of image is below %d diff\n",a);
 
 //printf("half of image is below %d diff %d %d\n",a, b1average, b2average);
-        threshold = a*4+2;
+        threshold = a*3+4;
+        if (threshold < 20) threshold = 20;
+        if (threshold > 70) threshold = 70;
         
         cumsum = 0;
         for (a=threshold;a<256;a++){
