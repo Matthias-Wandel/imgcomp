@@ -72,9 +72,11 @@ static void do_launch_program(void)
 int launch_raspistill(void)
 {
     pid_t pid;
+    int ignore;
 
     // Kill raspistill if it's already running.
-    system("killall raspistill");
+    ignore = system("killall raspistill");
+    ignore += 1;  // Do something with it to supress warning
 
     printf("Launching raspistill program\n");
     pid = fork();

@@ -14,7 +14,7 @@ int ComparePix(MemImage_t * pic1, MemImage_t * pic2, Region_t Region, char * Deb
 {
     int width, height, comp;
     int row, col;
-    MemImage_t * DiffOut;
+    MemImage_t * DiffOut = NULL;
     int DiffHist[256];
     int a;
     int DetectionPixels;
