@@ -8,18 +8,45 @@
 int NewestAverageBright;
 
 //----------------------------------------------------------------------------------------
+// Calculate average brightness of an image.
+//----------------------------------------------------------------------------------------
+double AverageBright(MemImage_t * pic, Region_t Region)
+{
+    double baverage;
+    int DetectionPixels;
+    int row;
+    int rowbytes = pic->width*3;
+    DetectionPixels = (Region.x2-Region.x1) * (Region.y2-Region.y1);
+ 
+    // Compute average brightnesses.
+    baverage = 0;
+    for (row=Region.y1;row<Region.y2;row++){
+        unsigned char * p1;
+        int col, brow = 0;
+        p1 = pic->pixels+rowbytes*row;
+        for (col=Region.x1;col<Region.x2;col++){
+            brow += p1[0]+p1[1]*2+p1[2];  // Muliplies by 4.
+            p1 += 3;
+        }
+        baverage += brow; 
+    }
+    return baverage * 0.25 / DetectionPixels; // Multiply by 4 again.
+}
+
+
+//----------------------------------------------------------------------------------------
 // Compare two images in memory
 //----------------------------------------------------------------------------------------
 int ComparePix(MemImage_t * pic1, MemImage_t * pic2, Region_t Region, char * DebugImgName, int Verbosity)
 {
-    int width, height, comp;
+    int width, height, bPerRow;
     int row, col;
     MemImage_t * DiffOut = NULL;
     int DiffHist[256];
     int a;
     int DetectionPixels;
-    int b1average, b2average;
-    int m1, m2;
+    int m1i, m2i;
+    int NightMode;
 
     if (Verbosity){
         printf("\ncompare pictures %dx%d %d\n", pic1->width, pic1->height, pic1->components);
@@ -33,11 +60,11 @@ int ComparePix(MemImage_t * pic1, MemImage_t * pic2, Region_t Region, char * Deb
 
     width = pic1->width;
     height = pic1->height;
-    comp = pic1->components;
+    bPerRow = width * 3;
 
     if (DebugImgName){
         int data_size;
-        data_size = width * height * comp;
+        data_size = height * bPerRow;
         DiffOut = malloc(data_size+offsetof(MemImage_t, pixels));
         memcpy(DiffOut, pic1, offsetof(MemImage_t, pixels));
         memset(DiffOut->pixels, 0, data_size);
@@ -61,86 +88,148 @@ int ComparePix(MemImage_t * pic1, MemImage_t * pic2, Region_t Region, char * Deb
     }
 
     // Compute average brightnesses.
-    b1average = b2average = 0;
-    for (row=Region.y1;row<Region.y2;row++){
-        unsigned char * p1, *p2;
-        int b1row, b2row;
-        p1 = pic1->pixels+width*comp*row+Region.x1*comp;
-        p2 = pic2->pixels+width*comp*row+Region.x1*comp;
-        b1row = b2row = 0;
-        for (col=Region.x1;col<Region.x2;col++){
-            b1row += p1[0]+p1[1]*2+p1[2];
-            b2row += p2[0]+p2[1]*2+p2[2];
-        }
-        b1average += (b1row >> 4);
-        b2average += (b2row >> 4);
-    }
-    b1average = b1average / (DetectionPixels >> 4);
-    b2average = b2average / (DetectionPixels >> 4);
-    NewestAverageBright = b2average / 4;
-    if (Verbosity > 0){
-        printf("average bright: %d %d\n",b1average/4, b2average/4);
-    }
-    if (b1average == 1) b1average = 1; // Avoid possible division by zero.
-    if (b2average == 1) b2average = 1;
-    m1 = 256*110*4/b1average;
-    m2 = 256*110*4/b2average;
     {
-        // Don't allow multiplier to get bigger than 2.  Otherwise, for dark images
-        // we just end up multiplying pixel noise!
-        int mm = m1 > m2 ? m1 : m2;
-        if (mm > (int)(256*1.5)){
-            m1 = m1 * (int)(256*1.5) / mm;
-            m2 = m2 * (int)(256*1.5) / mm;
-        }
-    }
+        double b1average, b2average;
+        double m1, m2;
+        b1average = AverageBright(pic1, Region);
+        b2average = AverageBright(pic2, Region);
 
-    if (Verbosity > 0){
-        printf("Brightness adjust multipliers:  m1 = %5.2f  m2=%5.2f\n",m1/256.,m2/256.);
+        NewestAverageBright = (int)(b2average+0.5);
+
+        if (Verbosity > 0){
+            printf("average bright: %f %f\n",b1average, b2average);
+        }
+        if (b1average < 1) b1average = 1; // Avoid possible division by zero.
+        if (b2average < 1) b2average = 1;
+
+        NightMode = 0;
+        if (b1average < 15 || b2average < 15){
+            if (Verbosity > 0) printf("Using night mode diff\n");
+            NightMode = 1;
+        }
+
+        m1 = 80/b1average;
+        m2 = 80/b2average;
+
+        {
+            double maxm = m1 > m2 ? m1 : m2;
+            if (maxm > 4.0){
+                // Don't allow multiplier to get bigger than 4.  Otherwise, for dark images
+                // we just end up multiplying pixel noise!
+                m1 = m1 * 4 / maxm;
+                m2 = m2 * 4 / maxm;
+            }else if (maxm < 1.0){
+                // And there's no point in scaling down both images either.
+                m1 = m1 * 1 / maxm;
+                m2 = m2 * 1 / maxm;
+            }
+        }
+
+        if (Verbosity) printf("Brightness adjust multipliers:  m1 = %5.2f  m2=%5.2f\n",m1,m2);
+
+        if (!NightMode || b2average > b1average){
+            m1i = (int)(m1*256+0.5);
+            m2i = (int)(m2*256+0.5);
+        }else{
+            // Swap images and multipliers so that pic2 is the brighter one.
+            // this makes giving it slack easier.
+            MemImage_t * temp;
+            temp = pic1; pic1=pic2; pic2=temp;
+            m1i = (int)(m2*256+0.5);  // m1 should always be bigger.
+            m2i = (int)(m1*256+0.5);
+            if (Verbosity) printf("swapped images m1i=%d m2i=%d\n",m1i,m2i);
+        }
     }
 
     // Compute differences
-    for (row=Region.y1;row<Region.y2;row++){
-        unsigned char * p1, *p2, *pd;
-        p1 = pic1->pixels+width*comp*row+Region.x1*comp;
-        p2 = pic2->pixels+width*comp*row+Region.x1*comp;
+    for (row=Region.y1;row<Region.y2;){
+        unsigned char * p1, *p2, *pd = NULL;
+        p1 = pic1->pixels+row*bPerRow;
+        p2 = pic2->pixels+row*bPerRow;
+        if (DebugImgName) pd = DiffOut->pixels+row*bPerRow;
 
-        pd = NULL;
-        if (DebugImgName){
-            pd = DiffOut->pixels+width*comp*row+Region.x1*comp;
-        }
+        if (NightMode){
+            for (col=Region.x1;col<Region.x2;col+= 2){
+                unsigned char * pn;
+                int b1, b2, dcomp;
+                int debug_between;
+                // Add up two pixels for noise reduction.
+                b1 = (p1[0]+p1[1]*2+p1[2] + p1[3]+p1[4]*2+p1[5]);
+                pn = p1+bPerRow;
+                b1 += (pn[0]+pn[1]*2+pn[2] + pn[3]+pn[4]*2+pn[5]);
 
-        for (col=Region.x1;col<Region.x2;col++){
-            // Data is in order red, green, blue.
-            int dr,dg,db, dcomp;
-            dr = (p1[0]*m1 - p2[0]*m2);
-            dg = (p1[1]*m1 - p2[1]*m2);
-            db = (p1[2]*m1 - p2[2]*m2);
+                b2 = (p2[0]+p2[1]*2+p2[2] + p2[3]+p2[4]*2+p2[5]);
+                pn = p2+bPerRow;
+                b2 += (pn[0]+pn[1]*2+pn[2] + pn[3]+pn[4]*2+pn[5]);
 
-            if (dr < 0) dr = -dr;
-            if (dg < 0) dg = -dg;
-            if (db < 0) db = -db;
-            dcomp = (dr + dg*2 + db);     // Put more emphasis on green
-            dcomp = dcomp >> 8;           // Remove the *256 from fixed point aritmetic multiply
+                // Possibly take the brighter images's b1 value and divide by ratio.
+                dcomp = b2*m2i-b1*m1i;
+                debug_between = 0;
+                if (dcomp < 0){
+                    // difference might be on account of m1i > m2i.
+                    // Try it without multiplication difference.
+                    dcomp = b1*m1i-b2*m1i;
+                    if (dcomp > 0){
+                        // if difference now positive, it may be all because of m1i > m2i.
+                        dcomp = 0;
+                        debug_between = 1;
+                    }
+                }else{
+                    //dcomp = -dcomp;
+                }
 
-            if (dcomp >= 256) dcomp = 255;// put it in a histogram.
-            DiffHist[dcomp] += 1;
-            
-            if (DebugImgName){
-                // Save the difference image, scaled 4x.
-                if (dr > 256) dr = 256;
-                if (dg > 256) dg = 256;
-                if (db > 256) db = 256;
-                pd[0] = dr;
-                pd[1] = dg;
-                pd[2] = db;;
-                pd += comp;
+                dcomp = dcomp >> 9;
+
+                if (DebugImgName){
+                    pd[1] = pd[4] = dcomp > 0 ? dcomp : 0; // Green = img2 brighter
+                    pd[0] = pd[3] = dcomp < 0 ? -dcomp : 0; // Red = img1 brigher.
+                    pd[2] = pd[5] = debug_between*200;
+                    pd += 6;
+                }
+
+                if (dcomp < 0) dcomp = -dcomp;
+                if (dcomp >= 256) dcomp = 255;// put it in a histogram.
+                DiffHist[dcomp] += 4;
+
+                p1 += 6;
+                p2 += 6;
             }
+            row+=2;
+        }else{
+            for (col=Region.x1;col<Region.x2;col++){
+                // Data is in order red, green, blue.
+                int dr,dg,db, dcomp;
+                dr = (p1[0]*m1i - p2[0]*m2i);
+                dg = (p1[1]*m1i - p2[1]*m2i);
+                db = (p1[2]*m1i - p2[2]*m2i);
 
-            p1 += comp;
-            p2 += comp;
+                if (dr < 0) dr = -dr;
+                if (dg < 0) dg = -dg;
+                if (db < 0) db = -db;
+                dcomp = (dr + dg*2 + db);     // Put more emphasis on green
+                dcomp = dcomp >> 8;           // Remove the *256 from fixed point aritmetic multiply
+
+                if (dcomp >= 256) dcomp = 255;// put it in a histogram.
+                DiffHist[dcomp] += 1;
+            
+                if (DebugImgName){
+                    // Save the difference image, scaled 4x.
+                    if (dr > 256) dr = 256;
+                    if (dg > 256) dg = 256;
+                    if (db > 256) db = 256;
+                    pd[0] = dr;
+                    pd[1] = dg;
+                    pd[2] = db;;
+                    pd += 3;
+                }
+
+                p1 += 3;
+                p2 += 3;
+            }
+            row++;
         }
     }
+
     if (DebugImgName){
         WritePpmFile(DebugImgName,DiffOut);
         free(DiffOut);
