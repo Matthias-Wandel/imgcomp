@@ -31,7 +31,7 @@ static int ScaleDenom;
 static Region_t DetectReg;
 static int Verbosity = 0;
 static int Sensitivity;
-time_t TimelapseInterval;
+int TimelapseInterval;
 
 
 //-----------------------------------------------------------------------------------
@@ -151,7 +151,7 @@ static int parse_switches (int argc, char **argv, int last_file_arg_seen, int fo
 //-----------------------------------------------------------------------------------
 // Too many parameters for imgcomp running.  Just read them from a configuration file.
 //-----------------------------------------------------------------------------------
-static int read_config_file()
+static void read_config_file()
 {
     FILE * file;
     char ConfLine[201];
@@ -388,9 +388,7 @@ int main(int argc, char **argv)
     // Get command line arguments (which may override configuration file)
     file_index = parse_switches(argc, argv, 0, 0);
   
-    if (DoDirName){
-        DoDirectory(DoDirName, SaveDir);
-    }
+    if (DoDirName[0]) DoDirectory(DoDirName, SaveDir);
 
     if (argc-file_index == 2){
         MemImage_t *pic1, *pic2;

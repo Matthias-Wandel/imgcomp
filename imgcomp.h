@@ -16,7 +16,7 @@ typedef struct {
 
 MemImage_t MemImage;
 extern int NewestAverageBright;
-extern time_t TimelapseInterval;
+extern int TimelapseInterval;
 extern int FollowDir;
 
 void WritePpmFile(char * FileName, MemImage_t *MemImage);
