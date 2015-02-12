@@ -1,3 +1,7 @@
+//-----------------------------------------------------------------------------------
+// Simple tool for monitor continuously captured images for changes
+// and saving changed images, as well as an image every N seconds for timelapses.
+//-----------------------------------------------------------------------------------
 #include <stdio.h>
 #include <ctype.h>		// to declare isupper(), tolower() 
 #include <stdlib.h>
@@ -20,17 +24,14 @@
 
 // Configuration variables.
 static const char * progname;  // program name for error messages
-static char * DoDirName = NULL;
-static char * SaveDir = NULL;
-static int FollowDir = 0;
+static char DoDirName[200];
+static char SaveDir[200];
+int FollowDir = 0;
 static int ScaleDenom;
 static Region_t DetectReg;
 static int Verbosity = 0;
 static int Sensitivity;
-static time_t TimelapseInterval;
-
-
-static time_t NextTimelapsePix;
+time_t TimelapseInterval;
 
 
 //-----------------------------------------------------------------------------------
@@ -46,7 +47,7 @@ void usage (void)// complain about bad command line
     fprintf(stderr, " -region  x1-x2,y1-y2 Specify region of interest\n");
 //    fprintf(stderr, " -exclude x1-x2,y1-y2 Exclude part of region\n");
     fprintf(stderr, " -dodir   <srcdir>    Compare images in dir, in order\n");
-    fprintf(stderr, " -f                   Do dir and monitor for new images\n");
+    fprintf(stderr, " -followdir <srcdir>  Do dir and monitor for new images\n");
     fprintf(stderr, " -savedir <saveto>    Where to save images with changes\n");
     fprintf(stderr, " -sens N              Set sensitivity\n");
     fprintf(stderr, " -tl N                Save image every N seconds regardless\n");
@@ -85,16 +86,6 @@ static int parse_switches (int argc, char **argv, int last_file_arg_seen, int fo
 {
     int argn;
     char * arg;
-    char * s;
-
-    ScaleDenom = 4;
-    DoDirName = NULL;
-    Sensitivity = 10;
-    DetectReg.x1 = 0;
-    DetectReg.x2 = 1000000;
-    DetectReg.y1 = 0;
-    DetectReg.y2 = 1000000;
-    TimelapseInterval = 0;
 
     // Scan command line options, adjust parameters
     for (argn = 1; argn < argc; argn++) {
@@ -110,13 +101,6 @@ static int parse_switches (int argc, char **argv, int last_file_arg_seen, int fo
             // Enable debug printouts.  Specify more than once for more detail.
             Verbosity += 1;
 
-        } else if (keymatch(arg, "grayscale", 2)) {
-            // Force monochrome output.
-            //cinfo->out_color_space = JCS_GRAYSCALE;
-        } else if (keymatch(arg, "savedir", 4)) {
-            // Set output file name.
-            if (++argn >= argc) usage();            
-            SaveDir = argv[argn];
         } else if (keymatch(arg, "scale", 1)) {
             // Scale the output image by a fraction M/N.
             if (++argn >= argc) usage();            
@@ -136,31 +120,20 @@ static int parse_switches (int argc, char **argv, int last_file_arg_seen, int fo
                 fprintf(stderr,"timelaps interval must be at least 1 second\n");
                 exit(-1);
             }
-        } else if (keymatch(arg, "region", 1)) {
-            // Specify region of interest
-            if (++argn >= argc) usage();
-            printf("region %s\n",argv[argn]);
-            s = strstr(argv[argn], ",");
-            if (s == NULL || s != argv[argn]){
-                // No comma, or comma not in first position.  Parse X parameters.
-                if (sscanf(argv[argn], "%d-%d", &DetectReg.x1, &DetectReg.x2) != 2) usage();
-            }
-            if (s != NULL){
-                // Y parameters come after the comma.
-                if (sscanf(s+1, "%d-%d", &DetectReg.y1, &DetectReg.y2) != 2) usage();
-            }
-            if (DetectReg.y2-DetectReg.y1 < 8 || DetectReg.x2-DetectReg.x1 < 8){
-                fprintf(stderr,"Detect region is too small\n");
-                exit(-1);
-            }
-            printf("Region is x:%d-%d, y:%d-%d\n",DetectReg.x1, DetectReg.x2, DetectReg.y1, DetectReg.y2);
+        } else if (keymatch(arg, "savedir", 4)) {
+            // Set output file name.
+            if (++argn >= argc) usage();            
+            strncpy(SaveDir,argv[argn], sizeof(SaveDir)-1);
 
         } else if (keymatch(arg, "dodir", 1)) {
             // Scale the output image by a fraction M/N. */
             if (++argn >= argc) usage();
-            DoDirName = argv[argn];
-        } else if (keymatch(arg, "f", 1)) {
+            strncpy(DoDirName,argv[argn], sizeof(DoDirName)-1);
+        } else if (keymatch(arg, "followdir", 1)) {
+            if (++argn >= argc) usage();
+            strncpy(DoDirName,argv[argn], sizeof(DoDirName)-1);
             FollowDir = 1;
+
         } else {
             usage();	   // bogus switch
         }
@@ -175,173 +148,122 @@ static int parse_switches (int argc, char **argv, int last_file_arg_seen, int fo
     return argn;  // return index of next arg (file name)
 }
 
-
 //-----------------------------------------------------------------------------------
-// Concatenate dir name and file name.  Not thread safe!
+// Too many parameters for imgcomp running.  Just read them from a configuration file.
 //-----------------------------------------------------------------------------------
-static char * CatPath(char *Dir, char * FileName)
+static int read_config_file()
 {
-    static char catpath[502];
-    int pathlen;
+    FILE * file;
+    char ConfLine[201];
 
-    pathlen = strlen(Dir);
-    if (pathlen > 300){
-        fprintf(stderr, "path too long!");
+    // Reset to default parameters.
+    ScaleDenom = 4;
+    DoDirName[0] = '\0';
+    Sensitivity = 10;
+    DetectReg.x1 = 0;
+    DetectReg.x2 = 1000000;
+    DetectReg.y1 = 0;
+    DetectReg.y2 = 1000000;
+    TimelapseInterval = 0;
+
+    file = fopen("imgcomp.conf", "r");
+    if (file == NULL){
+        fprintf(stderr, "Could not open configuration file imgcomp.conf\n");
         exit(-1);
     }
-    memcpy(catpath, Dir, pathlen+1);
-    if (catpath[pathlen-1] != '/' && catpath[pathlen-1] != '\\'){
-        catpath[pathlen] = '/';
-        pathlen += 1;
-    }
-    strncpy(catpath+pathlen, FileName,200);
-    return catpath;
-}
+    for(;;){
+        char *s, *v, *t;
+        int len;
+        s = fgets(ConfLine, sizeof(ConfLine)-1, file);
+        ConfLine[sizeof(ConfLine)-1] = '\0';
+        if (s == NULL) break;
 
-//-----------------------------------------------------------------------------------
-// Compare file names to sort directory.
-//-----------------------------------------------------------------------------------
-static int fncmpfunc (const void * a, const void * b)
-{
-    return strcmp(*(char **)a, *(char **)b);
-}
+        // Remove leading spaces
+        while (*s == ' ' || *s == '\t') s++;
 
-//-----------------------------------------------------------------------------------
-// Read a directory and sort it.
-//-----------------------------------------------------------------------------------
-char ** GetSortedDir(char * Directory, int * NumFiles)
-{
-    char ** FileNames;
-    int NumFileNames;
-    int NumAllocated;
-    DIR * dirp;
-
-    NumAllocated = 5;
-    FileNames = malloc(sizeof (char *) * NumAllocated);
-
-    NumFileNames = 0;
-  
-    dirp = opendir(Directory);
-    if (dirp == NULL){
-        fprintf(stderr, "could not open dir\n");
-        return NULL;
-    }
-
-    for (;;){
-        struct dirent * dp;
-        struct stat buf;
-        int l;
-        dp = readdir(dirp);
-        if (dp == NULL) break;
-        //printf("name: %s %d %d\n",dp->d_name, (int)dp->d_off, (int)dp->d_reclen);
-
-
-        // Check that name ends in ".jpg", ".jpeg", or ".JPG", etc...
-        l = strlen(dp->d_name);
-        if (l < 5) continue;
-        if (dp->d_name[l-1] != 'g' && dp->d_name[l-1] != 'G') continue;
-        if (dp->d_name[l-2] == 'e' || dp->d_name[l-2] == 'E') l-= 1;
-        if (dp->d_name[l-2] != 'p' && dp->d_name[l-2] != 'P') continue;
-        if (dp->d_name[l-3] != 'j' && dp->d_name[l-3] != 'J') continue;
-        if (dp->d_name[l-4] != '.') continue;
-        //printf("use: %s\n",dp->d_name);
-
-        // Check that it's a regular file.
-        stat(CatPath(Directory, dp->d_name), &buf);
-        if (!S_ISREG(buf.st_mode)) continue; // not a file.
-
-        if (NumFileNames >= NumAllocated){
-            //printf("realloc\n");
-            NumAllocated *= 2;
-            FileNames = realloc(FileNames, sizeof (char *) * NumAllocated);
+        // Check line length not exceeded.
+        len = strlen(s);
+        if(len >= sizeof(ConfLine)-1){
+            fprintf(stderr, "Configuration line too long:\n%s",s);
+            exit(-1);
         }
 
-        FileNames[NumFileNames++] = strdup(dp->d_name);
-    }
-    closedir(dirp);
+        // Remove trailing spaces and linefeed.
+        t = s+len-1;
+        while (*t <= ' ' && t > s) *t-- = '\0';
 
-    // Now sort the names (could be in random order)
-    qsort(FileNames, NumFileNames, sizeof(char **), fncmpfunc);
+        if (*s == '#') continue; // comment.
+        if (*s == '\r' || *s == '\n') continue; // Blank line.
 
-    *NumFiles = NumFileNames;
-    return FileNames;
-}
-
-//-----------------------------------------------------------------------------------
-// Unallocate directory structure
-//-----------------------------------------------------------------------------------
-void FreeDir(char ** FileNames, int NumEntries)
-{
-    int a;
-    // Free it up again.
-    for (a=0;a<NumEntries;a++){
-        free(FileNames[a]);
-        FileNames[a] = NULL;
-    }
-    free(FileNames);
-}
-
-//-----------------------------------------------------------------------------------
-// Back up a photo that is of interest or applies to tiemelapse.
-//-----------------------------------------------------------------------------------
-char * BackupPicture(char * Directory, char * Name, char * KeepPixDir, int Threshold, int MotionTriggered)
-{
-    char SrcPath[500];
-    static char DstPath[500];
-    struct stat statbuf;
-    static char ABCChar = ' ';
-    static time_t LastSaveTime;
-    struct tm tm;
-
-
-    if (!KeepPixDir) return NULL; // Picture saving not enabled.
-
-    strcpy(SrcPath, CatPath(Directory, Name));
-    if (stat(SrcPath, &statbuf) == -1) {
-        perror(SrcPath);
-        exit(1);
-    }
-    if (!MotionTriggered){
-        if (TimelapseInterval < 1) return 0; // timelapse mode off.
-        if (statbuf.st_mtime < NextTimelapsePix){
-            // No motion, not timelapse picture.
-            return NULL;
+        v = strstr(s, "=");
+        if (v == NULL){
+            fprintf(stderr, "Configuration lines must be in format 'tag=value', not '%s'\n",s);
+            exit(-1);
         }
-    }
+        t = v;
 
-    if (TimelapseInterval >= 1){
-        // Figure out when the next timelapse interval should be.
-        NextTimelapsePix = statbuf.st_mtime+TimelapseInterval;
-        NextTimelapsePix -= (NextTimelapsePix % TimelapseInterval);
-    }
+        // Remove value leading spaces
+        v += 1;
+        while (*v == ' ' || *v == '\t') v++;
 
-    if (FollowDir){
-        // In followdir mode, rename according to date.
-         if (stat(SrcPath, &statbuf) == -1) {
-            perror(SrcPath);
-            exit(1);
-        }
-        if (LastSaveTime == statbuf.st_mtime){
-            // If it's the same second, cycle through suffixes a-z
-            ABCChar = (ABCChar >= 'a' && ABCChar <'z') ? ABCChar+1 : 'a';
-        }else{
-            // New time. No need for a suffix.
-            ABCChar = ' ';
-            LastSaveTime = statbuf.st_mtime;
+        // remove tag trailing spaces.
+        *t = '\0';
+        while (*t == ' ' || *t == '\t'){
+            *t = '\0';
+            t--;
         }
 
-        tm = *localtime(&statbuf.st_mtime);
-        sprintf(DstPath, "%s/%02d%02d-%02d%02d%02d%c%04d.jpg",KeepPixDir,
-             tm.tm_mon+1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec, 
-             ABCChar, Threshold);
+        // Now finally have the tag extracted.
+        printf("'%s' = '%s'\n",s, v);
 
-        CopyFile(SrcPath, DstPath);
-    }else{
-        // In test mode, just reuse the name.
-        CopyFile(SrcPath, CatPath(KeepPixDir, Name));
+
+        if (strcmp(s,"scale") == 0){
+            if (sscanf(v, "%d", &ScaleDenom) != 1) goto bad_value;
+
+        }else if(strcmp(s,"region") == 0){
+            // Specify region of interest
+            t = strstr(v, ",");
+            if (t == NULL || t != v){
+                // No comma, or comma not in first position.  Parse X parameters.
+                if (sscanf(v, "%d-%d", &DetectReg.x1, &DetectReg.x2) != 2) goto bad_value;
+            }
+            if (v != NULL){
+                // Y parameters come after the comma.
+                if (sscanf(v+1, "%d-%d", &DetectReg.y1, &DetectReg.y2) != 2) goto bad_value;
+            }
+            if (DetectReg.y2-DetectReg.y1 < 16 || DetectReg.x2-DetectReg.x1 < 16){
+                fprintf(stderr,"Detect region is too small\n");
+                exit(-1);
+            }
+            printf("Region is x:%d-%d, y:%d-%d\n",DetectReg.x1, DetectReg.x2, DetectReg.y1, DetectReg.y2);
+
+        }else if(strcmp(s,"dodir") == 0){
+            strncpy(DoDirName,v, sizeof(DoDirName)-1);
+        }else if(strcmp(s,"followdir") == 0){
+            strncpy(DoDirName,v, sizeof(DoDirName)-1);
+            FollowDir = 1;
+        }else if(strcmp(s,"savedir") == 0){
+            strncpy(SaveDir,v, sizeof(SaveDir)-1);
+
+        }else if(strcmp(s,"aquire_cmd") == 0){
+            strncpy(raspistill_cmd,v, sizeof(200)-1);
+
+        }else if(strcmp(s,"sensitivity") == 0){
+            if (sscanf(v, "%d", &Sensitivity) != 1) goto bad_value;
+        }else if(strcmp(s,"verbose") == 0){
+            if (sscanf(v, "%d", &Verbosity) != 1) goto bad_value;
+        }else if(strcmp(s,"timelapse") == 0){
+            if (sscanf(v, "%d", (int *)&TimelapseInterval) != 1){
+bad_value:
+                fprintf(stderr, "Value of %s=%s\n not understood\n",s,v);
+            }
+        }else {
+            printf("Unknown tag '%s=%s'\n",s,v);
+        }
     }
-    return DstPath;
 }
+
+
 
 static MemImage_t *LastPic;
 static char LastPicName[500];
@@ -460,14 +382,12 @@ int main(int argc, char **argv)
     int file_index;
     progname = argv[0];
 
-    // Scan command line to find file names.
-    file_index = parse_switches(argc, argv, 0, 0);
+    // First read the configuration file.
+    read_config_file();
 
-    if (FollowDir && DoDirName == NULL){
-        fprintf(stderr, "Must specify directory to do and monitor with -dodir\n");
-        usage();
-    }
-   
+    // Get command line arguments (which may override configuration file)
+    file_index = parse_switches(argc, argv, 0, 0);
+  
     if (DoDirName){
         DoDirectory(DoDirName, SaveDir);
     }
