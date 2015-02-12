@@ -152,7 +152,6 @@ int ComparePix(MemImage_t * pic1, MemImage_t * pic2, Region_t Region, char * Deb
             for (col=Region.x1;col<Region.x2;col+= 2){
                 unsigned char * pn;
                 int b1, b2, dcomp;
-                int debug_between;
                 // Add up two pixels for noise reduction.
                 b1 = (p1[0]+p1[1]*2+p1[2] + p1[3]+p1[4]*2+p1[5]);
                 pn = p1+bPerRow;
@@ -162,20 +161,16 @@ int ComparePix(MemImage_t * pic1, MemImage_t * pic2, Region_t Region, char * Deb
                 pn = p2+bPerRow;
                 b2 += (pn[0]+pn[1]*2+pn[2] + pn[3]+pn[4]*2+pn[5]);
 
-                // Possibly take the brighter images's b1 value and divide by ratio.
-                dcomp = b2*m2i-b1*m1i;
-                debug_between = 0;
+                dcomp = b2*m2i-b1*m1i; // Differentce with ratio applied.
                 if (dcomp < 0){
                     // difference might be on account of m1i > m2i.
                     // Try it without multiplication difference.
                     dcomp = b1*m1i-b2*m1i;
                     if (dcomp > 0){
-                        // if difference now positive, it may be all because of m1i > m2i.
+                        // if difference now positive, the whole difference seen may
+                        // be because m1i > m2i.  So call it zero.
                         dcomp = 0;
-                        debug_between = 1;
                     }
-                }else{
-                    //dcomp = -dcomp;
                 }
 
                 dcomp = dcomp >> 9;
@@ -183,13 +178,13 @@ int ComparePix(MemImage_t * pic1, MemImage_t * pic2, Region_t Region, char * Deb
                 if (DebugImgName){
                     pd[1] = pd[4] = dcomp > 0 ? dcomp : 0; // Green = img2 brighter
                     pd[0] = pd[3] = dcomp < 0 ? -dcomp : 0; // Red = img1 brigher.
-                    pd[2] = pd[5] = debug_between*200;
+                    pd[2] = pd[5] = 0;
                     pd += 6;
                 }
 
                 if (dcomp < 0) dcomp = -dcomp;
                 if (dcomp >= 256) dcomp = 255;// put it in a histogram.
-                DiffHist[dcomp] += 4;
+                DiffHist[dcomp] += 4; // Did four pixels, so add 4.
 
                 p1 += 6;
                 p2 += 6;
