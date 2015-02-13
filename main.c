@@ -196,11 +196,11 @@ static void read_config_file()
         if (*s == '\r' || *s == '\n') continue; // Blank line.
 
         v = strstr(s, "=");
-        if (v == NULL){
+        if (v == NULL || v==s){
             fprintf(stderr, "Configuration lines must be in format 'tag=value', not '%s'\n",s);
             exit(-1);
         }
-        t = v;
+        t = v-1;
 
         // Remove value leading spaces
         v += 1;
@@ -214,8 +214,7 @@ static void read_config_file()
         }
 
         // Now finally have the tag extracted.
-        printf("'%s' = '%s'\n",s, v);
-
+        //printf("'%s' = '%s'\n",s, v);
 
         if (strcmp(s,"scale") == 0){
             if (sscanf(v, "%d", &ScaleDenom) != 1) goto bad_value;
