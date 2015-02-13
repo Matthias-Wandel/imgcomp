@@ -1,17 +1,7 @@
 To do next:
-Add code to launch raspistill
-Add code to kill raspistill
 
-If image is too bright and shutter speed is not fastest:
-	relaunch!
-
-If image is too dim and shutter is not long:
-	relaunch!
-
-If no new image in 10 seconds:
-	relaunch!
-
-
+Review relaunch logic for dark images
+Test night mode some more
 
 Maybe later:
 Make it able to use webcam.

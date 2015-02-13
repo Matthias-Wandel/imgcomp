@@ -248,8 +248,6 @@ static void read_config_file()
 
         }else if(strcmp(s,"aquire_cmd") == 0){
             strncpy(raspistill_cmd,v, sizeof(raspistill_cmd)-1);
-printf("command = %s\n",raspistill_cmd);            
-
         }else if(strcmp(s,"sensitivity") == 0){
             if (sscanf(v, "%d", &Sensitivity) != 1) goto bad_value;
         }else if(strcmp(s,"verbose") == 0){
@@ -389,6 +387,10 @@ int main(int argc, char **argv)
 
     // Get command line arguments (which may override configuration file)
     file_index = parse_switches(argc, argv, 0, 0);
+
+    if (DoDirName[0]) printf("Source directory = %s, follow=%d\n",DoDirName, FollowDir); 
+    if (SaveDir[0]) printf("Save to dir %s\n",SaveDir);
+    if (TimelapseInterval) printf("Timelapse interva %d seconds\n",TimelapseInterval);
   
     if (DoDirName[0]) DoDirectory(DoDirName, SaveDir);
 
