@@ -32,6 +32,8 @@ static Region_t DetectReg;
 static int Verbosity = 0;
 static int Sensitivity;
 int TimelapseInterval;
+#define MAX_RAPISTILL_CMD
+char raspistill_cmd[200];
 
 
 //-----------------------------------------------------------------------------------
@@ -214,7 +216,7 @@ static void read_config_file()
         }
 
         // Now finally have the tag extracted.
-        //printf("'%s' = '%s'\n",s, v);
+        printf("'%s' = '%s'\n",s, v);
 
         if (strcmp(s,"scale") == 0){
             if (sscanf(v, "%d", &ScaleDenom) != 1) goto bad_value;
@@ -245,7 +247,8 @@ static void read_config_file()
             strncpy(SaveDir,v, sizeof(SaveDir)-1);
 
         }else if(strcmp(s,"aquire_cmd") == 0){
-            strncpy(raspistill_cmd,v, sizeof(200)-1);
+            strncpy(raspistill_cmd,v, sizeof(raspistill_cmd)-1);
+printf("command = %s\n",raspistill_cmd);            
 
         }else if(strcmp(s,"sensitivity") == 0){
             if (sscanf(v, "%d", &Sensitivity) != 1) goto bad_value;

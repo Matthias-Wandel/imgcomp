@@ -18,8 +18,6 @@
 #include "imgcomp.h"
 #include "jhead.h"
 
-char raspistill_cmd[200];
-
 //"raspistill -q 10 -n -bm -th none -p 480,0,800,480 -w 1280 -h 720 -o /ramdisk/out%05d.jpg -t 4000000 -tl 300";
 
 static int raspistill_pid = 0;
