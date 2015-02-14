@@ -25,7 +25,17 @@
     #include <unistd.h>
     #include <utime.h>
     #define O_BINARY 0
+#endif
 
+#ifdef _WIN32
+    #include <direct.h> // for mkdir under windows.
+    #define mkdir(dir,mode) _mkdir(dir)
+    #define S_ISDIR(a)   (a & _S_IFDIR)
+    #define PATH_MAX _MAX_PATH
+#else
+    #ifndef PATH_MAX
+        #define PATH_MAX 1024
+    #endif
 #endif
 
 #include "imgcomp.h"
@@ -53,6 +63,73 @@ char * CatPath(char *Dir, char * FileName)
     strncpy(catpath+pathlen, FileName,200);
     return catpath;
 }
+
+
+//--------------------------------------------------------------------------------
+// Ensure that a path exists
+//--------------------------------------------------------------------------------
+int EnsurePathExists(const char * FileName)
+{
+    char NewPath[PATH_MAX*2];
+    int a;
+    int LastSlash = 0;
+
+    printf("\nEnsure exists:%s\n",FileName);
+
+    // Extract the path component of the file name.
+    strcpy(NewPath, FileName);
+    a = strlen(NewPath);
+    for (;;){
+        a--;
+        if (a == 0){
+            NewPath[0] = 0;
+            break;    
+        }
+        if (NewPath[a] == '/'){
+            struct stat dummy;
+            NewPath[a] = 0;
+            if (stat(NewPath, &dummy) == 0){
+                if (S_ISDIR(dummy.st_mode)){
+                    // Break out of loop, and go forward along path making
+                    // the directories.
+                    if (LastSlash == 0){
+                        // Full path exists.  No need to create any directories.
+                        return 1;
+                    }
+                    break;
+                }else{
+                    // Its a file.
+                    fprintf(stderr,"Can't create path '%s' due to file conflict\n",NewPath);
+                    return 0;
+                }
+            }
+            if (LastSlash == 0) LastSlash = a;
+        }
+    }
+
+    // Now work forward.
+    printf("Existing First dir: '%s' a = %d\n",NewPath,a);
+
+    for(;FileName[a];a++){
+        if (FileName[a] == '/' || a == 0){
+            if (a == LastSlash) break;
+            NewPath[a] = FileName[a];
+            //printf("make dir '%s'\n",NewPath);
+            #ifdef _WIN32
+                if (NewPath[1] == ':' && strlen(NewPath) == 2) continue;
+            #endif
+printf("mkdir %s\n",NewPath);
+            if (mkdir(NewPath,0777)){
+                fprintf(stderr,"Could not create directory '%s'\n",NewPath);
+                // Failed to create directory.
+                return 0;
+            }
+        }
+    }
+    return 1;
+}
+
+
 
 //-----------------------------------------------------------------------------------
 // Compare file names to sort directory.
@@ -138,6 +215,33 @@ void FreeDir(char ** FileNames, int NumEntries)
 }
 
 //-----------------------------------------------------------------------------------
+// Make a name from the file date.
+//-----------------------------------------------------------------------------------
+void PicDestFromTime(char * DestPath, const char * KeepPixDir, time_t PicTime, char * NameSuffix)
+{
+    struct tm tm;
+    char * p;
+    tm = *localtime(&PicTime);
+
+    // %d  Day of month as decimal number (01 – 31)
+    // %H	Hour in 24-hour format (00 – 23)
+    // %j	Day of year as decimal number (001 – 366)
+    // %m	Month as decimal number (01 – 12)
+    // %M	Minute as decimal number (00 – 59)
+    // %S	Second as decimal number (00 – 59)
+    // %U	Week of year as decimal number, with Sunday as first day of week (00 – 53)
+    // %w	Weekday as decimal number (0 – 6; Sunday is 0)
+    // %y	Year without century, as decimal number (00 – 99)
+    // %Y	Year with century, as decimal number
+
+    p = DestPath+sprintf(DestPath, "%s/", KeepPixDir);
+
+    // Using this rule, make a subdiretories for date and for hour.
+    p += strftime(p, PATH_MAX, "%m%d/%H/%m%d-%H%M%S", &tm);
+    sprintf(p, "%s.jpg",NameSuffix);
+}
+
+//-----------------------------------------------------------------------------------
 // Back up a photo that is of interest or applies to tiemelapse.
 //-----------------------------------------------------------------------------------
 char * BackupPicture(char * Directory, char * Name, char * KeepPixDir, int Threshold, int MotionTriggered)
@@ -145,10 +249,8 @@ char * BackupPicture(char * Directory, char * Name, char * KeepPixDir, int Thres
     char SrcPath[500];
     static char DstPath[500];
     struct stat statbuf;
-    static char ABCChar = ' ';
+    static char SuffixChar = ' ';
     static time_t LastSaveTime;
-    struct tm tm;
-
 
     if (!KeepPixDir) return NULL; // Picture saving not enabled.
 
@@ -171,7 +273,8 @@ char * BackupPicture(char * Directory, char * Name, char * KeepPixDir, int Thres
         NextTimelapsePix -= (NextTimelapsePix % TimelapseInterval);
     }
 
-    if (FollowDir){
+    {
+        char NameSuffix[20];
         // In followdir mode, rename according to date.
          if (stat(SrcPath, &statbuf) == -1) {
             perror(SrcPath);
@@ -179,22 +282,17 @@ char * BackupPicture(char * Directory, char * Name, char * KeepPixDir, int Thres
         }
         if (LastSaveTime == statbuf.st_mtime){
             // If it's the same second, cycle through suffixes a-z
-            ABCChar = (ABCChar >= 'a' && ABCChar <'z') ? ABCChar+1 : 'a';
+            SuffixChar = (SuffixChar >= 'a' && SuffixChar <'z') ? SuffixChar+1 : 'a';
         }else{
             // New time. No need for a suffix.
-            ABCChar = ' ';
+            SuffixChar = ' ';
             LastSaveTime = statbuf.st_mtime;
         }
-
-        tm = *localtime(&statbuf.st_mtime);
-        sprintf(DstPath, "%s/%02d%02d-%02d%02d%02d%c%04d.jpg",KeepPixDir,
-             tm.tm_mon+1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec, 
-             ABCChar, Threshold);
+        sprintf(NameSuffix, "%c%04d",SuffixChar, Threshold);
+        PicDestFromTime(DstPath, KeepPixDir, statbuf.st_mtime, NameSuffix);
+        EnsurePathExists(DstPath);
 
         CopyFile(SrcPath, DstPath);
-    }else{
-        // In test mode, just reuse the name.
-        CopyFile(SrcPath, CatPath(KeepPixDir, Name));
     }
     return DstPath;
 }

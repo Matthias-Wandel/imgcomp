@@ -94,7 +94,6 @@ static int parse_switches (int argc, char **argv, int last_file_arg_seen, int fo
         arg = argv[argn];
         if (*arg != '-') {
             return argn;
-            usage();
         }
         arg++;		// advance past switch marker character
 
@@ -136,6 +135,7 @@ static int parse_switches (int argc, char **argv, int last_file_arg_seen, int fo
             FollowDir = 1;
 
         } else {
+            fprintf(stderr,"Argument %s not understood\n\n",arg);
             usage();	   // bogus switch
         }
     }
@@ -169,7 +169,7 @@ static void read_config_file()
 
     file = fopen("imgcomp.conf", "r");
     if (file == NULL){
-        printf(stderr, "No configuration file imgcomp.conf\n");
+        fprintf(stderr, "No configuration file imgcomp.conf\n");
         return;
     }
     for(;;){
@@ -271,7 +271,6 @@ static char * LastPicSaveName = NULL;
 
 //-----------------------------------------------------------------------------------
 // Process a whole directory of files.
-// Return 
 //-----------------------------------------------------------------------------------
 static int DoDirectoryFunc(char * Directory, char * KeepPixDir, int Delete)
 {
