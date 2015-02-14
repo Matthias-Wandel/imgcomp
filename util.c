@@ -250,7 +250,7 @@ char * BackupPicture(char * Directory, char * Name, char * KeepPixDir, int Thres
     static char SuffixChar = ' ';
     static time_t LastSaveTime;
 
-    if (!KeepPixDir) return NULL; // Picture saving not enabled.
+    if (KeepPixDir[0] == '\0') return NULL; // Picture saving not enabled.
 
     strcpy(SrcPath, CatPath(Directory, Name));
     if (stat(SrcPath, &statbuf) == -1) {
