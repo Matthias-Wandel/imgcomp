@@ -74,8 +74,6 @@ int EnsurePathExists(const char * FileName)
     int a;
     int LastSlash = 0;
 
-    printf("\nEnsure exists:%s\n",FileName);
-
     // Extract the path component of the file name.
     strcpy(NewPath, FileName);
     a = strlen(NewPath);
@@ -108,7 +106,7 @@ int EnsurePathExists(const char * FileName)
     }
 
     // Now work forward.
-    printf("Existing First dir: '%s' a = %d\n",NewPath,a);
+    //printf("Existing First dir: '%s' a = %d\n",NewPath,a);
 
     for(;FileName[a];a++){
         if (FileName[a] == '/' || a == 0){
@@ -118,7 +116,7 @@ int EnsurePathExists(const char * FileName)
             #ifdef _WIN32
                 if (NewPath[1] == ':' && strlen(NewPath) == 2) continue;
             #endif
-printf("mkdir %s\n",NewPath);
+            //printf("mkdir %s\n",NewPath);
             if (mkdir(NewPath,0777)){
                 fprintf(stderr,"Could not create directory '%s'\n",NewPath);
                 // Failed to create directory.
