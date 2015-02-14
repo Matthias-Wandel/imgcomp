@@ -21,6 +21,7 @@
 //"raspistill -q 10 -n -bm -th none -p 480,0,800,480 -w 1280 -h 720 -o /ramdisk/out%05d.jpg -t 4000000 -tl 300";
 
 static int raspistill_pid = 0;
+extern int NightMode;
 
 //-----------------------------------------------------------------------------------
 // Parse command line and launch.
@@ -95,8 +96,6 @@ int launch_raspistill(void)
 }
 
 
-
-
 //-----------------------------------------------------------------------------------
 // Parse command line and launch.
 //-----------------------------------------------------------------------------------
@@ -113,9 +112,9 @@ void manage_raspistill(int NewImages)
     SecondsSinceLaunch += 1;
     if (NewImages > 0){
         SecondsSinceImage = 0;
-        printf("Exp:%5.1fms Iso:%d  Bright:%d av=%5.2f\r",
-            ImageInfo.ExposureTime*1000, ImageInfo.ISOequivalent, NewestAverageBright, 
-            RunningAverageBright);
+        printf("Exp:%5.1fms Iso:%d  Nm=%d  Bright:%d  av=%5.2f\r",
+            ImageInfo.ExposureTime*1000, ImageInfo.ISOequivalent, 
+            NightMode, NewestAverageBright, RunningAverageBright);
         fflush(stdout);
     }else{
         printf("No new images, %d\n",SecondsSinceImage);
@@ -154,7 +153,7 @@ void manage_raspistill(int NewImages)
     // 20 second time constant brightness averaging.
     RunningAverageBright = RunningAverageBright * 0.95 + NewestAverageBright * 0.05;
 
-    // If brightness changes by more than 10%, relaunch.
+    // If brightness changes by more than 20%, relaunch.
     if (SecondsSinceLaunch > 15){
         double Ratio;
         Ratio = RunningAverageBright / InitialAverageBright;

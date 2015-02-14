@@ -47,7 +47,6 @@ void usage (void)// complain about bad command line
     fprintf(stderr, "Switches (names may be abbreviated):\n");
     fprintf(stderr, " -scale   N           Scale before detection by 1/N.  Default 1/4\n");
     fprintf(stderr, " -region  x1-x2,y1-y2 Specify region of interest\n");
-//    fprintf(stderr, " -exclude x1-x2,y1-y2 Exclude part of region\n");
     fprintf(stderr, " -dodir   <srcdir>    Compare images in dir, in order\n");
     fprintf(stderr, " -followdir <srcdir>  Do dir and monitor for new images\n");
     fprintf(stderr, " -savedir <saveto>    Where to save images with changes\n");
@@ -170,8 +169,8 @@ static void read_config_file()
 
     file = fopen("imgcomp.conf", "r");
     if (file == NULL){
-        fprintf(stderr, "Could not open configuration file imgcomp.conf\n");
-        exit(-1);
+        printf(stderr, "No configuration file imgcomp.conf\n");
+        return;
     }
     for(;;){
         char *s, *v, *t;
@@ -390,7 +389,7 @@ int main(int argc, char **argv)
 
     if (DoDirName[0]) printf("Source directory = %s, follow=%d\n",DoDirName, FollowDir); 
     if (SaveDir[0]) printf("Save to dir %s\n",SaveDir);
-    if (TimelapseInterval) printf("Timelapse interva %d seconds\n",TimelapseInterval);
+    if (TimelapseInterval) printf("Timelapse interval %d seconds\n",TimelapseInterval);
   
     if (DoDirName[0]) DoDirectory(DoDirName, SaveDir);
 

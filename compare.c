@@ -6,6 +6,7 @@
 #include "imgcomp.h"
 
 int NewestAverageBright;
+int NightMode;
 
 //----------------------------------------------------------------------------------------
 // Calculate average brightness of an image.
@@ -46,7 +47,6 @@ int ComparePix(MemImage_t * pic1, MemImage_t * pic2, Region_t Region, char * Deb
     int a;
     int DetectionPixels;
     int m1i, m2i;
-    int NightMode;
 
     if (Verbosity){
         printf("\ncompare pictures %dx%d %d\n", pic1->width, pic1->height, pic1->components);
