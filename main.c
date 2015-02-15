@@ -46,7 +46,7 @@ void usage (void)// complain about bad command line
 
     fprintf(stderr, "Switches (names may be abbreviated):\n");
     fprintf(stderr, " -scale   N           Scale before detection by 1/N.  Default 1/4\n");
-    fprintf(stderr, " -region  x1-x2,y1-y2 Specify region of interest\n");
+//    fprintf(stderr, " -region  x1-x2,y1-y2 Specify region of interest\n");
     fprintf(stderr, " -dodir   <srcdir>    Compare images in dir, in order\n");
     fprintf(stderr, " -followdir <srcdir>  Do dir and monitor for new images\n");
     fprintf(stderr, " -savedir <saveto>    Where to save images with changes\n");
@@ -140,12 +140,6 @@ static int parse_switches (int argc, char **argv, int last_file_arg_seen, int fo
         }
     }
 
-    // Adjust region of interest to scale.
-    DetectReg.x1 /= ScaleDenom;
-    DetectReg.x2 /= ScaleDenom;
-    DetectReg.y1 /= ScaleDenom;
-    DetectReg.y2 /= ScaleDenom;
-
     return argn;  // return index of next arg (file name)
 }
 
@@ -156,16 +150,6 @@ static void read_config_file()
 {
     FILE * file;
     char ConfLine[201];
-
-    // Reset to default parameters.
-    ScaleDenom = 4;
-    DoDirName[0] = '\0';
-    Sensitivity = 10;
-    DetectReg.x1 = 0;
-    DetectReg.x2 = 1000000;
-    DetectReg.y1 = 0;
-    DetectReg.y2 = 1000000;
-    TimelapseInterval = 0;
 
     file = fopen("imgcomp.conf", "r");
     if (file == NULL){
@@ -380,11 +364,27 @@ int main(int argc, char **argv)
     int file_index;
     progname = argv[0];
 
+    // Reset to default parameters.
+    ScaleDenom = 4;
+    DoDirName[0] = '\0';
+    Sensitivity = 10;
+    DetectReg.x1 = 0;
+    DetectReg.x2 = 1000000;
+    DetectReg.y1 = 0;
+    DetectReg.y2 = 1000000;
+    TimelapseInterval = 0;
+
     // First read the configuration file.
     read_config_file();
 
     // Get command line arguments (which may override configuration file)
     file_index = parse_switches(argc, argv, 0, 0);
+
+    // Adjust region of interest to scale.
+    DetectReg.x1 /= ScaleDenom;
+    DetectReg.x2 /= ScaleDenom;
+    DetectReg.y1 /= ScaleDenom;
+    DetectReg.y2 /= ScaleDenom;
 
     if (DoDirName[0]) printf("Source directory = %s, follow=%d\n",DoDirName, FollowDir); 
     if (SaveDir[0]) printf("Save to dir %s\n",SaveDir);

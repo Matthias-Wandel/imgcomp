@@ -73,10 +73,11 @@ int ComparePix(MemImage_t * pic1, MemImage_t * pic2, Region_t Region, char * Deb
 
     if (Region.y2 > height) Region.y2 = height;
     if (Region.x2 > width) Region.x2 = width;
-    if (Region.x2 < Region.x1 || Region.x2 < Region.x1){
+    if (Region.x2 < Region.x1 || Region.y2 < Region.y1){
         fprintf(stderr, "Negative region, or region outside of image\n");
         return -1;
     }
+
     DetectionPixels = (Region.x2-Region.x1) * (Region.y2-Region.y1);
     if (DetectionPixels < 1000){
         fprintf(stderr, "Too few pixels in region\n");
@@ -162,10 +163,11 @@ int ComparePix(MemImage_t * pic1, MemImage_t * pic2, Region_t Region, char * Deb
                 b2 += (pn[0]+pn[1]*2+pn[2] + pn[3]+pn[4]*2+pn[5]);
 
                 dcomp = b2*m2i-b1*m1i; // Differentce with ratio applied.
+
                 if (dcomp < 0){
                     // difference might be on account of m1i > m2i.
                     // Try it without multiplication difference.
-                    dcomp = b1*m1i-b2*m1i;
+                    dcomp = b2*m1i-b1*m1i;
                     if (dcomp > 0){
                         // if difference now positive, the whole difference seen may
                         // be because m1i > m2i.  So call it zero.
