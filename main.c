@@ -139,7 +139,7 @@ static int parse_parameter (const char * tag, const char * value)
     } else if (keymatch(tag, "aquire_cmd", 4)) {
         // Set output file name.
         if (!value) goto need_val;
-        strncpy(raspistill_cmd, value, sizeof(raspistill_cmd-1));
+        strncpy(raspistill_cmd, value, sizeof(raspistill_cmd)-1);
     } else if (keymatch(tag, "savedir", 4)) {
         // Set output file name.
         if (!value) goto need_val;
@@ -195,6 +195,7 @@ static int parse_switches (int argc, char **argv, int last_file_arg_seen, int fo
 
         argn += parse_parameter(arg+1, value);
     }
+    return argc;
 }
 
 //-----------------------------------------------------------------------------------
