@@ -54,7 +54,7 @@ void usage (void)// complain about bad command line
     fprintf(stderr, " -dodir   <srcdir>    Compare images in dir, in order\n");
     fprintf(stderr, " -followdir <srcdir>  Do dir and monitor for new images\n");
     fprintf(stderr, " -savedir <saveto>    Where to save images with changes\n");
-    fprintf(stderr, " -sens N              Set sensitivity\n");
+    fprintf(stderr, " -sensitivity N       Set sensitivity\n");
     fprintf(stderr, " -tl N                Save image every N seconds regardless\n");
 
     fprintf(stderr, " -outfile name  Specify name for output file\n");
@@ -85,7 +85,7 @@ static int keymatch (const char * arg, const char * keyword, int minchars)
 //-----------------------------------------------------------------------------------
 // Parse a region parameter.
 //-----------------------------------------------------------------------------------
-static int ParseRegion(Region_t * reg, char * value)
+static int ParseRegion(Region_t * reg, const char * value)
 {
     char * t;
     t = strstr(value, ",");
@@ -122,7 +122,7 @@ static int parse_parameter (const char * tag, const char * value)
         if (!value) goto need_val;
         if (sscanf(value, "%d", &ScaleDenom) != 1)
            usage();
-    } else if (keymatch(tag, "sens", 2)) {
+    } else if (keymatch(tag, "sensitivity", 2)) {
         // Scale the output image by a fraction M/N.
         if (!value) goto need_val;
         if (sscanf(value, "%d", &Sensitivity) != 1)
@@ -133,9 +133,13 @@ static int parse_parameter (const char * tag, const char * value)
         if (sscanf(value, "%d", (int *)&TimelapseInterval) != 1)
            usage();
         if (TimelapseInterval < 1){
-            fprintf(stderr,"timelaps interval must be at least 1 second\n");
+            fprintf(stderr,"timelapse interval must be at least 1 second\n");
             exit(-1);
         }
+    } else if (keymatch(tag, "aquire_cmd", 4)) {
+        // Set output file name.
+        if (!value) goto need_val;
+        strncpy(raspistill_cmd, value, sizeof(raspistill_cmd-1));
     } else if (keymatch(tag, "savedir", 4)) {
         // Set output file name.
         if (!value) goto need_val;
