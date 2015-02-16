@@ -1,7 +1,12 @@
 To do next:
 
+Ignore region
+Same code to parse image and config
+Naming scheme option
+Ignore regions
 Review relaunch logic for dark images
-Test night mode some more
+
+
 
 Maybe later:
 Make it able to use webcam.
