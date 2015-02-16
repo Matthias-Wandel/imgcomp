@@ -29,6 +29,10 @@ static char SaveDir[200];
 int FollowDir = 0;
 static int ScaleDenom;
 static Region_t DetectReg;
+
+static Region_t ExcludeReg[4];
+static int NumExcludeReg;
+
 static int Verbosity = 0;
 static int Sensitivity;
 int TimelapseInterval;
@@ -63,7 +67,7 @@ void usage (void)// complain about bad command line
 // keyword is the constant keyword (must be lower case already),
 // minchars is length of minimum legal abbreviation.
 //-----------------------------------------------------------------------------------
-static int keymatch (char * arg, const char * keyword, int minchars)
+static int keymatch (const char * arg, const char * keyword, int minchars)
 {
     int ca, ck, nmatched = 0;
 
@@ -78,6 +82,92 @@ static int keymatch (char * arg, const char * keyword, int minchars)
     return 1;
 }
 
+//-----------------------------------------------------------------------------------
+// Parse a region parameter.
+//-----------------------------------------------------------------------------------
+static int ParseRegion(Region_t * reg, char * value)
+{
+    char * t;
+    t = strstr(value, ",");
+    if (t == NULL || t != value){
+        // No comma, or comma not in first position.  Parse X parameters.
+        if (sscanf(value, "%d-%d", &reg->x1, &reg->x2) != 2) return 0;
+    }
+    if (t != NULL){
+        // Y parameters come after the comma.
+        if (sscanf(t+1, "%d-%d", &reg->y1, &reg->y2) != 2) return 0;
+    }
+    if (reg->y2-reg->y1 < 16 || reg->x2-reg->x1 < 16){
+        fprintf(stderr,"Detect region is too small\n");
+        exit(-1);
+    }
+    printf("Region is x:%d-%d, y:%d-%d\n",reg->x1, reg->x2, reg->y1, reg->y2);
+    return 1;
+}
+
+
+//-----------------------------------------------------------------------------------
+// Parse command line switches
+// Returns argv[] index of first file-name argument (== argc if none).
+//-----------------------------------------------------------------------------------
+static int parse_parameter (const char * tag, const char * value)
+{
+    if (keymatch(tag, "debug", 1) || keymatch(tag, "verbose", 1)) {
+        // Enable debug printouts.  Specify more than once for more detail.
+        Verbosity += 1;
+        return 1;
+
+    } else if (keymatch(tag, "scale", 2)) {
+        // Scale the output image by a fraction M/N.
+        if (!value) goto need_val;
+        if (sscanf(value, "%d", &ScaleDenom) != 1)
+           usage();
+    } else if (keymatch(tag, "sens", 2)) {
+        // Scale the output image by a fraction M/N.
+        if (!value) goto need_val;
+        if (sscanf(value, "%d", &Sensitivity) != 1)
+           usage();
+    } else if (keymatch(tag, "timelapse", 1)) {
+        // Scale the output image by a fraction M/N.
+        if (!value) goto need_val;
+        if (sscanf(value, "%d", (int *)&TimelapseInterval) != 1)
+           usage();
+        if (TimelapseInterval < 1){
+            fprintf(stderr,"timelaps interval must be at least 1 second\n");
+            exit(-1);
+        }
+    } else if (keymatch(tag, "savedir", 4)) {
+        // Set output file name.
+        if (!value) goto need_val;
+        strncpy(SaveDir,value, sizeof(SaveDir)-1);
+
+    } else if (keymatch(tag, "dodir", 2)) {
+        // Scale the output image by a fraction M/N. */
+        if (!value) goto need_val;
+        strncpy(DoDirName,value, sizeof(DoDirName)-1);
+    } else if (keymatch(tag, "region", 2)) {
+        if (!value) goto need_val;
+        if (!ParseRegion(&DetectReg, value)) goto bad_value;
+        printf("Region is x:%d-%d, y:%d-%d\n",DetectReg.x1, DetectReg.x2, DetectReg.y1, DetectReg.y2);
+    } else if (keymatch(tag, "followdir", 2)) {
+        if (!value){
+            need_val:
+            fprintf(stderr, "Parameter '%s' needs to be followed by a vaue\n",tag);
+            usage();
+        }
+        strncpy(DoDirName,value, sizeof(DoDirName)-1);
+        FollowDir = 1;
+    } else {
+        fprintf(stderr,"argument %s not understood\n\n",tag);
+        usage();	   // bogus switch
+        bad_value:
+        fprintf(stderr, "Value of %s=%s\n not understood\n",tag,value);
+        usage();
+
+    }
+    return 2;
+}
+
 
 //-----------------------------------------------------------------------------------
 // Parse command line switches
@@ -87,60 +177,20 @@ static int parse_switches (int argc, char **argv, int last_file_arg_seen, int fo
 {
     int argn;
     char * arg;
+    char * value;
 
     // Scan command line options, adjust parameters
-    for (argn = 1; argn < argc; argn++) {
+    for (argn = 1; argn < argc;) {
         //printf("argn = %d\n",argn);
         arg = argv[argn];
         if (*arg != '-') {
             return argn;
         }
-        arg++;		// advance past switch marker character
+        value = NULL;
+        if (argn+1 < argc) value = argv[argn+1];
 
-        if (keymatch(arg, "debug", 1) || keymatch(arg, "verbose", 1)) {
-            // Enable debug printouts.  Specify more than once for more detail.
-            Verbosity += 1;
-
-        } else if (keymatch(arg, "scale", 1)) {
-            // Scale the output image by a fraction M/N.
-            if (++argn >= argc) usage();            
-            if (sscanf(argv[argn], "%d", &ScaleDenom) != 1)
-               usage();
-        } else if (keymatch(arg, "sens", 1)) {
-            // Scale the output image by a fraction M/N.
-            if (++argn >= argc) usage();            
-            if (sscanf(argv[argn], "%d", &Sensitivity) != 1)
-               usage();
-        } else if (keymatch(arg, "tl", 1)) {
-            // Scale the output image by a fraction M/N.
-            if (++argn >= argc) usage();            
-            if (sscanf(argv[argn], "%d", (int *)&TimelapseInterval) != 1)
-               usage();
-            if (TimelapseInterval < 1){
-                fprintf(stderr,"timelaps interval must be at least 1 second\n");
-                exit(-1);
-            }
-        } else if (keymatch(arg, "savedir", 4)) {
-            // Set output file name.
-            if (++argn >= argc) usage();            
-            strncpy(SaveDir,argv[argn], sizeof(SaveDir)-1);
-
-        } else if (keymatch(arg, "dodir", 1)) {
-            // Scale the output image by a fraction M/N. */
-            if (++argn >= argc) usage();
-            strncpy(DoDirName,argv[argn], sizeof(DoDirName)-1);
-        } else if (keymatch(arg, "followdir", 1)) {
-            if (++argn >= argc) usage();
-            strncpy(DoDirName,argv[argn], sizeof(DoDirName)-1);
-            FollowDir = 1;
-
-        } else {
-            fprintf(stderr,"Argument %s not understood\n\n",arg);
-            usage();	   // bogus switch
-        }
+        argn += parse_parameter(arg+1, value);
     }
-
-    return argn;  // return index of next arg (file name)
 }
 
 //-----------------------------------------------------------------------------------
@@ -157,7 +207,7 @@ static void read_config_file()
         return;
     }
     for(;;){
-        char *s, *v, *t;
+        char *s, *value, *t;
         int len;
         s = fgets(ConfLine, sizeof(ConfLine)-1, file);
         ConfLine[sizeof(ConfLine)-1] = '\0';
@@ -180,69 +230,25 @@ static void read_config_file()
         if (*s == '#') continue; // comment.
         if (*s == '\r' || *s == '\n') continue; // Blank line.
 
-        v = strstr(s, "=");
-        if (v == NULL || v==s){
-            fprintf(stderr, "Configuration lines must be in format 'tag=value', not '%s'\n",s);
-            exit(-1);
-        }
-        t = v-1;
+        value = strstr(s, "=");
+        if (value != NULL){
+            t = value-1;
 
-        // Remove value leading spaces
-        v += 1;
-        while (*v == ' ' || *v == '\t') v++;
+            // Remove value leading spaces
+            value += 1;
+            while (*value == ' ' || *value == '\t') value++;
 
-        // remove tag trailing spaces.
-        *t = '\0';
-        while (*t == ' ' || *t == '\t'){
+            // remove tag trailing spaces.
             *t = '\0';
-            t--;
+            while (*t == ' ' || *t == '\t'){
+                *t = '\0';
+                t--;
+            }
         }
-
         // Now finally have the tag extracted.
-        printf("'%s' = '%s'\n",s, v);
+        printf("'%s' = '%s'\n",s, value);
 
-        if (strcmp(s,"scale") == 0){
-            if (sscanf(v, "%d", &ScaleDenom) != 1) goto bad_value;
-
-        }else if(strcmp(s,"region") == 0){
-            // Specify region of interest
-            t = strstr(v, ",");
-            if (t == NULL || t != v){
-                // No comma, or comma not in first position.  Parse X parameters.
-                if (sscanf(v, "%d-%d", &DetectReg.x1, &DetectReg.x2) != 2) goto bad_value;
-            }
-            if (v != NULL){
-                // Y parameters come after the comma.
-                if (sscanf(v+1, "%d-%d", &DetectReg.y1, &DetectReg.y2) != 2) goto bad_value;
-            }
-            if (DetectReg.y2-DetectReg.y1 < 16 || DetectReg.x2-DetectReg.x1 < 16){
-                fprintf(stderr,"Detect region is too small\n");
-                exit(-1);
-            }
-            printf("Region is x:%d-%d, y:%d-%d\n",DetectReg.x1, DetectReg.x2, DetectReg.y1, DetectReg.y2);
-
-        }else if(strcmp(s,"dodir") == 0){
-            strncpy(DoDirName,v, sizeof(DoDirName)-1);
-        }else if(strcmp(s,"followdir") == 0){
-            strncpy(DoDirName,v, sizeof(DoDirName)-1);
-            FollowDir = 1;
-        }else if(strcmp(s,"savedir") == 0){
-            strncpy(SaveDir,v, sizeof(SaveDir)-1);
-
-        }else if(strcmp(s,"aquire_cmd") == 0){
-            strncpy(raspistill_cmd,v, sizeof(raspistill_cmd)-1);
-        }else if(strcmp(s,"sensitivity") == 0){
-            if (sscanf(v, "%d", &Sensitivity) != 1) goto bad_value;
-        }else if(strcmp(s,"verbose") == 0){
-            if (sscanf(v, "%d", &Verbosity) != 1) goto bad_value;
-        }else if(strcmp(s,"timelapse") == 0){
-            if (sscanf(v, "%d", (int *)&TimelapseInterval) != 1){
-bad_value:
-                fprintf(stderr, "Value of %s=%s\n not understood\n",s,v);
-            }
-        }else {
-            printf("Unknown tag '%s=%s'\n",s,v);
-        }
+        parse_parameter(s,value);
     }
 }
 
