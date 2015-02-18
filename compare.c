@@ -248,11 +248,12 @@ int ComparePix(MemImage_t * pic1, MemImage_t * pic2, Region_t Region, char * Deb
             if (cumsum >= twothirds) break;
             cumsum += DiffHist[a];
         }
-        if (Verbosity) printf("2/3 of image is below %d diff\n",a);
 
-        threshold = a*3+6;
-        if (threshold < 25) threshold = 25;
+        threshold = a*3+12;
+        if (threshold < 30) threshold = 30;
         if (threshold > 80) threshold = 80;
+
+        if (Verbosity) printf("2/3 of image is below %d diff.  Using %d threshold\n",a, threshold);
         
         cumsum = 0;
         for (a=threshold;a<256;a++){
