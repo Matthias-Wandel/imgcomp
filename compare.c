@@ -100,8 +100,8 @@ int ComparePix(MemImage_t * pic1, MemImage_t * pic2, Region_t Region, char * Deb
         if (Verbosity > 0){
             printf("average bright: %f %f\n",b1average, b2average);
         }
-        if (b1average < 1) b1average = 1; // Avoid possible division by zero.
-        if (b2average < 1) b2average = 1;
+        if (b1average < 0.5) b1average = 0.5; // Avoid possible division by zero.
+        if (b2average < 0.5) b2average = 0.5;
 
         NightMode = 0;
         if (b1average < 15 || b2average < 15){
@@ -250,16 +250,15 @@ int ComparePix(MemImage_t * pic1, MemImage_t * pic2, Region_t Region, char * Deb
         }
         if (Verbosity) printf("2/3 of image is below %d diff\n",a);
 
-//printf("half of image is below %d diff %d %d\n",a, b1average, b2average);
-        threshold = a*3+4;
-        if (threshold < 20) threshold = 20;
-        if (threshold > 70) threshold = 70;
+        threshold = a*3+6;
+        if (threshold < 25) threshold = 25;
+        if (threshold > 80) threshold = 80;
         
         cumsum = 0;
         for (a=threshold;a<256;a++){
             cumsum += DiffHist[a] * (a-threshold);
         }
-        if (Verbosity) printf("Above threshold: %d pixels\n",cumsum);
+        if (Verbosity) printf("Above threshold: %d\n",cumsum);
 
         cumsum = (cumsum * 100) / DetectionPixels;
         if (Verbosity) printf("Normalized diff: %d\n",cumsum);
