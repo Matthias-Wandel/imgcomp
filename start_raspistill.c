@@ -68,7 +68,7 @@ static void do_launch_program(void)
 //-----------------------------------------------------------------------------------
 // Parse command line and launch.
 //-----------------------------------------------------------------------------------
-int launch_raspistill(void)
+static int launch_raspistill(void)
 {
     pid_t pid;
     int ignore;
@@ -99,14 +99,14 @@ int launch_raspistill(void)
 //-----------------------------------------------------------------------------------
 // Parse command line and launch.
 //-----------------------------------------------------------------------------------
-int SecondsSinceImage = 0;
-int SecondsSinceLaunch = 0;
-int InitialAverageBright;
-int InitialBrSum;
-int InitialNumBr;
-double RunningAverageBright;
+static int SecondsSinceImage = 0;
+static int SecondsSinceLaunch = 0;
+static int InitialAverageBright;
+static int InitialBrSum;
+static int InitialNumBr;
+static double RunningAverageBright;
 
-void manage_raspistill(int NewImages)
+int manage_raspistill(int NewImages)
 {
     SecondsSinceImage += 1;
     SecondsSinceLaunch += 1;
@@ -168,11 +168,12 @@ void manage_raspistill(int NewImages)
     // if image is too dark and shutter speed is not 1/8, launch raspistill.
 
 
-    return;
+    return 0;
 force_restart:
     launch_raspistill();
     SecondsSinceImage = 0;
     SecondsSinceLaunch = 0;
     InitialBrSum = InitialNumBr = 0;
+    return 1;
 
 }

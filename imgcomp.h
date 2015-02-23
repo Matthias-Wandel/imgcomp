@@ -25,8 +25,7 @@ int ComparePix(MemImage_t * pic1, MemImage_t * pic2, Region_t reg, char * DebugI
 int CopyFile(char * src, char * dest);
 
 // start_raspistill declarations
-int launch_raspistill(void);
-void manage_raspistill(int HaveNewImages);
+int manage_raspistill(int HaveNewImages);
 extern char raspistill_cmd[200];
 
 // util.c declarations
