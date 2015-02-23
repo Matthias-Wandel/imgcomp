@@ -35,6 +35,7 @@ static int NumExcludeReg;
 
 static int Verbosity = 0;
 static int Sensitivity;
+static int Raspistill_restarted;
 int TimelapseInterval;
 #define MAX_RAPISTILL_CMD
 char raspistill_cmd[200];
@@ -277,6 +278,7 @@ static int DoDirectoryFunc(char * Directory, char * KeepPixDir, int Delete)
 
     static MemImage_t *CurrentPic;
     static char * CurrentPicName;
+    static int PixSinceDiff;
 
     FileNames = GetSortedDir(Directory, &NumEntries);
     if (FileNames == NULL) return 0;
@@ -307,10 +309,16 @@ static int DoDirectoryFunc(char * Directory, char * KeepPixDir, int Delete)
         }
         NumProcessed += 1;
         if (LastPic != NULL && CurrentPic != NULL){
-            printf("Pix %s vs %s:",LastPicName, CurrentPicName);
             diff = ComparePix(LastPic, CurrentPic, DetectReg, NULL, Verbosity);
-            printf(" %d ",diff);
 
+            if (diff >= Sensitivity && PixSinceDiff > 5 && Raspistill_restarted){
+                printf("Ignoring diff %d caused by rapistill restart\n",diff);
+                diff = 0;
+            }
+            
+            printf("Pix %s vs %s:",LastPicName, CurrentPicName);            
+            printf(" %d ",diff);
+            
             if (diff >= Sensitivity){
                 if (!LastPicSaveName){
                     // Save the pre-motion pic if it wasn't already saved.
@@ -318,12 +326,15 @@ static int DoDirectoryFunc(char * Directory, char * KeepPixDir, int Delete)
                 }
                 LastPicSaveName = BackupPicture(Directory, CurrentPicName, KeepPixDir, diff, 1);
                 if (LastPicSaveName) printf("  Motion pic %s",LastPicSaveName);
+                PixSinceDiff = 0;
             }else{
                 LastPicSaveName = BackupPicture(Directory, CurrentPicName, KeepPixDir, diff, 0);
                 if (LastPicSaveName) printf("  Timelapse pic %s",LastPicSaveName);
+                PixSinceDiff ++;
             }
             if (!LastPicSaveName) printf("                ");
             printf("\n");
+            Raspistill_restarted = 0;
         }
 
         if (LastPic != NULL) free(LastPic);
@@ -351,12 +362,14 @@ static int DoDirectoryFunc(char * Directory, char * KeepPixDir, int Delete)
 //-----------------------------------------------------------------------------------
 int DoDirectory(char * Directory, char * KeepPixDir)
 {
-    int a;
+    int a,b;
+    Raspistill_restarted = 0;
 
     for (;;){
         a = DoDirectoryFunc(Directory, KeepPixDir, FollowDir);
         if (FollowDir){
-            manage_raspistill(a);
+            b = manage_raspistill(a);
+            if (b) Raspistill_restarted = 1;
             sleep(1);
         }else{
             break;
