@@ -8,6 +8,14 @@
 int NewestAverageBright;
 int NightMode;
 
+typedef struct {
+    int w, h;
+    unsigned short values[1];
+}DiffValues_t;
+
+DiffValues_t * DiffVal = NULL;
+
+
 //----------------------------------------------------------------------------------------
 // Calculate average brightness of an image.
 //----------------------------------------------------------------------------------------
@@ -57,10 +65,19 @@ int ComparePix(MemImage_t * pic1, MemImage_t * pic2, Region_t Region, char * Deb
         fprintf(stderr, "pic types mismatch!\n");
         return -1;
     }
-
     width = pic1->width;
     height = pic1->height;
-    bPerRow = width * 3;
+    bPerRow = width * 3;    
+    
+    if (DiffVal != NULL && (width != DiffVal->w || height != DiffVal->h)){
+        // DiffVal allocated size is wrong.
+        free(DiffVal);
+        DiffVal = NULL;
+    }
+    if (DiffVal == NULL){
+        DiffVal = malloc(offsetof(DiffValues_t, values) + sizeof(DiffVal->values[0])*width*height);
+    }
+    memset(DiffVal->values, 0,  sizeof(DiffVal->values)*width*height);
 
     if (DebugImgName){
         int data_size;
@@ -145,8 +162,10 @@ int ComparePix(MemImage_t * pic1, MemImage_t * pic2, Region_t Region, char * Deb
     // Compute differences
     for (row=Region.y1;row<Region.y2;){
         unsigned char * p1, *p2, *pd = NULL;
+        unsigned short * diffrow;
         p1 = pic1->pixels+row*bPerRow;
         p2 = pic2->pixels+row*bPerRow;
+        diffrow = &DiffVal->values[width*row];
         if (DebugImgName) pd = DiffOut->pixels+row*bPerRow;
 
         if (NightMode){
@@ -187,6 +206,7 @@ int ComparePix(MemImage_t * pic1, MemImage_t * pic2, Region_t Region, char * Deb
                 if (dcomp < 0) dcomp = -dcomp;
                 if (dcomp >= 256) dcomp = 255;// put it in a histogram.
                 DiffHist[dcomp] += 4; // Did four pixels, so add 4.
+                diffrow[col] = dcomp;
 
                 p1 += 6;
                 p2 += 6;
@@ -208,6 +228,8 @@ int ComparePix(MemImage_t * pic1, MemImage_t * pic2, Region_t Region, char * Deb
 
                 if (dcomp >= 256) dcomp = 255;// put it in a histogram.
                 DiffHist[dcomp] += 1;
+                diffrow[col] = dcomp;
+
             
                 if (DebugImgName){
                     // Save the difference image, scaled 4x.
@@ -230,8 +252,9 @@ int ComparePix(MemImage_t * pic1, MemImage_t * pic2, Region_t Region, char * Deb
     if (DebugImgName){
         WritePpmFile(DebugImgName,DiffOut);
         free(DiffOut);
-
     }
+
+    
 
     if (Verbosity > 1){
         for (a=0;a<60;a+= 2){
@@ -240,10 +263,13 @@ int ComparePix(MemImage_t * pic1, MemImage_t * pic2, Region_t Region, char * Deb
     }
 
     {
+        // Try to gauge the difference noise (assuming two thirds of the image
+        // has not changed)
         int cumsum = 0;
         int threshold;
         int twothirds = DetectionPixels*2/3;
-
+        int colsum[640];
+        
         for (a=0;a<256;a++){
             if (cumsum >= twothirds) break;
             cumsum += DiffHist[a];
@@ -263,6 +289,45 @@ int ComparePix(MemImage_t * pic1, MemImage_t * pic2, Region_t Region, char * Deb
 
         cumsum = (cumsum * 100) / DetectionPixels;
         if (Verbosity) printf("Normalized diff: %d\n",cumsum);
-        return cumsum;
+
+        // Try to gauge the difference noise (assuming two thirds of the image
+        // has not changed)
+
+        memset(colsum, 0, sizeof(colsum));
+        for (row=Region.y1;row<Region.y2;row++){
+            // Compute difference by column (using stablished threshold value)
+            unsigned short * diffrow;
+            diffrow = &DiffVal->values[width*row];
+        
+            for (col=Region.x1;col<Region.x2;col++){
+                if (diffrow[col] > threshold){
+                    colsum[col] += (diffrow[col]-threshold);
+                }
+            }
+        }
+        {
+            // Search for the maximum horizontal window of differences.
+            const int window_w = width/8;
+            int winsum = 0;
+            int max_winsum = 0;
+            int max_window_left = window_w;
+            for (col=Region.x1;col<Region.x2;){
+                printf("diffcol %3d = %d\n",col, colsum[col]);
+                winsum += colsum[col];
+                col++;
+                if (col >= window_w){
+                    if(winsum > max_winsum){
+                        max_winsum = winsum;
+                        max_window_left = col-window_w;
+                    }
+                    winsum -= colsum[col-window_w];
+                }
+            }
+            printf("Maximum sum=%d  at col %d\n",max_winsum*100/DetectionPixels, max_window_left);
+        }
+        
+        return cumsum;        
     }
+
+    
 }
