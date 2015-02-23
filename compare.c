@@ -269,6 +269,7 @@ int ComparePix(MemImage_t * pic1, MemImage_t * pic2, Region_t Region, char * Deb
         int threshold;
         int twothirds = DetectionPixels*2/3;
         int colsum[640];
+        int max_window_loc = 0;
         
         for (a=0;a<256;a++){
             if (cumsum >= twothirds) break;
@@ -295,35 +296,19 @@ int ComparePix(MemImage_t * pic1, MemImage_t * pic2, Region_t Region, char * Deb
 
         memset(colsum, 0, sizeof(colsum));
         for (row=Region.y1;row<Region.y2;row++){
-            // Compute difference by column (using stablished threshold value)
+            // Compute difference by column (using established threshold value)
             unsigned short * diffrow;
             diffrow = &DiffVal->values[width*row];
         
             for (col=Region.x1;col<Region.x2;col++){
-                if (diffrow[col] > threshold){
-                    colsum[col] += (diffrow[col]-threshold);
+                if (diffrow[col>>3] > threshold){
+                    colsum[col>>3] += (diffrow[col]-threshold);
                 }
             }
         }
+        
         {
-            // Search for the maximum horizontal window of differences.
-            const int window_w = width/8;
-            int winsum = 0;
-            int max_winsum = 0;
-            int max_window_left = window_w;
-            for (col=Region.x1;col<Region.x2;){
-                printf("diffcol %3d = %d\n",col, colsum[col]);
-                winsum += colsum[col];
-                col++;
-                if (col >= window_w){
-                    if(winsum > max_winsum){
-                        max_winsum = winsum;
-                        max_window_left = col-window_w;
-                    }
-                    winsum -= colsum[col-window_w];
-                }
-            }
-            printf("Maximum sum=%d  at col %d\n",max_winsum*100/DetectionPixels, max_window_left);
+            // Search for the maximum vertical window of differences within the horizontal window found
         }
         
         return cumsum;        
