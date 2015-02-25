@@ -30,10 +30,10 @@ int FollowDir = 0;
 static int ScaleDenom;
 static Region_t DetectReg;
 
-static Region_t ExcludeReg[4];
-static int NumExcludeReg;
+//static Region_t ExcludeReg[4];
+//static int NumExcludeReg;
 
-static int Verbosity = 0;
+int Verbosity = 0;
 static int Sensitivity;
 static int Raspistill_restarted;
 int TimelapseInterval;
@@ -309,15 +309,19 @@ static int DoDirectoryFunc(char * Directory, char * KeepPixDir, int Delete)
         }
         NumProcessed += 1;
         if (LastPic != NULL && CurrentPic != NULL){
-            diff = ComparePix(LastPic, CurrentPic, DetectReg, NULL, Verbosity);
+            TriggerInfo_t Trig;
+            int diff;
+            
+            Trig = ComparePix(LastPic, CurrentPic, DetectReg, NULL);
+            diff = Trig.DiffLevel;
 
             if (diff >= Sensitivity && PixSinceDiff > 5 && Raspistill_restarted){
-                printf("Ignoring diff %d caused by rapistill restart\n",diff);
+                printf("Ignoring diff %d caused by raspistill restart\n",diff);
                 diff = 0;
             }
             
-            printf("Pix %s vs %s:",LastPicName, CurrentPicName);            
-            printf(" %d ",diff);
+            printf("%s - %s:",LastPicName, CurrentPicName);            
+            printf(" %3d at (%3d,%3d) ", Trig.DiffLevel, Trig.x*ScaleDenom, Trig.y*ScaleDenom);
             
             if (diff >= Sensitivity){
                 if (!LastPicSaveName){
@@ -424,7 +428,8 @@ int main(int argc, char **argv)
         printf("\nload %s\n",argv[file_index+1]);
         pic2 = LoadJPEG(argv[file_index+1], ScaleDenom, 0, 0);
         if (pic1 && pic2){
-            ComparePix(pic1, pic2, DetectReg, "diff.ppm", 2);
+            Verbosity = 2;
+            ComparePix(pic1, pic2, DetectReg, "diff.ppm");
         }
         free(pic1);
         free(pic2);

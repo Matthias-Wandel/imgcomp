@@ -16,7 +16,7 @@ typedef struct {
 DiffValues_t * DiffVal = NULL;
 
 
-static void SearchDiffMaxWindow(Region_t Region, int threshold);
+static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold);
 
 //----------------------------------------------------------------------------------------
 // Calculate average brightness of an image.
@@ -48,7 +48,7 @@ double AverageBright(MemImage_t * pic, Region_t Region)
 //----------------------------------------------------------------------------------------
 // Compare two images in memory
 //----------------------------------------------------------------------------------------
-int ComparePix(MemImage_t * pic1, MemImage_t * pic2, Region_t Region, char * DebugImgName, int Verbosity)
+TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, Region_t Region, char * DebugImgName)
 {
     int width, height, bPerRow;
     int row, col;
@@ -57,6 +57,9 @@ int ComparePix(MemImage_t * pic1, MemImage_t * pic2, Region_t Region, char * Deb
     int a;
     int DetectionPixels;
     int m1i, m2i;
+    TriggerInfo_t RetVal;
+    RetVal.x = RetVal.y = 0;
+    RetVal.DiffLevel = -1;
 
     if (Verbosity){
         printf("\ncompare pictures %dx%d %d\n", pic1->width, pic1->height, pic1->components);
@@ -65,7 +68,7 @@ int ComparePix(MemImage_t * pic1, MemImage_t * pic2, Region_t Region, char * Deb
     if (pic1->width != pic2->width || pic1->height != pic2->height 
         || pic1->components != pic2->components){
         fprintf(stderr, "pic types mismatch!\n");
-        return -1;
+        return RetVal;
     }
     width = pic1->width;
     height = pic1->height;
@@ -96,13 +99,13 @@ int ComparePix(MemImage_t * pic1, MemImage_t * pic2, Region_t Region, char * Deb
     if (Region.x2 > width) Region.x2 = width;
     if (Region.x2 < Region.x1 || Region.y2 < Region.y1){
         fprintf(stderr, "Negative region, or region outside of image\n");
-        return -1;
+        return RetVal;
     }
 
     DetectionPixels = (Region.x2-Region.x1) * (Region.y2-Region.y1);
     if (DetectionPixels < 1000){
         fprintf(stderr, "Too few pixels in region\n");
-        return -1;
+        return RetVal;
     }
 
     if (Verbosity > 0){
@@ -272,6 +275,7 @@ int ComparePix(MemImage_t * pic1, MemImage_t * pic2, Region_t Region, char * Deb
         int cumsum = 0;
         int threshold;
         int twothirds = DetectionPixels*2/3;
+        TriggerInfo_t Trigger;
         
         for (a=0;a<256;a++){
             if (cumsum >= twothirds) break;
@@ -296,24 +300,25 @@ int ComparePix(MemImage_t * pic1, MemImage_t * pic2, Region_t Region, char * Deb
         // Try to gauge the difference noise (assuming two thirds of the image
         // has not changed)
 
-        SearchDiffMaxWindow(Region, threshold);
-        return cumsum;        
+        Trigger = SearchDiffMaxWindow(Region, threshold);
+        return Trigger;
     }
 }
 
 //----------------------------------------------------------------------------------------
 // Search for an nxn window with the maximum differences in it.
 //----------------------------------------------------------------------------------------
-static void SearchDiffMaxWindow(Region_t Region, int threshold)
+static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold)
 {
     int row,col;
+    TriggerInfo_t retval;
     
     // Scale down by this factor before applying windowing algorithm to look for max localized change
-    #define SCALEF 8
+    #define SCALEF 4
     #define ROOF(x) ((x+SCALEF-1)/SCALEF)
 
     // these determine the window over over which to look for the change (after scaling)    
-    const int wind_w = 3, wind_h = 3;
+    const int wind_w = 4, wind_h = 4;
     
     static int * Diff4 = NULL;
     static int * Diff4b = NULL;
@@ -346,10 +351,12 @@ static void SearchDiffMaxWindow(Region_t Region, int threshold)
         }
     }
 
-    // Show the array.
-    for (row=0;row<height4;row++){
-        for (col=0;col<width4;col++) printf("%3d",Diff4[row*width4+col]/100);
-        printf("\n");
+    if (Verbosity > 1){
+        // Show the array.
+        for (row=0;row<height4;row++){
+            for (col=0;col<width4;col++) printf("%3d",Diff4[row*width4+col]/100);
+            printf("\n");
+        }
     }
     
     // Transform array to sum of wind_h rows
@@ -376,11 +383,13 @@ static void SearchDiffMaxWindow(Region_t Region, int threshold)
         }
     }
 
-    // Show the array.
-    printf("\n");
-    for (row=0;row<height4;row++){
-        for (col=0;col<width4;col++) printf("%3d",Diff4b[row*width4+col]/100);
+    if (Verbosity > 1){
+        // Show the array.
         printf("\n");
+        for (row=0;row<height4;row++){
+            for (col=0;col<width4;col++) printf("%3d",Diff4b[row*width4+col]/100);
+            printf("\n");
+        }
     }
 
     // Transform array to sum of wind_w rows, while also looking for maximum.
@@ -405,15 +414,24 @@ static void SearchDiffMaxWindow(Region_t Region, int threshold)
                 }
             }
         }
-        printf("max v=%d at r=%d,c=%d",maxval/100, maxr, maxc);
+        if (Verbosity) printf("max v=%d at r=%d,c=%d",maxval/100, maxr, maxc);
+        retval.x = maxc * SCALEF - wind_w * SCALEF / 2;
+        retval.y = maxr * SCALEF - wind_h * SCALEF / 2;
+        if (retval.x < 0) retval.x = 0;
+        if (retval.y < 0) retval.y = 0;
+        retval.DiffLevel = maxval / 250;
+    }
+   
+    if (Verbosity > 1){ 
+        // Show the array.
+        printf("\n");
+        for (row=0;row<height4;row++){
+            for (col=0;col<width4;col++) printf("%3d",Diff4[row*width4+col]/100);
+            printf("\n");
+        }
     }
     
-    // Show the array.
-    printf("\n");
-    for (row=0;row<height4;row++){
-        for (col=0;col<width4;col++) printf("%3d",Diff4[row*width4+col]/100);
-        printf("\n");
-    }
+    return retval;
 }
 
 
