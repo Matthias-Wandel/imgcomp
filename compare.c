@@ -16,6 +16,8 @@ typedef struct {
 DiffValues_t * DiffVal = NULL;
 
 
+static void SearchDiffMaxWindow(Region_t Region, int threshold);
+
 //----------------------------------------------------------------------------------------
 // Calculate average brightness of an image.
 //----------------------------------------------------------------------------------------
@@ -76,6 +78,8 @@ int ComparePix(MemImage_t * pic1, MemImage_t * pic2, Region_t Region, char * Deb
     }
     if (DiffVal == NULL){
         DiffVal = malloc(offsetof(DiffValues_t, values) + sizeof(DiffVal->values[0])*width*height);
+        DiffVal->w = width;
+        DiffVal->h = height;
     }
     memset(DiffVal->values, 0,  sizeof(DiffVal->values)*width*height);
 
@@ -268,8 +272,6 @@ int ComparePix(MemImage_t * pic1, MemImage_t * pic2, Region_t Region, char * Deb
         int cumsum = 0;
         int threshold;
         int twothirds = DetectionPixels*2/3;
-        int colsum[640];
-        int max_window_loc = 0;
         
         for (a=0;a<256;a++){
             if (cumsum >= twothirds) break;
@@ -294,25 +296,124 @@ int ComparePix(MemImage_t * pic1, MemImage_t * pic2, Region_t Region, char * Deb
         // Try to gauge the difference noise (assuming two thirds of the image
         // has not changed)
 
-        memset(colsum, 0, sizeof(colsum));
+        SearchDiffMaxWindow(Region, threshold);
+        return cumsum;        
+    }
+}
+
+//----------------------------------------------------------------------------------------
+// Search for an nxn window with the maximum differences in it.
+//----------------------------------------------------------------------------------------
+static void SearchDiffMaxWindow(Region_t Region, int threshold)
+{
+    int row,col;
+    
+    // Scale down by this factor before applying windowing algorithm to look for max localized change
+    #define SCALEF 8
+    #define ROOF(x) ((x+SCALEF-1)/SCALEF)
+
+    // these determine the window over over which to look for the change (after scaling)    
+    const int wind_w = 3, wind_h = 3;
+    
+    static int * Diff4 = NULL;
+    static int * Diff4b = NULL;
+    static int width4, height4;
+    if (width4 != ROOF(DiffVal->w) || height4 != ROOF(DiffVal->h) || Diff4 == NULL){
+        // Size has changed.  Reallocate.
+        free(Diff4);
+        width4 = ROOF(DiffVal->w);
+        height4 = ROOF(DiffVal->h);
+        Diff4 = malloc(sizeof(int)*width4*height4);
+        Diff4b = malloc(sizeof(int)*width4*height4);        
+    }
+
+    // Compute scaled down array of differences.
+    {
+        int width = DiffVal->w;
+        memset(Diff4, 0, sizeof(int)*width4*height4);
         for (row=Region.y1;row<Region.y2;row++){
-            // Compute difference by column (using established threshold value)
+            // Compute difference by column using established threshold value
             unsigned short * diffrow;
+            int * width4row;
             diffrow = &DiffVal->values[width*row];
-        
+            width4row = &Diff4[width4*(row/SCALEF)];
             for (col=Region.x1;col<Region.x2;col++){
-                if (diffrow[col>>3] > threshold){
-                    colsum[col>>3] += (diffrow[col]-threshold);
+                int d = diffrow[col] > threshold;
+                if (d > 0){
+                    width4row[col/SCALEF] += (diffrow[col]-threshold);
                 }
             }
         }
-        
-        {
-            // Search for the maximum vertical window of differences within the horizontal window found
-        }
-        
-        return cumsum;        
     }
 
+    // Show the array.
+    for (row=0;row<height4;row++){
+        for (col=0;col<width4;col++) printf("%3d",Diff4[row*width4+col]/100);
+        printf("\n");
+    }
     
+    // Transform array to sum of wind_h rows
+    memset(Diff4b, 0, sizeof(int)*width4*height4);
+    for (row=0;row<height4;row++){
+        int *oldrow, *newrow, *addrow;
+        oldrow = &Diff4b[width4*(row-1)];
+        newrow = &Diff4b[width4*row];
+        
+        addrow = &Diff4[width4*row];
+        if (row >= wind_h){
+            int * subtrow = &Diff4[width4*(row-wind_h)];
+            for (col=0;col<width4;col++){
+                newrow[col] = addrow[col]+oldrow[col]-subtrow[col];
+            }
+        }else{
+            if (row == 0){
+                for (col=0;col<width4;col++) newrow[col] = addrow[col];
+            }else{
+                for (col=0;col<width4;col++){
+                    newrow[col] = addrow[col]+oldrow[col];
+                }
+            }
+        }
+    }
+
+    // Show the array.
+    printf("\n");
+    for (row=0;row<height4;row++){
+        for (col=0;col<width4;col++) printf("%3d",Diff4b[row*width4+col]/100);
+        printf("\n");
+    }
+
+    // Transform array to sum of wind_w rows, while also looking for maximum.
+    {
+        int maxval, maxr, maxc;
+        maxval = maxr = maxc = 0;
+        // Transform array to sum of n columns from previous.
+        for (row=0;row<height4;row++){
+            int *srcrow, *destrow;
+            int s;
+            srcrow = &Diff4b[width4*row];
+            destrow = &Diff4[width4*row];
+            s = 0;
+            for (col=0;col<width4;col++){
+                s += srcrow[col];
+                if (col >= wind_w) s-= srcrow[col-wind_w];
+                destrow[col] = s;
+                if (s > maxval){
+                    maxval = s;
+                    maxc = col;
+                    maxr = row;
+                }
+            }
+        }
+        printf("max v=%d at r=%d,c=%d",maxval/100, maxr, maxc);
+    }
+    
+    // Show the array.
+    printf("\n");
+    for (row=0;row<height4;row++){
+        for (col=0;col<width4;col++) printf("%3d",Diff4[row*width4+col]/100);
+        printf("\n");
+    }
 }
+
+
