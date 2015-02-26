@@ -283,7 +283,7 @@ TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, Region_t Region, 
         }
 
         threshold = a*3+12;
-        if (threshold < 30) threshold = 30;
+        if (threshold < 25) threshold = 25;
         if (threshold > 80) threshold = 80;
 
         if (Verbosity) printf("2/3 of image is below %d diff.  Using %d threshold\n",a, threshold);
@@ -419,7 +419,7 @@ static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold)
         retval.y = maxr * SCALEF - wind_h * SCALEF / 2;
         if (retval.x < 0) retval.x = 0;
         if (retval.y < 0) retval.y = 0;
-        retval.DiffLevel = maxval / 250;
+        retval.DiffLevel = maxval / 100;
     }
    
     if (Verbosity > 1){ 
