@@ -283,7 +283,7 @@ TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, Region_t Region, 
         }
 
         threshold = a*3+12;
-        if (threshold < 25) threshold = 25;
+        if (threshold < 30) threshold = 30;
         if (threshold > 80) threshold = 80;
 
         if (Verbosity) printf("2/3 of image is below %d diff.  Using %d threshold\n",a, threshold);
