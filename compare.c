@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <malloc.h>
 #include <stddef.h>
+#include <stdlib.h>
 #include <memory.h>
 #include "imgcomp.h"
 
@@ -10,45 +11,94 @@ int NightMode;
 
 typedef struct {
     int w, h;
-    unsigned short values[1];
-}DiffValues_t;
+    unsigned char values[1];
+}ImgMap_t;
 
-DiffValues_t * DiffVal = NULL;
-
+static ImgMap_t * DiffVal = NULL;
+static ImgMap_t * Excludes = NULL;
 
 static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold);
 
 //----------------------------------------------------------------------------------------
 // Calculate average brightness of an image.
 //----------------------------------------------------------------------------------------
-double AverageBright(MemImage_t * pic, Region_t Region)
+static double AverageBright(MemImage_t * pic, Region_t Region, ImgMap_t* Excludes)
 {
     double baverage;
     int DetectionPixels;
     int row;
     int rowbytes = pic->width*3;
-    DetectionPixels = (Region.x2-Region.x1) * (Region.y2-Region.y1);
+    DetectionPixels = 0;
  
     // Compute average brightnesses.
     baverage = 0;
     for (row=Region.y1;row<Region.y2;row++){
-        unsigned char * p1;
+        unsigned char *p1, *px;
         int col, brow = 0;
         p1 = pic->pixels+rowbytes*row;
+        px = &Excludes->values[pic->width*row];
         for (col=Region.x1;col<Region.x2;col++){
-            brow += p1[0]+p1[1]*2+p1[2];  // Muliplies by 4.
-            p1 += 3;
+            if (px[col]){
+                brow += p1[0]+p1[1]*2+p1[2];  // Muliplies by 4.
+                p1 += 3;
+                DetectionPixels += 1;
+            }
         }
         baverage += brow; 
     }
+
+    if (DetectionPixels < 1000){
+        fprintf(stderr, "Detection region too small");
+        exit(-1);
+    }
     return baverage * 0.25 / DetectionPixels; // Multiply by 4 again.
+}
+
+//----------------------------------------------------------------------------------------
+// Turn exclude regions into a map.
+//----------------------------------------------------------------------------------------
+void FillExcludes(ImgMap_t * Excludes, Regions_t * Regions)
+{
+    int row, width, height, r;
+    Region_t Reg;
+
+    width = Excludes->w;
+    height = Excludes->h;
+
+    memset(Excludes->values, 0,  sizeof(Excludes->values)*width*height);
+
+    Reg = Regions->DetectReg;
+    if (Reg.x2 > width) Reg.x2 = width;
+    if (Reg.y2 > height) Reg.y2 = height;
+    printf("fill %d-%d,%d-%d\n",Reg.x1, Reg.x2, Reg.y1, Reg.y2);
+    for (row=Reg.y1;row<Reg.y2;row++){
+        memset(&Excludes->values[row*width+Reg.x1], 1, Reg.x2-Reg.x1);
+    }
+
+    for (r=0;r<Regions->NumExcludeReg;r++){
+        Reg=Regions->ExcludeReg[r];
+        if (Reg.x2 > width) Reg.x2 = width;
+        if (Reg.y2 > height) Reg.y2 = height;
+        printf("clear %d-%d,%d-%d\n",Reg.x1, Reg.x2, Reg.y1, Reg.y2);
+        for (row=Reg.y1;row<Reg.y2;row++){
+            memset(&Excludes->values[row*width+Reg.x1], 0, Reg.x2-Reg.x1);
+        }
+    }
+
+    Reg = Regions->DetectReg;    
+    for (row=Reg.y1;row<Reg.y2;row+=4){
+        for (r=0;r<width;r+=4){
+            printf("%d",Excludes->values[row*width+r]);
+        }
+        printf("\n");
+    }
 }
 
 
 //----------------------------------------------------------------------------------------
 // Compare two images in memory
 //----------------------------------------------------------------------------------------
-TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, Region_t Region, char * DebugImgName)
+TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, Regions_t * Region, char * DebugImgName)
 {
     int width, height, bPerRow;
     int row, col;
@@ -57,6 +107,7 @@ TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, Region_t Region, 
     int a;
     int DetectionPixels;
     int m1i, m2i;
+    Region_t MainReg;
     TriggerInfo_t RetVal;
     RetVal.x = RetVal.y = 0;
     RetVal.DiffLevel = -1;
@@ -77,12 +128,15 @@ TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, Region_t Region, 
     if (DiffVal != NULL && (width != DiffVal->w || height != DiffVal->h)){
         // DiffVal allocated size is wrong.
         free(DiffVal);
+        free(Excludes);
         DiffVal = NULL;
     }
     if (DiffVal == NULL){
-        DiffVal = malloc(offsetof(DiffValues_t, values) + sizeof(DiffVal->values[0])*width*height);
-        DiffVal->w = width;
-        DiffVal->h = height;
+        DiffVal = malloc(offsetof(ImgMap_t, values) + sizeof(DiffVal->values[0])*width*height);
+        DiffVal->w = width; DiffVal->h = height;
+        Excludes = malloc(offsetof(ImgMap_t, values) + sizeof(Excludes->values[0])*width*height);
+        Excludes->w = width; Excludes->h = height;
+        FillExcludes(Excludes, Region);
     }
     memset(DiffVal->values, 0,  sizeof(DiffVal->values)*width*height);
 
@@ -95,29 +149,30 @@ TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, Region_t Region, 
     }
     memset(DiffHist, 0, sizeof(DiffHist));
 
-    if (Region.y2 > height) Region.y2 = height;
-    if (Region.x2 > width) Region.x2 = width;
-    if (Region.x2 < Region.x1 || Region.y2 < Region.y1){
+    MainReg = Region->DetectReg;
+    if (MainReg.y2 > height) MainReg.y2 = height;
+    if (MainReg.x2 > width) MainReg.x2 = width;
+    if (MainReg.x2 < MainReg.x1 || MainReg.y2 < MainReg.y1){
         fprintf(stderr, "Negative region, or region outside of image\n");
         return RetVal;
     }
 
-    DetectionPixels = (Region.x2-Region.x1) * (Region.y2-Region.y1);
+    DetectionPixels = (MainReg.x2-MainReg.x1) * (MainReg.y2-MainReg.y1);
     if (DetectionPixels < 1000){
         fprintf(stderr, "Too few pixels in region\n");
         return RetVal;
     }
 
     if (Verbosity > 0){
-        printf("Detection region is %d-%d, %d-%d\n",Region.x1, Region.x2, Region.y1, Region.y2);
+        printf("Detection region is %d-%d, %d-%d\n",MainReg.x1, MainReg.x2, MainReg.y1, MainReg.y2);
     }
 
-    // Compute average brightnesses.
+    // Compute brightness multipliers.
     {
         double b1average, b2average;
         double m1, m2;
-        b1average = AverageBright(pic1, Region);
-        b2average = AverageBright(pic2, Region);
+        b1average = AverageBright(pic1, MainReg, Excludes);
+        b2average = AverageBright(pic2, MainReg, Excludes);
 
         NewestAverageBright = (int)(b2average+0.5);
 
@@ -167,88 +222,94 @@ TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, Region_t Region, 
     }
 
     // Compute differences
-    for (row=Region.y1;row<Region.y2;){
+    for (row=MainReg.y1;row<MainReg.y2;){
         unsigned char * p1, *p2, *pd = NULL;
-        unsigned short * diffrow;
+        unsigned char * ExRow;
+        unsigned char * diffrow;
         p1 = pic1->pixels+row*bPerRow;
         p2 = pic2->pixels+row*bPerRow;
         diffrow = &DiffVal->values[width*row];
+        ExRow = &Excludes->values[width*row];
         if (DebugImgName) pd = DiffOut->pixels+row*bPerRow;
 
         if (NightMode){
-            for (col=Region.x1;col<Region.x2;col+= 2){
+            for (col=MainReg.x1;col<MainReg.x2;col+= 2){
                 unsigned char * pn;
                 int b1, b2, dcomp;
-                // Add up two pixels for noise reduction.
-                b1 = (p1[0]+p1[1]*2+p1[2] + p1[3]+p1[4]*2+p1[5]);
-                pn = p1+bPerRow;
-                b1 += (pn[0]+pn[1]*2+pn[2] + pn[3]+pn[4]*2+pn[5]);
+                if (ExRow[col]){
+                    // Add up four pixels for noise reduction.
+                    b1 = (p1[0]+p1[1]*2+p1[2] + p1[3]+p1[4]*2+p1[5]);
+                    pn = p1+bPerRow;
+                    b1 += (pn[0]+pn[1]*2+pn[2] + pn[3]+pn[4]*2+pn[5]);
 
-                b2 = (p2[0]+p2[1]*2+p2[2] + p2[3]+p2[4]*2+p2[5]);
-                pn = p2+bPerRow;
-                b2 += (pn[0]+pn[1]*2+pn[2] + pn[3]+pn[4]*2+pn[5]);
+                    b2 = (p2[0]+p2[1]*2+p2[2] + p2[3]+p2[4]*2+p2[5]);
+                    pn = p2+bPerRow;
+                    b2 += (pn[0]+pn[1]*2+pn[2] + pn[3]+pn[4]*2+pn[5]);
 
-                dcomp = b2*m2i-b1*m1i; // Differentce with ratio applied.
+                    dcomp = b2*m2i-b1*m1i; // Differentce with ratio applied.
 
-                if (dcomp < 0){
-                    // difference might be on account of m1i > m2i.
-                    // Try it without multiplication difference.
-                    dcomp = b2*m1i-b1*m1i;
-                    if (dcomp > 0){
-                        // if difference now positive, the whole difference seen may
-                        // be because m1i > m2i.  So call it zero.
-                        dcomp = 0;
+                    if (dcomp < 0){
+                        // difference might be on account of m1i > m2i.
+                        // Try it without multiplication difference.
+                        dcomp = b2*m1i-b1*m1i;
+                        if (dcomp > 0){
+                            // if difference now positive, the whole difference seen may
+                            // be because m1i > m2i.  So call it zero.
+                            dcomp = 0;
+                        }
                     }
+
+                    dcomp = dcomp >> 9;
+
+                    if (DebugImgName){
+                        pd[1] = pd[4] = dcomp > 0 ? dcomp : 0; // Green = img2 brighter
+                        pd[0] = pd[3] = dcomp < 0 ? -dcomp : 0; // Red = img1 brigher.
+                        pd[2] = pd[5] = 0;
+                    }
+
+                    if (dcomp < 0) dcomp = -dcomp;
+                    if (dcomp > 255) dcomp = 255;// put it in a histogram.
+                    DiffHist[dcomp] += 4; // Did four pixels, so add 4.
+                    diffrow[col] = dcomp;
                 }
 
-                dcomp = dcomp >> 9;
-
-                if (DebugImgName){
-                    pd[1] = pd[4] = dcomp > 0 ? dcomp : 0; // Green = img2 brighter
-                    pd[0] = pd[3] = dcomp < 0 ? -dcomp : 0; // Red = img1 brigher.
-                    pd[2] = pd[5] = 0;
-                    pd += 6;
-                }
-
-                if (dcomp < 0) dcomp = -dcomp;
-                if (dcomp >= 256) dcomp = 255;// put it in a histogram.
-                DiffHist[dcomp] += 4; // Did four pixels, so add 4.
-                diffrow[col] = dcomp;
-
+                pd += 6;
                 p1 += 6;
                 p2 += 6;
             }
             row+=2;
         }else{
-            for (col=Region.x1;col<Region.x2;col++){
-                // Data is in order red, green, blue.
-                int dr,dg,db, dcomp;
-                dr = (p1[0]*m1i - p2[0]*m2i);
-                dg = (p1[1]*m1i - p2[1]*m2i);
-                db = (p1[2]*m1i - p2[2]*m2i);
+            for (col=MainReg.x1;col<MainReg.x2;col++){
+                if (ExRow[col]){
+                    // Data is in order red, green, blue.
+                    int dr,dg,db, dcomp;
+                    dr = (p1[0]*m1i - p2[0]*m2i);
+                    dg = (p1[1]*m1i - p2[1]*m2i);
+                    db = (p1[2]*m1i - p2[2]*m2i);
 
-                if (dr < 0) dr = -dr;
-                if (dg < 0) dg = -dg;
-                if (db < 0) db = -db;
-                dcomp = (dr + dg*2 + db);     // Put more emphasis on green
-                dcomp = dcomp >> 8;           // Remove the *256 from fixed point aritmetic multiply
+                    if (dr < 0) dr = -dr;
+                    if (dg < 0) dg = -dg;
+                    if (db < 0) db = -db;
+                    dcomp = (dr + dg*2 + db);     // Put more emphasis on green
+                    dcomp = dcomp >> 8;           // Remove the *256 from fixed point aritmetic multiply
 
-                if (dcomp >= 256) dcomp = 255;// put it in a histogram.
-                DiffHist[dcomp] += 1;
-                diffrow[col] = dcomp;
+                    if (dcomp >= 256) dcomp = 255;// put it in a histogram.
+                    DiffHist[dcomp] += 1;
+                    diffrow[col] = dcomp;
 
             
-                if (DebugImgName){
-                    // Save the difference image, scaled 4x.
-                    if (dr > 256) dr = 256;
-                    if (dg > 256) dg = 256;
-                    if (db > 256) db = 256;
-                    pd[0] = dr;
-                    pd[1] = dg;
-                    pd[2] = db;;
-                    pd += 3;
+                    if (DebugImgName){
+                        // Save the difference image, scaled 4x.
+                        if (dr > 256) dr = 256;
+                        if (dg > 256) dg = 256;
+                        if (db > 256) db = 256;
+                        pd[0] = dr;
+                        pd[1] = dg;
+                        pd[2] = db;;
+                    }
                 }
 
+                pd += 3;
                 p1 += 3;
                 p2 += 3;
             }
@@ -300,7 +361,7 @@ TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, Region_t Region, 
         // Try to gauge the difference noise (assuming two thirds of the image
         // has not changed)
 
-        Trigger = SearchDiffMaxWindow(Region, threshold);
+        Trigger = SearchDiffMaxWindow(MainReg, threshold);
         return Trigger;
     }
 }
@@ -338,7 +399,7 @@ static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold)
         memset(Diff4, 0, sizeof(int)*width4*height4);
         for (row=Region.y1;row<Region.y2;row++){
             // Compute difference by column using established threshold value
-            unsigned short * diffrow;
+            unsigned char * diffrow;
             int * width4row;
             diffrow = &DiffVal->values[width*row];
             width4row = &Diff4[width4*(row/SCALEF)];

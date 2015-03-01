@@ -14,6 +14,14 @@ typedef struct {
     int y1, y2;
 }Region_t;
 
+#define MAX_EXCLUDE_REGIONS 5
+typedef struct {
+    Region_t DetectReg;
+    Region_t ExcludeReg[MAX_EXCLUDE_REGIONS];
+    int NumExcludeReg;
+}Regions_t;
+
+
 typedef struct {
     int DiffLevel;
     int x, y;
@@ -27,7 +35,7 @@ extern int Verbosity;
 
 void WritePpmFile(char * FileName, MemImage_t *MemImage);
 MemImage_t * LoadJPEG(char* FileName, int scale_denom, int discard_colors, int ParseExif);
-TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, Region_t reg, char * DebugImgName);
+TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, Regions_t * reg, char * DebugImgName);
 int CopyFile(char * src, char * dest);
 
 // start_raspistill declarations

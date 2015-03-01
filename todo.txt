@@ -1,12 +1,8 @@
 To do next:
 
-Ignore region
-Same code to parse image and config
-Naming scheme option
-Ignore regions
+ignore distributed changes (use x-windowing - aviod snowfall trigger)
+Ignore regions map image
+Output naming scheme option
 Review relaunch logic for dark images
 
 
-
-Maybe later:
-Make it able to use webcam.

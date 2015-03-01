@@ -28,10 +28,10 @@ static char DoDirName[200];
 static char SaveDir[200];
 int FollowDir = 0;
 static int ScaleDenom;
-static Region_t DetectReg;
 
-//static Region_t ExcludeReg[4];
-//static int NumExcludeReg;
+
+static Regions_t Regions;
+
 
 int Verbosity = 0;
 static int Sensitivity;
@@ -51,7 +51,8 @@ void usage (void)// complain about bad command line
 
     fprintf(stderr, "Switches (names may be abbreviated):\n");
     fprintf(stderr, " -scale   N           Scale before detection by 1/N.  Default 1/4\n");
-//    fprintf(stderr, " -region  x1-x2,y1-y2 Specify region of interest\n");
+    fprintf(stderr, " -region  x1-x2,y1-y2 Specify region of interest\n");
+    fprintf(stderr, " -region  x1-x2,y1-y2 Exclude from area of interest\n");
     fprintf(stderr, " -dodir   <srcdir>    Compare images in dir, in order\n");
     fprintf(stderr, " -followdir <srcdir>  Do dir and monitor for new images\n");
     fprintf(stderr, " -savedir <saveto>    Where to save images with changes\n");
@@ -92,11 +93,17 @@ static int ParseRegion(Region_t * reg, const char * value)
     t = strstr(value, ",");
     if (t == NULL || t != value){
         // No comma, or comma not in first position.  Parse X parameters.
-        if (sscanf(value, "%d-%d", &reg->x1, &reg->x2) != 2) return 0;
+        if (sscanf(value, "%d-%d", &reg->x1, &reg->x2) != 2){
+            if (sscanf(value, "%d+%d", &reg->x1, &reg->x2) != 2) return 0;
+            reg->x2 += reg->x1;
+        }
     }
     if (t != NULL){
         // Y parameters come after the comma.
-        if (sscanf(t+1, "%d-%d", &reg->y1, &reg->y2) != 2) return 0;
+        if (sscanf(t+1, "%d-%d", &reg->y1, &reg->y2) != 2){
+            if (sscanf(t+1, "%d+%d", &reg->y1, &reg->y2) != 2) return 0;
+            reg->y2 += reg->y1;
+        }
     }
     if (reg->y2-reg->y1 < 16 || reg->x2-reg->x1 < 16){
         fprintf(stderr,"Detect region is too small\n");
@@ -152,8 +159,23 @@ static int parse_parameter (const char * tag, const char * value)
         strncpy(DoDirName,value, sizeof(DoDirName)-1);
     } else if (keymatch(tag, "region", 2)) {
         if (!value) goto need_val;
-        if (!ParseRegion(&DetectReg, value)) goto bad_value;
-        printf("Region is x:%d-%d, y:%d-%d\n",DetectReg.x1, DetectReg.x2, DetectReg.y1, DetectReg.y2);
+        if (!ParseRegion(&Regions.DetectReg, value)) goto bad_value;
+        printf("Region is x:%d-%d, y:%d-%d\n",
+            Regions.DetectReg.x1, Regions.DetectReg.x2, 
+            Regions.DetectReg.y1, Regions.DetectReg.y2);
+    } else if (keymatch(tag, "exclude", 2)) {
+        if (!value) goto need_val;
+
+        if (Regions.NumExcludeReg >= MAX_EXCLUDE_REGIONS){
+            fprintf(stderr, "too many exclude regions");
+            exit(-1);
+        }else{
+            Region_t NewEx;
+            if (!ParseRegion(&NewEx, value)) goto bad_value;
+            printf("Exclude region x:%d-%d, y:%d-%d\n",NewEx.x1, NewEx.x2, NewEx.y1, NewEx.y2);
+            Regions.ExcludeReg[Regions.NumExcludeReg++] = NewEx;
+        }
+
     } else if (keymatch(tag, "followdir", 2)) {
         if (!value){
             need_val:
@@ -238,7 +260,7 @@ static void read_config_file()
 
         value = strstr(s, "=");
         if (value != NULL){
-            t = value-1;
+            t = value;
 
             // Remove value leading spaces
             value += 1;
@@ -246,6 +268,7 @@ static void read_config_file()
 
             // remove tag trailing spaces.
             *t = '\0';
+            t--;
             while (*t == ' ' || *t == '\t'){
                 *t = '\0';
                 t--;
@@ -312,7 +335,7 @@ static int DoDirectoryFunc(char * Directory, char * KeepPixDir, int Delete)
             TriggerInfo_t Trig;
             int diff;
             
-            Trig = ComparePix(LastPic, CurrentPic, DetectReg, NULL);
+            Trig = ComparePix(LastPic, CurrentPic, &Regions, NULL);
             diff = Trig.DiffLevel;
 
             if (diff >= Sensitivity && PixSinceDiff > 5 && Raspistill_restarted){
@@ -321,7 +344,7 @@ static int DoDirectoryFunc(char * Directory, char * KeepPixDir, int Delete)
             }
             
             printf("%s - %s:",LastPicName, CurrentPicName);            
-            printf(" %3d at (%3d,%3d) ", Trig.DiffLevel, Trig.x*ScaleDenom, Trig.y*ScaleDenom);
+            printf(" %3d at (%4d,%3d) ", Trig.DiffLevel, Trig.x*ScaleDenom, Trig.y*ScaleDenom);
             
             if (diff >= Sensitivity){
                 if (!LastPicSaveName){
@@ -383,23 +406,31 @@ int DoDirectory(char * Directory, char * KeepPixDir)
     return a;
 }
 
+static void ScaleRegion (Region_t * Reg, int Denom)
+{
+    Reg->x1 /= Denom;
+    Reg->x2 /= Denom;
+    Reg->y1 /= Denom;
+    Reg->y2 /= Denom;
+}
 
 //-----------------------------------------------------------------------------------
 // The main program.
 //-----------------------------------------------------------------------------------
 int main(int argc, char **argv)
 {
-    int file_index;
+    int file_index, a;
     progname = argv[0];
 
     // Reset to default parameters.
     ScaleDenom = 4;
     DoDirName[0] = '\0';
     Sensitivity = 10;
-    DetectReg.x1 = 0;
-    DetectReg.x2 = 1000000;
-    DetectReg.y1 = 0;
-    DetectReg.y2 = 1000000;
+    Regions.DetectReg.x1 = 0;
+    Regions.DetectReg.x2 = 1000000;
+    Regions.DetectReg.y1 = 0;
+    Regions.DetectReg.y2 = 1000000;
+    Regions.NumExcludeReg = 0;
     TimelapseInterval = 0;
 
     // First read the configuration file.
@@ -409,16 +440,20 @@ int main(int argc, char **argv)
     file_index = parse_switches(argc, argv, 0, 0);
 
     // Adjust region of interest to scale.
-    DetectReg.x1 /= ScaleDenom;
-    DetectReg.x2 /= ScaleDenom;
-    DetectReg.y1 /= ScaleDenom;
-    DetectReg.y2 /= ScaleDenom;
+    ScaleRegion(&Regions.DetectReg, ScaleDenom);
+    for (a=0;a<Regions.NumExcludeReg;a++){
+        ScaleRegion(&Regions.ExcludeReg[a], ScaleDenom);
+    }
 
     if (DoDirName[0]) printf("Source directory = %s, follow=%d\n",DoDirName, FollowDir); 
     if (SaveDir[0]) printf("Save to dir %s\n",SaveDir);
     if (TimelapseInterval) printf("Timelapse interval %d seconds\n",TimelapseInterval);
   
-    if (DoDirName[0]) DoDirectory(DoDirName, SaveDir);
+    if (DoDirName[0] && file_index == argc){
+        // if dodir is specified in config file, but files are specified
+        // on the command line, do the files instead.
+        DoDirectory(DoDirName, SaveDir);
+    }
 
     if (argc-file_index == 2){
         MemImage_t *pic1, *pic2;
@@ -429,7 +464,7 @@ int main(int argc, char **argv)
         pic2 = LoadJPEG(argv[file_index+1], ScaleDenom, 0, 0);
         if (pic1 && pic2){
             Verbosity = 2;
-            ComparePix(pic1, pic2, DetectReg, "diff.ppm");
+            ComparePix(pic1, pic2, &Regions, "diff.ppm");
         }
         free(pic1);
         free(pic2);
