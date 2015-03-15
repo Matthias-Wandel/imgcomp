@@ -6,7 +6,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
-#include <sys/wait.h>
 
 #ifdef _WIN32
     typedef int pid_t;
@@ -14,6 +13,7 @@
     #define fork() 1
 #else
     #include <unistd.h>
+    #include <sys/wait.h>
 #endif
 
 #include "imgcomp.h"
@@ -70,6 +70,9 @@ static void do_launch_program(void)
 // Parse command line and launch.
 //-----------------------------------------------------------------------------------
 static int launch_raspistill(void)
+#ifdef _WIN32
+{ return 0; }
+#else
 {
     pid_t pid;
     int ignore;
@@ -103,6 +106,7 @@ static int launch_raspistill(void)
     }
     return 0;
 }
+#endif
 
 
 //-----------------------------------------------------------------------------------
