@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <sys/wait.h>
 
 #ifdef _WIN32
     typedef int pid_t;
@@ -76,6 +77,14 @@ static int launch_raspistill(void)
     // Kill raspistill if it's already running.
     ignore = system("killall raspistill");
     ignore += 1;  // Do something with it to supress warning
+    if (raspistill_pid){
+        // If we launched raspistill, need to call wait() so that we dont't
+        // accumulate an armie of child zombie processes
+        int exit_code = 123;
+        int a;
+        a = wait(&exit_code);
+        printf("Child exit code %d (wait returned %d)\n",exit_code,a);
+    }
 
     printf("Launching raspistill program\n");
     pid = fork();
