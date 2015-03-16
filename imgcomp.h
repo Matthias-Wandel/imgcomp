@@ -33,17 +33,21 @@ extern int TimelapseInterval;
 extern int FollowDir;
 extern int Verbosity;
 
-void WritePpmFile(char * FileName, MemImage_t *MemImage);
-MemImage_t * LoadJPEG(char* FileName, int scale_denom, int discard_colors, int ParseExif);
+// compare.c functions
 TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, Regions_t * reg, char * DebugImgName);
-int CopyFile(char * src, char * dest);
+void ProcessDiffMap(MemImage_t * MapPic);
 
-// start_raspistill declarations
+// jpeg2mem.c functions
+MemImage_t * LoadJPEG(char* FileName, int scale_denom, int discard_colors, int ParseExif);
+void WritePpmFile(char * FileName, MemImage_t *MemImage);
+
+// start_raspistill functions
 int manage_raspistill(int HaveNewImages);
 extern char raspistill_cmd[200];
 
-// util.c declarations
+// util.c functions
 char * CatPath(char *Dir, char * FileName);
 char ** GetSortedDir(char * Directory, int * NumFiles);
 void FreeDir(char ** FileNames, int NumEntries);
 char * BackupPicture(char * Directory, char * Name, char * KeepPixDir, int Threshold, int MotionTriggered);
+int CopyFile(char * src, char * dest);

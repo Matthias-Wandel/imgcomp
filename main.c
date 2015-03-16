@@ -29,7 +29,7 @@ static char SaveDir[200];
 int FollowDir = 0;
 static int ScaleDenom;
 
-
+static char DiffMapFileName[200];
 static Regions_t Regions;
 
 
@@ -52,7 +52,8 @@ void usage (void)// complain about bad command line
     fprintf(stderr, "Switches (names may be abbreviated):\n");
     fprintf(stderr, " -scale   N           Scale before detection by 1/N.  Default 1/4\n");
     fprintf(stderr, " -region  x1-x2,y1-y2 Specify region of interest\n");
-    fprintf(stderr, " -region  x1-x2,y1-y2 Exclude from area of interest\n");
+    fprintf(stderr, " -exclude x1-x2,y1-y2 Exclude from area of interest\n");
+    fprintf(stderr, " -diffmap <filename>  A file to use as diff map\n");
     fprintf(stderr, " -dodir   <srcdir>    Compare images in dir, in order\n");
     fprintf(stderr, " -followdir <srcdir>  Do dir and monitor for new images\n");
     fprintf(stderr, " -savedir <saveto>    Where to save images with changes\n");
@@ -175,6 +176,10 @@ static int parse_parameter (const char * tag, const char * value)
             printf("Exclude region x:%d-%d, y:%d-%d\n",NewEx.x1, NewEx.x2, NewEx.y1, NewEx.y2);
             Regions.ExcludeReg[Regions.NumExcludeReg++] = NewEx;
         }
+    } else if (keymatch(tag, "diffmap", 2)) {
+        if (!value) goto need_val;
+        strncpy(DiffMapFileName,value, sizeof(DiffMapFileName)-1);
+
 
     } else if (keymatch(tag, "followdir", 2)) {
         if (!value){
@@ -448,6 +453,27 @@ int main(int argc, char **argv)
     if (DoDirName[0]) printf("Source directory = %s, follow=%d\n",DoDirName, FollowDir); 
     if (SaveDir[0]) printf("Save to dir %s\n",SaveDir);
     if (TimelapseInterval) printf("Timelapse interval %d seconds\n",TimelapseInterval);
+
+    if (DiffMapFileName[0]){
+        MemImage_t *MapPic;
+        printf("Diffmap file: %s\n",DiffMapFileName);
+        if (Regions.DetectReg.x1 || Regions.DetectReg.y1
+                || (Regions.DetectReg.x2 <  100000) || (Regions.DetectReg.y2 < 100000)){
+            fprintf(stderr, "Specify diff map or detect regions, but not both\n");
+            exit(-1);
+        }
+
+        if (Regions.NumExcludeReg){
+            fprintf(stderr, "Specify diff map or exclude regions, but not both\n");
+            exit(-1);
+        }
+
+        MapPic  = LoadJPEG(DiffMapFileName, ScaleDenom, 0, 0);
+        ProcessDiffMap(MapPic);
+
+        free(MapPic);
+    }
+
   
     if (DoDirName[0] && file_index == argc){
         // if dodir is specified in config file, but files are specified

@@ -15,14 +15,14 @@ typedef struct {
 }ImgMap_t;
 
 static ImgMap_t * DiffVal = NULL;
-static ImgMap_t * Excludes = NULL;
+static ImgMap_t * WeightMap = NULL;
 
 static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold);
 
 //----------------------------------------------------------------------------------------
 // Calculate average brightness of an image.
 //----------------------------------------------------------------------------------------
-static double AverageBright(MemImage_t * pic, Region_t Region, ImgMap_t* Excludes)
+static double AverageBright(MemImage_t * pic, Region_t Region, ImgMap_t* WeightMap)
 {
     double baverage;
     int DetectionPixels;
@@ -36,7 +36,7 @@ static double AverageBright(MemImage_t * pic, Region_t Region, ImgMap_t* Exclude
         unsigned char *p1, *px;
         int col, brow = 0;
         p1 = pic->pixels+rowbytes*row;
-        px = &Excludes->values[pic->width*row];
+        px = &WeightMap->values[pic->width*row];
         for (col=Region.x1;col<Region.x2;col++){
             if (px[col]){
                 brow += p1[0]+p1[1]*2+p1[2];  // Muliplies by 4.
@@ -57,22 +57,22 @@ static double AverageBright(MemImage_t * pic, Region_t Region, ImgMap_t* Exclude
 //----------------------------------------------------------------------------------------
 // Turn exclude regions into a map.
 //----------------------------------------------------------------------------------------
-void FillExcludes(ImgMap_t * Excludes, Regions_t * Regions)
+void FillWeightMap(ImgMap_t * WeightMap, Regions_t * Regions)
 {
     int row, width, height, r;
     Region_t Reg;
 
-    width = Excludes->w;
-    height = Excludes->h;
+    width = WeightMap->w;
+    height = WeightMap->h;
 
-    memset(Excludes->values, 0,  sizeof(Excludes->values)*width*height);
+    memset(WeightMap->values, 0,  sizeof(WeightMap->values)*width*height);
 
     Reg = Regions->DetectReg;
     if (Reg.x2 > width) Reg.x2 = width;
     if (Reg.y2 > height) Reg.y2 = height;
     printf("fill %d-%d,%d-%d\n",Reg.x1, Reg.x2, Reg.y1, Reg.y2);
     for (row=Reg.y1;row<Reg.y2;row++){
-        memset(&Excludes->values[row*width+Reg.x1], 1, Reg.x2-Reg.x1);
+        memset(&WeightMap->values[row*width+Reg.x1], 1, Reg.x2-Reg.x1);
     }
 
     for (r=0;r<Regions->NumExcludeReg;r++){
@@ -81,18 +81,84 @@ void FillExcludes(ImgMap_t * Excludes, Regions_t * Regions)
         if (Reg.y2 > height) Reg.y2 = height;
         printf("clear %d-%d,%d-%d\n",Reg.x1, Reg.x2, Reg.y1, Reg.y2);
         for (row=Reg.y1;row<Reg.y2;row++){
-            memset(&Excludes->values[row*width+Reg.x1], 0, Reg.x2-Reg.x1);
+            memset(&WeightMap->values[row*width+Reg.x1], 0, Reg.x2-Reg.x1);
         }
     }
 
     Reg = Regions->DetectReg;    
     for (row=Reg.y1;row<Reg.y2;row+=4){
         for (r=0;r<width;r+=4){
-            printf("%d",Excludes->values[row*width+r]);
+            printf("%d",WeightMap->values[row*width+r]);
         }
         printf("\n");
     }
 }
+
+//----------------------------------------------------------------------------------------
+// Load an image which indicates regions to use and exclude.
+//----------------------------------------------------------------------------------------
+void ProcessDiffMap(MemImage_t * MapPic)
+{
+    int width, height, row, col;
+    int firstrow, lastrow;
+    int numred, numblue;
+    width = MapPic->width;
+    height = MapPic->height;
+
+    // Allocate the detection region.
+    WeightMap = malloc(offsetof(ImgMap_t, values) 
+             + sizeof(DiffVal->values[0])*width*height);
+    WeightMap->w = width; 
+    WeightMap->h = height;
+
+    numred = numblue = 0;
+    firstrow = -1;
+    lastrow = 0;
+
+    for (row=0;row<height;row++){
+        unsigned char * map;
+        unsigned char * img;
+        map = &WeightMap->values[width*row];
+        img = &MapPic->pixels[width*3*row];
+        for (col=0;col<width;col++){
+            int r,g,b;
+            r = img[0];
+            g = img[1];
+            b = img[2];
+            img += 3;
+
+            // If the map is blue, then ignore.
+            // If the map is red, then wight 3x.
+
+            if (b > 100 && b > (r+g)*2){
+                // Blue.  Ignore.
+                *map = 0;
+                numblue += 1;
+            }else{
+                if (firstrow == -1) firstrow = row;
+                lastrow = row;
+                *map = 1;                
+                if (r > 100 && r > (g+b)*2){
+                    // Red.  Weigh 3x.
+                    *map = 3;
+                    numred += 1;
+                }
+            }
+            map += 1;
+        }
+    }
+    printf("Map: Ignore %5.1f%%  3x:%5.1f%%\n",numblue*100.0/(width*height), 
+                                                numred*100.0/(width*height));
+
+    for (row=0;row<height;row+=4){
+        int r;
+        for (r=0;r<width;r+=4){
+            printf("%d",WeightMap->values[row*width+r]);
+        }
+        printf("\n");
+    }
+}
+
 
 
 //----------------------------------------------------------------------------------------
@@ -128,15 +194,15 @@ TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, Regions_t * Regio
     if (DiffVal != NULL && (width != DiffVal->w || height != DiffVal->h)){
         // DiffVal allocated size is wrong.
         free(DiffVal);
-        free(Excludes);
+        free(WeightMap);
         DiffVal = NULL;
     }
     if (DiffVal == NULL){
         DiffVal = malloc(offsetof(ImgMap_t, values) + sizeof(DiffVal->values[0])*width*height);
         DiffVal->w = width; DiffVal->h = height;
-        Excludes = malloc(offsetof(ImgMap_t, values) + sizeof(Excludes->values[0])*width*height);
-        Excludes->w = width; Excludes->h = height;
-        FillExcludes(Excludes, Region);
+        WeightMap = malloc(offsetof(ImgMap_t, values) + sizeof(WeightMap->values[0])*width*height);
+        WeightMap->w = width; WeightMap->h = height;
+        FillWeightMap(WeightMap, Region);
     }
     memset(DiffVal->values, 0,  sizeof(DiffVal->values)*width*height);
 
@@ -171,8 +237,8 @@ TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, Regions_t * Regio
     {
         double b1average, b2average;
         double m1, m2;
-        b1average = AverageBright(pic1, MainReg, Excludes);
-        b2average = AverageBright(pic2, MainReg, Excludes);
+        b1average = AverageBright(pic1, MainReg, WeightMap);
+        b2average = AverageBright(pic2, MainReg, WeightMap);
 
         NewestAverageBright = (int)(b2average+0.5);
 
@@ -229,7 +295,7 @@ TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, Regions_t * Regio
         p1 = pic1->pixels+row*bPerRow;
         p2 = pic2->pixels+row*bPerRow;
         diffrow = &DiffVal->values[width*row];
-        ExRow = &Excludes->values[width*row];
+        ExRow = &WeightMap->values[width*row];
         if (DebugImgName) pd = DiffOut->pixels+row*bPerRow;
 
         if (NightMode){
