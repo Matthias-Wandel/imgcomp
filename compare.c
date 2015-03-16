@@ -57,7 +57,7 @@ static double AverageBright(MemImage_t * pic, Region_t Region, ImgMap_t* WeightM
 //----------------------------------------------------------------------------------------
 // Turn exclude regions into a map.
 //----------------------------------------------------------------------------------------
-void FillWeightMap(ImgMap_t * WeightMap, Regions_t * Regions)
+void FillWeightMap(void)
 {
     int row, width, height, r;
     Region_t Reg;
@@ -65,9 +65,13 @@ void FillWeightMap(ImgMap_t * WeightMap, Regions_t * Regions)
     width = WeightMap->w;
     height = WeightMap->h;
 
+    WeightMap = malloc(offsetof(ImgMap_t, values) + sizeof(WeightMap->values[0])*width*height);
+    WeightMap->w = width; WeightMap->h = height;
+
+
     memset(WeightMap->values, 0,  sizeof(WeightMap->values)*width*height);
 
-    Reg = Regions->DetectReg;
+    Reg = Regions.DetectReg;
     if (Reg.x2 > width) Reg.x2 = width;
     if (Reg.y2 > height) Reg.y2 = height;
     printf("fill %d-%d,%d-%d\n",Reg.x1, Reg.x2, Reg.y1, Reg.y2);
@@ -75,8 +79,8 @@ void FillWeightMap(ImgMap_t * WeightMap, Regions_t * Regions)
         memset(&WeightMap->values[row*width+Reg.x1], 1, Reg.x2-Reg.x1);
     }
 
-    for (r=0;r<Regions->NumExcludeReg;r++){
-        Reg=Regions->ExcludeReg[r];
+    for (r=0;r<Regions.NumExcludeReg;r++){
+        Reg=Regions.ExcludeReg[r];
         if (Reg.x2 > width) Reg.x2 = width;
         if (Reg.y2 > height) Reg.y2 = height;
         printf("clear %d-%d,%d-%d\n",Reg.x1, Reg.x2, Reg.y1, Reg.y2);
@@ -85,7 +89,7 @@ void FillWeightMap(ImgMap_t * WeightMap, Regions_t * Regions)
         }
     }
 
-    Reg = Regions->DetectReg;    
+    Reg = Regions.DetectReg;    
     for (row=Reg.y1;row<Reg.y2;row+=4){
         for (r=0;r<width;r+=4){
             printf("%d",WeightMap->values[row*width+r]);
@@ -147,8 +151,12 @@ void ProcessDiffMap(MemImage_t * MapPic)
             map += 1;
         }
     }
+
     printf("Map: Ignore %5.1f%%  3x:%5.1f%%\n",numblue*100.0/(width*height), 
                                                 numred*100.0/(width*height));
+
+    Regions.DetectReg.y1 = firstrow;
+    Regions.DetectReg.y2 = lastrow+1;
 
     for (row=0;row<height;row+=4){
         int r;
@@ -164,7 +172,7 @@ void ProcessDiffMap(MemImage_t * MapPic)
 //----------------------------------------------------------------------------------------
 // Compare two images in memory
 //----------------------------------------------------------------------------------------
-TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, Regions_t * Region, char * DebugImgName)
+TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, char * DebugImgName)
 {
     int width, height, bPerRow;
     int row, col;
@@ -200,9 +208,7 @@ TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, Regions_t * Regio
     if (DiffVal == NULL){
         DiffVal = malloc(offsetof(ImgMap_t, values) + sizeof(DiffVal->values[0])*width*height);
         DiffVal->w = width; DiffVal->h = height;
-        WeightMap = malloc(offsetof(ImgMap_t, values) + sizeof(WeightMap->values[0])*width*height);
-        WeightMap->w = width; WeightMap->h = height;
-        FillWeightMap(WeightMap, Region);
+        FillWeightMap();
     }
     memset(DiffVal->values, 0,  sizeof(DiffVal->values)*width*height);
 
@@ -215,7 +221,7 @@ TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, Regions_t * Regio
     }
     memset(DiffHist, 0, sizeof(DiffHist));
 
-    MainReg = Region->DetectReg;
+    MainReg = Regions.DetectReg;
     if (MainReg.y2 > height) MainReg.y2 = height;
     if (MainReg.x2 > width) MainReg.x2 = width;
     if (MainReg.x2 < MainReg.x1 || MainReg.y2 < MainReg.y1){

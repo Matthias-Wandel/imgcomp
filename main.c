@@ -30,7 +30,7 @@ int FollowDir = 0;
 static int ScaleDenom;
 
 static char DiffMapFileName[200];
-static Regions_t Regions;
+Regions_t Regions;
 
 
 int Verbosity = 0;
@@ -340,7 +340,7 @@ static int DoDirectoryFunc(char * Directory, char * KeepPixDir, int Delete)
             TriggerInfo_t Trig;
             int diff;
             
-            Trig = ComparePix(LastPic, CurrentPic, &Regions, NULL);
+            Trig = ComparePix(LastPic, CurrentPic, NULL);
             diff = Trig.DiffLevel;
 
             if (diff >= Sensitivity && PixSinceDiff > 5 && Raspistill_restarted){
@@ -490,7 +490,7 @@ int main(int argc, char **argv)
         pic2 = LoadJPEG(argv[file_index+1], ScaleDenom, 0, 0);
         if (pic1 && pic2){
             Verbosity = 2;
-            ComparePix(pic1, pic2, &Regions, "diff.ppm");
+            ComparePix(pic1, pic2, "diff.ppm");
         }
         free(pic1);
         free(pic2);

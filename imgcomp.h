@@ -33,8 +33,10 @@ extern int TimelapseInterval;
 extern int FollowDir;
 extern int Verbosity;
 
+extern Regions_t Regions;
+
 // compare.c functions
-TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, Regions_t * reg, char * DebugImgName);
+TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, char * DebugImgName);
 void ProcessDiffMap(MemImage_t * MapPic);
 
 // jpeg2mem.c functions
