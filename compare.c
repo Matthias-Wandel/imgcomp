@@ -57,13 +57,10 @@ static double AverageBright(MemImage_t * pic, Region_t Region, ImgMap_t* WeightM
 //----------------------------------------------------------------------------------------
 // Turn exclude regions into a map.
 //----------------------------------------------------------------------------------------
-void FillWeightMap(void)
+void FillWeightMap(int width, int height)
 {
-    int row, width, height, r;
+    int row, r;
     Region_t Reg;
-
-    width = WeightMap->w;
-    height = WeightMap->h;
 
     WeightMap = malloc(offsetof(ImgMap_t, values) + sizeof(WeightMap->values[0])*width*height);
     WeightMap->w = width; WeightMap->h = height;
@@ -215,7 +212,7 @@ TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, char * DebugImgNa
         DiffVal = malloc(offsetof(ImgMap_t, values) + sizeof(DiffVal->values[0])*width*height);
         DiffVal->w = width; DiffVal->h = height;
         if (!WeightMap){
-            FillWeightMap();
+            FillWeightMap(width,height);
         }else{
             if (WeightMap->w != width || WeightMap->h != height){
                 fprintf(stderr,"diff map image size mismatch\n");
@@ -223,6 +220,7 @@ TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, char * DebugImgNa
             }
         }
     }
+
     memset(DiffVal->values, 0,  sizeof(DiffVal->values)*width*height);
 
     if (DebugImgName){
