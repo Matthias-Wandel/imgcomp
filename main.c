@@ -303,10 +303,13 @@ static int DoDirectoryFunc(char * Directory, char * KeepPixDir, int Delete)
     int a;
     int ReadExif;
     int NumProcessed;
+    int SawMotion;
 
     static MemImage_t *CurrentPic;
     static char * CurrentPicName;
     static int PixSinceDiff;
+
+    SawMotion = 0;
 
     FileNames = GetSortedDir(Directory, &NumEntries);
     if (FileNames == NULL) return 0;
@@ -359,6 +362,7 @@ static int DoDirectoryFunc(char * Directory, char * KeepPixDir, int Delete)
                 LastPicSaveName = BackupPicture(Directory, CurrentPicName, KeepPixDir, diff, 1);
                 if (LastPicSaveName) printf("  Motion pic %s",LastPicSaveName);
                 PixSinceDiff = 0;
+                SawMotion = 1;
             }else{
                 LastPicSaveName = BackupPicture(Directory, CurrentPicName, KeepPixDir, diff, 0);
                 if (LastPicSaveName) printf("  Timelapse pic %s",LastPicSaveName);
@@ -384,6 +388,10 @@ static int DoDirectoryFunc(char * Directory, char * KeepPixDir, int Delete)
 
     FreeDir(FileNames, NumEntries); // Free up the whole directory structure.
     FileNames = NULL;
+
+    if (SawMotion){
+        run_blink_program();
+    }
 
     return NumProcessed;
 }

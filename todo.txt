@@ -1,8 +1,16 @@
 To do next:
 
-ignore distributed changes (use x-windowing - aviod snowfall trigger)
-Ignore regions map image
+Finish and test regions map image stuff
+Camera blink command option
 Output naming scheme option
 Review relaunch logic for dark images
+
+How to set it up:
+* Need configuration file
+* set disable_camera_led.c in /boot/config.txt
+* Enable raspi camera (of course)
+* make a ram disk at /ramdisk (add line to fstab)
+* chown root and setuid blink_camera_led
+
 
 

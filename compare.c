@@ -165,6 +165,8 @@ void ProcessDiffMap(MemImage_t * MapPic)
         }
         printf("\n");
     }
+
+    // FIXME: Should use firstrow and lastrow to set a region!
 }
 
 
