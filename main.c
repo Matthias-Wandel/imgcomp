@@ -57,11 +57,12 @@ void usage (void)// complain about bad command line
     fprintf(stderr, " -dodir   <srcdir>    Compare images in dir, in order\n");
     fprintf(stderr, " -followdir <srcdir>  Do dir and monitor for new images\n");
     fprintf(stderr, " -savedir <saveto>    Where to save images with changes\n");
-    fprintf(stderr, " -sensitivity N       Set sensitivity\n");
+    fprintf(stderr, " -sensitivity N       Set sensitivity.  Lower=more sensitive\n");
+    fprintf(stderr, " -blink_cmd <command> Run this command when motion detected\n"
+                    "                      (used to blink the camera LED)\n");
     fprintf(stderr, " -tl N                Save image every N seconds regardless\n");
-
     fprintf(stderr, " -outfile name  Specify name for output file\n");
-    fprintf(stderr, "  -verbose  or  -debug   Emit debug output\n");
+    fprintf(stderr, " -verbose or -debug   Emit more verbose output\n");
     exit(-1);
 }
 
@@ -152,7 +153,7 @@ static int parse_parameter (const char * tag, const char * value)
     } else if (keymatch(tag, "blink_cmd", 4)) {
         // Set output file name.
         if (!value) goto need_val;
-        strncpy(blink_cmd, value, sizeof(raspistill_cmd)-1);
+        strncpy(blink_cmd, value, sizeof(blink_cmd)-1);
     } else if (keymatch(tag, "savedir", 4)) {
         // Set output file name.
         if (!value) goto need_val;

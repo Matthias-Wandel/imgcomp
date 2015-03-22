@@ -197,10 +197,10 @@ force_restart:
 // Hitting the I/O lines requires root priviledges, so let's just spawn a program
 // to do a single LED blink.
 //-----------------------------------------------------------------------------------
-int run_blink_program()
+void run_blink_program()
 {
 #ifdef _WIN32
-  return 0; }
+  return }
 #else
     pid_t pid;
 
@@ -226,7 +226,7 @@ int run_blink_program()
         // Failed to fork.
         fprintf(stderr,"Failed to fork off child process\n");
         perror("Reason");
-        return -1;
+        return;
     }
 
     if(pid == 0){ 
@@ -235,6 +235,6 @@ int run_blink_program()
     }else{
         blink_led_pid = pid;
     }
-    return 0;
+    return;
 }
 #endif
