@@ -46,6 +46,7 @@ void WritePpmFile(char * FileName, MemImage_t *MemImage);
 // start_raspistill functions
 int manage_raspistill(int HaveNewImages);
 extern char raspistill_cmd[200];
+extern char blink_cmd[200];
 int run_blink_program(void);
 
 // util.c functions

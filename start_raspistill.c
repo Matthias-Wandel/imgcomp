@@ -22,6 +22,7 @@
 //"raspistill -q 10 -n -bm -th none -p 480,0,800,480 -w 1280 -h 720 -o /ramdisk/out%05d.jpg -t 4000000 -tl 300";
 
 static int raspistill_pid = 0;
+static int blink_led_pid = 0;
 extern int NightMode;
 
 //-----------------------------------------------------------------------------------
@@ -192,7 +193,9 @@ force_restart:
 
 
 //-----------------------------------------------------------------------------------
-// Blink LED program
+// Run a program to blink the LED.
+// Hitting the I/O lines requires root priviledges, so let's just spawn a program
+// to do a single LED blink.
 //-----------------------------------------------------------------------------------
 int run_blink_program()
 {
@@ -200,6 +203,22 @@ int run_blink_program()
   return 0; }
 #else
     pid_t pid;
+
+    if (blink_cmd[0] == 0){
+        // No blink command configured.
+        return;
+    }
+
+    if (blink_led_pid){
+        // Avoid accumulating zombie child processes.
+        // Blink process should be done by now.
+        int exit_code = 0;
+        int a;
+        a = wait(&exit_code);
+        printf("Child exit code %d (wait returned %d)\n",exit_code,a);
+        blink_led_pid = 0;
+    }
+
 
     printf("Run blink program\n");
     pid = fork();
@@ -212,7 +231,9 @@ int run_blink_program()
 
     if(pid == 0){ 
         // Child takes this branch.
-        do_launch_program("/home/pi/imgcomp/blink_camera_led");
+        do_launch_program(blink_cmd);
+    }else{
+        blink_led_pid = pid;
     }
     return 0;
 }

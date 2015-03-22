@@ -37,8 +37,8 @@ int Verbosity = 0;
 static int Sensitivity;
 static int Raspistill_restarted;
 int TimelapseInterval;
-#define MAX_RAPISTILL_CMD
 char raspistill_cmd[200];
+char blink_cmd[200];
 
 
 //-----------------------------------------------------------------------------------
@@ -149,6 +149,10 @@ static int parse_parameter (const char * tag, const char * value)
         // Set output file name.
         if (!value) goto need_val;
         strncpy(raspistill_cmd, value, sizeof(raspistill_cmd)-1);
+    } else if (keymatch(tag, "blink_cmd", 4)) {
+        // Set output file name.
+        if (!value) goto need_val;
+        strncpy(blink_cmd, value, sizeof(raspistill_cmd)-1);
     } else if (keymatch(tag, "savedir", 4)) {
         // Set output file name.
         if (!value) goto need_val;

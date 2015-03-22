@@ -1,7 +1,5 @@
 To do next:
 
-Finish and test regions map image stuff
-Camera blink command option
 Output naming scheme option
 Review relaunch logic for dark images
 
