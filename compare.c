@@ -68,7 +68,6 @@ void FillWeightMap(void)
     WeightMap = malloc(offsetof(ImgMap_t, values) + sizeof(WeightMap->values[0])*width*height);
     WeightMap->w = width; WeightMap->h = height;
 
-
     memset(WeightMap->values, 0,  sizeof(WeightMap->values)*width*height);
 
     Reg = Regions.DetectReg;
@@ -161,12 +160,17 @@ void ProcessDiffMap(MemImage_t * MapPic)
     for (row=0;row<height;row+=4){
         int r;
         for (r=0;r<width;r+=4){
-            printf("%d",WeightMap->values[row*width+r]);
+            if (WeightMap->values[row*width+r] == 0){
+                putchar('-');
+            }else{
+                putchar(WeightMap->values[row*width+r]+'0');
+            }
         }
         printf("\n");
     }
 
-    // FIXME: Should use firstrow and lastrow to set a region!
+    Regions.DetectReg.y1 = firstrow;
+    Regions.DetectReg.y2 = lastrow;
 }
 
 
@@ -210,7 +214,14 @@ TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, char * DebugImgNa
     if (DiffVal == NULL){
         DiffVal = malloc(offsetof(ImgMap_t, values) + sizeof(DiffVal->values[0])*width*height);
         DiffVal->w = width; DiffVal->h = height;
-        FillWeightMap();
+        if (!WeightMap){
+            FillWeightMap();
+        }else{
+            if (WeightMap->w != width || WeightMap->h != height){
+                fprintf(stderr,"diff map image size mismatch\n");
+                exit(-1);
+            }
+        }
     }
     memset(DiffVal->values, 0,  sizeof(DiffVal->values)*width*height);
 
