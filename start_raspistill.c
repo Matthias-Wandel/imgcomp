@@ -27,7 +27,7 @@ extern int NightMode;
 //-----------------------------------------------------------------------------------
 // Parse command line and launch.
 //-----------------------------------------------------------------------------------
-static void do_launch_program(void)
+static void do_launch_program(char * cmd_string)
 {
     char * Arguments[51];
     int narg;
@@ -36,18 +36,18 @@ static void do_launch_program(void)
 
     // Note: NOT handling quoted strings or anything for arguments with spaces in them.
     narg=0;
-    for (a=0;raspistill_cmd[a];a++){
-        if (raspistill_cmd[a] != ' '){
+    for (a=0;cmd_string[a];a++){
+        if (cmd_string[a] != ' '){
             if (wasblank){
                 if (narg >= 50){
-                    fprintf(stderr, "raspistill too many raspistill arguments\n");
+                    fprintf(stderr, "too many command line arguments\n");
                     exit(0);
                 }
-                Arguments[narg++] = &raspistill_cmd[a];
+                Arguments[narg++] = &cmd_string[a];
             }
             wasblank = 0;
         }else{
-            raspistill_cmd[a] = '\0';
+            cmd_string[a] = '\0';
             wasblank = 1;
         }
     }
@@ -100,7 +100,7 @@ static int launch_raspistill(void)
 
     if(pid == 0){ 
         // Child takes this branch.
-        do_launch_program();
+        do_launch_program(raspistill_cmd);
     }else{
         raspistill_pid = pid;
     }
@@ -188,5 +188,32 @@ force_restart:
     SecondsSinceLaunch = 0;
     InitialBrSum = InitialNumBr = 0;
     return 1;
-
 }
+
+
+//-----------------------------------------------------------------------------------
+// Blink LED program
+//-----------------------------------------------------------------------------------
+int run_blink_program()
+{
+#ifdef _WIN32
+{ return 0; }
+#else
+    pid_t pid;
+
+    printf("Run blink program\n");
+    pid = fork();
+    if (pid == -1){
+        // Failed to fork.
+        fprintf(stderr,"Failed to fork off child process\n");
+        perror("Reason");
+        return -1;
+    }
+
+    if(pid == 0){ 
+        // Child takes this branch.
+        do_launch_program("/home/pi/imgcomp/blink_camera_led");
+    }
+    return 0;
+}
+#endif
