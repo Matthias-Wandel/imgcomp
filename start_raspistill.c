@@ -197,7 +197,7 @@ force_restart:
 int run_blink_program()
 {
 #ifdef _WIN32
-{ return 0; }
+  return 0; }
 #else
     pid_t pid;
 
