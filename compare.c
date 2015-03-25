@@ -86,7 +86,7 @@ void FillWeightMap(int width, int height)
     }
 
     Reg = Regions.DetectReg;    
-    for (row=Reg.y1;row<Reg.y2;row+=4){
+    for (row=Reg.y1;row<height;row+=4){
         for (r=0;r<width;r+=4){
             printf("%d",WeightMap->values[row*width+r]);
         }
@@ -192,7 +192,7 @@ TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, char * DebugImgNa
     if (Verbosity){
         printf("\ncompare pictures %dx%d %d\n", pic1->width, pic1->height, pic1->components);
     }
-    
+
     if (pic1->width != pic2->width || pic1->height != pic2->height 
         || pic1->components != pic2->components){
         fprintf(stderr, "pic types mismatch!\n");
@@ -201,7 +201,7 @@ TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, char * DebugImgNa
     width = pic1->width;
     height = pic1->height;
     bPerRow = width * 3;    
-    
+
     if (DiffVal != NULL && (width != DiffVal->w || height != DiffVal->h)){
         // DiffVal allocated size is wrong.
         free(DiffVal);
