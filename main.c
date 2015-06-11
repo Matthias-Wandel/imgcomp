@@ -291,17 +291,106 @@ static void read_config_file()
     }
 }
 
+typedef struct {
+    MemImage_t *Image;
+    char Name[500];
+    int nind; // Name part index.
+    unsigned  mtime;
+    int DiffMag;
+    //int Saved;
+    int IsTimelapse;
+    int IsMotion;
+}LastPic_t;
 
+static LastPic_t LastPics[3];
+static time_t NextTimelapsePix;
 
-static MemImage_t *LastPic;
-static char LastPicName[500];
-static int LastDiffMag;
-static char * LastPicSaveName = NULL;
+//-----------------------------------------------------------------------------------
+// Figure out which images should be saved.
+//-----------------------------------------------------------------------------------
+static void ProcessImage(LastPic_t * New)
+{
+    static int PixSinceDiff;
+
+    LastPics[2] = LastPics[1];
+    LastPics[1] = LastPics[0];
+    LastPics[0] = *New;
+    LastPics[0].IsMotion = LastPics[0].IsTimelapse = 0;
+
+    if (LastPics[1].Image != NULL){
+        TriggerInfo_t Trig;
+        int diff;
+
+        // Handle timelapsing.
+        if (TimelapseInterval >= 1){
+            if (LastPics[0].mtime >= NextTimelapsePix){
+                LastPics[0].IsTimelapse = 1;
+            }
+
+            // Figure out when the next timelapse interval should be.
+            NextTimelapsePix = LastPics[0].mtime+TimelapseInterval;
+            NextTimelapsePix -= (NextTimelapsePix % TimelapseInterval);
+//printf("Now  %d\nNext %d\n", LastPics[0].mtime, NextTimelapsePix);
+        }
+
+        // compare with previosu picture.
+        Trig.DiffLevel = Trig.x = Trig.y = 0;
+
+        if (LastPics[2].Image){
+            Trig = ComparePix(LastPics[0].Image, LastPics[1].Image, NULL);
+        }
+
+        if (Trig.DiffLevel >= Sensitivity && PixSinceDiff > 5 && Raspistill_restarted){
+            printf("Ignoring diff %d caused by raspistill restart\n",diff);
+            Trig.DiffLevel = 0;
+        }
+        LastPics[0].DiffMag = Trig.DiffLevel;
+
+        printf("%s - %s:",LastPics[0].Name+LastPics[0].nind, LastPics[1].Name+LastPics[0].nind);
+        printf(" %3d at (%4d,%3d) ", Trig.DiffLevel, Trig.x*ScaleDenom, Trig.y*ScaleDenom);
+
+        if (LastPics[0].DiffMag > Sensitivity){
+            LastPics[0].IsMotion = 1;
+        }
+
+        if (LastPics[2].Image && 
+            LastPics[0].IsMotion && LastPics[1].IsMotion
+            && LastPics[2].DiffMag < (Sensitivity>>1)){
+            // Compare to picture before last picture.
+            Trig = ComparePix(LastPics[0].Image, LastPics[2].Image, NULL);
+
+            //printf("Diff with pix before last: %d\n",Trig.DiffLevel);
+            if (Trig.DiffLevel < Sensitivity){
+                printf("(spurious %d) \n", Trig.DiffLevel);
+                LastPics[0].IsMotion = 0;
+                LastPics[1].IsMotion = 0;
+            }
+        }
+        if (LastPics[0].IsMotion) printf("(motion) ");
+        if (LastPics[0].IsTimelapse) printf("(time) ");
+
+        if (LastPics[2].IsMotion || LastPics[2].IsTimelapse || LastPics[1].IsMotion){
+            // If it's motion, pre-motion, or timelapse, save it.
+            if (SaveDir){
+                BackupPicture(LastPics[2].Name, SaveDir, LastPics[2].mtime, LastPics[2].DiffMag);
+            }
+        }
+
+        printf("\n");
+        Raspistill_restarted = 0;
+    }
+
+    // Third picture now falls out of the window.  Free it and delete it.
+    if (LastPics[2].Image != NULL) free(LastPics[2].Image);
+    if (FollowDir){
+        unlink(LastPics[2].Name);
+    }
+}
 
 //-----------------------------------------------------------------------------------
 // Process a whole directory of files.
 //-----------------------------------------------------------------------------------
-static int DoDirectoryFunc(char * Directory, char * KeepPixDir, int Delete)
+static int DoDirectoryFunc(char * Directory)
 {
     char ** FileNames;
     int NumEntries;
@@ -310,9 +399,6 @@ static int DoDirectoryFunc(char * Directory, char * KeepPixDir, int Delete)
     int NumProcessed;
     int SawMotion;
 
-    static MemImage_t *CurrentPic;
-    static char * CurrentPicName;
-    static int PixSinceDiff;
 
     SawMotion = 0;
 
@@ -320,30 +406,46 @@ static int DoDirectoryFunc(char * Directory, char * KeepPixDir, int Delete)
     if (FileNames == NULL) return 0;
     if (NumEntries == 0) return 0;
 
-    a=0;
-    if (strcmp(LastPicName, FileNames[0]) == 0){
-        // Don't redo the last picture.
-        a += 1;
-    }
 
     ReadExif = 1;
     NumProcessed = 0;
-    for (;a<NumEntries;a++){
+    for (a=0;a<NumEntries;a++){
+        LastPic_t NewPic;
+        struct stat statbuf;
+
         int diff = 0;
+        if (strcmp(LastPics[0].Name, FileNames[a]) == 0
+           || strcmp(LastPics[1].Name, FileNames[a]) == 0){
+printf("skip old %s\n",FileNames[a]);
+            continue; // Don't redo old pictures that we haven't deleted yet.
+        }
+        strcpy(NewPic.Name, CatPath(Directory, FileNames[a]));
+        NewPic.nind = strlen(Directory)+1;
+
         //printf("sorted dir: %s\n",FileNames[a]);
-        CurrentPicName = FileNames[a];
-        CurrentPic = LoadJPEG(CatPath(Directory, CurrentPicName), ScaleDenom, 0, ReadExif);
+        NewPic.Image = LoadJPEG(NewPic.Name, ScaleDenom, 0, ReadExif);
         ReadExif = 0; // Only read exif for first image.
-        if (CurrentPic == NULL){
-            fprintf(stderr, "Failed to load %s\n",CatPath(Directory, CurrentPicName));
-            if (Delete){
+        if (NewPic.Image == NULL){
+            fprintf(stderr, "Failed to load %s\n",NewPic.Name);
+            if (FollowDir){
                 // Raspberry pi timelapse mode may at times dump a corrupt
                 // picture at the end of timelapse mode.  Just delete and go on.
-                unlink(CatPath(Directory, CurrentPicName));
+                unlink(NewPic.Name);
             }
             continue;
         }
+
+        if (stat(NewPic.Name, &statbuf) == -1) {
+            perror(NewPic.Name);
+            exit(1);
+        }
+        NewPic.mtime = (unsigned)statbuf.st_mtime;
+
+        ProcessImage(&NewPic);
+
         NumProcessed += 1;
+
+/*
         if (LastPic != NULL && CurrentPic != NULL){
             TriggerInfo_t Trig;
             int diff;
@@ -389,6 +491,7 @@ static int DoDirectoryFunc(char * Directory, char * KeepPixDir, int Delete)
             LastDiffMag = diff;
             CurrentPic = NULL;
         }
+*/
     }
 
     FreeDir(FileNames, NumEntries); // Free up the whole directory structure.
@@ -405,13 +508,13 @@ static int DoDirectoryFunc(char * Directory, char * KeepPixDir, int Delete)
 //-----------------------------------------------------------------------------------
 // Process a whole directory of files.
 //-----------------------------------------------------------------------------------
-int DoDirectory(char * Directory, char * KeepPixDir)
+int DoDirectory(char * Directory)
 {
     int a,b;
     Raspistill_restarted = 0;
 
     for (;;){
-        a = DoDirectoryFunc(Directory, KeepPixDir, FollowDir);
+        a = DoDirectoryFunc(Directory);
         if (FollowDir){
             b = manage_raspistill(a);
             if (b) Raspistill_restarted = 1;
@@ -420,7 +523,7 @@ int DoDirectory(char * Directory, char * KeepPixDir)
             break;
         }
     }
-    if (LastPic != NULL) free(LastPic);
+//    if (LastPic != NULL) free(LastPic);
     return a;
 }
 
@@ -491,7 +594,7 @@ int main(int argc, char **argv)
     if (DoDirName[0] && file_index == argc){
         // if dodir is specified in config file, but files are specified
         // on the command line, do the files instead.
-        DoDirectory(DoDirName, SaveDir);
+        DoDirectory(DoDirName);
     }
 
     if (argc-file_index == 2){

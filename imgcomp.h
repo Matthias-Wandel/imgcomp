@@ -53,5 +53,5 @@ void run_blink_program(void);
 char * CatPath(char *Dir, char * FileName);
 char ** GetSortedDir(char * Directory, int * NumFiles);
 void FreeDir(char ** FileNames, int NumEntries);
-char * BackupPicture(char * Directory, char * Name, char * KeepPixDir, int Threshold, int MotionTriggered);
+char * BackupPicture(char * Name, char * KeepPixDir, time_t mtime, int diffmag);
 int CopyFile(char * src, char * dest);

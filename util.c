@@ -40,8 +40,6 @@
 
 #include "imgcomp.h"
 
-static time_t NextTimelapsePix;
-
 //-----------------------------------------------------------------------------------
 // Concatenate dir name and file name.  Not thread safe!
 //-----------------------------------------------------------------------------------
@@ -242,55 +240,29 @@ void PicDestFromTime(char * DestPath, const char * KeepPixDir, time_t PicTime, c
 //-----------------------------------------------------------------------------------
 // Back up a photo that is of interest or applies to tiemelapse.
 //-----------------------------------------------------------------------------------
-char * BackupPicture(char * Directory, char * Name, char * KeepPixDir, int Threshold, int MotionTriggered)
+char * BackupPicture(char * Name, char * KeepPixDir, time_t mtime, int DiffMag)
 {
-    char SrcPath[500];
     static char DstPath[500];
-    struct stat statbuf;
     static char SuffixChar = ' ';
     static time_t LastSaveTime;
 
     if (KeepPixDir[0] == '\0') return NULL; // Picture saving not enabled.
 
-    strcpy(SrcPath, CatPath(Directory, Name));
-    if (stat(SrcPath, &statbuf) == -1) {
-        perror(SrcPath);
-        exit(1);
-    }
-    if (!MotionTriggered){
-        if (TimelapseInterval < 1) return 0; // timelapse mode off.
-        if (statbuf.st_mtime < NextTimelapsePix){
-            // No motion, not timelapse picture.
-            return NULL;
-        }
-    }
-
-    if (TimelapseInterval >= 1){
-        // Figure out when the next timelapse interval should be.
-        NextTimelapsePix = statbuf.st_mtime+TimelapseInterval;
-        NextTimelapsePix -= (NextTimelapsePix % TimelapseInterval);
-    }
-
     {
         char NameSuffix[20];
-        // In followdir mode, rename according to date.
-         if (stat(SrcPath, &statbuf) == -1) {
-            perror(SrcPath);
-            exit(1);
-        }
-        if (LastSaveTime == statbuf.st_mtime){
+        if (LastSaveTime == mtime){
             // If it's the same second, cycle through suffixes a-z
             SuffixChar = (SuffixChar >= 'a' && SuffixChar <'z') ? SuffixChar+1 : 'a';
         }else{
             // New time. No need for a suffix.
             SuffixChar = ' ';
-            LastSaveTime = statbuf.st_mtime;
+            LastSaveTime = mtime;
         }
-        sprintf(NameSuffix, "%c%04d",SuffixChar, Threshold);
-        PicDestFromTime(DstPath, KeepPixDir, statbuf.st_mtime, NameSuffix);
+        sprintf(NameSuffix, "%c%04d",SuffixChar, DiffMag);
+        PicDestFromTime(DstPath, KeepPixDir, mtime, NameSuffix);
+printf("\ncopy %s to %s",Name, DstPath);
         EnsurePathExists(DstPath);
-
-        CopyFile(SrcPath, DstPath);
+        CopyFile(Name, DstPath);
     }
     return DstPath;
 }
