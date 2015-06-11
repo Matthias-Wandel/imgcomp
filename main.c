@@ -359,7 +359,7 @@ static void ProcessImage(LastPic_t * New)
         }
 
         if (Trig.DiffLevel >= Sensitivity && PixSinceDiff > 5 && Raspistill_restarted){
-            printf("Ignoring diff %d caused by raspistill restart\n");
+            printf("Ignoring diff caused by raspistill restart\n");
             Trig.DiffLevel = 0;
         }
         LastPics[0].DiffMag = Trig.DiffLevel;
@@ -430,8 +430,6 @@ static int DoDirectoryFunc(char * Directory)
     for (a=0;a<NumEntries;a++){
         LastPic_t NewPic;
         struct stat statbuf;
-
-        int diff = 0;
         if (strcmp(LastPics[0].Name, FileNames[a]) == 0
            || strcmp(LastPics[1].Name, FileNames[a]) == 0){
 printf("skip old %s\n",FileNames[a]);

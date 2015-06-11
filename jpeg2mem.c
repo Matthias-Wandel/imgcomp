@@ -9,9 +9,9 @@
 #include <setjmp.h>
 #include "libjpeg/jpeglib.h"
 #include "libjpeg/jerror.h"
+#include <time.h>
 #include "imgcomp.h"
 #include "jhead.h"
-#include <time.h>
 
 //----------------------------------------------------------------------------------------
 // for libjpeg - don't abort on corrupt jpeg data.
