@@ -328,12 +328,13 @@ static time_t NextTimelapsePix;
 //-----------------------------------------------------------------------------------
 // Figure out which images should be saved.
 //-----------------------------------------------------------------------------------
-static void ProcessImage(LastPic_t * New)
+static int ProcessImage(LastPic_t * New)
 {
     static int PixSinceDiff;
 
     LastPics[2] = LastPics[1];
     LastPics[1] = LastPics[0];
+
     LastPics[0] = *New;
     LastPics[0].IsMotion = LastPics[0].IsTimelapse = 0;
 
@@ -379,13 +380,14 @@ static void ProcessImage(LastPic_t * New)
 
             //printf("Diff with pix before last: %d\n",Trig.DiffLevel);
             if (Trig.DiffLevel < Sensitivity){
-                printf("(spurious %d) \n", Trig.DiffLevel);
+                printf("(spurious %d) ", Trig.DiffLevel);
                 LastPics[0].IsMotion = 0;
                 LastPics[1].IsMotion = 0;
             }
         }
         if (LastPics[0].IsMotion) printf("(motion) ");
         if (LastPics[0].IsTimelapse) printf("(time) ");
+        if (!LastPics[0].IsMotion) printf("       "); // Overwrite rest of old line.
 
         if (LastPics[2].IsMotion || LastPics[2].IsTimelapse || LastPics[1].IsMotion){
             // If it's motion, pre-motion, or timelapse, save it.
@@ -401,8 +403,11 @@ static void ProcessImage(LastPic_t * New)
     // Third picture now falls out of the window.  Free it and delete it.
     if (LastPics[2].Image != NULL) free(LastPics[2].Image);
     if (FollowDir){
+        //printf("Delete %s\n",LastPics[2].Name);
         unlink(LastPics[2].Name);
     }
+
+    return LastPics[0].IsMotion;
 }
 
 //-----------------------------------------------------------------------------------
@@ -417,26 +422,25 @@ static int DoDirectoryFunc(char * Directory)
     int NumProcessed;
     int SawMotion;
 
-
     SawMotion = 0;
 
     FileNames = GetSortedDir(Directory, &NumEntries);
     if (FileNames == NULL) return 0;
     if (NumEntries == 0) return 0;
 
-
     ReadExif = 1;
     NumProcessed = 0;
     for (a=0;a<NumEntries;a++){
         LastPic_t NewPic;
         struct stat statbuf;
-        if (strcmp(LastPics[0].Name, FileNames[a]) == 0
-           || strcmp(LastPics[1].Name, FileNames[a]) == 0){
-printf("skip old %s\n",FileNames[a]);
-            continue; // Don't redo old pictures that we haven't deleted yet.
-        }
         strcpy(NewPic.Name, CatPath(Directory, FileNames[a]));
         NewPic.nind = strlen(Directory)+1;
+
+        if (strcmp(LastPics[0].Name, NewPic.Name) == 0
+           || strcmp(LastPics[1].Name, NewPic.Name) == 0){
+            continue; // Don't redo old pictures that we have looked at, but
+                      // not yet deleted because we may still need them.
+        }
 
         //printf("sorted dir: %s\n",FileNames[a]);
         NewPic.Image = LoadJPEG(NewPic.Name, ScaleDenom, 0, ReadExif);
@@ -457,7 +461,7 @@ printf("skip old %s\n",FileNames[a]);
         }
         NewPic.mtime = (unsigned)statbuf.st_mtime;
 
-        ProcessImage(&NewPic);
+        SawMotion += ProcessImage(&NewPic);
 
         NumProcessed += 1;
     }

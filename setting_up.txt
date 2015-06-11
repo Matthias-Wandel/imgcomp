@@ -1,0 +1,13 @@
+Things to set up:
+
+Disable main screen logo
+Disable screen blanking
+Make ram disk
+Enable camera module
+
+
+Make obj directory
+Compile
+File sharing
+Sudo blink LED program
+
