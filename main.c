@@ -25,7 +25,8 @@
 // Configuration variables.
 static const char * progname;  // program name for error messages
 static char DoDirName[200];
-static char SaveDir[200];
+char SaveDir[200];
+char SaveNames[200];
 int FollowDir = 0;
 static int ScaleDenom;
 
@@ -57,6 +58,9 @@ void usage (void)// complain about bad command line
     fprintf(stderr, " -dodir   <srcdir>    Compare images in dir, in order\n");
     fprintf(stderr, " -followdir <srcdir>  Do dir and monitor for new images\n");
     fprintf(stderr, " -savedir <saveto>    Where to save images with changes\n");
+    fprintf(stderr, " -savenames <scheme>  Output naming scheme.  Uses strftime\n"
+                    "                      to format the output name.  May include\n"
+                    "                      '/' characters for directories.");
     fprintf(stderr, " -sensitivity N       Set sensitivity.  Lower=more sensitive\n");
     fprintf(stderr, " -blink_cmd <command> Run this command when motion detected\n"
                     "                      (used to blink the camera LED)\n");
@@ -154,10 +158,26 @@ static int parse_parameter (const char * tag, const char * value)
         // Set output file name.
         if (!value) goto need_val;
         strncpy(blink_cmd, value, sizeof(blink_cmd)-1);
-    } else if (keymatch(tag, "savedir", 4)) {
+    } else if (keymatch(tag, "savedir", 5)) {
         // Set output file name.
         if (!value) goto need_val;
         strncpy(SaveDir,value, sizeof(SaveDir)-1);
+    } else if (keymatch(tag, "savenames", 5)) {
+        // Set output file name.
+        if (!value) goto need_val;
+        strncpy(SaveNames,value, sizeof(SaveNames)-1);
+        {
+            int a,b;
+            for (a=0;SaveNames[a];a++){
+                if (SaveNames[a] == '%'){
+                    for (b=0;b<10;b++) if (SaveNames[a+1] == "dHjmMSUwyY"[b]) break;
+                    if (b >=10){
+                        fprintf(stderr, "savenames '%%' may only be followed by one of d,H,j,m,M,S,U,w,y, or Y\n");
+                        exit(-1);
+                    }
+                }
+            }
+        }
 
     } else if (keymatch(tag, "dodir", 2)) {
         // Scale the output image by a fraction M/N. */
@@ -319,8 +339,6 @@ static void ProcessImage(LastPic_t * New)
 
     if (LastPics[1].Image != NULL){
         TriggerInfo_t Trig;
-        int diff;
-
         // Handle timelapsing.
         if (TimelapseInterval >= 1){
             if (LastPics[0].mtime >= NextTimelapsePix){
@@ -341,7 +359,7 @@ static void ProcessImage(LastPic_t * New)
         }
 
         if (Trig.DiffLevel >= Sensitivity && PixSinceDiff > 5 && Raspistill_restarted){
-            printf("Ignoring diff %d caused by raspistill restart\n",diff);
+            printf("Ignoring diff %d caused by raspistill restart\n");
             Trig.DiffLevel = 0;
         }
         LastPics[0].DiffMag = Trig.DiffLevel;
@@ -371,8 +389,8 @@ static void ProcessImage(LastPic_t * New)
 
         if (LastPics[2].IsMotion || LastPics[2].IsTimelapse || LastPics[1].IsMotion){
             // If it's motion, pre-motion, or timelapse, save it.
-            if (SaveDir){
-                BackupPicture(LastPics[2].Name, SaveDir, LastPics[2].mtime, LastPics[2].DiffMag);
+            if (SaveDir[0]){
+                BackupPicture(LastPics[2].Name, LastPics[2].mtime, LastPics[2].DiffMag);
             }
         }
 
@@ -444,54 +462,6 @@ printf("skip old %s\n",FileNames[a]);
         ProcessImage(&NewPic);
 
         NumProcessed += 1;
-
-/*
-        if (LastPic != NULL && CurrentPic != NULL){
-            TriggerInfo_t Trig;
-            int diff;
-            
-            Trig = ComparePix(LastPic, CurrentPic, NULL);
-            diff = Trig.DiffLevel;
-
-            if (diff >= Sensitivity && PixSinceDiff > 5 && Raspistill_restarted){
-                printf("Ignoring diff %d caused by raspistill restart\n",diff);
-                diff = 0;
-            }
-            
-            printf("%s - %s:",LastPicName, CurrentPicName);            
-            printf(" %3d at (%4d,%3d) ", Trig.DiffLevel, Trig.x*ScaleDenom, Trig.y*ScaleDenom);
-            
-            if (diff >= Sensitivity){
-                if (!LastPicSaveName){
-                    // Save the pre-motion pic if it wasn't already saved.
-                    BackupPicture(Directory, LastPicName, KeepPixDir, LastDiffMag, 1);
-                }
-                LastPicSaveName = BackupPicture(Directory, CurrentPicName, KeepPixDir, diff, 1);
-                if (LastPicSaveName) printf("  Motion pic %s",LastPicSaveName);
-                PixSinceDiff = 0;
-                SawMotion = 1;
-            }else{
-                LastPicSaveName = BackupPicture(Directory, CurrentPicName, KeepPixDir, diff, 0);
-                if (LastPicSaveName) printf("  Timelapse pic %s",LastPicSaveName);
-                PixSinceDiff ++;
-            }
-            if (!LastPicSaveName) printf("                ");
-            printf("\n");
-            Raspistill_restarted = 0;
-        }
-
-        if (LastPic != NULL) free(LastPic);
-        if (Delete){
-            unlink(CatPath(Directory, LastPicName));
-        }
-
-        if (CurrentPic != NULL){
-            LastPic = CurrentPic;
-            strcpy(LastPicName, CurrentPicName);
-            LastDiffMag = diff;
-            CurrentPic = NULL;
-        }
-*/
     }
 
     FreeDir(FileNames, NumEntries); // Free up the whole directory structure.
@@ -553,6 +523,8 @@ int main(int argc, char **argv)
     Regions.DetectReg.y2 = 1000000;
     Regions.NumExcludeReg = 0;
     TimelapseInterval = 0;
+    SaveDir[0] = 0;
+    strcpy(SaveNames, "%m%d/%H/%m%d-%H%M%S");
 
     // First read the configuration file.
     read_config_file();

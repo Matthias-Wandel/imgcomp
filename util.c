@@ -233,20 +233,20 @@ void PicDestFromTime(char * DestPath, const char * KeepPixDir, time_t PicTime, c
     p = DestPath+sprintf(DestPath, "%s/", KeepPixDir);
 
     // Using this rule, make a subdiretories for date and for hour.
-    p += strftime(p, PATH_MAX, "%m%d/%H/%m%d-%H%M%S", &tm);
+    p += strftime(p, PATH_MAX, SaveNames, &tm);
     sprintf(p, "%s.jpg",NameSuffix);
 }
 
 //-----------------------------------------------------------------------------------
 // Back up a photo that is of interest or applies to tiemelapse.
 //-----------------------------------------------------------------------------------
-char * BackupPicture(char * Name, char * KeepPixDir, time_t mtime, int DiffMag)
+char * BackupPicture(char * Name, time_t mtime, int DiffMag)
 {
     static char DstPath[500];
     static char SuffixChar = ' ';
     static time_t LastSaveTime;
 
-    if (KeepPixDir[0] == '\0') return NULL; // Picture saving not enabled.
+    if (SaveDir[0] == '\0') return NULL; // Picture saving not enabled.
 
     {
         char NameSuffix[20];
@@ -259,8 +259,7 @@ char * BackupPicture(char * Name, char * KeepPixDir, time_t mtime, int DiffMag)
             LastSaveTime = mtime;
         }
         sprintf(NameSuffix, "%c%04d",SuffixChar, DiffMag);
-        PicDestFromTime(DstPath, KeepPixDir, mtime, NameSuffix);
-printf("\ncopy %s to %s",Name, DstPath);
+        PicDestFromTime(DstPath, SaveDir, mtime, NameSuffix);
         EnsurePathExists(DstPath);
         CopyFile(Name, DstPath);
     }

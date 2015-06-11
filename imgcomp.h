@@ -29,9 +29,11 @@ typedef struct {
 
 MemImage_t MemImage;
 extern int NewestAverageBright;
-extern int TimelapseInterval;
-extern int FollowDir;
 extern int Verbosity;
+
+extern char SaveDir[200];
+extern char SaveNames[200];
+
 
 extern Regions_t Regions;
 
@@ -53,5 +55,5 @@ void run_blink_program(void);
 char * CatPath(char *Dir, char * FileName);
 char ** GetSortedDir(char * Directory, int * NumFiles);
 void FreeDir(char ** FileNames, int NumEntries);
-char * BackupPicture(char * Name, char * KeepPixDir, time_t mtime, int diffmag);
+char * BackupPicture(char * Name, time_t mtime, int DiffMag);
 int CopyFile(char * src, char * dest);
