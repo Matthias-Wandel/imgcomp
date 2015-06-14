@@ -51,7 +51,7 @@ MemImage_t * LoadJPEG(char* FileName, int scale_denom, int discard_colors, int P
 
     //if the jpeg file doesn't load
     if(!file) {
-       fprintf(stderr, "Error reading JPEG file %s!", FileName);
+       fprintf(stderr, "Error reading JPEG file %s!\n", FileName);
        return NULL;
     }
 

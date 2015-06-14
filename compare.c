@@ -128,7 +128,7 @@ void ProcessDiffMap(MemImage_t * MapPic)
             img += 3;
 
             // If the map is blue, then ignore.
-            // If the map is red, then wight 3x.
+            // If the map is red, then wight 2x.
 
             if (b > 100 && b > (r+g)*2){
                 // Blue.  Ignore.
@@ -139,8 +139,8 @@ void ProcessDiffMap(MemImage_t * MapPic)
                 lastrow = row;
                 *map = 1;                
                 if (r > 100 && r > (g+b)*2){
-                    // Red.  Weigh 3x.
-                    *map = 3;
+                    // Red.  Weigh 2x.
+                    *map = 2;
                     numred += 1;
                 }
             }
@@ -482,14 +482,20 @@ static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold)
         memset(Diff4, 0, sizeof(int)*width4*height4);
         for (row=Region.y1;row<Region.y2;row++){
             // Compute difference by column using established threshold value
-            unsigned char * diffrow;
+            unsigned char * diffrow, *ExRow;
             int * width4row;
             diffrow = &DiffVal->values[width*row];
+            ExRow = &WeightMap->values[width*row];
+
             width4row = &Diff4[width4*(row/SCALEF)];
             for (col=Region.x1;col<Region.x2;col++){
-                int d = diffrow[col] > threshold;
+                int d = diffrow[col] - threshold;
                 if (d > 0){
-                    width4row[col/SCALEF] += (diffrow[col]-threshold);
+                    width4row[col/SCALEF] += d;
+                    if (ExRow[col] > 1){
+                        // Double weight region
+                        width4row[col/SCALEF] += d;
+                    }
                 }
             }
         }
@@ -527,15 +533,6 @@ static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold)
         }
     }
 
-    if (Verbosity > 1){
-        // Show the array.
-        printf("\n");
-        for (row=0;row<height4;row++){
-            for (col=0;col<width4;col++) printf("%3d",Diff4b[row*width4+col]/100);
-            printf("\n");
-        }
-    }
-
     // Transform array to sum of wind_w rows, while also looking for maximum.
     {
         int maxval, maxr, maxc;
@@ -558,7 +555,7 @@ static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold)
                 }
             }
         }
-        if (Verbosity) printf("max v=%d at r=%d,c=%d",maxval/100, maxr, maxc);
+        if (Verbosity) printf("max v=%d at r=%d,c=%d\n",maxval/100, maxr, maxc);
         retval.x = maxc * SCALEF - wind_w * SCALEF / 2;
         retval.y = maxr * SCALEF - wind_h * SCALEF / 2;
         if (retval.x < 0) retval.x = 0;
@@ -568,7 +565,7 @@ static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold)
    
     if (Verbosity > 1){ 
         // Show the array.
-        printf("\n");
+        printf("Window sums\n");
         for (row=0;row<height4;row++){
             for (col=0;col<width4;col++) printf("%3d",Diff4[row*width4+col]/100);
             printf("\n");

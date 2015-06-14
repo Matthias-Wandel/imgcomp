@@ -559,8 +559,9 @@ int main(int argc, char **argv)
         }
 
         MapPic  = LoadJPEG(DiffMapFileName, ScaleDenom, 0, 0);
-        ProcessDiffMap(MapPic);
+        if (MapPic == 0) exit(-1); // error is already reported.
 
+        ProcessDiffMap(MapPic);
         free(MapPic);
     }
 
