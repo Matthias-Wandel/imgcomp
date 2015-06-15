@@ -1,0 +1,128 @@
+<html>
+<head>
+<title>imgcomp documentation</title>
+<style type=text/css>
+  body { font-family: sans-serif; font-size: 100%;}
+  div.c { white-space: pre; font-family: monospace; font-weight: bold; font-size: 120%;
+</style></head>
+<h2>What is imgcomp for?</h2>
+The program "imgcomp" is for capturing long term motion triggered timelaps photographs
+using a Raspberry Pi and camera module.  It is for the purpose of unattended
+monitoring and surveilance.
+<p>
+Unlike the "motion" package, it is not intended to work likc a CCTV camera.  Instead,
+imgcomp is intended to fulfill the function of wildlife cameras - the sort that
+is battery powered and strapped to a tree for weeks at a time to monitor what sort of wildlife
+is present.  I have used such cameras but found that the passive infrared motion sensing of
+these camers would often miss events, especially in winter.  Sometimes they would even
+miss a tractor driving past the camera within five meters!
+
+<h2>What imgcomp does not do</h2>
+<li>A raspberry Pi running imgcomp cannot be run off batteries (too much power draw)
+<li>Imgcomp does not capture video
+<li>Imgcomp has no user interface to speak of
+<li>Imgcomp does not work with USB web cameras
+<li>Imgcomp is not for people unfamiliar with using Linux from the command line.
+<p>
+<b>
+If you don't know how to edit configuration file, before asking me questions,
+get very familiar with linux.  This might take you a few months.  There is plenty
+about linux on the internet, please don't ask me for pointers.</b>
+
+<h2>Compiling imgcomp</h2>
+It is assumed that you have rapsian already installed on your Raspberry Pi.
+<p>
+I do not have a binary distribution for imgcomp.  Before using imgcomp, you will have
+to compile it.
+<p>
+Imgcomp uses libjpeg.  Because I don't like external dependencies, I included
+a stripped down version of libjpeg in the distribution.  You will have to compile
+this first:<p>
+<div class="c">cd libjpeg</div>
+<div class="c">make</div>
+<div class="c">cd ..</div><br>
+
+This will take a minute.
+Then go back into the main imgcomp directory and type:<p>
+<div class="c">mkdir obj</div>
+<div class="c">make</div><br>
+This will compile imgcomp.
+
+<h2>Setting up imgcomp to run on the raspberry pi</h2>
+<h3>Enable camera module</h3>
+Run raspi-config to enable the camera module<p>
+You also need to make sure that your camera module is installed and functioning.
+Take some pictures with raspistill to test.  Type:
+<div class="c">raspistill -o foo.jpg"</div><br>
+Then check that foo.jpg is an image of what the camera was pointed at.
+
+<h3>Make a ram disk</h3>
+Imgcomp uses raspistill to capture images to the file system.  To avoid wearing out
+the flash card, it's best to capture to a ramdisk.  Make a 20 megabyte ramdisk
+by adding the following line to the end of <div class="c">/etc/fstab</div>:
+<div class="c">tmpfs   /ramdisk        tmpfs   nodev,nosuid,size=20M   0       0</div>
+<p>
+
+<h2>Setting up Camera LED blinking</h2>
+imgcomp can optionally blink the camera module's LED (the one that comes on when the camera
+is active).  If you wish the LED to blink when imgcomp detects motion, plese follow
+the following steps:
+
+Disable normal function of the camera LED, add the following line to the end of
+the file at 
+<div class="c">/boot/config.txt</div>
+
+<div class="c">disable_camera_led=1</div>
+
+<a href="http://www.raspberrypi-spy.co.uk/2013/05/how-to-disable-the-red-led-on-the-pi-camera-module/">
+More on how to do this here</a>
+<p>
+imgcomp runs a separate program with superuser priviledges to blink the LED.
+This program is typically specified as "blinkc_camera_led" and is compiled along with
+imgcomp.  You can test that this blinks the camera's LED by running blink_camera_led with
+root priviledges with this command (which will promot you for your password)
+<p>
+<div class="c">sudo ./blink_camera_led</div>
+<p>
+blink_camera_led toggles the GPIO line that goes to the camera LED on the raspberry Pi model b+.
+If you are using a model A, you will have to modify the file blink_camera_led.c to specify
+the appropriate LED line, then recompile by typing "make".
+<p>
+Once you have made sure that blink_camera_led blinks the LED, you will have to change the owner
+of the file to root, and set the "setuid bit".  This will allow the program to run with administrator
+proviledges even when invoked by a regular user.
+<p>
+<div class="c">sudo chown root blink_camera_led</div>
+<div class="c">sudo chmod +s blink_camera_led</div>
+<p>
+After this, type "ls -l".  The blink_camera_led file should now be highlighted because it runs
+with elevated priviledges.
+
+<div class="c">-rwsr-sr-x 1 root pi   6702 Jun 11 16:13 blink_camera_led</div>
+<p>
+<h2>Disable on screen logo and screen blanking</h2>
+These steps are not necessary, but I prefer to disable the raspberry pi logo at the top
+of the screen (more room for text) and disabling screen blanking:
+
+In the file /etc/kbd.config change:
+<div class="c">BLANK_TIME=30</div>
+to
+<div class="c">BLANK_TIME=0</div>
+
+Also change:
+
+<div class="c">POWERDOWN_TIME=30</div>
+to
+<div class="c">POWERDOWN_TIME=0</div>
+<a href="https://www.raspberrypi.org/forums/viewtopic.php?f=66&t=18200">see here</a>
+<p><br>
+
+To disable the pi logo on the console, to the file /boot/cmdline.txt add:
+<div class="c">logo.nolog</a>
+to the end of the line
+<a href="http://ananddrs.com/2013/09/18/remove-rpi-logo-startup/">see here</a>
+<p><br>
+
+<h2>How it works</h2>
+<h2>Configuration file, image map</h2>
+
