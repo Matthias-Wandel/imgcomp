@@ -7,22 +7,23 @@
 </style></head>
 <h2>What is imgcomp for?</h2>
 The program "imgcomp" is for capturing long term motion triggered timelaps photographs
-using a Raspberry Pi and camera module.  It is for the purpose of unattended
+using a Raspberry Pi and camera module.  It's also useful for unattended
 monitoring and surveilance.
 <p>
-Unlike the "motion" package, it is not intended to work likc a CCTV camera.  Instead,
-imgcomp is intended to fulfill the function of wildlife cameras - the sort that
-is battery powered and strapped to a tree for weeks at a time to monitor what sort of wildlife
-is present.  I have used such cameras but found that the passive infrared motion sensing of
+Unlike the "motion" package, it is not intended to work likc a CCTV camera. 
+Imgcomp was inspired by wildlife cameras - the sort that
+is strapped to a tree in the woods to monitor what sort of wildlife
+is present, and checked after a week or more to see what it captured.
+I use such cameras but found that the passive infrared motion sensing of
 these camers would often miss events, especially in winter.  Sometimes they would even
 miss a tractor driving past the camera within five meters!
 
 <h2>What imgcomp does not do</h2>
-<li>A raspberry Pi running imgcomp cannot be run off batteries (too much power draw)
-<li>Imgcomp does not capture video
-<li>Imgcomp has no user interface to speak of
-<li>Imgcomp does not work with USB web cameras
-<li>Imgcomp is not for people unfamiliar with using Linux from the command line.
+<li>Not for battery powered application.  It uses too much power.
+<li>Does not capture video
+<li>Does not work with USB web cameras (still frame capture is too slow)
+<li>Has no user interface to speak of
+<li>Is not for people unfamiliar with using Linux from the command line.
 <p>
 <b>
 If you don't know how to edit configuration file, before asking me questions,
@@ -42,11 +43,17 @@ this first:<p>
 <div class="c">make</div>
 <div class="c">cd ..</div><br>
 
-This will take a minute.
+This will take a few minutes.
 Then go back into the main imgcomp directory and type:<p>
 <div class="c">mkdir obj</div>
 <div class="c">make</div><br>
 This will compile imgcomp.
+
+<p>
+I recommend setitng up imgcomp to run as user "pi" in the directory /home/pi/imgcomp<br>
+The program "raspistill" will run as user "pi", but for other accounts requires root
+priviledges (for reasons I don't understand).  So just use the user id 'pi' and
+avoid the hassle.
 
 <h2>Setting up imgcomp to run on the raspberry pi</h2>
 <h3>Enable camera module</h3>
@@ -64,9 +71,8 @@ by adding the following line to the end of <div class="c">/etc/fstab</div>:
 <p>
 
 <h2>Setting up Camera LED blinking</h2>
-imgcomp can optionally blink the camera module's LED (the one that comes on when the camera
-is active).  If you wish the LED to blink when imgcomp detects motion, plese follow
-the following steps:
+imgcomp can optionally blink the camera module's LED when it detects motion.
+If you wish to enable this, plese follow the steps below.
 
 Disable normal function of the camera LED, add the following line to the end of
 the file at 
@@ -77,19 +83,19 @@ the file at
 <a href="http://www.raspberrypi-spy.co.uk/2013/05/how-to-disable-the-red-led-on-the-pi-camera-module/">
 More on how to do this here</a>
 <p>
-imgcomp runs a separate program with superuser priviledges to blink the LED.
-This program is typically specified as "blinkc_camera_led" and is compiled along with
-imgcomp.  You can test that this blinks the camera's LED by running blink_camera_led with
+imgcomp runs a separate program with root priviledges to blink the LED.
+This program is compiled as "blinkc_camera_led" along with imgcomp.
+You can test that this blinks the camera's LED by running blink_camera_led with
 root priviledges with this command (which will promot you for your password)
 <p>
 <div class="c">sudo ./blink_camera_led</div>
 <p>
 blink_camera_led toggles the GPIO line that goes to the camera LED on the raspberry Pi model b+.
 If you are using a model A, you will have to modify the file blink_camera_led.c to specify
-the appropriate LED line, then recompile by typing "make".
+the appropriate GPIO line, then recompile by typing "make".
 <p>
 Once you have made sure that blink_camera_led blinks the LED, you will have to change the owner
-of the file to root, and set the "setuid bit".  This will allow the program to run with administrator
+of the file to root and set the "setuid bit".  This will allow the program to run with administrator
 proviledges even when invoked by a regular user.
 <p>
 <div class="c">sudo chown root blink_camera_led</div>
