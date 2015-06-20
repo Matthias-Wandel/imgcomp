@@ -5,7 +5,10 @@ OBJ=obj
 SRC=.
 CFLAGS:= $(CFLAGS) -O3 -Wall
 
-all: imgcomp blink_camera_led
+all: objdir imgcomp blink_camera_led
+
+objdir:
+	mkdir -p obj
 
 objs = $(OBJ)/main.o $(OBJ)/compare.o $(OBJ)/jpeg2mem.o \
 	$(OBJ)/jpgfile.o $(OBJ)/exif.o $(OBJ)/start_raspistill.o $(OBJ)/util.o
@@ -20,6 +23,9 @@ imgcomp: $(objs) libjpeg/libjpeg.a
 
 blink_camera_led: blink_camera_led.c
 	$(CC) -o blink_camera_led blink_camera_led.c
+
+libjpeg/libjpeg.a:
+	cd libjpeg; make
 
 
 clean:
