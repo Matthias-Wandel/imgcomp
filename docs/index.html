@@ -3,7 +3,8 @@
 <title>imgcomp documentation</title>
 <style type=text/css>
   body { font-family: sans-serif; font-size: 100%;}
-  div.c { white-space: pre; font-family: monospace; font-weight: bold; font-size: 120%;
+  div.c { white-space: pre; font-family: monospace; font-weight: bold; font-size: 120%;}
+  span.c { font-family: monospace; font-weight: bold; font-size: 120%;}
 </style></head>
 <h2>What is imgcomp for?</h2>
 The program "imgcomp" is for capturing long term motion triggered timelaps photographs
@@ -31,21 +32,31 @@ get very familiar with linux.  This might take you a few months.  There is plent
 about linux on the internet, please don't ask me for pointers.</b>
 
 <h2>Compiling imgcomp</h2>
+
+<h2>How imgcomp works</h2>
+The imgcomp runs the raspberry pi camera capture program "raspistill" to capture
+still pictures every second (up to 3 frames per second).  Raspistill then reads
+the images, and if it detects a change from one image to the next, copies the image
+to a more permanent directory, under a name that contains the date.
+<p>
+imgcomp tries to differentiate between important and unimportant changes.  Changes
+that are localized to part of the image, are more important than changes that
+happen to the whole image.  Slow changes (such as clouds moving in) tend to be ignored.
+
+<h2>Configuration file, image map</h2>
+
+
+
 It is assumed that you have rapsian already installed on your Raspberry Pi.
 <p>
 I do not have a binary distribution for imgcomp.  Before using imgcomp, you will have
 to compile it.
 <p>
 Imgcomp uses libjpeg.  Because I don't like external dependencies, I included
-a stripped down version of libjpeg in the distribution.  You will have to compile
-this first:<p>
-<div class="c">cd libjpeg</div>
-<div class="c">make</div>
-<div class="c">cd ..</div><br>
-
-This will take a few minutes.
-Then go back into the main imgcomp directory and type:<p>
-<div class="c">mkdir obj</div>
+a stripped down version of libjpeg in the distribution.  This will automatically
+compile when you compile imgcomp.  Compiling everything will take a few minutes.
+<p>
+You can compile imgcomp by going into the imgcomp directory and typing:<br>
 <div class="c">make</div><br>
 This will compile imgcomp.
 
@@ -66,17 +77,18 @@ Then check that foo.jpg is an image of what the camera was pointed at.
 <h3>Make a ram disk</h3>
 Imgcomp uses raspistill to capture images to the file system.  To avoid wearing out
 the flash card, it's best to capture to a ramdisk.  Make a 20 megabyte ramdisk
-by adding the following line to the end of <div class="c">/etc/fstab</div>:
+by adding the following line to the end of <span class="c">/etc/fstab</span> :
 <div class="c">tmpfs   /ramdisk        tmpfs   nodev,nosuid,size=20M   0       0</div>
 <p>
+Note that /etc/fstab is only read at startup, so to make this ramdisk active,
+you will have to reboot your raspberry pi.
 
 <h2>Setting up Camera LED blinking</h2>
 imgcomp can optionally blink the camera module's LED when it detects motion.
 If you wish to enable this, plese follow the steps below.
 
 Disable normal function of the camera LED, add the following line to the end of
-the file at 
-<div class="c">/boot/config.txt</div>
+the file at <span class="c">/boot/config.txt</span>:
 
 <div class="c">disable_camera_led=1</div>
 
@@ -101,34 +113,27 @@ proviledges even when invoked by a regular user.
 <div class="c">sudo chown root blink_camera_led</div>
 <div class="c">sudo chmod +s blink_camera_led</div>
 <p>
-After this, type "ls -l".  The blink_camera_led file should now be highlighted because it runs
-with elevated priviledges.
-
+After this, type "ls -l".  The blink_camera_led file should show roughly like this<br>
 <div class="c">-rwsr-sr-x 1 root pi   6702 Jun 11 16:13 blink_camera_led</div>
+<br>
+If your terminal program supports colour highlighting, this line will also be highlighted.
 <p>
 <h2>Disable on screen logo and screen blanking</h2>
 These steps are not necessary, but I prefer to disable the raspberry pi logo at the top
 of the screen (more room for text) and disabling screen blanking:
 
-In the file /etc/kbd.config change:
-<div class="c">BLANK_TIME=30</div>
-to
-<div class="c">BLANK_TIME=0</div>
-
-Also change:
-
-<div class="c">POWERDOWN_TIME=30</div>
-to
-<div class="c">POWERDOWN_TIME=0</div>
-<a href="https://www.raspberrypi.org/forums/viewtopic.php?f=66&t=18200">see here</a>
+In the file /etc/kbd/config change:<p>
+<span class="c">BLANK_TIME=30</span> to <span class="c">BLANK_TIME=0</span><br>
+Also change:<br>
+<span class="c">POWERDOWN_TIME=30</span> to <span class="c">POWERDOWN_TIME=0</span>
+<br>
+<a href="https://www.raspberrypi.org/forums/viewtopic.php?f=66&t=18200">more on this here</a>
 <p><br>
 
-To disable the pi logo on the console, to the file /boot/cmdline.txt add:
-<div class="c">logo.nolog</a>
-to the end of the line
-<a href="http://ananddrs.com/2013/09/18/remove-rpi-logo-startup/">see here</a>
+To disable the pi logo on the console, to the file <span class="c">/boot/cmdline.txt</span> add
+<span class="c">logo.nolog</span> to the end of the line
+<br>
+<a href="http://ananddrs.com/2013/09/18/remove-rpi-logo-startup/">more on this here</a>
 <p><br>
 
-<h2>How it works</h2>
-<h2>Configuration file, image map</h2>
 
