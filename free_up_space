@@ -1,0 +1,13 @@
+#! /bin/bash
+
+FREESP=$(df /dev/root | tail -1 | cut -b46-47)
+echo Disk free percent: $FREESP
+
+if [ "$FREESP" -gt "75" ]; then
+	DELDIR=$(ls -tr /home/pi/images | head -1)
+	echo Delete this directory: $DELDIR
+	rm -r /home/pi/images/$DELDIR
+else
+	echo Have enough free space
+fi
+
