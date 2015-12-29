@@ -8,16 +8,21 @@
 </style></head>
 <h2>What is imgcomp for?</h2>
 The program "imgcomp" is for capturing long term motion triggered timelaps photographs
-using a Raspberry Pi and camera module.  It's also useful for unattended
+using a Raspberry Pi and camera module.  The intended use is unattended
 monitoring and surveilance.
 <p>
 Unlike the "motion" package, it is not intended to work likc a CCTV camera. 
 Imgcomp was inspired by wildlife cameras - the sort that
-is strapped to a tree in the woods to monitor what sort of wildlife
-is present, and checked after a week or more to see what it captured.
+is left strapped to a tree in the woods to take picture of passing deer and other
+wildlife, with the images retrieved at a later time.
 I use such cameras but found that the passive infrared motion sensing of
-these camers would often miss events, especially in winter.  Sometimes they would even
-miss a tractor driving past the camera within five meters!
+these camers would often miss events, especially in winter.  Sometimes
+they would even miss a tractor driving past the camera!
+<P>
+I wrote imcomp to monitor comings and goings at my rural proerty when I am
+not there.  Unlike the wildlife cameras, itwill not miss anything.  However,
+it cannot be run on battery, and unlike passive infrared, it will not
+trigger in the dark.
 
 <h2>What imgcomp does not do</h2>
 <li>Not for battery powered application.  It uses too much power.
@@ -28,10 +33,22 @@ miss a tractor driving past the camera within five meters!
 <p>
 <b>
 If you don't know how to edit configuration file, before asking me questions,
-get very familiar with linux.  This might take you a few months.  There is plenty
-about linux on the internet, please don't ask me for pointers.</b>
+get very familiar with linux.  This might take you a few months of study.
+There is plenty about linux on the internet, please don't ask me for pointers.</b>
 
 <h2>Compiling imgcomp</h2>
+Imgcomp compiles using gcc on a raspberry PI computer.  It builds a
+static stripped down version of "libjpeg" along with it.  Building of the library
+is invoked automatically by the makefile.
+<p>
+To compile imcomp, go to the main directory (containing the .c files) and 
+enter the command<p>
+<b>make</b>
+<p><br>
+Imgcomp can also be compiled under windows using the microsoft visual C
+compiler.  The windows build cannot be used with live image capture.  I use
+it for development and debugging.
+
 
 <h2>How imgcomp works</h2>
 The imgcomp runs the raspberry pi camera capture program "raspistill" to capture
@@ -43,14 +60,13 @@ imgcomp tries to differentiate between important and unimportant changes.  Chang
 that are localized to part of the image, are more important than changes that
 happen to the whole image.  Slow changes (such as clouds moving in) tend to be ignored.
 
-<h2>Configuration file, image map</h2>
-
-
+<h2>Compiling imgcomp</h2>
 
 It is assumed that you have rapsian already installed on your Raspberry Pi.
 <p>
 I do not have a binary distribution for imgcomp.  Before using imgcomp, you will have
-to compile it.
+to compile it.  If you don't know what compiling a program is, then you will not
+have much luck with other aspects of setting up imcomp.
 <p>
 Imgcomp uses libjpeg.  Because I don't like external dependencies, I included
 a stripped down version of libjpeg in the distribution.  This will automatically
@@ -67,6 +83,13 @@ priviledges (for reasons I don't understand).  So just use the user id 'pi' and
 avoid the hassle.
 
 <h2>Setting up imgcomp to run on the raspberry pi</h2>
+Most of the steps of setting up imcomp described below can be automated
+by running the bash script<p>
+<span class="c">setup_imgcomp</span>
+<br>
+This automates creating the ram disk, 
+
+
 <h3>Enable camera module</h3>
 Run raspi-config to enable the camera module<p>
 You also need to make sure that your camera module is installed and functioning.
@@ -83,7 +106,7 @@ by adding the following line to the end of <span class="c">/etc/fstab</span> :
 Note that /etc/fstab is only read at startup, so to make this ramdisk active,
 you will have to reboot your raspberry pi.
 
-<h2>Setting up Camera LED blinking</h2>
+<h3>Setting up Camera LED blinking</h2>
 imgcomp can optionally blink the camera module's LED when it detects motion.
 If you wish to enable this, plese follow the steps below.
 
@@ -117,10 +140,10 @@ After this, type "ls -l".  The blink_camera_led file should show roughly like th
 <div class="c">-rwsr-sr-x 1 root pi   6702 Jun 11 16:13 blink_camera_led</div>
 <br>
 If your terminal program supports colour highlighting, this line will also be highlighted.
+Its important that the file attributes "-rwsr-sr-x 1 root" should match what is shown here.
 <p>
-<h2>Disable on screen logo and screen blanking</h2>
-These steps are not necessary, but I prefer to disable the raspberry pi logo at the top
-of the screen (more room for text) and disabling screen blanking:
+<h3>Disable screen blanking</h3>
+To disable screen blanking in console mode:<br>
 
 In the file /etc/kbd/config change:<p>
 <span class="c">BLANK_TIME=30</span> to <span class="c">BLANK_TIME=0</span><br>
@@ -128,12 +151,15 @@ Also change:<br>
 <span class="c">POWERDOWN_TIME=30</span> to <span class="c">POWERDOWN_TIME=0</span>
 <br>
 <a href="https://www.raspberrypi.org/forums/viewtopic.php?f=66&t=18200">more on this here</a>
-<p><br>
 
-To disable the pi logo on the console, to the file <span class="c">/boot/cmdline.txt</span> add
-<span class="c">logo.nolog</span> to the end of the line
-<br>
+<h3>Disable on screen logo</h3>
+I prefer to disable the raspberry pi logo at the top of the screen
+to leave more room for text.  To disable the logo, add <span class="c">logo.nologo</span> to the end of the line
+in the file <span class="c">/boot/cmdline.txt</span>.  The line should look like this:<p>
+<small>dwc_otg.lpm_enable=0 console=ttyAMA0,115200 console=tty1 root=/dev/mmcblk0p2 rootfstype=ext4 elevator=deadline rootwait <b>logo.nologo</b></small>
+<p>
 <a href="http://ananddrs.com/2013/09/18/remove-rpi-logo-startup/">more on this here</a>
 <p><br>
 
 
+<h2>How image detection works</h2>

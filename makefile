@@ -1,6 +1,7 @@
-#--------------------------------
-# imgcomp makefile for Linux (raspberry pi)
-#--------------------------------
+#-------------------------------------------------------------
+# imgcomp makefile for Linux (compile on raspberry pi or pi2)
+# Matthias Wandel 2015
+#-------------------------------------------------------------
 OBJ=obj
 SRC=.
 CFLAGS:= $(CFLAGS) -O3 -Wall

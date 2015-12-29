@@ -15,4 +15,6 @@ How to set it up:
 
 * Sample map images in documentation
 
-* How detection works (threshol levels, contrast scaling, diff window)
+* How detection works (threshold levels, contrast scaling, diff window)
+
+* Uses exif, what if no exif?
