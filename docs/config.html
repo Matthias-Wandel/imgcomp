@@ -4,7 +4,7 @@
 <style type=text/css>
   body { font-family: sans-serif; font-size: 100%;}
   div.c { white-space: pre; font-family: monospace; font-weight: bold; font-size: 120%;}
-  div.p { white-space: pre; font-family: monospace; font-weight: bold; font-size: 140%;}
+  div.p { white-space: pre; font-family: monospace; font-weight: bold; font-size: 140%; margin-top:10px;}
   span.c { font-family: monospace; font-weight: bold; font-size: 120%;}
 </style></head>
 <h2>imgcomp configuration options</h2>
@@ -12,24 +12,35 @@
 Imgcomp, under normal use, will run on a Raspberry Pi and launch raspistill to
 capture images every second or so to a ramdisk.  Imgcomp monitors the ram disk,
 comparing successive images and saving those images with changes from the previous
-one to a folder hierarchy in flash.
+one to a folder hierarchy in flash.  This involves a lot of configuration options.
+These are best specified in a configuration file, "imgcomp.conf" file
 <p>
-Imgcomp can also be run on a series of images stored in a folder, as well as
-compare two images specified on the command line.  These modes are primarily
-used for development and diagnostics.
+Imgcomp can also be run on a series of images stored in a folder (using the dodir option),
+<div class="c">imgcomp -dodir [images directory name]</div>
+This option is primarily used development and diagnostics, but is also useful
+for re-processing images if too many images were saved on account of setting the
+different threshold too low.
 <p>
-Parameters can be in a configuration file (imgcomp.conf) or on the command line.  Parameters
-in imgcomp.conf are read first, and may be overridden by parameters on the command line.
-<p>
-Configuration file options are in the form of:
-<p>
+Imcomp can also be run on just two images.  These images will be compared,
+with debug information printed, and a difference image saved to "diff.ppm".
+The diff image will be in PPM format (an uncompressed bitmap format)
+used for development and diagnostics.  The invocation for this would be:
+<div class="c">imgcomp [image1.jpg] [image2.jpg]</div>
+
+<h2>List of imcomp options and parameters</h2>
+When parameters are specified in the imgcomp.conf file, 
+they are specified in the form:
 <div class="c">parameter = value</div>
+The same option, specified on the command line, would take the form:
+<div class="c">-parameter value</div>
 <p>
+
 <div class="p">scale</div>
 How much to scale jpeg images by before running the detection algorithm.  Scaling the image
 down makes the program run faster and less susceptible to pixel noise.  Scale value can be
 1, 2, 4 or 8.  Default is 4.  I only use it with a scaling of 4 myself.
-<p>
+This equates to the command line option "-scale 4" or an imcomp.conf entry of "scale = 4"
+
 <div class="p">region</div>
 Specifies what region of the image that detection is to be done over.
 The region is specified as x1-x2,y1-y2.  For example 200-600,150-450 would specify
@@ -101,10 +112,6 @@ Specifies a timelapse interval, in seconds.  For example "tl=600" will cause ras
 to save an image every ten minutes, regardless of whether motion was detected.  Timelapse
 images will occur on multiples of the specified time.  "tl=3600" will save an image on the
 hour every hour, or whichever image is the first image acquired after the start of an hour.
-
-<div class="p">outfile</div>
-Specified the output file to write an image of differences.  This option is ONLY used
-in development and debugging.  The output image is on PPM format (uncompressed bitmap)
 
 <div class="p">debug</div>
 Output extra debugging information

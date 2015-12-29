@@ -1,6 +1,5 @@
 To do next:
 
-Output naming scheme option
 Review relaunch logic for dark images
 
 How to set it up:
@@ -10,5 +9,10 @@ How to set it up:
 * make a ram disk at /ramdisk (add line to fstab)
 * chown root and setuid blink_camera_led
 
+* Write setup script
 
+* LED configuration for PI2 
 
+* Sample map images in documentation
+
+* How detection works (threshol levels, contrast scaling, diff window)

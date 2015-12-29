@@ -65,7 +65,6 @@ void usage (void)// complain about bad command line
     fprintf(stderr, " -blink_cmd <command> Run this command when motion detected\n"
                     "                      (used to blink the camera LED)\n");
     fprintf(stderr, " -tl N                Save image every N seconds regardless\n");
-    fprintf(stderr, " -outfile name  Specify name for output file\n");
     fprintf(stderr, " -verbose or -debug   Emit more verbose output\n");
     exit(-1);
 }
@@ -179,10 +178,6 @@ static int parse_parameter (const char * tag, const char * value)
             }
         }
 
-    } else if (keymatch(tag, "dodir", 2)) {
-        // Scale the output image by a fraction M/N. */
-        if (!value) goto need_val;
-        strncpy(DoDirName,value, sizeof(DoDirName)-1);
     } else if (keymatch(tag, "region", 2)) {
         if (!value) goto need_val;
         if (!ParseRegion(&Regions.DetectReg, value)) goto bad_value;
@@ -206,6 +201,12 @@ static int parse_parameter (const char * tag, const char * value)
         strncpy(DiffMapFileName,value, sizeof(DiffMapFileName)-1);
 
 
+    } else if (keymatch(tag, "dodir", 2)) {
+        // Scale the output image by a fraction M/N. */
+        if (!value) goto need_val;
+        strncpy(DoDirName,value, sizeof(DoDirName)-1);
+		FollowDir = 0;
+		
     } else if (keymatch(tag, "followdir", 2)) {
         if (!value){
             need_val:

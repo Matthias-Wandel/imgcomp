@@ -10,7 +10,7 @@ followdir = /ramdisk
 region = ,390-700
 
 # Where to save interesting images to
-savedir = zz
+savedir = images
 
 # How often to save an image regardless
 timelapse = 30
