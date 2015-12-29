@@ -1,0 +1,60 @@
+#! /bin/bash
+echo "hello"
+
+# enable the camera
+
+if [ ! -f imgcomp ]; then
+	echo "You need to build imgcomp first.  type \"make\" to build it."
+	exit 1
+fi
+
+if grep -q "start_x\=1" /boot/config.txt; then
+	echo "camera is not enabled.  Please use raspi-config to enable camera module"
+else
+	echo "camera module is already enabled"
+fi
+
+# Make surea configuration file exists
+if [ -e ../imgcomp.conf ] ; then
+	echo "imcomp.conf file aready in place"
+else
+	echo "copy imcomp.conf file"
+	cp -a imgcomp.conf.example ../imgcomp.conf
+fi
+
+if [[ $EUID -ne 0 ]]; then
+	echo "This script needs to run as root.  Run \"sudo setup_imgcomop\""
+	#exit 1
+fi
+
+if [ -d /ramdisk ]; then
+	echo "ramdisk already exists"
+else
+	echo "making /ramdisk directory"
+	mkdir /ramdisk
+fi
+
+if grep -q "/ramdisk" /etc/fstab; then
+	echo "fstab already contains entry for ramdisk"
+else
+	echo "Adding ramdisk entry to fstab"
+	echo "tmpfs   /ramdisk        tmpfs   nodev,nosuid,size=20M   0       0" >> /etc/fstab
+fi
+
+if grep -q "logo.xnologo" /boot/cmdline.txt; then
+	echo "pi logo already disabled in /boot/cmdline.txt"
+else
+	sed '${s/$/ logo.nologo/}' cmdline.txt > cmdline.new
+	mv cmdline.txt cmdline.old
+	mv cmdline.new cmdline.txt
+fi
+
+
+if ls -l blink_camera_led | grep -q "sr.x...root" ; then
+	echo "blink_led already set to setuid root"
+else
+	echo "Setting blink_led to be root and setuid"
+	chown root blink_camera_led
+	chmod +s blink_camera_led
+fi
+
