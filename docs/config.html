@@ -9,32 +9,33 @@
 </style></head>
 <h2>imgcomp configuration options</h2>
 
-There are two ways to run imgcomp: Test mode and process mode.
-In test mode, two file names are provided on the command line, and it will compare the two
-and output debug information about the differences.
+Imgcomp, under normal use, will run on a Raspberry Pi and launch raspistill to
+capture images every second or so to a ramdisk.  Imgcomp monitors the ram disk,
+comparing successive images and saving those images with changes from the previous
+one to a folder hierarchy in flash.
 <p>
-The other mode is to run it so it launches raspistill to capture images, or
-just to run it through an already captured series of images for post-analysis.
-Whether imcomp uses live images captured from raspistill or just operates on a directory
-is specified by the command line options.
+Imgcomp can also be run on a series of images stored in a folder, as well as
+compare two images specified on the command line.  These modes are primarily
+used for development and diagnostics.
 <p>
-Parameters can be in a configuration file (imgcomp.conf) or on the command line.  Parmaters
-in imgcomp.conf are read first, and may be overriden by parameters on the command line.
+Parameters can be in a configuration file (imgcomp.conf) or on the command line.  Parameters
+in imgcomp.conf are read first, and may be overridden by parameters on the command line.
 <p>
-Configuration file optins are in the form of:
+Configuration file options are in the form of:
 <p>
 <div class="c">parameter = value</div>
 <p>
 <div class="p">scale</div>
 How much to scale jpeg images by before running the detection algorithm.  Scaling the image
 down makes the program run faster and less susceptible to pixel noise.  Scale value can be
-1, 2, 4 or 8.  Default is 4.  4 is the only value that has been tested.
+1, 2, 4 or 8.  Default is 4.  I only use it with a scaling of 4 myself.
 <p>
 <div class="p">region</div>
 Specifies what region of the image that detection is to be done over.
-The region is specified as x1-x2,y1-y2.  For example 256-768,192-576 would specify
-and area in the middle, and half the size of a 1024x768 image.  By default, image detection
-is over the entire image.
+The region is specified as x1-x2,y1-y2.  For example 200-600,150-450 would specify
+and area in the middle, and half the size of a 800x600 image.  By default, image detection
+is over the entire image.  Note that these values will be scaled down along with the image
+for the actual detection algorithm, so the region edges may not be precise to the pixel.
 
 <div class="p">exclude</div>
 Specifies a rectangular image to be excluded from detection.  The region is specified
@@ -42,12 +43,15 @@ in the format x1-x2,y1-y2, similar to "region".  If your detection region contai
 of excluded area, I recommend using the "diffmap" option instead.
 
 <div class="p">diffmap</div>
-Specifies the name of a jpeg file that is the map of a jpeg image.  Areas of pure blue
-will be excluded from the image, and areas of pure red will be weighted twice as heavily
-in image detection.  Most natural images do not contain sufficiently red or blue areas
+Specifies the name of a jpeg file that is the map of a jpeg image.  Areas coloure
+pure blue in the diffmap will be excluded from detection, and areas of pure red will
+be twice as sensitive for detection.
+Most natural images do not contain sufficiently red or blue areas
 to be considered "ignore" or "double", so you can take a capture image and paint
-areas to ignore (such as trees or flags that move with the wind) blue, without having
-the rest of the image trigger on this.  When imgcomp starts with a diffmap, it shows
+areas to ignore (such as trees or waving flags) blue, and perhaps a doorway
+in red.  The colours of the rest of the image are highly unlikely to be sufficiently
+red or blue to hit the threshold for ignore or double sensitivity.
+When imgcomp starts with a diffmap, it shows
 (in text) which areas are ignore or high weight.
 
 <div class="p">dodir</div>
@@ -55,17 +59,19 @@ Specifies which directory full of images to process.  This is for offline mode
 (not using live captures using raspistill).  Source images are not deleted.
 
 <div class="p">followdir</div>
-Specifies a directory to monitor for new images.  As new images appear,
-imgcomp processes them and deletes them.
+Specifies a directory to process and monitor for new images.  As new images appear,
+imgcomp processes them and deletes them.  an "aquire_cmd" option is normally used
+with this mode to launch raspistill to continuously aquire new images.
 
 <div class="p">aquire_cmd</div>
 Indicates the command line to launch raspistill with.  This line will in turn have a lot
 of options to pass to raspistill.  Potentially, you could have imgcomp run another
-image aquisition program instead.  The reason imgcomp launches raspistill is that it
-will monitor that it still works and re-launch raspistill if necessary.  Imgcomp will also
-check if the image has become too britht or too dim and re-launch raspistill so that
-raspistill can re-do the auto exposure (raspistill will not adjust the exposure settings
-when running in timelapse mode).  The aquire_cmd parameter is only used in followdir
+image aquisition program instead of raspistill.  The reason imgcomp launches raspistill is that it
+will monitor that raspistill has not stalled.  Imgcomp will kill and re-launch raspistill
+if it detects that image aquisition has stopped.  Imgcomp will also
+check if the image has become too bright or too dim and re-launch raspistill so that
+raspistill can re-do the auto exposure, because (raspistill will not make exposure adjustments
+while capturing timelapse images.  The aquire_cmd parameter is only used in followdir
 mode. 
 
 <div class="p">savedir</div>
@@ -74,25 +80,31 @@ Specifies with directory to save images to.
 <div class="p">savenames</div>
 Output naming scheme.  Uses strftime to format the output name.  
 May include '/' characters to put different images in different directories.
-The default "savenames" value is "%m%d/%H/%m%d-%H%M%S".  This value causes
+The default would be savenames="%m%d/%H/%m%d-%H%M%S".  This value causes
 imgcomp to create a directory for every day and every hour, and save the images
 with the naming scheme "MMDD-HHMMSS".  An image on July 20 at 11:50:58 would
-be placed in 07/20-115058.  This name will be appended with a space and the
+be placed in 0720/11/0720-115058.  This name will be appended with a space and the
 diff magnitude value of three digits.  In addition, if more than one image is
-aquired per second, the space will be replaced with a, b, or c, etc.
+saved in the same second, the space in the name will be replaced with a, b, or c, etc.
 
 <div class="p">sensitivity</div>
 Indicates how sensitive the program is.  I typically use values around 100.  However,
-this value is higly dependent on image resolution.
+this value is highly dependent on image resolution.
 
 <div class="p">blink_cmd</div>
 Raspistill can blink the LED on the raspberry pi camera module when it detects
-motion.  It uses a separate program 
+motion.  It uses a separate program, compiled as blink_camera_led.  This program
+needs to be setuid root to have sufficient privileges for manipulating the hardware I/O lines.
 
-sensitivity N       Set sensitivity.  Lower=more sensitive\n");
-blink_cmd <command> Run this command when motion detected\n"
-                    (used to blink the camera LED)\n");
-tl N                Save image every N seconds regardless\n");
-outfile name  Specify name for output file\n");
-verbose or -debug   Emit more verbose output\n");
+<div class="p">tl</div>
+Specifies a timelapse interval, in seconds.  For example "tl=600" will cause raspistill
+to save an image every ten minutes, regardless of whether motion was detected.  Timelapse
+images will occur on multiples of the specified time.  "tl=3600" will save an image on the
+hour every hour, or whichever image is the first image acquired after the start of an hour.
 
+<div class="p">outfile</div>
+Specified the output file to write an image of differences.  This option is ONLY used
+in development and debugging.  The output image is on PPM format (uncompressed bitmap)
+
+<div class="p">debug</div>
+Output extra debugging information
