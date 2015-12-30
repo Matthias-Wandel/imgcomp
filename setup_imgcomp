@@ -3,6 +3,11 @@ echo "hello"
 
 # enable the camera
 
+if [[ $EUID -ne 0 ]]; then
+	echo "Parts of this script require administrator priviledged."
+	echo "You may be propted to enter your password"
+fi
+
 if [ ! -f imgcomp ]; then
 	echo "You need to build imgcomp first.  type \"make\" to build it."
 	exit 1
@@ -11,50 +16,63 @@ fi
 if grep -q "start_x\=1" /boot/config.txt; then
 	echo "camera is not enabled.  Please use raspi-config to enable camera module"
 else
-	echo "camera module is already enabled"
+	echo "    camera module is already enabled"
 fi
 
-# Make surea configuration file exists
+# Make sure a configuration file exists
 if [ -e ../imgcomp.conf ] ; then
-	echo "imcomp.conf file aready in place"
+	echo "   imcomp.conf file aready in /home/pi"
 else
-	echo "copy imcomp.conf file"
-	cp -a imgcomp.conf.example ../imgcomp.conf
-fi
-
-if [[ $EUID -ne 0 ]]; then
-	echo "This script needs to run as root.  Run \"sudo setup_imgcomop\""
-	#exit 1
+	echo "copy imcomp.conf.example to /home/pi/imgcomp.conf"
+	cp -a imgcomp.conf.example /home/pi/imgcomp.conf
 fi
 
 if [ -d /ramdisk ]; then
-	echo "ramdisk already exists"
+	echo "    ramdisk mount point already exists"
 else
-	echo "making /ramdisk directory"
+	echo "making /ramdisk mount point"
 	mkdir /ramdisk
 fi
 
 if grep -q "/ramdisk" /etc/fstab; then
-	echo "fstab already contains entry for ramdisk"
+	echo "    fstab already contains entry for ramdisk"
 else
 	echo "Adding ramdisk entry to fstab"
-	echo "tmpfs   /ramdisk        tmpfs   nodev,nosuid,size=20M   0       0" >> /etc/fstab
+	sudo echo "tmpfs   /ramdisk        tmpfs   nodev,nosuid,size=20M   0       0" >> /etc/fstab
 fi
 
-if grep -q "logo.xnologo" /boot/cmdline.txt; then
-	echo "pi logo already disabled in /boot/cmdline.txt"
+if grep -q "/home/pi/imgcomp/imgcomp" /etc/rc.local; then
+	echo "    imgcomp already set up to run at startup"
 else
-	sed '${s/$/ logo.nologo/}' cmdline.txt > cmdline.new
-	mv cmdline.txt cmdline.old
-	mv cmdline.new cmdline.txt
+	echo "adding imcomp to rc.local to run at startup"
+	# Note: This makes imgcomp run at startup.  this prionts lot of stuff all the time,
+	# but you can still log in and kill imgcomp if you ignore all the stuff being printed.
+	sudo sed -i '/exit 0$/c\# Start my imgcomp program on startup\nasu - pi -c \"/home/pi/imgcomp/imgcomp\" &\n\nexit 0\n' /etc/rc.local
 fi
 
+if grep -q "logo.nologo" /boot/cmdline.txt; then
+	echo "    on screen pi logo already disabled in /boot/cmdline.txt"
+else
+	echo "disabling on screen pi logo in cmdline.txt"
+	sudo sed -i '${s/$/ logo.nologo/}' /boot/cmdline.txt
+fi
 
 if ls -l blink_camera_led | grep -q "sr.x...root" ; then
-	echo "blink_led already set to setuid root"
+	echo "    blink_led already set to setuid root"
 else
 	echo "Setting blink_led to be root and setuid"
-	chown root blink_camera_led
-	chmod +s blink_camera_led
+	sudo chown root blink_camera_led
+	sudo chmod +s blink_camera_led
 fi
+
+
+if crontab -l 2>/dev/null | grep -q "/imgcomp/free_up_space"; then
+	echo "    crontab entry for free_up_space script already exists"
+else
+	echo "Adding crontab entry to periodically delete old images"
+	# Run the free_up_space script every hour to delete the oldest day's directory
+	# if space on the flash card is runninglow.
+	crontab -l 2>/dev/null| { cat; echo "3 * * * * /home/pi/imgcomp/free_up_space"; } | crontab -
+fi
+
 
