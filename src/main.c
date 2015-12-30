@@ -305,8 +305,15 @@ static void read_config_file()
                 t--;
             }
         }
+        
+        {
+            static int msg_shown = 0;
+            if (!msg_shown) printf("Configuration parameters:\n");
+            msg_shown = 1;
+        }
+
         // Now finally have the tag extracted.
-        printf("'%s' = '%s'\n",s, value);
+        printf("    '%s' = '%s'\n",s, value);
 
         parse_parameter(s,value);
     }
@@ -514,6 +521,9 @@ static void ScaleRegion (Region_t * Reg, int Denom)
 int main(int argc, char **argv)
 {
     int file_index, a;
+
+    printf("Imgcomp version 0.8 (December 2015) by Matthias Wandel\n\n");
+
     progname = argv[0];
 
     // Reset to default parameters.
@@ -541,13 +551,13 @@ int main(int argc, char **argv)
         ScaleRegion(&Regions.ExcludeReg[a], ScaleDenom);
     }
 
-    if (DoDirName[0]) printf("Source directory = %s, follow=%d\n",DoDirName, FollowDir); 
-    if (SaveDir[0]) printf("Save to dir %s\n",SaveDir);
-    if (TimelapseInterval) printf("Timelapse interval %d seconds\n",TimelapseInterval);
+    if (DoDirName[0]) printf("    Source directory = %s, follow=%d\n",DoDirName, FollowDir); 
+    if (SaveDir[0]) printf("    Save to dir %s\n",SaveDir);
+    if (TimelapseInterval) printf("    Timelapse interval %d seconds\n",TimelapseInterval);
 
     if (DiffMapFileName[0]){
         MemImage_t *MapPic;
-        printf("Diffmap file: %s\n",DiffMapFileName);
+        printf("    Diffmap file: %s\n",DiffMapFileName);
         if (Regions.DetectReg.x1 || Regions.DetectReg.y1
                 || (Regions.DetectReg.x2 <  100000) || (Regions.DetectReg.y2 < 100000)){
             fprintf(stderr, "Specify diff map or detect regions, but not both\n");

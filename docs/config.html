@@ -61,16 +61,21 @@ of excluded area, I recommend using the "diffmap" option instead.
 Specifies the name of a jpeg file that is the map of a jpeg image.  Areas coloure
 pure blue in the diffmap will be excluded from detection, and areas of pure red will
 be twice as sensitive for detection.
-Most natural images do not contain sufficiently red or blue areas
-to be considered "ignore" or "double", so you can take a capture image and paint
-areas to ignore (such as trees or waving flags) blue, and perhaps a doorway
+<p>
+Most acquired images do not contain sufficiently red or blue areas
+to be considered "ignore" or "double", so you can take a captured image and paint
+over areas to ignore (such as trees or waving flags) blue, and perhaps a doorway
 in red.  The colours of the rest of the image are highly unlikely to be sufficiently
 red or blue to hit the threshold for ignore or double sensitivity.
 When imgcomp starts with a diffmap, it shows
 (in text) which areas are ignore or high weight.
+<p>
+Note that the diffmap is scaled down to the detection resolution, so use of the diffmap
+may not be accurate to the exact pixel boundary.
+
 
 <div class="p">dodir</div>
-Specifies which directory full of images to process.  This is for offline mode
+Specifies which directory full of images to process.  This is for off-line mode
 (not using live captures using raspistill).  Source images are not deleted.
 
 <div class="p">followdir</div>
@@ -86,7 +91,7 @@ will monitor that raspistill has not stalled.  Imgcomp will kill and re-launch r
 if it detects that image aquisition has stopped.  Imgcomp will also
 check if the image has become too bright or too dim and re-launch raspistill so that
 raspistill can re-do the auto exposure, because (raspistill will not make exposure adjustments
-while capturing timelapse images.  The aquire_cmd parameter is only used in followdir
+while capturing time-lapse images.  The aquire_cmd parameter is only used in followdir
 mode. 
 
 <div class="p">savedir</div>
@@ -107,13 +112,15 @@ Indicates how sensitive the program is.  I typically use values around 100.  How
 this value is highly dependent on image resolution.
 
 <div class="p">blink_cmd</div>
-Raspistill can grigger another program to blink the LED on the raspberry pi camera
+Raspistill can trigger another program to blink the LED on the raspberry pi camera
 module when it detects motion.  <b>This option is not used as I am unable to figure out
 how to blink the Rapsberry Pi 2 camera LED from a C program.</b>
 <p>
 It uses a separate program, compiled as blink_camera_led.  This program
 needs to be setuid root to have sufficient privileges for manipulating the hardware I/O lines.
 <p>
+I have only been able to determine how to blink the camera LED on Raspberry pi model b+,
+so I don't recoomend using this option.
 
 <div class="p">tl</div>
 Specifies a timelapse interval, in seconds.  For example "tl=600" will cause raspistill
@@ -123,3 +130,4 @@ hour every hour, or whichever image is the first image acquired after the start 
 
 <div class="p">debug</div>
 Output extra debugging information
+
