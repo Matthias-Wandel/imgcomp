@@ -1,5 +1,4 @@
 #! /bin/bash
-echo "hello"
 
 # enable the camera
 
@@ -21,7 +20,7 @@ fi
 
 # Make sure a configuration file exists
 if [ -e ../imgcomp.conf ] ; then
-	echo "   imcomp.conf file aready in /home/pi"
+	echo "    imcomp.conf file aready in /home/pi"
 else
 	echo "copy imcomp.conf.example to /home/pi/imgcomp.conf"
 	cp -a imgcomp.conf.example /home/pi/imgcomp.conf
