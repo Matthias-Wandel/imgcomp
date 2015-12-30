@@ -1,7 +1,6 @@
 #! /bin/bash
 
 # enable the camera
-
 if [[ $EUID -ne 0 ]]; then
 	echo "Parts of this script require administrator priviledged."
 	echo "You may be propted to enter your password"
