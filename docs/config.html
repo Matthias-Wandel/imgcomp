@@ -107,9 +107,13 @@ Indicates how sensitive the program is.  I typically use values around 100.  How
 this value is highly dependent on image resolution.
 
 <div class="p">blink_cmd</div>
-Raspistill can blink the LED on the raspberry pi camera module when it detects
-motion.  It uses a separate program, compiled as blink_camera_led.  This program
+Raspistill can grigger another program to blink the LED on the raspberry pi camera
+module when it detects motion.  <b>This option is not used as I am unable to figure out
+how to blink the Rapsberry Pi 2 camera LED from a C program.</b>
+<p>
+It uses a separate program, compiled as blink_camera_led.  This program
 needs to be setuid root to have sufficient privileges for manipulating the hardware I/O lines.
+<p>
 
 <div class="p">tl</div>
 Specifies a timelapse interval, in seconds.  For example "tl=600" will cause raspistill

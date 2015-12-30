@@ -106,6 +106,10 @@ by adding the following line to the end of <span class="c">/etc/fstab</span> :
 Note that /etc/fstab is only read at startup, so to make this ramdisk active,
 you will have to reboot your raspberry pi.
 
+<!-- Section on blinking the camera LED commented out because I can't figure out
+     how to make this work on Raspberry Pi 2 -->
+
+<!--
 <h3>Setting up Camera LED blinking</h2>
 imgcomp can optionally blink the camera module's LED when it detects motion.
 If you wish to enable this, plese follow the steps below.
@@ -142,10 +146,11 @@ After this, type "ls -l".  The blink_camera_led file should show roughly like th
 If your terminal program supports colour highlighting, this line will also be highlighted.
 Its important that the file attributes "-rwsr-sr-x 1 root" should match what is shown here.
 <p>
+-->
 <h3>Configure startup on boot</h3>
 It's best if imgcomp will automatically start after a power failure.  The easiest way to do
 this is to add a line to /etc/rc.local.  Add the following line near the end of rc.local,
-just above the line that reads <span class="c">exit 0<span>
+just above the line that reads <span class="c">exit 0</span>
 <p>
 <div class="c">su - pi -c "/home/pi/imgcomp/imgcomp" &amp;</div>
 <p>
