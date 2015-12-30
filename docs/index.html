@@ -85,7 +85,7 @@ avoid the hassle.
 <h2>Setting up imgcomp to run on the raspberry pi</h2>
 Most of the steps of setting up imcomp described below can be automated
 by running the bash script<p>
-<span class="c">setup_imgcomp</span>
+<span class="c">setup-imgcomp</span>
 <br>
 This automates creating the ram disk, 
 
@@ -143,14 +143,18 @@ If your terminal program supports colour highlighting, this line will also be hi
 Its important that the file attributes "-rwsr-sr-x 1 root" should match what is shown here.
 <p>
 <h3>Configure startup on boot</h3>
-
-
-
-
-<p><br><p>
-
-
-
+It's best if imgcomp will automatically start after a power failure.  The easiest way to do
+this is to add a line to /etc/rc.local.  Add the following line near the end of rc.local,
+just above the line that reads <span class="c">exit 0<span>
+<p>
+<div class="c">su - pi -c "/home/pi/imgcomp/imgcomp" &amp;</div>
+<p>
+This will cause imgcomp to run on startup.  The login prompt will also start, but will quickly
+become hidden by all the output that imgcomp produces.  However, you will still be able to
+log into the console by typing your username and password (though your typing will quickly
+be obscured by all the output).  After logging in, type "killall -9 imgcomp" to kill
+the program.  You can restart it by typing "imcomp/imgcomp &amp;" from the home directory.
+Started this way, it will keep running even after you log out.
 
 
 <h3>Disable screen blanking</h3>

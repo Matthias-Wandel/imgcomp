@@ -47,7 +47,7 @@ else
 	echo "adding imcomp to rc.local to run at startup"
 	# Note: This makes imgcomp run at startup.  this prionts lot of stuff all the time,
 	# but you can still log in and kill imgcomp if you ignore all the stuff being printed.
-	sudo sed -i '/exit 0$/c\# Start my imgcomp program on startup\nasu - pi -c \"/home/pi/imgcomp/imgcomp\" &\n\nexit 0\n' /etc/rc.local
+	sudo sed -i '/exit 0$/c\# Start my imgcomp program on startup\nsu - pi -c \"/home/pi/imgcomp/imgcomp\" &\n\nexit 0\n' /etc/rc.local
 fi
 
 if grep -q "logo.nologo" /boot/cmdline.txt; then
