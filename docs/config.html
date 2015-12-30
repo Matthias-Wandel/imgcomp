@@ -27,13 +27,17 @@ The diff image will be in PPM format (an uncompressed bitmap format)
 used for development and diagnostics.  The invocation for this would be:
 <div class="c">imgcomp [image1.jpg] [image2.jpg]</div>
 
-<h2>List of imcomp options and parameters</h2>
+<h2>Imgcomp options</h2>
+<h3>Options format</h2>
 When parameters are specified in the imgcomp.conf file, 
 they are specified in the form:
 <div class="c">parameter = value</div>
 The same option, specified on the command line, would take the form:
 <div class="c">-parameter value</div>
 <p>
+The file "imgcomp.conf.example" contains an example imgcomp.conf file.
+I recommend you start with that file.
+
 
 <div class="p">scale</div>
 How much to scale jpeg images by before running the detection algorithm.  Scaling the image

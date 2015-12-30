@@ -2,19 +2,9 @@ To do next:
 
 Review relaunch logic for dark images
 
-How to set it up:
-* Need configuration file
-* set disable_camera_led.c in /boot/config.txt
-* Enable raspi camera (of course)
-* make a ram disk at /ramdisk (add line to fstab)
-* chown root and setuid blink_camera_led
-
-* Write setup script
-
 * LED configuration for PI2 
-
 * Sample map images in documentation
-
 * How detection works (threshold levels, contrast scaling, diff window)
-
 * Uses exif, what if no exif?
+* move source code to src directory
+* Mention about logging in to console with stuff printing somewhere
