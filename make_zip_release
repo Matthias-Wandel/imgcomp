@@ -1,0 +1,28 @@
+#! /bin/bash
+
+# First remove all files not part of the release.
+rm -f obj/*
+rm -f libjpeg/*.o
+rm -f libjpeg/libjpeg.a
+rm -f *.bak
+rm -f src/*.bak
+rm -f docs/*.bak
+rm -f imgcomp
+rm -f blink_camera_led
+cd ..
+
+# Compress it with lzma (better than gzip and bzip2, faster than bzip2)
+# Want to have high compression ratio because I'm icluding all this libjpeg stuff.
+tar --lzma --exclude=".git" -cvf imgcomp.tar.lzma imgcomp
+
+echo
+echo "Created file imgcomp.tar.lzma"
+echo 
+echo "This file can be unpacked with the following command:"
+echo "   tar --lzma -xvf imgcomp.tar.lzma"
+
+
+
+
+
+

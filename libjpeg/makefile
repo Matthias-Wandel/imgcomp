@@ -96,7 +96,7 @@ DOBJECTS= djpeg.o wrppm.o wrgif.o wrtarga.o wrrle.o wrbmp.o rdcolmap.o \
 TROBJECTS= jpegtran.o rdswitch.o cdjpeg.o transupp.o
 
 
-all: libjpeg.a cjpeg djpeg jpegtran rdjpgcom wrjpgcom
+all: libjpeg.a #cjpeg djpeg jpegtran rdjpgcom wrjpgcom
 
 libjpeg.a: $(LIBOBJECTS)
 	$(RM) libjpeg.a
