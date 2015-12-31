@@ -14,9 +14,9 @@ objdir:
 objs = $(OBJ)/main.o $(OBJ)/compare.o $(OBJ)/jpeg2mem.o \
 	$(OBJ)/jpgfile.o $(OBJ)/exif.o $(OBJ)/start_raspistill.o $(OBJ)/util.o
 
-$(OBJ)/jpgfile.o $(OBJ)/exif.o $(OBJ)/start_raspistill.o: jhead.h
+$(OBJ)/jpgfile.o $(OBJ)/exif.o $(OBJ)/start_raspistill.o: $(SRC)/jhead.h
 
-$(OBJ)/%.o:$(SRC)/%.c imgcomp.h
+$(OBJ)/%.o:$(SRC)/%.c $(SRC)/imgcomp.h
 	${CC} $(CFLAGS) -c $< -o $@
 
 imgcomp: $(objs) libjpeg/libjpeg.a
