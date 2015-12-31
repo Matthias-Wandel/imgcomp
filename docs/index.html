@@ -52,11 +52,13 @@ compiler.  The windows build cannot be used with live image capture.  I use
 it for development and debugging.
 
 
-<h2>How imgcomp works</h2>
+<h2>How Imgcomp works</h2>
 The imgcomp runs the raspberry pi camera capture program "raspistill" to capture
-still pictures every second (up to 3 frames per second).  Raspistill then reads
+still pictures every second (up to 3 frames per second).  Imgcomp then reads
 the images, and if it detects a change from one image to the next, copies the image
 to a more permanent directory, under a name that contains the date.
+Imgcomp will occasionally restart rapsistill if the exposure has changed by too
+much, or if raspistill stops taking pictures (sometimes raspistill gets stuck)
 <p>
 imgcomp tries to differentiate between important and unimportant changes.  Changes
 that are localized to part of the image, are more important than changes that
@@ -84,14 +86,21 @@ The program "raspistill" will run as user "pi", but for other accounts requires 
 priviledges (for reasons I don't understand).  So just use the user id 'pi' and
 avoid the hassle.
 
-<h2>Setting up imgcomp to run on the raspberry pi</h2>
+<h2>Imgcomp setup scripts (automatic setup)</h2>
 Most of the steps of setting up imcomp described below can be automated
-by running the bash script<p>
+by running the bash script<br>
 <span class="c">setup-imgcomp</span>
-<br>
-This automates creating the ram disk, 
+<p>
+This automates creating the ram disk and a few other tweaks to make it run better.
+<p>
+To make imgcomp run at startup, you can follow this by running:<br>
+<span class="c">setup-imgcomp-autorun</span>
+<p>
+This sets imgcomp to run in console mode at startup  (Best not to start to graphical
+user interface) and also adds a cron job to delete the oldest recorded day
+if free flash space is getting low. 
 
-
+<h2>Manual Imgcomp setup</h2>
 <h3>Enable camera module</h3>
 Run raspi-config to enable the camera module<p>
 You also need to make sure that your camera module is installed and functioning.
@@ -185,3 +194,29 @@ in the file <span class="c">/boot/cmdline.txt</span>.  The line should look like
 
 
 <h2>How image detection works</h2>
+Imgcomp compares successive images.  Before doing detection, the images are scaled by
+a specified amount (typicall 1/4).  This eliminates pixel noise and makes it less sensitve
+to very subtle shifts in the image.
+<p>
+Next, average brightness is computed for both images and noamalization (scaling) values
+computed for both.  After that, brightness differences are computed for each pixel of the
+image.  A histogram is constructed of the brightness levesl.
+<p>
+It is assumed a typical change only affects one third of the image, so a difference threshold
+is computed from the histograh based on that.  Using this threshold. 
+<p>
+After that, the image differences are examined again to find a window of maximum change.
+This window is computed from a difference map further reduced by 4x, and the window is
+4 pixles in size, corresponding to an actual 64x64 pixel window in the source image.
+This windowing technique biases detection to clustered changes, which makes it less sensitive
+to distributed changes such as snowflakes, rainfall, or grasses waving in the wind.
+<p>
+Based on the maximum window found, a global "difference" value is calculated.  This threshold
+is compared to the sensitivity setting.  If the change is above the specified sensitivity
+threshold, the difference is considered significant, and the imag, as well as the one
+preceeding it are saved.
+<p>
+<h2>Spurious image detection</h2>
+Imgcomp occasionally false-triggers if an insect or a bird flies near the camera.
+This typically shows up in just one image frame, whereas changes of interst are usuall
+across several frames.  

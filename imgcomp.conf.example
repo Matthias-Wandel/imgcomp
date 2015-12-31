@@ -16,6 +16,8 @@ region = ,390-700
 # any other colour in the image is treated as normal detection area.
 #diffmap = "diffmap.jpg"
 
+# Turn on spurious reject
+spurious = 1
 
 # Where to save interesting images to
 savedir = images

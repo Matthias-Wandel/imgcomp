@@ -111,18 +111,24 @@ saved in the same second, the space in the name will be replaced with a, b, or c
 Indicates how sensitive the program is.  I typically use values around 100.  However,
 this value is highly dependent on image resolution.
 
+<div class="p">spurious</div>
+Set to '1' for spurious detection on, '0' for spurious detection off.  Default off.
+Spurious detection ignores any changes where the images before and after the image
+are identical.  This ignores single image events, such as an insect flying past
+the lens.  Changes that do not return to the previous image will not be ignored.
+
 <div class="p">blink_cmd</div>
 Raspistill can trigger another program to blink the LED on the raspberry pi camera
-module when it detects motion.  <b>This option is not used as I am unable to figure out
-how to blink the Rapsberry Pi 2 camera LED from a C program.</b>
+module when it detects motion.<br>
 <p>
 It uses a separate program, compiled as blink_camera_led.  This program
 needs to be setuid root to have sufficient privileges for manipulating the hardware I/O lines.
-<p>
-I have only been able to determine how to blink the camera LED on Raspberry pi model b+,
-so I don't recoomend using this option.
+<br>
+<b><small>I have only been ableto make my blink_camera_led
+program work on Raspbery Pi Model B+.  If you can modify the code to work on the Pi2,
+that would be much appreciated.</small></b>
 
-<div class="p">tl</div>
+<div class="p">timelapse</div>
 Specifies a timelapse interval, in seconds.  For example "tl=600" will cause raspistill
 to save an image every ten minutes, regardless of whether motion was detected.  Timelapse
 images will occur on multiples of the specified time.  "tl=3600" will save an image on the

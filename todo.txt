@@ -1,10 +1,14 @@
 To do next:
-* Mention split setup files in html docs
 
 Review relaunch logic for dark images
 
 * Sample map images in documentation
-* How detection works (threshold levels, contrast scaling, diff window)
 * Uses exif, what if no exif?
 * Mention about logging in to console with stuff printing somewhere
 
+
+Future features:
+* glitch detection for longer
+* Option to not save previous image
+* Save rate limiting
+* Some sort of web image interface
