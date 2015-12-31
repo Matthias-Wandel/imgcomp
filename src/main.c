@@ -29,6 +29,7 @@ char SaveDir[200];
 char SaveNames[200];
 int FollowDir = 0;
 static int ScaleDenom;
+int SpuriousReject = 0;
 
 static char DiffMapFileName[200];
 Regions_t Regions;
@@ -65,6 +66,8 @@ void usage (void)// complain about bad command line
     fprintf(stderr, " -blink_cmd <command> Run this command when motion detected\n"
                     "                      (used to blink the camera LED)\n");
     fprintf(stderr, " -tl N                Save image every N seconds regardless\n");
+    fprintf(stderr, " -spurious            Ignore any change that returns to\n"
+                    "                      previous image in the next frame\n");
     fprintf(stderr, " -verbose or -debug   Emit more verbose output\n");
     exit(-1);
 }
@@ -114,7 +117,7 @@ static int ParseRegion(Region_t * reg, const char * value)
         fprintf(stderr,"Detect region is too small\n");
         exit(-1);
     }
-    printf("Region is x:%d-%d, y:%d-%d\n",reg->x1, reg->x2, reg->y1, reg->y2);
+    printf("    Region is x:%d-%d, y:%d-%d\n",reg->x1, reg->x2, reg->y1, reg->y2);
     return 1;
 }
 
@@ -129,20 +132,27 @@ static int parse_parameter (const char * tag, const char * value)
         // Enable debug printouts.  Specify more than once for more detail.
         Verbosity += 1;
         return 1;
+	}
+	if (!value){
+        fprintf(stderr, "Parameters needs to be followed by a vaue\n",tag);
+        usage();
+	}
 
+    if (keymatch(tag, "spurious", 4)) {
+        SpuriousReject = value[0]-'0';
+		if (SpuriousReject != 0 && SpuriousReject != 1 || value[1] != 0){
+			fprintf(stderr, "Spurious value can only be 0 or 1\n");
+		}
     } else if (keymatch(tag, "scale", 2)) {
         // Scale the output image by a fraction M/N.
-        if (!value) goto need_val;
         if (sscanf(value, "%d", &ScaleDenom) != 1)
            usage();
     } else if (keymatch(tag, "sensitivity", 2)) {
         // Scale the output image by a fraction M/N.
-        if (!value) goto need_val;
         if (sscanf(value, "%d", &Sensitivity) != 1)
            usage();
-    } else if (keymatch(tag, "timelapse", 1)) {
+    } else if (keymatch(tag, "timelapse", 4)) {
         // Scale the output image by a fraction M/N.
-        if (!value) goto need_val;
         if (sscanf(value, "%d", (int *)&TimelapseInterval) != 1)
            usage();
         if (TimelapseInterval < 1){
@@ -151,19 +161,15 @@ static int parse_parameter (const char * tag, const char * value)
         }
     } else if (keymatch(tag, "aquire_cmd", 4)) {
         // Set output file name.
-        if (!value) goto need_val;
         strncpy(raspistill_cmd, value, sizeof(raspistill_cmd)-1);
-    } else if (keymatch(tag, "blink_cmd", 4)) {
+    } else if (keymatch(tag, "blink_cmd", 5)) {
         // Set output file name.
-        if (!value) goto need_val;
         strncpy(blink_cmd, value, sizeof(blink_cmd)-1);
-    } else if (keymatch(tag, "savedir", 5)) {
+    } else if (keymatch(tag, "savedir", 4)) {
         // Set output file name.
-        if (!value) goto need_val;
         strncpy(SaveDir,value, sizeof(SaveDir)-1);
     } else if (keymatch(tag, "savenames", 5)) {
         // Set output file name.
-        if (!value) goto need_val;
         strncpy(SaveNames,value, sizeof(SaveNames)-1);
         {
             int a,b;
@@ -178,15 +184,9 @@ static int parse_parameter (const char * tag, const char * value)
             }
         }
 
-    } else if (keymatch(tag, "region", 2)) {
-        if (!value) goto need_val;
+    } else if (keymatch(tag, "region", 3)) {
         if (!ParseRegion(&Regions.DetectReg, value)) goto bad_value;
-        printf("Region is x:%d-%d, y:%d-%d\n",
-            Regions.DetectReg.x1, Regions.DetectReg.x2, 
-            Regions.DetectReg.y1, Regions.DetectReg.y2);
-    } else if (keymatch(tag, "exclude", 2)) {
-        if (!value) goto need_val;
-
+    } else if (keymatch(tag, "exclude", 4)) {
         if (Regions.NumExcludeReg >= MAX_EXCLUDE_REGIONS){
             fprintf(stderr, "too many exclude regions");
             exit(-1);
@@ -196,23 +196,15 @@ static int parse_parameter (const char * tag, const char * value)
             printf("Exclude region x:%d-%d, y:%d-%d\n",NewEx.x1, NewEx.x2, NewEx.y1, NewEx.y2);
             Regions.ExcludeReg[Regions.NumExcludeReg++] = NewEx;
         }
-    } else if (keymatch(tag, "diffmap", 2)) {
-        if (!value) goto need_val;
+    } else if (keymatch(tag, "diffmap", 5)) {
         strncpy(DiffMapFileName,value, sizeof(DiffMapFileName)-1);
 
-
-    } else if (keymatch(tag, "dodir", 2)) {
+    } else if (keymatch(tag, "dodir", 5)) {
         // Scale the output image by a fraction M/N. */
-        if (!value) goto need_val;
         strncpy(DoDirName,value, sizeof(DoDirName)-1);
 		FollowDir = 0;
 		
-    } else if (keymatch(tag, "followdir", 2)) {
-        if (!value){
-            need_val:
-            fprintf(stderr, "Parameter '%s' needs to be followed by a vaue\n",tag);
-            usage();
-        }
+    } else if (keymatch(tag, "followdir", 6)) {
         strncpy(DoDirName,value, sizeof(DoDirName)-1);
         FollowDir = 1;
     } else {
@@ -380,7 +372,7 @@ static int ProcessImage(LastPic_t * New)
             LastPics[0].IsMotion = 1;
         }
 
-        if (LastPics[2].Image && 
+        if (SpuriousReject && LastPics[2].Image && 
             LastPics[0].IsMotion && LastPics[1].IsMotion
             && LastPics[2].DiffMag < (Sensitivity>>1)){
             // Compare to picture before last picture.
@@ -388,7 +380,9 @@ static int ProcessImage(LastPic_t * New)
 
             //printf("Diff with pix before last: %d\n",Trig.DiffLevel);
             if (Trig.DiffLevel < Sensitivity){
-                printf("(spurious %d) ", Trig.DiffLevel);
+                // An event that was just one frame.  We assume this was something
+                // spurious, like an insect or a rain drop
+                printf("(spurious %d, ignore) ", Trig.DiffLevel);
                 LastPics[0].IsMotion = 0;
                 LastPics[1].IsMotion = 0;
             }
