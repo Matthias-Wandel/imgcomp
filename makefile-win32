@@ -18,7 +18,7 @@ OBJECTS_IMGCOMP = $(OBJ)\main.obj $(OBJ)\compare.obj $(OBJ)\dir_win.obj \
                   $(OBJ)\jpeg2mem.obj $(OBJ)\jpgfile.obj $(OBJ)\exif.obj \
                   $(OBJ)\start_raspistill.obj $(OBJ)\util.obj
 
-$(OBJECTS_IMGCOMP): src\$(@B).c imgcomp.h
+$(OBJECTS_IMGCOMP): src\$(@B).c src\imgcomp.h
     $(CC) /Fo$(OBJ)\ $(CFLAGS) src\$(@B).c
 
 imgcomp.exe: $(OBJECTS_IMGCOMP)
