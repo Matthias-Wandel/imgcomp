@@ -44,7 +44,7 @@ static double AverageBright(MemImage_t * pic, Region_t Region, ImgMap_t* WeightM
                 DetectionPixels += 1;
             }
         }
-        baverage += brow; 
+		baverage += brow; 
     }
 
     if (DetectionPixels < 1000){
@@ -55,7 +55,31 @@ static double AverageBright(MemImage_t * pic, Region_t Region, ImgMap_t* WeightM
 }
 
 //----------------------------------------------------------------------------------------
-// Turn exclude regions into a map.
+//----------------------------------------------------------------------------------------
+static void ShowWeightMap()
+{
+	int row, width, height;
+    width = WeightMap->w;
+    height = WeightMap->h;
+	printf("Weight map:  '-' = ignore, '1' = normal, '#' = 2x weight\n");
+	
+    for (row=0;row<height;row+=4){
+        int r;
+		printf("   ");
+        for (r=0;r<width;r+=4){
+			switch (WeightMap->values[row*width+r]){
+				case 0: putchar('-');break;
+				case 1: putchar('1');break;
+				case 2: putchar('#');break;
+				default: putchar('?'); break;
+			}
+        }
+        printf("\n");
+    }
+}
+
+//----------------------------------------------------------------------------------------
+// Turn exclude regions into an image map of what to use and not use.
 //----------------------------------------------------------------------------------------
 void FillWeightMap(int width, int height)
 {
@@ -85,17 +109,12 @@ void FillWeightMap(int width, int height)
         }
     }
 
-    Reg = Regions.DetectReg;    
-    for (row=Reg.y1;row<height;row+=4){
-        for (r=0;r<width;r+=4){
-            printf("%d",WeightMap->values[row*width+r]);
-        }
-        printf("\n");
-    }
+	ShowWeightMap();
+	
 }
 
 //----------------------------------------------------------------------------------------
-// Load an image which indicates regions to use and exclude.
+// Load the image to determine which regions to use and which to exclude.
 //----------------------------------------------------------------------------------------
 void ProcessDiffMap(MemImage_t * MapPic)
 {
@@ -148,26 +167,10 @@ void ProcessDiffMap(MemImage_t * MapPic)
         }
     }
 
-    printf("Map: Ignore %5.1f%%  3x:%5.1f%%\n",numblue*100.0/(width*height), 
-                                                numred*100.0/(width*height));
-
-    Regions.DetectReg.y1 = firstrow;
-    Regions.DetectReg.y2 = lastrow+1;
-
-    for (row=0;row<height;row+=4){
-        int r;
-        for (r=0;r<width;r+=4){
-            if (WeightMap->values[row*width+r] == 0){
-                putchar('-');
-            }else{
-                putchar(WeightMap->values[row*width+r]+'0');
-            }
-        }
-        printf("\n");
-    }
-
     Regions.DetectReg.y1 = firstrow;
     Regions.DetectReg.y2 = lastrow;
+	
+	ShowWeightMap();
 }
 
 
@@ -450,7 +453,7 @@ TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, char * DebugImgNa
 }
 
 //----------------------------------------------------------------------------------------
-// Search for an nxn window with the maximum differences in it.
+// Search for an N x N window with the maximum differences in it.
 //----------------------------------------------------------------------------------------
 static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold)
 {
