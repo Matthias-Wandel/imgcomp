@@ -15,10 +15,10 @@ if [ ! -f imgcomp ]; then
 fi
 
 if grep -q "start_x\=1" /boot/config.txt; then
+	echo "    camera module is already enabled"
+else	
 	echo "camera is not enabled.  Please run raspi-config to enable camera module"
 	exit 1
-else
-	echo "    camera module is already enabled"
 fi
 
 # Make sure a configuration file exists
@@ -33,14 +33,15 @@ if [ -d /ramdisk ]; then
 	echo "    ramdisk mount point already exists"
 else
 	echo "making /ramdisk mount point"
-	mkdir /ramdisk
+	sudo mkdir /ramdisk
 fi
 
 if grep -q "/ramdisk" /etc/fstab; then
 	echo "    fstab already contains entry for ramdisk"
 else
 	echo "Adding ramdisk entry to fstab"
-	sudo echo "tmpfs   /ramdisk        tmpfs   nodev,nosuid,size=20M   0       0" >> /etc/fstab
+	echo "tmpfs   /ramdisk        tmpfs   nodev,nosuid,size=20M   0       0" | sudo tee -a  /etc/fstab > /dev/null
+	sudo mount /ramdisk
 fi
 
 if grep -q "logo.nologo" /boot/cmdline.txt; then
