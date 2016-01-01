@@ -60,7 +60,7 @@ static int FindExifInFile (FILE * infile)
         }
 
         if (marker != M_EXIF){
-            printf("Image did not start with exif section\n");
+            //printf("Image did not start with exif section\n");
             return 0;
         }
   

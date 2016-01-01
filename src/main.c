@@ -446,7 +446,6 @@ static int DoDirectoryFunc(char * Directory)
 
         //printf("sorted dir: %s\n",FileNames[a]);
         NewPic.Image = LoadJPEG(NewPic.Name, ScaleDenom, 0, ReadExif);
-        ReadExif = 0; // Only read exif for first image.
         if (NewPic.Image == NULL){
             fprintf(stderr, "Failed to load %s\n",NewPic.Name);
             if (FollowDir){
@@ -456,6 +455,7 @@ static int DoDirectoryFunc(char * Directory)
             }
             continue;
         }
+		ReadExif = 0; // Only read exif for first image.
 
         if (stat(NewPic.Name, &statbuf) == -1) {
             perror(NewPic.Name);
@@ -516,7 +516,7 @@ int main(int argc, char **argv)
 {
     int file_index, a;
 
-    printf("Imgcomp version 0.8 (December 2015) by Matthias Wandel\n\n");
+    printf("Imgcomp version 0.8 (January 2016) by Matthias Wandel\n\n");
 
     progname = argv[0];
 
@@ -608,8 +608,6 @@ int main(int argc, char **argv)
 
 // Features to consider adding:
 //--------------------------------------------------------
-// Ignore regions, focus regions (Threshold an image for this)
 // Polling same file mode (for use with  uvccapture)
-// Delete old saved images if too many saved.
-// Dynamic thresholding?
+// Dynamic thresholding if too much is happening?
 
