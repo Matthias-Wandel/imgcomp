@@ -46,12 +46,10 @@ MemImage_t * LoadJPEG(char* FileName, int scale_denom, int discard_colors, int P
     struct my_error_mgr jerr;
     MemImage_t *MemImage;
     int components;
+    FILE* file = fopen(FileName, "rb");
 
-    FILE* file = fopen(FileName, "rb");  // open the file
-
-    //if the jpeg file doesn't load
-    if(!file) {
-       fprintf(stderr, "Error reading JPEG file %s!\n", FileName);
+    if(file == NULL) {
+       fprintf(stderr, "Could not open file: \"%s\"!\n", FileName);
        return NULL;
     }
 
