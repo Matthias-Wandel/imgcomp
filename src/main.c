@@ -134,13 +134,13 @@ static int parse_parameter (const char * tag, const char * value)
         return 1;
 	}
 	if (!value){
-        fprintf(stderr, "Parameters needs to be followed by a vaue\n",tag);
+        fprintf(stderr, "Parameters needs to be followed by a vaue\n");
         usage();
 	}
 
     if (keymatch(tag, "spurious", 4)) {
         SpuriousReject = value[0]-'0';
-		if (SpuriousReject != 0 && SpuriousReject != 1 || value[1] != 0){
+		if ((SpuriousReject != 0 && SpuriousReject != 1) || value[1] != 0){
 			fprintf(stderr, "Spurious value can only be 0 or 1\n");
 		}
     } else if (keymatch(tag, "scale", 2)) {
