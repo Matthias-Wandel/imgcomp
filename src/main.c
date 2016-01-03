@@ -134,8 +134,8 @@ static int parse_parameter (const char * tag, const char * value)
         return 1;
 	}
 	if (!value){
-        fprintf(stderr, "Parameters needs to be followed by a vaue\n");
-        usage();
+        fprintf(stderr, "Parameter '%s' needs to be followed by a vaue\n",tag);
+        return -1;
 	}
 
     if (keymatch(tag, "spurious", 4)) {
@@ -144,20 +144,17 @@ static int parse_parameter (const char * tag, const char * value)
 			fprintf(stderr, "Spurious value can only be 0 or 1\n");
 		}
     } else if (keymatch(tag, "scale", 2)) {
-        // Scale the output image by a fraction M/N.
-        if (sscanf(value, "%d", &ScaleDenom) != 1)
-           usage();
+        // Scale the output image by a fraction 1/N.
+        if (sscanf(value, "%d", &ScaleDenom) != 1) return -1;
     } else if (keymatch(tag, "sensitivity", 2)) {
-        // Scale the output image by a fraction M/N.
-        if (sscanf(value, "%d", &Sensitivity) != 1)
-           usage();
+        // Sensitivity level (lower = more senstitive) 
+        if (sscanf(value, "%d", &Sensitivity) != 1) return -1;
     } else if (keymatch(tag, "timelapse", 4)) {
         // Scale the output image by a fraction M/N.
-        if (sscanf(value, "%d", (int *)&TimelapseInterval) != 1)
-           usage();
+        if (sscanf(value, "%d", (int *)&TimelapseInterval) != 1) return -1;
         if (TimelapseInterval < 1){
             fprintf(stderr,"timelapse interval must be at least 1 second\n");
-            exit(-1);
+            return -1;
         }
     } else if (keymatch(tag, "aquire_cmd", 4)) {
         // Set output file name.
@@ -208,11 +205,11 @@ static int parse_parameter (const char * tag, const char * value)
         strncpy(DoDirName,value, sizeof(DoDirName)-1);
         FollowDir = 1;
     } else {
-        fprintf(stderr,"argument %s not understood\n\n",tag);
-        usage();	   // bogus switch
+        fprintf(stderr,"argument %s not understood\n",tag);
+        return -1;	   // bogus switch
         bad_value:
         fprintf(stderr, "Value of %s=%s\n not understood\n",tag,value);
-        usage();
+        return -1;
 
     }
     return 2;
@@ -223,9 +220,9 @@ static int parse_parameter (const char * tag, const char * value)
 // Parse command line switches
 // Returns argv[] index of first file-name argument (== argc if none).
 //-----------------------------------------------------------------------------------
-static int parse_switches (int argc, char **argv, int last_file_arg_seen, int for_real)
+static int parse_switches (int argc, char **argv, int last_file_arg_seen)
 {
-    int argn;
+    int argn,a;
     char * arg;
     char * value;
 
@@ -239,7 +236,9 @@ static int parse_switches (int argc, char **argv, int last_file_arg_seen, int fo
         value = NULL;
         if (argn+1 < argc) value = argv[argn+1];
 
-        argn += parse_parameter(arg+1, value);
+        a = parse_parameter(arg+1, value);
+        if (a < 0) usage();
+        argn += a;
     }
     return argc;
 }
@@ -251,6 +250,7 @@ static void read_config_file()
 {
     FILE * file;
     char ConfLine[201];
+    int linenum = 0;
 
     file = fopen("imgcomp.conf", "r");
     if (file == NULL){
@@ -259,10 +259,11 @@ static void read_config_file()
     }
     for(;;){
         char *s, *value, *t;
-        int len;
+        int len, a;
         s = fgets(ConfLine, sizeof(ConfLine)-1, file);
         ConfLine[sizeof(ConfLine)-1] = '\0';
         if (s == NULL) break;
+        linenum += 1;
 
         // Remove leading spaces
         while (*s == ' ' || *s == '\t') s++;
@@ -271,7 +272,7 @@ static void read_config_file()
         len = strlen(s);
         if(len >= sizeof(ConfLine)-1){
             fprintf(stderr, "Configuration line too long:\n%s",s);
-            exit(-1);
+            goto no_good;
         }
 
         // Remove trailing spaces and linefeed.
@@ -307,7 +308,13 @@ static void read_config_file()
         // Now finally have the tag extracted.
         printf("    '%s' = '%s'\n",s, value);
 
-        parse_parameter(s,value);
+        a = parse_parameter(s,value);
+        if (a < 0){
+no_good:            
+            fprintf(stderr, "Error on line %d of imgcomp.conf",linenum);
+            exit(-1);
+        }
+
     }
 }
 
@@ -514,7 +521,7 @@ static void ScaleRegion (Region_t * Reg, int Denom)
 //-----------------------------------------------------------------------------------
 int main(int argc, char **argv)
 {
-    int file_index, a;
+    int file_index, a, argn;
 
     printf("Imgcomp version 0.8 (January 2016) by Matthias Wandel\n\n");
 
@@ -532,6 +539,18 @@ int main(int argc, char **argv)
     TimelapseInterval = 0;
     SaveDir[0] = 0;
     strcpy(SaveNames, "%m%d/%H/%m%d-%H%M%S");
+
+
+    for (argn = 1; argn < argc; argn++) {
+        //printf("argn = %d\n",argn);
+        char * arg;
+        arg = argv[argn];
+        if (strcmp(arg, "-h") == 0){
+            usage();
+            exit (-1);
+        }
+    }
+
 
     // First read the configuration file.
     read_config_file();
