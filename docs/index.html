@@ -56,11 +56,16 @@ it for development and debugging.
 The imgcomp runs the raspberry pi camera capture program "raspistill" to capture
 still pictures every second (up to 3 frames per second).  Imgcomp then reads
 the images, and if it detects a change from one image to the next, copies the image
-to a more permanent directory, under a name that contains the date.
-Imgcomp will occasionally restart rapsistill if the exposure has changed by too
-much, or if raspistill stops taking pictures (sometimes raspistill gets stuck)
+to a more permanent directory, organized by time and date.  The file date of
+the original image is used for the timestamp, so organizing is still correct even
+if images are analyzed after the fact.
 <p>
-imgcomp tries to differentiate between important and unimportant changes.  Changes
+Imgcomp will occasionally restart rapsistill if the exposure has changed by too
+much becauase raspistill will not make exposure adjustments during a sequence.
+Raspistill will also sometimes stop taking pictures for unknown reasons.   When this
+is detected, imgcomp will restart raspistill.
+<p>
+Imgcomp tries to differentiate between important and unimportant changes.  Changes
 that are localized to part of the image, are more important than changes that
 happen to the whole image.  Slow changes (such as clouds moving in) tend to be ignored.
 
@@ -83,7 +88,7 @@ This will compile imgcomp.
 <p>
 I recommend setitng up imgcomp to run as user "pi" in the directory /home/pi/imgcomp<br>
 The program "raspistill" will run as user "pi", but for other accounts requires root
-priviledges (for reasons I don't understand).  So just use the user id 'pi' and
+priviledges or messing with group permissions.  So just use the user id 'pi' and
 avoid the hassle.
 
 <h2>Imgcomp setup scripts (automatic setup)</h2>
@@ -96,9 +101,9 @@ This automates creating the ram disk and a few other tweaks to make it run bette
 To make imgcomp run at startup, you can follow this by running:<br>
 <span class="c">setup-imgcomp-autorun</span>
 <p>
-This sets imgcomp to run in console mode at startup  (Best not to start to graphical
-user interface) and also adds a cron job to delete the oldest recorded day
-if free flash space is getting low. 
+This sets imgcomp to run in console mode at startup  (Best not to boot your pi
+into graphical user interface mode).  It also adds a cron job to delete the
+oldest recorded directory in /home/pi/images if free flash space is getting low. 
 
 <h2>Manual Imgcomp setup</h2>
 <h3>Enable camera module</h3>

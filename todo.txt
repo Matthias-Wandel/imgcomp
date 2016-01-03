@@ -3,12 +3,11 @@ To do next:
 Review relaunch logic for dark images
 
 * Sample map images in documentation
-* Uses exif, what if no exif?
 * Mention about logging in to console with stuff printing somewhere
 
 
 Future features:
 * glitch detection for longer
-* Option to not save previous image
-* Save rate limiting
-* Some sort of web image interface
+* Option to not save pre and post event images?
+* Image save rate liminting (raise threshold when too many aquired)
+* Some sort of web image view interface
