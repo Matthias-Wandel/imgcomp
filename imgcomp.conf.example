@@ -1,15 +1,17 @@
 # Imgcomp test configruation file
+# Please see docs/config.html for more details on cofiguring Imgcomp
 
 # The command to start aquiring
 # Tell rapistill to aquire a 1280x720 image every 500 miliseconds.
 aquire_cmd = raspistill -q 10 -n -bm -th none -p 480,0,800,480 -w 1280 -h 720 -o /ramdisk/out%05d.jpg -t 4000000 -tl 500";
 
-# Directory to get images from as they are aquired (aquire_cmd directs them there)
+# Directory to get images from as they are aquired
+# (aquire_cmd must also indicate to put images there)
 followdir = /ramdisk
 
-# Region.  Format left-right,top-bottom 
+# Region of interst.  Format left-right,top-bottom 
 # Omitted left-right means full width.
-region = ,390-700
+#region = ,390-700
 
 # Specify a map of which parts of the image to ignore.
 # Solid blue ares are ignored, solid red is twice as sensitive.
@@ -26,6 +28,6 @@ savedir = images
 # Configure for every 300 seconds (5 minutes)
 timelapse = 300
 
-# Sensitivity
+# Sensitivity.  50 would be quite senstive.  400 is relatively insensitive.
 sensitivity = 100
 

@@ -1,13 +1,13 @@
 <html>
 <head>
-<title>imgcomp configuration options</title>
+<title>Imgcomp configuration</title>
 <style type=text/css>
   body { font-family: sans-serif; font-size: 100%;}
   div.c { white-space: pre; font-family: monospace; font-weight: bold; font-size: 120%;}
   div.p { white-space: pre; font-family: monospace; font-weight: bold; font-size: 140%; margin-top:10px;}
   span.c { font-family: monospace; font-weight: bold; font-size: 120%;}
 </style></head>
-<h2>imgcomp configuration options</h2>
+<h2>Imgcomp configuration</h2>
 
 Imgcomp, under normal use, will run on a Raspberry Pi and launch raspistill to
 capture images every second or so to a ramdisk.  Imgcomp monitors the ram disk,
@@ -28,13 +28,15 @@ used for development and diagnostics.  The invocation for this would be:
 <div class="c">imgcomp [image1.jpg] [image2.jpg]</div>
 
 <h2>Imgcomp options</h2>
-<h3>Options format</h2>
-When parameters are specified in the imgcomp.conf file, 
+Imgcomp parameters can be provided on the command line or in a file "imgcomp.conf"
+which is read from the current directory.
+When parameters are specified in the imgcomp.conf file 
 they are specified in the form:
 <div class="c">parameter = value</div>
 The same option, specified on the command line, would take the form:
 <div class="c">-parameter value</div>
 <p>
+The imgcomp.conf file is read before command line arguments are interpreted.
 The file "imgcomp.conf.example" contains an example imgcomp.conf file.
 I recommend you start with that file.
 
