@@ -13,9 +13,10 @@ Imgcomp, under normal use, will run on a Raspberry Pi and launch raspistill to
 capture images every second or so to a ramdisk.  Imgcomp monitors the ram disk,
 comparing successive images and saving those images with changes from the previous
 one to a folder hierarchy in flash.  This involves a lot of configuration options.
-These are best specified in a configuration file, "imgcomp.conf" file
+These are best specified in a configuration file, "imgcomp.conf" file, placed
+in the current directory.
 <p>
-Imgcomp can also be run on a series of images stored in a folder (using the dodir option),
+Imgcomp can also be run on a series of images stored in a folder (using the "-dodir" option),
 <div class="c">imgcomp -dodir [images directory name]</div>
 This option is primarily used development and diagnostics, but is also useful
 for re-processing images if too many images were saved on account of setting the
@@ -23,8 +24,8 @@ different threshold too low.
 <p>
 Imcomp can also be run on just two images.  These images will be compared,
 with debug information printed, and a difference image saved to "diff.ppm".
-The diff image will be in PPM format (an uncompressed bitmap format)
-used for development and diagnostics.  The invocation for this would be:
+The diff image will be in PPM format (an uncompressed bitmap format).  This
+mode is primarily used for development and diagnostics.  The invocation for this would be:
 <div class="c">imgcomp [image1.jpg] [image2.jpg]</div>
 
 <h2>Imgcomp options</h2>
@@ -56,24 +57,26 @@ for the actual detection algorithm, so the region edges may not be precise to th
 
 <div class="p">exclude</div>
 Specifies a rectangular image to be excluded from detection.  The region is specified
-in the format x1-x2,y1-y2, similar to "region".  If your detection region contains a lot
-of excluded area, I recommend using the "diffmap" option instead.
+in the format x1-x2,y1-y2, similar to "region".  Multiple exclude regions can be specified.
+If your detection region contains a lot
+of excluded areas, I recommend using the "diffmap" option instead.
 
 <div class="p">diffmap</div>
 Specifies the name of a jpeg file that is the map of a jpeg image.  Areas coloure
 pure blue in the diffmap will be excluded from detection, and areas of pure red will
 be twice as sensitive for detection.
 <p>
-Most acquired images do not contain sufficiently red or blue areas
+Most acquired images do not contain sufficiently pure red or blue areas
 to be considered "ignore" or "double", so you can take a captured image and paint
 over areas to ignore (such as trees or waving flags) blue, and perhaps a doorway
-in red.  The colours of the rest of the image are highly unlikely to be sufficiently
-red or blue to hit the threshold for ignore or double sensitivity.
-When imgcomp starts with a diffmap, it shows
+in red.  When imgcomp starts with a diffmap, it shows
 (in text) which areas are ignore or high weight.
 <p>
 Note that the diffmap is scaled down to the detection resolution, so use of the diffmap
 may not be accurate to the exact pixel boundary.
+<p>
+<a href="http://woodgears.ca/imgcomp/diffmap.html">More on diffmaps here</a>
+<p>
 
 
 <div class="p">dodir</div>
@@ -86,15 +89,16 @@ imgcomp processes them and deletes them.  an "aquire_cmd" option is normally use
 with this mode to launch raspistill to continuously aquire new images.
 
 <div class="p">aquire_cmd</div>
-Indicates the command line to launch raspistill with.  This line will in turn have a lot
-of options to pass to raspistill.  Potentially, you could have imgcomp run another
-image aquisition program instead of raspistill.  The reason imgcomp launches raspistill is that it
-will monitor that raspistill has not stalled.  Imgcomp will kill and re-launch raspistill
-if it detects that image aquisition has stopped.  Imgcomp will also
-check if the image has become too bright or too dim and re-launch raspistill so that
-raspistill can re-do the auto exposure, because (raspistill will not make exposure adjustments
-while capturing time-lapse images.  The aquire_cmd parameter is only used in followdir
-mode. 
+Indicates the command line to launch raspistill with.  This line will in
+turn have a lot of options to pass to raspistill.  Potentially, you
+could have imgcomp run another image aquisition program instead of
+raspistill.  The reason imgcomp launches raspistill is that it will need
+to be able to restart raspistill if needed. Imgcomp will kill and
+re-launch raspistill if it detects that image aquisition has stopped.
+Imgcomp will also check if the image has become too bright or too dim
+and re-launch raspistill so that raspistill can re-do the auto exposure.
+The aquire_cmd parameter is only used in followdir mode (ignored in
+offline "dodir" mode)
 
 <div class="p">savedir</div>
 Specifies with directory to save images to.
@@ -111,7 +115,8 @@ saved in the same second, the space in the name will be replaced with a, b, or c
 
 <div class="p">sensitivity</div>
 Indicates how sensitive the program is.  I typically use values around 100.  However,
-this value is highly dependent on image resolution.
+this value is highly dependent on image resolution.  Change magnitudes peak out
+around 500 because of the change magnitude is calculated over a limited size region.
 
 <div class="p">spurious</div>
 Set to '1' for spurious detection on, '0' for spurious detection off.  Default off.
@@ -123,19 +128,22 @@ the lens.  Changes that do not return to the previous image will not be ignored.
 Raspistill can trigger another program to blink the LED on the raspberry pi camera
 module when it detects motion.<br>
 <p>
-A separate program, "blink_camera_led" is used to blink the LED.  This program
-needs to be setuid root to have sufficient privileges for manipulating the hardware I/O lines.
+A separate program, "blink_camera_led" is used to blink the LED.<br>
+This program needs to be setuid root to have sufficient privileges
+for manipulating the hardware I/O lines.
 <br>
 <b><small>I have only been ableto make my blink_camera_led
-program work on Raspbery Pi Model B+.  If you can modify the code to work on the Pi2,
-that would be much appreciated.</small></b>
+program work on Raspbery Pi Model B+, can't figure out what I/O lines it connects
+to on the Raspberry Pi 2.  If you can modify the code to work on the Pi 2,
+that would be much appreciated.  Don't tell me "you should do this".  Try the change
+first, then send it to me</small></b>
 
 <div class="p">timelapse</div>
-Specifies a timelapse interval, in seconds.  For example "tl=600" will cause raspistill
-to save an image every ten minutes, regardless of whether motion was detected.  Timelapse
+Specifies a time-lapse interval, in seconds.  For example "tl=600" will cause imgcomp
+to save an image every ten minutes, regardless of whether motion was detected.  Time-lapse
 images will occur on multiples of the specified time.  "tl=3600" will save an image on the
 hour every hour, or whichever image is the first image acquired after the start of an hour.
 
 <div class="p">debug</div>
-Output extra debugging information
+Output extra debugging information.
 

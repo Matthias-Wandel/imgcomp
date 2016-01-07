@@ -7,56 +7,59 @@
   span.c { font-family: monospace; font-weight: bold; font-size: 120%;}
 </style></head>
 
-See also: <a href="config.html">Imgcomp configuration parameters</a>
-<a href="http://woodgears.ca/tech/imgcomp/regions.html">Imgcomp detection regions</a><p>
+<b>See also: <a href="config.html">Imgcomp configuration parameters</a>, &nbsp;
+<a href="http://woodgears.ca/imgcomp/diffmap.html">Imgcomp detection regions</a></b>
+<p>
 
 <h2>What is imgcomp for?</h2>
 The program "imgcomp" is for capturing long term motion triggered time-lapse photographs
-using a Raspberry Pi and camera module.  The intended use is unattended
-monitoring and surveillance.
+using a <a href="https://www.raspberrypi.org/">Raspberry Pi</a> with 
+<a href="https://www.raspberrypi.org/products/camera-module/">camera module</a>.
+The intended use is unattended monitoring and surveillance.
 <p>
 Unlike the "motion" package, it is not intended to work like a CCTV camera. 
-Imgcomp was inspired by wildlife cameras - the sort that
+Imgcomp was inspired by "trail cameras" - the sort that
 is left strapped to a tree in the woods to take picture of passing deer and other
 wildlife, with the images retrieved at a later time.
-I use such cameras but found that the passive infrared motion sensing of
-these cameras would often miss events, especially in winter.  Sometimes
+I use such cameras but found that the passive infrared motion sensing
+would often miss events, especially in winter.  Sometimes
 they would even miss a tractor driving past the camera!
 <P>
-I wrote Imgcomp to monitor comings and goings at my rural property when I am
-not there.  Unlike the wildlife cameras, it will not miss anything.  However,
-it cannot be run on battery, and unlike passive infrared, it will not
-trigger in the dark.
+I wrote imgcomp to monitor comings and goings at my rural property when I am
+not there.  Unlike trail cameras, it will not miss anything, so long as it's
+daylight.  However, it cannot be run on battery, and unlike passive infrared,
+it will not trigger in the dark.
 
 <h2>What imgcomp does not do</h2>
 <li>Not for battery powered application.  It uses too much power.
 <li>Does not capture video
-<li>Does not work with USB web cameras (still frame capture is too slow)
+<li>Does not work with USB web cameras (frame rate too low, cameras too unreliable)
 <li>Has no user interface to speak of
 <li>Is not for people unfamiliar with using Linux from the command line.
 <p>
 <b>
-If you don't know how to edit configuration file or compile a C program,
+If you aren't comfortable editing configuration files or running a makefile,
 before asking me questions,
 get very familiar with linux.  This might take you a few months of study.
 There is plenty about learning linux on the internet, please don't ask me
 for pointers.  Sorry, I do not have time to teach you</b>
 
-<h2>How Imgcomp works</h2>
-The imgcomp runs the raspberry pi camera capture program "raspistill" to capture
-still pictures every second (up to 3 frames per second).  Imgcomp then reads
-the images, and if it detects a change from one image to the next, copies the image
-to a more permanent directory, organized by time and date.  The file date of
+<h2>How imgcomp works</h2>
+Imgcomp runs the raspberry pi camera capture program "raspistill" to capture
+still pictures every second, but can go up to 3 frames per second.  Images are
+captured to a ram disk.  Imgcomp then reads the images, and if it detects
+a change from one image to the next, copies the image
+to a more permanent directory in flash, organized by time and date.  The file date of
 the original image is used for the time stamp, so organizing is still correct even
 if images are analyzed after the fact.
 <p>
 Imgcomp will occasionally restart rapsistill if the exposure has changed by too
 much because raspistill will not make exposure adjustments during a sequence.
-Raspistill will also sometimes stop taking pictures for unknown reasons.   When this
-is detected, imgcomp will restart raspistill.
+Raspistill sometimes stalls and stops taking pictures for unknown reasons.
+When imgcomp stops seeing new images, it will  restart raspistill.
 <p>
 Imgcomp tries to differentiate between important and unimportant changes.  Changes
-that are localized to part of the image, are more important than changes that
+that are localized to part of the image are more important than changes that
 happen to the whole image.  Slow changes (such as clouds moving in) tend to be ignored.
 
 <h2>Compiling imgcomp</h2>
@@ -64,12 +67,13 @@ happen to the whole image.  Slow changes (such as clouds moving in) tend to be i
 It is assumed that you have raspian already installed on your Raspberry Pi.
 <p>
 I do not have a binary distribution for imgcomp.  Before using imgcomp, you will have
-to compile it.  If you don't know what compiling a program is, then you will not
-have much luck with other aspects of setting up Imgcomp.
+to compile it.  The compiler is already included in the default installation of
+raspian.  If you don't know what compiling a program is, then you will not
+have much luck with other aspects of setting up imgcomp.
 <p>
 Imgcomp uses libjpeg.  Because I don't like external dependencies, I included
 a stripped down version of libjpeg in the distribution.  This will automatically
-compile when you compile imgcomp.  Compiling everything will take a few minutes.
+compile when you compile imgcomp.  Compiling everything will take a minute or two.
 <p>
 You can compile imgcomp by going into the imgcomp directory and typing:<br>
 <div class="c">make</div><br>
@@ -82,23 +86,24 @@ avoid the hassle.
 <p>
 A test version (no live capture) of imgcomp can also be compiled for Windows
 using the Microsoft Visual C compiler.  If you set up the compiler to be on
-your path, running "make.bat" will build the windows build.
+your path, running "make.bat" from the windows command prompt will build the
+windows build.
 
 <h2>Imgcomp setup scripts (automatic setup)</h2>
-Most of the steps of setting up Imgcomp described below can be automated
+Most of the steps of setting up imgcomp described below can be automated
 by unpacking the archive in the /home/pi/imgcomp directory and running:<br>
 <span class="c">/home/pi/setup-imgcomp</span>
 <p>
 This automates creating the ram disk and a few other tweaks to make it run better.
 <p>
-To make imgcomp run at startup, you can follow this by running:<br>
+If you want imgcomp to automaticall run at startup, run the script:<br>
 <span class="c">/home/pi/setup-imgcomp-autorun</span>
 <p>
 This sets imgcomp to run in console mode at startup  (Best not to boot your pi
 into graphical user interface mode).  It also adds a cron job to delete the
 oldest recorded directory in /home/pi/images if free flash space is getting low. 
 
-<h2>Manual Imgcomp setup</h2>
+<h2>Manual imgcomp setup</h2>
 <h3>Enable camera module</h3>
 Run raspi-config to enable the camera module<p>
 You also need to make sure that your camera module is installed and functioning.
@@ -113,14 +118,14 @@ by adding the following line to the end of <span class="c">/etc/fstab</span> :
 <div class="c">tmpfs   /ramdisk        tmpfs   nodev,nosuid,size=20M   0       0</div>
 <p>
 Note that /etc/fstab is only read at startup, so to make this ramdisk active,
-you will have to reboot your raspberry pi.
+you will have to reboot your raspberry pi or type "mount /ramdisk"
 
 <!-- Section on blinking the camera LED commented out because I can't figure out
      how to make this work on Raspberry Pi 2 -->
 
 <!--
 <h3>Setting up Camera LED blinking</h2>
-imgcomp can optionally blink the camera module's LED when it detects motion.
+Imgcomp can optionally blink the camera module's LED when it detects motion.
 If you wish to enable this, please follow the steps below.
 
 Disable normal function of the camera LED, add the following line to the end of
@@ -131,7 +136,7 @@ the file at <span class="c">/boot/config.txt</span>:
 <a href="http://www.raspberrypi-spy.co.uk/2013/05/how-to-disable-the-red-led-on-the-pi-camera-module/">
 More on how to do this here</a>
 <p>
-imgcomp runs a separate program with root privileges to blink the LED.
+Imgcomp runs a separate program with root privileges to blink the LED.
 This program is compiled as "blink_camera_led" along with imgcomp.
 You can test that this blinks the camera's LED by running blink_camera_led with
 root privileges with this command (which will prompt you for your password)
@@ -165,8 +170,9 @@ just above the line that reads <span class="c">exit 0</span>
 <p>
 This will cause imgcomp to run on startup.  The login prompt will also start, but will quickly
 become hidden by all the output that imgcomp produces.  However, you will still be able to
-log into the console by typing your username and password (though your typing will quickly
-be obscured by all the output).  After logging in, type "killall -9 imgcomp" to kill
+log into the console by typing your username and password.  However, your have to do this
+blindly because your typing will be obscured by all the imgcomp output.
+After logging in, type "killall -9 imgcomp" to kill
 the program.  You can restart it by typing "imcomp/imgcomp &amp;" from the home directory.
 Started this way, it will keep running even after you log out.
 
@@ -192,16 +198,18 @@ in the file <span class="c">/boot/cmdline.txt</span>.  The line should look like
 
 
 <h2>How image detection works</h2>
-Imgcomp compares successive images.  Before doing detection, the images are scaled by
-a specified amount (typically 1/4).  This eliminates pixel noise and makes it less sensitive
+Imgcomp compares successive images.  Before doing detection, the images are 
+resized to 1/4 size.  (you can also specify 1/2 or 1/8 scaling, but I have only used
+1/4 myself).  Scaling eliminates pixel noise and makes it less sensitive
 to very subtle shifts in the image.
 <p>
 Next, average brightness is computed for both images and noamalization (scaling) values
-computed for both.  After that, brightness differences are computed for each pixel of the
-image.  A histogram is constructed of the brightness levels.
+computed for both.  After that, brightness and colour differences are computed for each pixel of the
+image.  A histogram of change size is constructed in memory.
 <p>
 It is assumed a typical change only affects one third of the image, so a difference threshold
-is computed from the histogram based on that.  Using this threshold. 
+is computed from the histogram based on that.  Change magnitudes are computed
+based on this threshold.
 <p>
 After that, the image differences are examined again to find a window of maximum change.
 This window is computed from a difference map further reduced by 4x, and the window is
@@ -211,18 +219,18 @@ to distributed changes such as snowflakes, rainfall, or grasses waving in the wi
 <p>
 Based on the maximum window found, a global "difference" value is calculated.  This threshold
 is compared to the sensitivity setting.  If the change is above the specified sensitivity
-threshold, the difference is considered significant, and the image, as well as the one
+threshold, the difference is considered significant and the image, as well as the one
 preceding it are saved.
 <p>
 <h2>Spurious change ignore</h2>
-Imgcomp occasionally false-triggers if an insect or a bird flies near the camera.
+Imgcomp occasionally false-triggers if an insect or a bird flies past the camera.
 This typically shows up in just one image frame, whereas changes of interest are usually
 across several frames.  Use the option "spurious=1" in the imgcomp.conf file
-to turn this feature on.
+to ignore these spurious changes.
 
 <hr>
 <b>
 See also:
 <p>
 <a href="config.html">Imgcomp configuration parameters</a><p>
-<a href="http://woodgears.ca/tech/imgcomp/regions.html">Imgcomp detection regions</a><p>
+<a href="http://woodgears.ca/imgcomp/diffmap.html">Imgcomp detection regions</a><p>

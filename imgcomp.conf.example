@@ -24,6 +24,11 @@ spurious = 1
 # Where to save interesting images to
 savedir = images
 
+# Where to save images that have changes.  One directory per day
+# with subdirectories for each hour.  This is also the default naming
+# scheme.
+savenames = %m%d/%H/%m%d-%H%M%S
+
 # How many seconds between images kept regardless of motion for timelapses.
 # Configure for every 300 seconds (5 minutes)
 timelapse = 300
