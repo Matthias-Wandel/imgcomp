@@ -1,5 +1,8 @@
 //----------------------------------------------------------------------------------------
 // Code to launch raspistill as a separately running process
+// Matthias Wandel 2015
+//
+// Imgcomp is licensed under GPL v2 (see README.txt)
 //----------------------------------------------------------------------------------------
 #include <sys/types.h>
 #include <signal.h>

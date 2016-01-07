@@ -1,7 +1,8 @@
 //--------------------------------------------------------------------------
 // Copied from jhead project to parse exif file header.
-//
 // Matthias Wandel
+//
+// Imgcomp is licensed under GPL v2 (see README.txt)
 //--------------------------------------------------------------------------
 #include "jhead.h"
 

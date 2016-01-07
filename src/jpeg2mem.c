@@ -1,6 +1,8 @@
 //----------------------------------------------------------------------------------------
-// Code for using libjpeg to read an image into memory.
-// from:  stackoverflow.com/questions/5616216/need-help-in-reading-jpeg-file-using-libjpeg
+// Code for using libjpeg to read an image into memory for imgcomp
+// Based on code from:  stackoverflow.com/questions/5616216/need-help-in-reading-jpeg-file-using-libjpeg
+//
+// Imgcomp is licensed under GPL v2 (see README.txt)
 //----------------------------------------------------------------------------------------
 #include <stdio.h>
 #include <stdio.h>

@@ -1,7 +1,8 @@
 //--------------------------------------------------------------------------
 // Module to make exif.c from jhead project work.
+// Matthias Wandel 2015
 //
-// Matthias Wandel
+// Imgcomp is licensed under GPL v2 (see README.txt)
 //--------------------------------------------------------------------------
 #include "jhead.h"
 

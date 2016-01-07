@@ -1,3 +1,6 @@
+// Include file to go with readdir.c
+// Used only on windows build, which is only used for testing algorithms
+
 #ifndef READDIR_H
 #define READDIR_H
 

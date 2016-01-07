@@ -1,9 +1,14 @@
+//-----------------------------------------------------------------------------------
+// Implements unix style directory functions for windows.  This module used for
+// windows test development of imgcomp.  Not part of the linux build.
+//
+// Copied from:
+// http://www.opensource.apple.com/source/apache_mod_php/apache_mod_php-4.3/php/win32/readdir.c
+//-----------------------------------------------------------------------------------
 #include <malloc.h>
 #include <string.h>
 #include <errno.h>
 #include "readdir_win.h"
-// Copied from:
-// http://www.opensource.apple.com/source/apache_mod_php/apache_mod_php-4.3/php/win32/readdir.c
 
 /**********************************************************************
  * Implement dirent-style opendir/readdir/closedir on Window 95/NT

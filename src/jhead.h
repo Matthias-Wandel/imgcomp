@@ -1,10 +1,7 @@
 //--------------------------------------------------------------------------
-// Include file for jhead program.
+// Include file for pieces of jhead project used in imgcomp.
 //
-// This include file only defines stuff that goes across modules.  
-// I like to keep the definitions for macros and structures as close to 
-// where they get used as possible, so include files only get stuff that 
-// gets used in more than one file.
+// Matthias Wandel 2015
 //--------------------------------------------------------------------------
 #include <stdio.h>
 #include <stdlib.h>

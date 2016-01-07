@@ -1,5 +1,8 @@
 //----------------------------------------------------------------------------
-// image comparator tool prototypes
+// imgcomp structures and function prototypes
+// Matthias Wandel 2015
+//
+// Imgcomp is licensed under GPL v2 (see README.txt)
 //----------------------------------------------------------------------------
 
 typedef struct {

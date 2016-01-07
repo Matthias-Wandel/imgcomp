@@ -1,5 +1,8 @@
 //-----------------------------------------------------------------------------------
-// Various utility functions.
+// imgcomp Various utility functions.
+// Matthias Wandel 2015
+//
+// Imgcomp is licensed under GPL v2 (see README.txt)
 //-----------------------------------------------------------------------------------
 #include <stdio.h>
 #include <ctype.h>		// to declare isupper(), tolower() 

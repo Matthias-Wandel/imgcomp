@@ -1,3 +1,9 @@
+//-----------------------------------------------------------------------------------
+// imgcomp image comparison module
+// Matthias Wandel 2015
+//
+// Imgcomp is licensed under GPL v2 (see README.txt)
+//-----------------------------------------------------------------------------------
 #include <stdio.h>
 #include <stdio.h>
 #include <malloc.h>

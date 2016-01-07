@@ -1,9 +1,10 @@
-//
+//-----------------------------------------------------------------------------------
 //  This program based on "How to access GPIO registers from C-code on the Raspberry-Pi
 //  Example program
 //  Blinks camerae LED on raspberry Pi model B+
 //
 //  I have not been able to figure out how to make this work on the Pi2.
+//-----------------------------------------------------------------------------------
  
 #define BCM2708_PERI_BASE        0x20000000
 #define GPIO_BASE                (BCM2708_PERI_BASE + 0x200000) /* GPIO controller */
