@@ -556,7 +556,7 @@ int main(int argc, char **argv)
     read_config_file();
 
     // Get command line arguments (which may override configuration file)
-    file_index = parse_switches(argc, argv, 0, 0);
+    file_index = parse_switches(argc, argv, 0);
 
     // Adjust region of interest to scale.
     ScaleRegion(&Regions.DetectReg, ScaleDenom);
