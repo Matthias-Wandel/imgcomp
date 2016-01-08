@@ -3,6 +3,12 @@
 # It is assumed that setup-imgcomp has already been run.
 # This script assumes imgcomp is in /home/pi/imgcomp
 
+if [ "$(pwd)" != "/home/pi/imgcomp" ]; then
+	echo "imgcomp needs to be in /home/imgcomp for this to work"
+	echo "Aborting!"
+	exit -1
+fi
+
 if grep -q "/home/pi/imgcomp/imgcomp" /etc/rc.local; then
 	echo "    imgcomp already set up to run at startup"
 else
