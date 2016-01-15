@@ -3,11 +3,12 @@
 # Do this from one level up so "imgcomp" is part of the path.
 cd ..
 
-# Compress it with lzma (better than gzip and bzip2, faster than bzip2)
+# Compress it w:ith lzma (better than gzip and bzip2, faster than bzip2)
 # Want to have high compression ratio because I'm icluding all this libjpeg stuff.
 tar --lzma --exclude=".git" -cvf imgcomp/imgcomp.tar.lzma imgcomp/README.txt \
   imgcomp/makefile imgcomp/make.bat imgcomp/makefile-win32 \
   imgcomp/free_up_space imgcomp/setup-imgcomp* imgcomp/make_zip_release \
+  imgcomp/imgcomp.conf.example \
   imgcomp/docs/*.html imgcomp/src/*.c imgcomp/src/*.h \
   imgcomp/libjpeg/*.h imgcomp/libjpeg/*.c imgcomp/libjpeg/makefile
 
