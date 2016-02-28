@@ -130,13 +130,8 @@ module when it detects motion.<br>
 <p>
 A separate program, "blink_camera_led" is used to blink the LED.<br>
 This program needs to be setuid root to have sufficient privileges
-for manipulating the hardware I/O lines.
-<br>
-<b><small>I have only been ableto make my blink_camera_led
-program work on Raspbery Pi Model B+, can't figure out what I/O lines it connects
-to on the Raspberry Pi 2.  If you can modify the code to work on the Pi 2,
-that would be much appreciated.  Don't tell me "you should do this".  Try the change
-first, then send it to me</small></b>
+for manipulating the hardware I/O lines.  The "blink_camera_led" program works
+on Raspberry Pi model B+ and Raspbery Pi 2 model B
 
 <div class="p">timelapse</div>
 Specifies a time-lapse interval, in seconds.  For example "tl=600" will cause imgcomp

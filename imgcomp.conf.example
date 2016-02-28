@@ -36,3 +36,5 @@ timelapse = 300
 # Sensitivity.  50 would be quite senstive.  400 is relatively insensitive.
 sensitivity = 100
 
+# Specify command to run to blink  the LED when motion is detected
+blink_cmd = /home/pi/imgcomp/blink_camera_led

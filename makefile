@@ -6,7 +6,7 @@ OBJ=obj
 SRC=src
 CFLAGS:= $(CFLAGS) -O3 -Wall
 
-all: objdir imgcomp
+all: objdir imgcomp blink_camera_led
 
 objdir:
 	@mkdir -p obj
@@ -22,8 +22,11 @@ $(OBJ)/%.o:$(SRC)/%.c $(SRC)/imgcomp.h
 imgcomp: $(objs) libjpeg/libjpeg.a
 	${CC} -o imgcomp $(objs) libjpeg/libjpeg.a
 
-#blink_camera_led: $(SRC)/blink_camera_led.c
-#	$(CC) -o blink_camera_led $(SRC)/blink_camera_led.c
+$(SRC)/pi_model.h:
+	$(SRC)/identify_pi >> $(SRC)/pi_model.h
+
+blink_camera_led: $(SRC)/blink_camera_led.c $(SRC)/pi_model.h
+	$(CC) -o blink_camera_led $(SRC)/blink_camera_led.c
 
 libjpeg/libjpeg.a:
 	cd libjpeg; make

@@ -1,11 +1,18 @@
 //-----------------------------------------------------------------------------------
 //  This program based on "How to access GPIO registers from C-code on the Raspberry-Pi
 //  Example program
-//  Blinks camerae LED on raspberry Pi model B+
+//  Blinks camerae LED on raspberry Pi model B+ and Raspberry Pi 2 model B
 //-----------------------------------------------------------------------------------
- 
-//define BCM2708_PERI_BASE        0x20000000 // For raspberry pi model B+
-#define BCM2708_PERI_BASE        0x3f000000 // For Raspberry pi 2 model B
+
+#include "pi_model.h" 
+#if RASPBERRY_PI == 2 
+    // it's a rapsberry pi 2.  Peripherals are mapped in a different location.
+    #define BCM2708_PERI_BASE        0x3f000000 // For Raspberry pi 2 model B
+#endif
+#if RASPBERRY_PI == 1
+    #define BCM2708_PERI_BASE        0x20000000 // For raspberry pi model B+
+#endif
+
 #define GPIO_BASE                (BCM2708_PERI_BASE + 0x200000) /* GPIO controller */
  
 #include <stdio.h>
