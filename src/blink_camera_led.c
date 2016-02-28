@@ -2,11 +2,10 @@
 //  This program based on "How to access GPIO registers from C-code on the Raspberry-Pi
 //  Example program
 //  Blinks camerae LED on raspberry Pi model B+
-//
-//  I have not been able to figure out how to make this work on the Pi2.
 //-----------------------------------------------------------------------------------
  
-#define BCM2708_PERI_BASE        0x20000000
+//define BCM2708_PERI_BASE        0x20000000 // For raspberry pi model B+
+#define BCM2708_PERI_BASE        0x3f000000 // For Raspberry pi 2 model B
 #define GPIO_BASE                (BCM2708_PERI_BASE + 0x200000) /* GPIO controller */
  
 #include <stdio.h>
@@ -57,23 +56,21 @@ int main(int argc, char **argv)
 	// Set up gpi pointer for direct register access
 	setup_io();
 
-	// Switch GPIO 7..11 to output mode
- 
 	/************************************************************************\
 	* You are about to change the GPIO settings of your computer.          *
 	* Mess this up and it will stop working!                               *
 	* It might be a good idea to 'sync' before running this program        *
 	* so at least you still have your code changes written to the SD-card! *
 	\************************************************************************/
- 
-	// Set GPIO pins 7-11 to output
-	INP_GPIO(32); // must use INP_GPIO before we can use OUT_GPIO
-	OUT_GPIO(32);
 
-	// Turn on the camera LED once for 300 miliseconds
-	GPIO_SET2 = 1;
-	usleep(300000);
-	GPIO_CLR2 = 1;
+    // Raspberry pi model B+
+    INP_GPIO(32); // must use INP_GPIO before we can use OUT_GPIO
+    OUT_GPIO(32);
+
+    // Turn on the camera LED once for 300 miliseconds
+    GPIO_SET2 = 1;
+    usleep(300000);
+    GPIO_CLR2 = 1;
 
 	return 0;
  
