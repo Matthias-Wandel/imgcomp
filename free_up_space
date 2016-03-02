@@ -1,6 +1,6 @@
 #! /bin/bash
 
-FREESP=$(df /dev/root | tail -1 | cut -b46-47)
+FREESP=$(df /dev/root | tail -1 | cut -b45-47)
 echo Disk free percent: $FREESP
 
 if [ "$FREESP" -gt "75" ]; then
