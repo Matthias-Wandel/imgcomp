@@ -3,7 +3,7 @@
 FREESP=$(df /dev/root | tail -1 | cut -b45-47)
 echo Disk free percent: $FREESP
 
-if [ "$FREESP" -gt "75" ]; then
+if [ "$FREESP" -gt "90" ]; then
 	DELDIR=$(ls -tr /home/pi/images | head -1)
 	echo Delete this directory: $DELDIR
 	rm -r /home/pi/images/$DELDIR
