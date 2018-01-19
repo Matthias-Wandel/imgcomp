@@ -33,6 +33,9 @@ typedef struct {
 MemImage_t MemImage;
 extern int NewestAverageBright;
 extern int Verbosity;
+extern int BrightnessChangeRestart;
+extern int SendTriggerSignals;
+
 
 extern char SaveDir[200];
 extern char SaveNames[200];

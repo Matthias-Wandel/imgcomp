@@ -86,7 +86,7 @@ static int launch_raspistill(void)
     ignore += 1;  // Do something with it to supress warning
     if (raspistill_pid){
         // If we launched raspistill, need to call wait() so that we dont't
-        // accumulate an armie of child zombie processes
+        // accumulate an army of child zombie processes
         int exit_code = 123;
         int a;
         a = wait(&exit_code);
@@ -143,49 +143,60 @@ int manage_raspistill(int NewImages)
         goto force_restart;
     }
 
-    if (SecondsSinceImage > 10){
-        // Not getting any images for 10 seconds.  Probably something went wrong with raspistill.
+    if (SecondsSinceImage > 5){
+        // Not getting any images for 5 seconds.  Probably something went wrong with raspistill.
         printf("No images timeout.  Relaunch  raspistill\n");
         goto force_restart;
     }
 
-    if (SecondsSinceLaunch > 36000){
-        printf("1 hour raspistill relaunch\n");
+    if (SecondsSinceLaunch > 72000){
+        printf("2 hour raspistill relaunch\n");
         goto force_restart;
     }
 
-    if (SecondsSinceLaunch > 5 && InitialNumBr < 5 && NewImages){
-        printf("Average in %d\n",NewestAverageBright);
-        InitialBrSum += NewestAverageBright;
-        InitialNumBr += 1;
-        // Save average brightness and reset averaging.
-        if (InitialNumBr == 5){
-            InitialAverageBright = (InitialBrSum+2) / 5;
-            if (InitialAverageBright == 0) InitialAverageBright = 1; // Avoid division by zero.
-            RunningAverageBright = InitialAverageBright;
-            printf("Initial rightness average = %d\n",InitialAverageBright);
+    if (BrightnessChangeRestart){
+        // If brightness of image changes a lot, restart raspistill, because
+        // raspistill doesn't normally do running exposure adjustments.
+        
+        if (SecondsSinceLaunch > 5 && InitialNumBr < 5 && NewImages){
+            printf("Average in %d\n",NewestAverageBright);
+            InitialBrSum += NewestAverageBright;
+            InitialNumBr += 1;
+            // Save average brightness and reset averaging.
+            if (InitialNumBr == 5){
+                InitialAverageBright = (InitialBrSum+2) / 5;
+                if (InitialAverageBright == 0) InitialAverageBright = 1; // Avoid division by zero.
+                RunningAverageBright = InitialAverageBright;
+                printf("Initial rightness average = %d\n",InitialAverageBright);
+            }
         }
-    }
 
-    // 20 second time constant brightness averaging.
-    RunningAverageBright = RunningAverageBright * 0.95 + NewestAverageBright * 0.05;
+        // 20 second time constant brightness averaging.
+        RunningAverageBright = RunningAverageBright * 0.95 + NewestAverageBright * 0.05;
 
-    // If brightness changes by more than 20%, relaunch.
-    if (SecondsSinceLaunch > 15){
-        double Ratio;
-        Ratio = RunningAverageBright / InitialAverageBright;
-        if (Ratio < 1) Ratio = 1/Ratio;
-        if (Ratio > 1.2){
-            printf("Brightness change by 20%%.  Force restart\n");
-            goto force_restart;
+        // If brightness changes by more than 20%, relaunch.
+        if (SecondsSinceLaunch > 15){
+            double Ratio;
+            Ratio = RunningAverageBright / InitialAverageBright;
+            if (Ratio < 1) Ratio = 1/Ratio;
+            if (Ratio > 1.2){
+                printf("Brightness change by 20%%.  Force restart\n");
+                goto force_restart;
+            }
         }
+        // Smarter things to do later:
+        // If image too bright and shutter speed is not fastest, launch raspistill
+        // if image is too dark and shutter speed is not 1/8, launch raspistill.
     }
-
-    // If image too bright and shutter speed is not fastest, launch raspistill
-    // if image is too dark and shutter speed is not 1/8, launch raspistill.
-
-
+    if (SendTriggerSignals){
+        // It's possible to run raspistill so it runs continuously and receives
+        // trigger signals.  In this mode, it does running exposure adjustments, but
+        // only takes pictures when it receives a signal.
+        printf("send signal to raspistill (pid=%d)\n",raspistill_pid);
+        kill(raspistill_pid, SIGUSR1);
+    }
     return 0;
+    
 force_restart:
     launch_raspistill();
     SecondsSinceImage = 0;

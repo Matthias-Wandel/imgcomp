@@ -34,6 +34,9 @@ int FollowDir = 0;
 static int ScaleDenom;
 int SpuriousReject = 0;
 
+int BrightnessChangeRestart = 1;
+int SendTriggerSignals = 0;
+
 static char DiffMapFileName[200];
 Regions_t Regions;
 
@@ -64,13 +67,17 @@ void usage (void)// complain about bad command line
     fprintf(stderr, " -savedir <saveto>    Where to save images with changes\n");
     fprintf(stderr, " -savenames <scheme>  Output naming scheme.  Uses strftime\n"
                     "                      to format the output name.  May include\n"
-                    "                      '/' characters for directories.");
+                    "                      '/' characters for directories.\n");
     fprintf(stderr, " -sensitivity N       Set sensitivity.  Lower=more sensitive\n");
     fprintf(stderr, " -blink_cmd <command> Run this command when motion detected\n"
                     "                      (used to blink the camera LED)\n");
     fprintf(stderr, " -tl N                Save image every N seconds regardless\n");
     fprintf(stderr, " -spurious            Ignore any change that returns to\n"
                     "                      previous image in the next frame\n");
+    fprintf(stderr, " -sendsigs            Send signal to raspistil every second\n");
+    fprintf(stderr, "                      For continous AE rapsistill, default off\n");
+    fprintf(stderr, " -brmonitor           Restart raspistill on brightness\n");
+    fprintf(stderr, "                      changes (default on)\n");
     fprintf(stderr, " -verbose or -debug   Emit more verbose output\n");
     exit(-1);
 }
@@ -146,6 +153,10 @@ static int parse_parameter (const char * tag, const char * value)
 		if ((SpuriousReject != 0 && SpuriousReject != 1) || value[1] != 0){
 			fprintf(stderr, "Spurious value can only be 0 or 1\n");
 		}
+    }else if (keymatch(tag, "sendsigs", 8)) {
+        if (sscanf(value, "%d", &SendTriggerSignals) != 1) return -1;        
+    }else if (keymatch(tag, "brmonitor", 5)) {
+        if (sscanf(value, "%d", &BrightnessChangeRestart) != 1) return -1;        
     } else if (keymatch(tag, "scale", 2)) {
         // Scale the output image by a fraction 1/N.
         if (sscanf(value, "%d", &ScaleDenom) != 1) return -1;
