@@ -1,9 +1,10 @@
 Things to set up:
 
-Disable main screen logo
-Disable screen blanking
-Make ram disk
-Enable camera module
+Things the script does:
+  Disable main screen logo
+  Disable screen blanking
+  Make ram disk
+  Enable camera module
 
 
 Make obj directory
@@ -11,3 +12,22 @@ Compile
 File sharing
 Sudo blink LED program
 
+
+Addigional setup:
+Setting up samba
+  apt-get install samba
+  Add this to the end of /etc/smb.cof:
+	[pi]
+	comment = picture share
+	valid users = pi
+	path = /home/pi
+	browsable = yes
+	read only = no
+  create samba user with this command:
+	smbpasswd -a pi
+
+Configure auto start and auto cleanup
+  Run crontab -e, put the following at the end of the file
+	10,40 * * * * wget -O /home/pi/mw.html -o /home/pi/wget_out.txt mw/martin.cgi
+	47 10,22 * * * /home/pi/imgcomp/free_up_space
+	@reboot imgcomp/imgcomp &
