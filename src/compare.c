@@ -25,38 +25,58 @@ static ImgMap_t * WeightMap = NULL;
 
 static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold);
 
+int rzaveragebright;
 //----------------------------------------------------------------------------------------
 // Calculate average brightness of an image.
 //----------------------------------------------------------------------------------------
 static double AverageBright(MemImage_t * pic, Region_t Region, ImgMap_t* WeightMap)
 {
-    double baverage;
-    int DetectionPixels;
+    double baverage, rzaverage;
+    int DetectionPixels, redpix;
     int row;
     int rowbytes = pic->width*3;
-    DetectionPixels = 0;
+    DetectionPixels = redpix = 0;
  
     // Compute average brightnesses.
-    baverage = 0;
+    baverage = rzaverage = 0;
     for (row=Region.y1;row<Region.y2;row++){
         unsigned char *p1, *px;
-        int col, brow = 0;
+        int col, brow = 0, redrow = 0;
         p1 = pic->pixels+rowbytes*row;
         px = &WeightMap->values[pic->width*row];
         for (col=Region.x1;col<Region.x2;col++){
             if (px[col]){
-                brow += p1[0]+p1[1]*2+p1[2];  // Muliplies by 4.
-                p1 += 3;
+                int bv;
+                bv = p1[0]+p1[1]*2+p1[2];  // Multiplies by 4.
+                brow += bv;
+                if (px[col] == 2){
+                    redrow += bv;
+                    redpix += 1;
+                }
                 DetectionPixels += 1;
             }
+            p1 += 3;
         }
-		baverage += brow; 
+		baverage += brow;
+        rzaverage += redrow;
     }
 
     if (DetectionPixels < 1000){
         fprintf(stderr, "Detection region too small");
         exit(-1);
     }
+    
+    
+    if (redpix){
+        // rzaveragebright is the average brightness over the red "high emphasis" zone,
+        // kind of a hack of the high emphasis zone to detect if the mouse is in the box.
+        rzaveragebright = rzaverage * 0.25 / redpix;
+        //printf("red zone average %5.1f %d pix\n",rzaveragebright, redpix);
+    }else{
+        rzaveragebright = 0;
+    } 
+    
+    
     return baverage * 0.25 / DetectionPixels; // Multiply by 4 again.
 }
 
@@ -178,7 +198,6 @@ void ProcessDiffMap(MemImage_t * MapPic)
 	
 	ShowWeightMap();
 }
-
 
 
 //----------------------------------------------------------------------------------------

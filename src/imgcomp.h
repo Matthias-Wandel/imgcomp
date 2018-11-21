@@ -43,6 +43,8 @@ extern char SaveNames[200];
 
 extern Regions_t Regions;
 
+extern Region_t MouseDetectRegion;
+
 // compare.c functions
 TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, char * DebugImgName);
 void ProcessDiffMap(MemImage_t * MapPic);

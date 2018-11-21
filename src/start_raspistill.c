@@ -193,7 +193,9 @@ int manage_raspistill(int NewImages)
         // trigger signals.  In this mode, it does running exposure adjustments, but
         // only takes pictures when it receives a signal.
         printf("send signal to raspistill (pid=%d)\n",raspistill_pid);
+        #ifndef _WIN32
         kill(raspistill_pid, SIGUSR1);
+        #endif
     }
     return 0;
     
