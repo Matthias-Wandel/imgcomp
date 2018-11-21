@@ -51,7 +51,8 @@ char blink_cmd[200];
 
 static int SinceMotionFrames = 1000;
 
-extern int rzaveragebright; // Kind of a hack for mouse detection
+extern int rzaveragebright; // Kind of a hack for mouse detection.  Detect mouse by brightness
+                            // in the red (high sensitivity) region of the diffmap.
 
 
 typedef struct {
@@ -75,6 +76,8 @@ static LastPic_t NoMousePic;
 static int ProcessImage(LastPic_t * New)
 {
     static int PixSinceDiff;
+    static int MousePresentFrames;
+    static int SawMouse;
 
     LastPics[2] = LastPics[1];
     LastPics[1] = LastPics[0];
@@ -103,7 +106,7 @@ static int ProcessImage(LastPic_t * New)
         }
         LastPics[0].RzAverageBright = rzaveragebright;
         
-        printf("%3d ",rzaveragebright);
+       
 
         if (Trig.DiffLevel >= Sensitivity && PixSinceDiff > 5 && Raspistill_restarted){
             printf("Ignoring diff caused by raspistill restart\n");
@@ -111,7 +114,7 @@ static int ProcessImage(LastPic_t * New)
         }
         LastPics[0].DiffMag = Trig.DiffLevel;
 
-        printf("%s - %s:",LastPics[0].Name+LastPics[0].nind, LastPics[1].Name+LastPics[0].nind);
+        printf("%s:",LastPics[0].Name+LastPics[0].nind);
         printf(" %3d at (%4d,%3d) ", Trig.DiffLevel, Trig.x*ScaleDenom, Trig.y*ScaleDenom);
 
         if (LastPics[0].DiffMag > Sensitivity){
@@ -147,7 +150,31 @@ static int ProcessImage(LastPic_t * New)
         }
         SinceMotionFrames += 1;
         
+printf(" %d %d ",rzaveragebright, NoMousePic.RzAverageBright-20);
+        
         printf("\n");
+
+        if (rzaveragebright < NoMousePic.RzAverageBright-20){
+            
+            MousePresentFrames += 1;
+            if (MousePresentFrames >= 15 && SawMouse == 0){
+                // Mouse must be in the box at least 20 frames.
+                SawMouse = 1;
+                printf("Mouse entered!\n");
+            }
+        }else{
+            if (MousePresentFrames){
+                MousePresentFrames = 0;
+                printf("Mouse left box!\n");
+                SinceMotionFrames = 0; // Just to be on the safe side.
+            }
+            if (SinceMotionFrames == 20){
+                if (SawMouse){
+                    SawMouse = 0;
+                    printf("Move the gate\n");
+                }
+            }
+        }
         
         Raspistill_restarted = 0;
     }
@@ -155,9 +182,10 @@ static int ProcessImage(LastPic_t * New)
     if (LastPics[2].Image != NULL){
         // Third picture now falls out of the window.  Free it and delete it.
         
-        if (SinceMotionFrames > 200){
+        if (SinceMotionFrames > 50){
             // If it's been 200 images ince we saw motion, save this image
             // as a background image for later mouse detection.
+            //printf("Save image as background");
             if (NoMousePic.Image != NULL){
                 free(NoMousePic.Image);
             }
