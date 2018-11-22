@@ -23,6 +23,7 @@
     #define read(a,b,c) _read(a,b,c)
     #define write(a,b,c) _write(a,b,c)
     #define close(a) _close(a)
+    #define unlink(n) _unlink(n)
 #else
     #include <dirent.h>
     #include <unistd.h>

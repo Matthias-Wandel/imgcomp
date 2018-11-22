@@ -291,7 +291,7 @@ int DoDirectory(char * Directory)
         if (FollowDir){
             b = manage_raspistill(a);
             if (b) Raspistill_restarted = 1;
-            if (ThisLogTo[0] != '\0') LogFileMaintain();
+            if (LogToFile[0] != '\0') LogFileMaintain();
             sleep(1);
         }else{
             break;
@@ -354,7 +354,7 @@ int main(int argc, char **argv)
     // Get command line arguments (which may override configuration file)
     file_index = parse_switches(argc, argv, 0);
     
-    if (ThisLogTo[0] != '\0'){
+    if (LogToFile[0] != '\0'){
         Log = NULL;
         LogFileMaintain();
     }
