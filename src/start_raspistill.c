@@ -90,7 +90,7 @@ static int launch_raspistill(void)
         int exit_code = 123;
         int a;
         a = wait(&exit_code);
-        printf("Child exit code %d (wait returned %d)\n",exit_code,a);
+        fprintf(Log,"Child exit code %d (wait returned %d)\n",exit_code,a);
     }
 
     printf("Launching raspistill program\n");
@@ -129,28 +129,29 @@ int manage_raspistill(int NewImages)
     SecondsSinceLaunch += 1;
     if (NewImages > 0){
         SecondsSinceImage = 0;
-        printf("Exp:%5.1fms Iso:%d  Nm=%d  Bright:%d  av=%5.2f\r",
-            ImageInfo.ExposureTime*1000, ImageInfo.ISOequivalent, 
-            NightMode, NewestAverageBright, RunningAverageBright);
-        fflush(stdout);
+        if (SecondsSinceLaunch <= 2){
+            fprintf(Log,"Exp:%5.1fms Iso:%d  Nm=%d  Bright:%d  av=%5.2f\n",
+                ImageInfo.ExposureTime*1000, ImageInfo.ISOequivalent, 
+                NightMode, NewestAverageBright, RunningAverageBright);
+        }
     }else{
-        printf("No new images, %d\n",SecondsSinceImage);
+        fprintf(Log,"No new images, %d\n",SecondsSinceImage);
     }
 
     if (raspistill_pid == 0){
         // Raspistill has not been launched.
-        printf("Initial launch of raspistill\n");
+        fprintf(Log,"Initial launch of raspistill\n");
         goto force_restart;
     }
 
     if (SecondsSinceImage > 5){
         // Not getting any images for 5 seconds.  Probably something went wrong with raspistill.
-        printf("No images timeout.  Relaunch  raspistill\n");
+        fprintf(Log,"No images timeout.  Relaunch  raspistill\n");
         goto force_restart;
     }
 
     if (SecondsSinceLaunch > 72000){
-        printf("2 hour raspistill relaunch\n");
+        fprintf(Log,"2 hour raspistill relaunch\n");
         goto force_restart;
     }
 
@@ -159,7 +160,7 @@ int manage_raspistill(int NewImages)
         // raspistill doesn't normally do running exposure adjustments.
         
         if (SecondsSinceLaunch > 5 && InitialNumBr < 5 && NewImages){
-            printf("Average in %d\n",NewestAverageBright);
+            fprintf(Log,"Average in %d\n",NewestAverageBright);
             InitialBrSum += NewestAverageBright;
             InitialNumBr += 1;
             // Save average brightness and reset averaging.
@@ -167,7 +168,7 @@ int manage_raspistill(int NewImages)
                 InitialAverageBright = (InitialBrSum+2) / 5;
                 if (InitialAverageBright == 0) InitialAverageBright = 1; // Avoid division by zero.
                 RunningAverageBright = InitialAverageBright;
-                printf("Initial rightness average = %d\n",InitialAverageBright);
+                fprintf(Log,"Initial rightness average = %d\n",InitialAverageBright);
             }
         }
 
@@ -180,7 +181,7 @@ int manage_raspistill(int NewImages)
             Ratio = RunningAverageBright / InitialAverageBright;
             if (Ratio < 1) Ratio = 1/Ratio;
             if (Ratio > 1.2){
-                printf("Brightness change by 20%%.  Force restart\n");
+                fprintf(Log,"Brightness change by 20%%.  Force restart\n");
                 goto force_restart;
             }
         }
@@ -192,7 +193,7 @@ int manage_raspistill(int NewImages)
         // It's possible to run raspistill so it runs continuously and receives
         // trigger signals.  In this mode, it does running exposure adjustments, but
         // only takes pictures when it receives a signal.
-        printf("send signal to raspistill (pid=%d)\n",raspistill_pid);
+        fprintf(Log,"send signal to raspistill (pid=%d)\n",raspistill_pid);
         #ifndef _WIN32
         kill(raspistill_pid, SIGUSR1);
         #endif
