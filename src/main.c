@@ -175,7 +175,7 @@ static int ProcessImage(LastPic_t * New)
                 fprintf(Log,"Mouse left box!\n");
                 SinceMotionFrames = 0; // Just to be on the safe side.
             }
-            if (SinceMotionFrames == 5){ // adjust
+            if (SinceMotionFrames == 50){ // adjust
                 if (SawMouse){
                     SawMouse = 0;
                     fprintf(Log,"Move the gate\n");
@@ -189,7 +189,7 @@ static int ProcessImage(LastPic_t * New)
     if (LastPics[2].Image != NULL){
         // Third picture now falls out of the window.  Free it and delete it.
         
-        if (SinceMotionFrames > 5){ // adjust
+        if (SinceMotionFrames > 200){ // adjust
             // If it's been 200 images ince we saw motion, save this image
             // as a background image for later mouse detection.
             //printf("Save image as background");
@@ -245,7 +245,7 @@ static int DoDirectoryFunc(char * Directory)
         //printf("sorted dir: %s\n",FileNames[a]);
         NewPic.Image = LoadJPEG(NewPic.Name, ScaleDenom, 0, ReadExif);
         if (NewPic.Image == NULL){
-            fprintf(stderr, "Failed to load %s\n",NewPic.Name);
+            fprintf(Log, "Failed to load %s\n",NewPic.Name);
             if (FollowDir){
                 // Raspberry pi timelapse mode may at times dump a corrupt
                 // picture at the end of timelapse mode.  Just delete and go on.
@@ -297,7 +297,6 @@ int DoDirectory(char * Directory)
             break;
         }
     }
-//    if (LastPic != NULL) free(LastPic);
     return a;
 }
 
@@ -319,7 +318,7 @@ int main(int argc, char **argv)
     
     Log = stdout;
 
-    printf("Imgcomp version 0.8 (January 2016) by Matthias Wandel\n\n");
+    printf("Imgcomp version 0.9 (Nov 2018) by Matthias Wandel\n\n");
 
     progname = argv[0];
 

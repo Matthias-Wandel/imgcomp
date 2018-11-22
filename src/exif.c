@@ -22,6 +22,7 @@ typedef struct {
 
 //--------------------------------------------------------------------------
 // Table of Jpeg encoding process names
+/*
 static const TagTable_t ProcessTable[] = {
     { M_SOF0,   "Baseline"},
     { M_SOF1,   "Extended sequential"},
@@ -37,7 +38,7 @@ static const TagTable_t ProcessTable[] = {
     { M_SOF14,  "Differential progressive, arithmetic coding"},
     { M_SOF15,  "Differential lossless, arithmetic coding"},
 };
-
+*/
 #define PROCESS_TABLE_SIZE  (sizeof(ProcessTable) / sizeof(TagTable_t))
 
 // 1 - "The 0th row is at the visual top of the image,    and the 0th column is the visual left-hand side."

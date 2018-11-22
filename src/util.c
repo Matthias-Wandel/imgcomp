@@ -348,10 +348,10 @@ void LogFileMaintain()
     }
     if (MoveLogNames[0]){
         strftime(NewLogTo, PATH_MAX, MoveLogNames, localtime(&LastPic_mtime));
-        printf("log name: %s\n",NewLogTo);
+        //printf("log name: %s\n",NewLogTo);
         if (strcmp(ThisLogTo, NewLogTo)){
             if (Log != NULL){
-                printf("Log rotate %s --> %s\n", ThisLogTo, NewLogTo);
+                fprintf(Log,"Log rotate %s --> %s\n", ThisLogTo, NewLogTo);
                 fclose(Log);
                 Log = NULL;
                 EnsurePathExists(NewLogTo);
@@ -364,10 +364,15 @@ void LogFileMaintain()
     
     if (Log == NULL){
         Log = fopen(LogToFile,"w");
+        if (Log == NULL){
+            fprintf(stderr, "Failed to open log file %s\n",LogToFile);
+        }
         if (ThisLogTo[0]){
             strncpy(ThisLogTo, NewLogTo, PATH_MAX);
         }
         return;
+    }else{
+        fflush(Log); // Do log to ram disk, or this wears out flash!
     }
 }
 

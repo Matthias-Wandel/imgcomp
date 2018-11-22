@@ -34,29 +34,33 @@ void usage (void)// complain about bad command line
     fprintf(stderr, "usage: %s [switches] ", progname);
     fprintf(stderr, "inputfile outputfile\n");
 
-    fprintf(stderr, "Switches (names may be abbreviated):\n");
-    fprintf(stderr, " -scale   N           Scale before detection by 1/N.  Default 1/4\n");
-    fprintf(stderr, " -region  x1-x2,y1-y2 Specify region of interest\n");
-    fprintf(stderr, " -exclude x1-x2,y1-y2 Exclude from area of interest\n");
-    fprintf(stderr, " -diffmap <filename>  A file to use as diff map\n");
-    fprintf(stderr, " -dodir   <srcdir>    Compare images in dir, in order\n");
-    fprintf(stderr, " -followdir <srcdir>  Do dir and monitor for new images\n");
-    fprintf(stderr, " -savedir <saveto>    Where to save images with changes\n");
-    fprintf(stderr, " -savenames <scheme>  Output naming scheme.  Uses strftime\n"
-                    "                      to format the output name.  May include\n"
-                    "                      '/' characters for directories.\n");
-    fprintf(stderr, " -sensitivity N       Set sensitivity.  Lower=more sensitive\n");
-    fprintf(stderr, " -blink_cmd <command> Run this command when motion detected\n"
-                    "                      (used to blink the camera LED)\n");
-    fprintf(stderr, " -tl N                Save image every N seconds regardless\n");
-    fprintf(stderr, " -spurious            Ignore any change that returns to\n"
-                    "                      previous image in the next frame\n");
-    fprintf(stderr, " -sendsigs            Send signal to raspistil every second\n");
-    fprintf(stderr, "                      For continous AE rapsistill, default off\n");
-    fprintf(stderr, " -brmonitor           Restart raspistill on brightness\n");
-    fprintf(stderr, "                      changes (default on)\n");
-    fprintf(stderr, " -verbose or -debug   Emit more verbose output\n");
-    
+    fprintf(stderr, 
+     "Switches (names may be abbreviated):\n"
+     " -scale   N           Scale before detection by 1/N.  Default 1/4\n"
+     " -region  x1-x2,y1-y2 Specify region of interest\n"
+     " -exclude x1-x2,y1-y2 Exclude from area of interest\n"
+     " -diffmap <filename>  A file to use as diff map\n"
+     " -dodir   <srcdir>    Compare images in dir, in order\n"
+     " -followdir <srcdir>  Do dir and monitor for new images\n"
+     " -savedir <saveto>    Where to save images with changes\n"
+     " -savenames <scheme>  Output naming scheme.  Uses strftime\n"
+     "                      to format the output name.  May include\n"
+     "                      '/' characters for directories.\n"
+     " -sensitivity N       Set sensitivity.  Lower=more sensitive\n"
+     " -blink_cmd <command> Run this command when motion detected\n"
+     "                      (used to blink the camera LED)\n"
+     " -tl N                Save image every N seconds regardless\n"
+     " -spurious            Ignore any change that returns to\n"
+     "                      previous image in the next frame\n"
+     " -sendsigs            Send signal to raspistil every second\n"
+     "                      For continous AE rapsistill, default off\n"
+     " -brmonitor           Restart raspistill on brightness\n"
+     "                      changes (default on)\n"
+     " -verbose or -debug   Emit more verbose output\n"
+     " -logtofile           Log to file instead of stdout\n"
+     " -movelognames <schme> Rotate log files, scheme works just like\n"
+     "                      it does for savenames\n");
+   
     exit(-1);
 }
 

@@ -11,10 +11,11 @@ all: objdir imgcomp blink_camera_led
 objdir:
 	@mkdir -p obj
 
-objs = $(OBJ)/main.o $(OBJ)/compare.o $(OBJ)/jpeg2mem.o \
+objs = $(OBJ)/main.o $(OBJ)/config.o $(OBJ)/compare.o $(OBJ)/jpeg2mem.o \
 	$(OBJ)/jpgfile.o $(OBJ)/exif.o $(OBJ)/start_raspistill.o $(OBJ)/util.o
 
 $(OBJ)/jpgfile.o $(OBJ)/exif.o $(OBJ)/start_raspistill.o: $(SRC)/jhead.h
+$(OBJ)/main.o $(OBJ)/config.o: $(SRC)/config.h
 
 $(OBJ)/%.o:$(SRC)/%.c $(SRC)/imgcomp.h
 	${CC} $(CFLAGS) -c $< -o $@
