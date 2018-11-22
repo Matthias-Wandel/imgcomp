@@ -1,0 +1,36 @@
+#!/usr/bin/env python
+# Python script for opening and closing the gate for my mouse gap experiments
+# Nov 2018
+
+import RPi.GPIO as GPIO, sys
+from time import sleep
+GPIO.setmode(GPIO.BCM)
+GPIO.setwarnings(False)
+GPIO.setup(4, GPIO.OUT, initial=False)  # J2
+GPIO.setup(22, GPIO.OUT, initial=False) # J3
+GPIO.setup(6, GPIO.OUT, initial=False)  # J4
+GPIO.setup(26, GPIO.OUT, initial=False) # J5
+
+GPIO.output(26,0) # Cancel close that might be active
+GPIO.output(6,0)  # Cancel open that might be active.
+
+
+
+duration = 12
+if len(sys.argv) > 2:
+    duration = float(sys.argv[2])
+#Pulse J5
+
+if len(sys.argv) > 1 and sys.argv[1] == "close":
+    GPIO.output(26,1)
+    sleep(duration)
+    GPIO.output(26,0)
+elif len(sys.argv) > 1 and sys.argv[1] == "open":
+    GPIO.output(6,1)
+    sleep(duration)
+    GPIO.output(6,0)
+else:
+    print ("Usage: gate [open|close] <duration>")
+
+
+
