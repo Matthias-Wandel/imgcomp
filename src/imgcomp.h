@@ -33,6 +33,10 @@ typedef struct {
 MemImage_t MemImage;
 extern int NewestAverageBright;
 extern int Verbosity;
+extern char LogToFile[200];
+extern char MoveLogNames[200];
+extern FILE * Log;
+
 extern int BrightnessChangeRestart;
 extern int SendTriggerSignals;
 
@@ -44,6 +48,8 @@ extern char SaveNames[200];
 extern Regions_t Regions;
 
 extern Region_t MouseDetectRegion;
+
+extern time_t LastPic_mtime;
 
 // compare.c functions
 TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, char * DebugImgName);
@@ -65,3 +71,4 @@ char ** GetSortedDir(char * Directory, int * NumFiles);
 void FreeDir(char ** FileNames, int NumEntries);
 char * BackupPicture(char * Name, time_t mtime, int DiffMag);
 int CopyFile(char * src, char * dest);
+void LogFileMaintain(void);

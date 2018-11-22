@@ -56,6 +56,7 @@ void usage (void)// complain about bad command line
     fprintf(stderr, " -brmonitor           Restart raspistill on brightness\n");
     fprintf(stderr, "                      changes (default on)\n");
     fprintf(stderr, " -verbose or -debug   Emit more verbose output\n");
+    
     exit(-1);
 }
 
@@ -173,6 +174,13 @@ static int parse_parameter (const char * tag, const char * value)
                 }
             }
         }
+
+    } else if (keymatch(tag, "logtofile", 8)) {
+        // Log to a file instead of stdout
+        strncpy(LogToFile,value, sizeof(SaveDir)-1);
+    } else if (keymatch(tag, "movelognames", 12)) {
+        // Log to a file instead of stdout
+        strncpy(MoveLogNames,value, sizeof(SaveDir)-1);
 
     } else if (keymatch(tag, "region", 3)) {
         if (!ParseRegion(&Regions.DetectReg, value)) goto bad_value;

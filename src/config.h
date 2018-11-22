@@ -14,6 +14,10 @@ extern char DiffMapFileName[200];
 extern Regions_t Regions;
 
 extern int Verbosity;
+extern char LogToFile[200];
+extern char MoveLogNames[200];
+
+
 extern int Sensitivity;
 extern int Raspistill_restarted;
 extern int TimelapseInterval;

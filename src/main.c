@@ -18,6 +18,7 @@
     #define strdup(a) _strdup(a) 
     extern void sleep(int);
     #define unlink(n) _unlink(n)
+    #define PATH_MAX _MAX_PATH
 #else
     #include <dirent.h>
     #include <unistd.h>
@@ -43,6 +44,10 @@ char DiffMapFileName[200];
 Regions_t Regions;
 
 int Verbosity = 0;
+char LogToFile[200];
+char MoveLogNames[200];
+FILE * Log;
+
 int Sensitivity;
 int Raspistill_restarted;
 int TimelapseInterval;
@@ -53,6 +58,7 @@ static int SinceMotionFrames = 1000;
 
 extern int rzaveragebright; // Kind of a hack for mouse detection.  Detect mouse by brightness
                             // in the red (high sensitivity) region of the diffmap.
+
 
 
 typedef struct {
@@ -69,6 +75,8 @@ typedef struct {
 static LastPic_t LastPics[3];
 static time_t NextTimelapsePix;
 static LastPic_t NoMousePic;
+
+time_t LastPic_mtime;
 
 //-----------------------------------------------------------------------------------
 // Figure out which images should be saved.
@@ -109,13 +117,13 @@ static int ProcessImage(LastPic_t * New)
        
 
         if (Trig.DiffLevel >= Sensitivity && PixSinceDiff > 5 && Raspistill_restarted){
-            printf("Ignoring diff caused by raspistill restart\n");
+            fprintf(Log,"Ignoring diff caused by raspistill restart\n");
             Trig.DiffLevel = 0;
         }
         LastPics[0].DiffMag = Trig.DiffLevel;
 
-        printf("%s:",LastPics[0].Name+LastPics[0].nind);
-        printf(" %3d at (%4d,%3d) ", Trig.DiffLevel, Trig.x*ScaleDenom, Trig.y*ScaleDenom);
+        fprintf(Log,"%s:",LastPics[0].Name+LastPics[0].nind);
+        fprintf(Log," %3d at (%4d,%3d) ", Trig.DiffLevel, Trig.x*ScaleDenom, Trig.y*ScaleDenom);
 
         if (LastPics[0].DiffMag > Sensitivity){
             LastPics[0].IsMotion = 1;
@@ -136,9 +144,8 @@ static int ProcessImage(LastPic_t * New)
                 LastPics[1].IsMotion = 0;
             }
         }
-        if (LastPics[0].IsMotion) printf("(motion) ");
-        if (LastPics[0].IsTimelapse) printf("(time) ");
-        if (!LastPics[0].IsMotion) printf("       "); // Overwrite rest of old line.
+        if (LastPics[0].IsMotion) fprintf(Log,"(motion) ");
+        if (LastPics[0].IsTimelapse) fprintf(Log,"(time) ");
 
         if (LastPics[1].IsMotion) SinceMotionFrames = 0;
 
@@ -150,28 +157,28 @@ static int ProcessImage(LastPic_t * New)
         }
         SinceMotionFrames += 1;
         
-printf(" %d %d ",rzaveragebright, NoMousePic.RzAverageBright-20);
+        fprintf(Log," %d %d ",rzaveragebright, NoMousePic.RzAverageBright-20);
         
-        printf("\n");
+        fprintf(Log,"\n");
 
         if (rzaveragebright < NoMousePic.RzAverageBright-20){
             
             MousePresentFrames += 1;
-            if (MousePresentFrames >= 15 && SawMouse == 0){
+            if (MousePresentFrames >= 5 && SawMouse == 0){ // adjust
                 // Mouse must be in the box at least 20 frames.
                 SawMouse = 1;
-                printf("Mouse entered!\n");
+                fprintf(Log,"Mouse entered!\n");
             }
         }else{
             if (MousePresentFrames){
                 MousePresentFrames = 0;
-                printf("Mouse left box!\n");
+                fprintf(Log,"Mouse left box!\n");
                 SinceMotionFrames = 0; // Just to be on the safe side.
             }
-            if (SinceMotionFrames == 20){
+            if (SinceMotionFrames == 5){ // adjust
                 if (SawMouse){
                     SawMouse = 0;
-                    printf("Move the gate\n");
+                    fprintf(Log,"Move the gate\n");
                 }
             }
         }
@@ -182,7 +189,7 @@ printf(" %d %d ",rzaveragebright, NoMousePic.RzAverageBright-20);
     if (LastPics[2].Image != NULL){
         // Third picture now falls out of the window.  Free it and delete it.
         
-        if (SinceMotionFrames > 50){
+        if (SinceMotionFrames > 5){ // adjust
             // If it's been 200 images ince we saw motion, save this image
             // as a background image for later mouse detection.
             //printf("Save image as background");
@@ -253,6 +260,7 @@ static int DoDirectoryFunc(char * Directory)
             exit(1);
         }
         NewPic.mtime = (unsigned)statbuf.st_mtime;
+        LastPic_mtime = NewPic.mtime;
 
         SawMotion += ProcessImage(&NewPic);
 
@@ -283,6 +291,7 @@ int DoDirectory(char * Directory)
         if (FollowDir){
             b = manage_raspistill(a);
             if (b) Raspistill_restarted = 1;
+            if (ThisLogTo[0] != '\0') LogFileMaintain();
             sleep(1);
         }else{
             break;
@@ -300,12 +309,15 @@ static void ScaleRegion (Region_t * Reg, int Denom)
     Reg->y2 /= Denom;
 }
 
+
 //-----------------------------------------------------------------------------------
 // The main program.
 //-----------------------------------------------------------------------------------
 int main(int argc, char **argv)
 {
     int file_index, a, argn;
+    
+    Log = stdout;
 
     printf("Imgcomp version 0.8 (January 2016) by Matthias Wandel\n\n");
 
@@ -341,6 +353,12 @@ int main(int argc, char **argv)
 
     // Get command line arguments (which may override configuration file)
     file_index = parse_switches(argc, argv, 0);
+    
+    if (ThisLogTo[0] != '\0'){
+        Log = NULL;
+        LogFileMaintain();
+    }
+
 
     // Adjust region of interest to scale.
     ScaleRegion(&Regions.DetectReg, ScaleDenom);

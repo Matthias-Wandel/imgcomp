@@ -333,5 +333,41 @@ int CopyFile(char * src, char * dest)
     return 0;
 }
 
+//-----------------------------------------------------------------------------------
+// Open and / or rotate logfiles
+//-----------------------------------------------------------------------------------
+void LogFileMaintain()
+{
+    static char ThisLogTo[PATH_MAX];
+    char NewLogTo[PATH_MAX];
+   
+    if (LogToFile[0] == 0){
+        Log = stdout;
+        return;
+    }
+    if (MoveLogNames[0]){
+        strftime(NewLogTo, PATH_MAX, MoveLogNames, localtime(&LastPic_mtime));
+        printf("log name: %s\n",NewLogTo);
+        if (strcmp(ThisLogTo, NewLogTo)){
+            if (Log != NULL){
+                printf("Log rotate %s --> %s\n", ThisLogTo, NewLogTo);
+                fclose(Log);
+                Log = NULL;
+                EnsurePathExists(NewLogTo);
+                CopyFile(LogToFile, NewLogTo);
+                unlink(LogToFile);
+            }
+            strcpy(ThisLogTo, NewLogTo);
+        }
+    }
+    
+    if (Log == NULL){
+        Log = fopen(LogToFile,"w");
+        if (ThisLogTo[0]){
+            strncpy(ThisLogTo, NewLogTo, PATH_MAX);
+        }
+        return;
+    }
+}
 
 
