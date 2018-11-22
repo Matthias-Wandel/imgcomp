@@ -53,6 +53,7 @@ int Raspistill_restarted;
 int TimelapseInterval;
 char raspistill_cmd[200];
 char blink_cmd[200];
+int GateDelay;
 
 static int SinceMotionFrames = 1000;
 
@@ -164,7 +165,7 @@ static int ProcessImage(LastPic_t * New)
         if (rzaveragebright < NoMousePic.RzAverageBright-20){
             
             MousePresentFrames += 1;
-            if (MousePresentFrames >= 5 && SawMouse == 0){ // adjust
+            if (MousePresentFrames >= 10 && SawMouse == 0){ // adjust
                 // Mouse must be in the box at least 20 frames.
                 SawMouse = 1;
                 fprintf(Log,"Mouse entered!\n");
@@ -175,10 +176,13 @@ static int ProcessImage(LastPic_t * New)
                 fprintf(Log,"Mouse left box!\n");
                 SinceMotionFrames = 0; // Just to be on the safe side.
             }
-            if (SinceMotionFrames == 50){ // adjust
+            if (SinceMotionFrames == GateDelay && GateDelay != 0){ 
                 if (SawMouse){
                     SawMouse = 0;
                     fprintf(Log,"Move the gate\n");
+                    run_blink_program(); // Reusing this function to operate the gate
+                    
+                    
                 }
             }
         }
@@ -270,9 +274,9 @@ static int DoDirectoryFunc(char * Directory)
     FreeDir(FileNames, NumEntries); // Free up the whole directory structure.
     FileNames = NULL;
 
-    if (SawMotion){
-        run_blink_program();
-    }
+    //if (SawMotion){
+    //    run_blink_program();
+    //}
 
     return NumProcessed;
 }

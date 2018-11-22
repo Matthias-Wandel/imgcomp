@@ -50,6 +50,7 @@ extern Regions_t Regions;
 extern Region_t MouseDetectRegion;
 
 extern time_t LastPic_mtime;
+extern int GateDelay; // In frames, no motion before inching gate closed.
 
 // compare.c functions
 TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, char * DebugImgName);

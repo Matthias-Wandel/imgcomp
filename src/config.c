@@ -141,13 +141,13 @@ static int parse_parameter (const char * tag, const char * value)
         if (sscanf(value, "%d", &SendTriggerSignals) != 1) return -1;        
     }else if (keymatch(tag, "brmonitor", 5)) {
         if (sscanf(value, "%d", &BrightnessChangeRestart) != 1) return -1;        
-    } else if (keymatch(tag, "scale", 2)) {
+    } else if (keymatch(tag, "scale", 5)) {
         // Scale the output image by a fraction 1/N.
         if (sscanf(value, "%d", &ScaleDenom) != 1) return -1;
-    } else if (keymatch(tag, "sensitivity", 2)) {
+    } else if (keymatch(tag, "sensitivity", 5)) {
         // Sensitivity level (lower = more senstitive) 
         if (sscanf(value, "%d", &Sensitivity) != 1) return -1;
-    } else if (keymatch(tag, "timelapse", 4)) {
+    } else if (keymatch(tag, "timelapse", 5)) {
         // Scale the output image by a fraction M/N.
         if (sscanf(value, "%d", (int *)&TimelapseInterval) != 1) return -1;
         if (TimelapseInterval < 1){
@@ -188,8 +188,8 @@ static int parse_parameter (const char * tag, const char * value)
 
     } else if (keymatch(tag, "region", 3)) {
         if (!ParseRegion(&Regions.DetectReg, value)) goto bad_value;
-//    } else if (keymatch(tag, "mouseregion", 11)) {
-//        if (!ParseRegion(&MouseDetectRegion, value)) goto bad_value;
+    } else if (keymatch(tag, "gatedelay", 9)) {
+        if (sscanf(value, "%d", &GateDelay) != 1) return -1;
     } else if (keymatch(tag, "exclude", 4)) {
         if (Regions.NumExcludeReg >= MAX_EXCLUDE_REGIONS){
             fprintf(stderr, "too many exclude regions");

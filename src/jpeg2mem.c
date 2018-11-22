@@ -51,7 +51,7 @@ MemImage_t * LoadJPEG(char* FileName, int scale_denom, int discard_colors, int P
     FILE* file = fopen(FileName, "rb");
 
     if(file == NULL) {
-       fprintf(stderr, "Could not open file: \"%s\"!\n", FileName);
+       fprintf(Log, "Could not open file: \"%s\"!\n", FileName);
        return NULL;
     }
 
@@ -94,7 +94,7 @@ MemImage_t * LoadJPEG(char* FileName, int scale_denom, int discard_colors, int P
 
     MemImage = malloc(data_size+offsetof(MemImage_t, pixels));
     if (!MemImage){
-        fprintf(stderr, "Image malloc failed");
+        fprintf(Log, "Image malloc failed");
         return 0;
     }
     MemImage->width = info.output_width;
@@ -131,7 +131,7 @@ void WritePpmFile(char * FileName, MemImage_t *MemImage)
     FILE * outfile;
     outfile = fopen(FileName,"wb");
     if (outfile == NULL){
-        printf("could not open outfile\n");
+        fprintf(Log,"could not open outfile\n");
         return;
     }
     fprintf(outfile, "P%c\n%d %d\n%d\n", MemImage->components == 3 ? '6' : '5',  

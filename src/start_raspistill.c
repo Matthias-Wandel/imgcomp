@@ -93,10 +93,11 @@ static int launch_raspistill(void)
         fprintf(Log,"Child exit code %d (wait returned %d)\n",exit_code,a);
     }
 
-    printf("Launching raspistill program\n");
+    fprintf(Log,"Launching raspistill program\n");
     pid = fork();
     if (pid == -1){
         // Failed to fork.
+        fprintf(Log,"Failed to fork off child process\n");
         fprintf(stderr,"Failed to fork off child process\n");
         perror("Reason");
         return -1;
@@ -168,7 +169,7 @@ int manage_raspistill(int NewImages)
                 InitialAverageBright = (InitialBrSum+2) / 5;
                 if (InitialAverageBright == 0) InitialAverageBright = 1; // Avoid division by zero.
                 RunningAverageBright = InitialAverageBright;
-                fprintf(Log,"Initial rightness average = %d\n",InitialAverageBright);
+                fprintf(Log,"Initial brightness average = %d\n",InitialAverageBright);
             }
         }
 

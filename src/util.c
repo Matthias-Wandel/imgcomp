@@ -366,6 +366,7 @@ void LogFileMaintain()
         Log = fopen(LogToFile,"w");
         if (Log == NULL){
             fprintf(stderr, "Failed to open log file %s\n",LogToFile);
+            exit(-1);
         }
         if (ThisLogTo[0]){
             strncpy(ThisLogTo, NewLogTo, PATH_MAX);
