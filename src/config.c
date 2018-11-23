@@ -8,15 +8,8 @@
 #include <stdio.h>
 #include <ctype.h>		// to declare isupper(), tolower() 
 #include <stdlib.h>
-//#include <sys/types.h>
-//#include <sys/stat.h>
 #include <string.h>
-//#include <time.h>
 #ifdef _WIN32
-//    #include "readdir.h"
-//    #define S_ISREG(m) (((m) & S_IFMT) == S_IFREG)
-//    #define strdup(a) _strdup(a) 
-//    extern void sleep(int);
 //    #define unlink(n) _unlink(n)
 #else
     #include <dirent.h>
@@ -185,7 +178,6 @@ static int parse_parameter (const char * tag, const char * value)
     } else if (keymatch(tag, "movelognames", 12)) {
         // Log to a file instead of stdout
         strncpy(MoveLogNames,value, sizeof(SaveDir)-1);
-
     } else if (keymatch(tag, "region", 3)) {
         if (!ParseRegion(&Regions.DetectReg, value)) goto bad_value;
     } else if (keymatch(tag, "gatedelay", 9)) {
