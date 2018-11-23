@@ -354,8 +354,8 @@ void LogFileMaintain()
                 fprintf(Log,"Log rotate %s --> %s\n", ThisLogTo, NewLogTo);
                 fclose(Log);
                 Log = NULL;
-                EnsurePathExists(NewLogTo);
-                CopyFile(LogToFile, NewLogTo);
+                EnsurePathExists(ThisLogTo);
+                CopyFile(LogToFile, ThisLogTo);
                 unlink(LogToFile);
             }
             strcpy(ThisLogTo, NewLogTo);
