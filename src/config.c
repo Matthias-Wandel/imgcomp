@@ -128,7 +128,7 @@ static int parse_parameter (const char * tag, const char * value)
 		if ((SpuriousReject != 0 && SpuriousReject != 1) || value[1] != 0){
 			fprintf(stderr, "Spurious value can only be 0 or 1\n");
 		}
-    }else if (keymatch(tag, "postmotion", 11)) {
+    }else if (keymatch(tag, "postmotion", 10)) {
         if (sscanf(value, "%d", &PostMotionKeep) != 1) return -1;
     }else if (keymatch(tag, "sendsigs", 8)) {
         if (sscanf(value, "%d", &SendTriggerSignals) != 1) return -1;        
