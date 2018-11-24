@@ -160,12 +160,12 @@ int manage_raspistill(int NewImages)
         // If brightness of image changes a lot, restart raspistill, because
         // raspistill doesn't normally do running exposure adjustments.
         
-        if (SecondsSinceLaunch > 5 && InitialNumBr < 5 && NewImages){
-            fprintf(Log,"Average in %d\n",NewestAverageBright);
+        if (SecondsSinceLaunch > 3 && InitialNumBr < 4 && NewImages){
+            fprintf(Log,"Brightness average in: %d\n",NewestAverageBright);
             InitialBrSum += NewestAverageBright;
             InitialNumBr += 1;
             // Save average brightness and reset averaging.
-            if (InitialNumBr == 5){
+            if (InitialNumBr == 4){
                 InitialAverageBright = (InitialBrSum+2) / 5;
                 if (InitialAverageBright == 0) InitialAverageBright = 1; // Avoid division by zero.
                 RunningAverageBright = InitialAverageBright;
@@ -177,7 +177,7 @@ int manage_raspistill(int NewImages)
         RunningAverageBright = RunningAverageBright * 0.95 + NewestAverageBright * 0.05;
 
         // If brightness changes by more than 20%, relaunch.
-        if (SecondsSinceLaunch > 15){
+        if (SecondsSinceLaunch > 10){
             double Ratio;
             Ratio = RunningAverageBright / InitialAverageBright;
             if (Ratio < 1) Ratio = 1/Ratio;

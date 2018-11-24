@@ -123,8 +123,15 @@ static int ProcessImage(LastPic_t * New)
         }
         LastPics[0].DiffMag = Trig.DiffLevel;
 
-        fprintf(Log,"%s:",LastPics[0].Name+LastPics[0].nind);
-        fprintf(Log," %3d at (%4d,%3d) ", Trig.DiffLevel, Trig.x*ScaleDenom, Trig.y*ScaleDenom);
+        if (FollowDir){
+            // When real-time following, the timestamp is more useful than the file name
+            char TimeString[10];
+            strftime(TimeString, 10, "%H%M%S", localtime(&LastPic_mtime));
+            fprintf(Log,TimeString);
+        }else{
+            fprintf(Log,"%s:",LastPics[0].Name+LastPics[0].nind);
+        }
+        fprintf(Log," %3d at (%4d,%4d) ", Trig.DiffLevel, Trig.x*ScaleDenom, Trig.y*ScaleDenom);
 
         if (LastPics[0].DiffMag > Sensitivity){
             LastPics[0].IsMotion = 1;
