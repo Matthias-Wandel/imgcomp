@@ -53,13 +53,17 @@ int Raspistill_restarted;
 int TimelapseInterval;
 char raspistill_cmd[200];
 char blink_cmd[200];
+//-----------------------------------------
+// Tightening gap experiment hack
 int GateDelay;
-
 static int SinceMotionFrames = 1000;
-
 extern int rzaveragebright; // Kind of a hack for mouse detection.  Detect mouse by brightness
                             // in the red (high sensitivity) region of the diffmap.
 
+//-----------------------------------------
+// Video mode hack
+int VidMode; // Video mode flag
+char VidDecomposeCmd[200];
 
 
 typedef struct {
@@ -82,7 +86,7 @@ time_t LastPic_mtime;
 //-----------------------------------------------------------------------------------
 // Figure out which images should be saved.
 //-----------------------------------------------------------------------------------
-static int ProcessImage(LastPic_t * New)
+static int ProcessImage(LastPic_t * New, int DeleteProcessed)
 {
     static int PixSinceDiff;
     static int MousePresentFrames;
@@ -160,7 +164,7 @@ static int ProcessImage(LastPic_t * New)
         if (SinceMotionFrames <= PostMotionKeep+1 || LastPics[2].IsTimelapse){
             // If it's motion, pre-motion, or timelapse, save it.
             if (SaveDir[0]){
-                BackupPicture(LastPics[2].Name, LastPics[2].mtime, LastPics[2].DiffMag);
+                BackupImageFile(LastPics[2].Name, LastPics[2].mtime, LastPics[2].DiffMag);
             }
         }
         SinceMotionFrames += 1;
@@ -213,7 +217,7 @@ static int ProcessImage(LastPic_t * New)
         }
     }
     
-    if (FollowDir){
+    if (DeleteProcessed){
         //printf("Delete %s\n",LastPics[2].Name);
         unlink(LastPics[2].Name);
     }
@@ -224,7 +228,7 @@ static int ProcessImage(LastPic_t * New)
 //-----------------------------------------------------------------------------------
 // Process a whole directory of files.
 //-----------------------------------------------------------------------------------
-static int DoDirectoryFunc(char * Directory)
+static int DoDirectoryFunc(char * Directory, int DeleteProcessed)
 {
     char ** FileNames;
     int NumEntries;
@@ -232,7 +236,7 @@ static int DoDirectoryFunc(char * Directory)
     int ReadExif;
     int NumProcessed;
     int SawMotion;
-
+    
     SawMotion = 0;
 
     FileNames = GetSortedDir(Directory, &NumEntries);
@@ -242,22 +246,43 @@ static int DoDirectoryFunc(char * Directory)
     ReadExif = 1;
     NumProcessed = 0;
     for (a=0;a<NumEntries;a++){
+        // Don't redo old pictures that we have looked at, but
+        // not yet deleted because we may still need them.
+        if (strcmp(LastPics[0].Name+LastPics[0].nind, FileNames[a]) == 0
+           || strcmp(LastPics[1].Name+LastPics[1].nind, FileNames[a]) == 0){
+            // Zero out file name to indicate skip this one.   
+            FileNames[a][0] = 0;
+        }
+    }        
+
+    
+    for (a=0;a<NumEntries;a++){
         LastPic_t NewPic;
         struct stat statbuf;
-        strcpy(NewPic.Name, CatPath(Directory, FileNames[a]));
+        char * ThisName;
+        int l;
+       
+        // Check that name ends in ".jpg", ".jpeg", or ".JPG", etc...
+        ThisName = FileNames[a];
+        if (ThisName[0] == 0) continue; // We already did this one.
+        
+        l = strlen(ThisName);
+        if (l < 5) continue;
+        if (ThisName[l-1] != 'g' && ThisName[l-1] != 'G') continue;
+        if (ThisName[l-2] == 'e' || ThisName[l-2] == 'E') l-= 1;
+        if (ThisName[l-2] != 'p' && ThisName[l-2] != 'P') continue;
+        if (ThisName[l-3] != 'j' && ThisName[l-3] != 'J') continue;
+        if (ThisName[l-4] != '.') continue;
+        //printf("use: %s\n",ThisName);
+        
+        strcpy(NewPic.Name, CatPath(Directory, ThisName));
         NewPic.nind = strlen(Directory)+1;
-
-        if (strcmp(LastPics[0].Name, NewPic.Name) == 0
-           || strcmp(LastPics[1].Name, NewPic.Name) == 0){
-            continue; // Don't redo old pictures that we have looked at, but
-                      // not yet deleted because we may still need them.
-        }
 
         //printf("sorted dir: %s\n",FileNames[a]);
         NewPic.Image = LoadJPEG(NewPic.Name, ScaleDenom, 0, ReadExif);
         if (NewPic.Image == NULL){
             fprintf(Log, "Failed to load %s\n",NewPic.Name);
-            if (FollowDir){
+            if (DeleteProcessed){
                 // Raspberry pi timelapse mode may at times dump a corrupt
                 // picture at the end of timelapse mode.  Just delete and go on.
                 unlink(NewPic.Name);
@@ -273,7 +298,7 @@ static int DoDirectoryFunc(char * Directory)
         NewPic.mtime = (unsigned)statbuf.st_mtime;
         LastPic_mtime = NewPic.mtime;
 
-        SawMotion += ProcessImage(&NewPic);
+        SawMotion += ProcessImage(&NewPic, DeleteProcessed);
 
         NumProcessed += 1;
     }
@@ -285,12 +310,12 @@ static int DoDirectoryFunc(char * Directory)
     //    run_blink_program();
     //}
 
-    return NumProcessed;
+    return SawMotion;
 }
 
 
 //-----------------------------------------------------------------------------------
-// Process a whole directory of files.
+// Process a whole directory of jpeg files.
 //-----------------------------------------------------------------------------------
 int DoDirectory(char * Directory)
 {
@@ -298,7 +323,7 @@ int DoDirectory(char * Directory)
     Raspistill_restarted = 0;
 
     for (;;){
-        a = DoDirectoryFunc(Directory);
+        a = DoDirectoryFunc(Directory, FollowDir);
         if (FollowDir){
             b = manage_raspistill(a);
             if (b) Raspistill_restarted = 1;
@@ -307,6 +332,77 @@ int DoDirectory(char * Directory)
         }else{
             break;
         }
+    }
+    return a;
+}
+
+//-----------------------------------------------------------------------------------
+// Process a whole directory of video files.
+//-----------------------------------------------------------------------------------
+int DoDirectoryVideos(char * Directory)
+{
+    int a,ret;
+    int infileindex;
+    static int seq;
+    Raspistill_restarted = 0;
+    printf("command = %s\n", VidDecomposeCmd);
+    infileindex = strstr(VidDecomposeCmd, "<infile>")-VidDecomposeCmd;
+    
+    if (infileindex <= 0){
+        fprintf(stderr, "Must specify '<infile>' as part of videodecomposecmd\n");
+        exit(-1);
+    }
+    
+    for (;;){
+        char ** FileNames;
+        int NumEntries;
+        char VidFileName[200];
+        char FFCmd[300];
+        int Saw_motion;
+        
+        FileNames = GetSortedDir(Directory, &NumEntries);
+        if (FileNames == NULL) return 0;
+        if (NumEntries == 0) return 0;
+
+        for (a=0;a<NumEntries;a++){
+            strcpy(VidFileName, CatPath(Directory, FileNames[a]));
+            printf("do video '%s' %d\n",VidFileName, infileindex);
+            
+            strncpy(FFCmd, VidDecomposeCmd, infileindex);
+            FFCmd[infileindex] = 0;
+            strcpy(FFCmd+infileindex, VidFileName);
+            strcat(FFCmd, VidDecomposeCmd+infileindex+8);
+            sprintf(FFCmd+strlen(FFCmd), " temp/sf%02d_%%02d.jpg",seq);
+            seq = seq+1;
+            if (seq >= 3) seq = 0;
+            
+            printf("%s\n",FFCmd);
+            
+
+            errno = 0;
+            ret = system(FFCmd);
+            if (ret || errno){
+                // A command can however fail without errno getting set or system returning an error.
+                if (errno) perror("system");
+                printf("Error on command %s\n",FFCmd);
+                continue;
+            }
+            
+            // Now should have some files in temp dir.
+            Saw_motion = DoDirectoryFunc("temp", 1);
+            //if (Saw_motion){
+                // Copy it (not move, because we typically go from ram disk to flash
+                
+            //}
+            
+            if (FollowDir){
+                printf("Delete video %s\n",VidFileName);
+                //unlink(VidFileName);
+            }
+        }
+        
+        break;
+        
     }
     return a;
 }
@@ -405,7 +501,11 @@ int main(int argc, char **argv)
     if (DoDirName[0] && file_index == argc){
         // if dodir is specified in config file, but files are specified
         // on the command line, do the files instead.
-        DoDirectory(DoDirName);
+        if (!VidMode){
+            DoDirectory(DoDirName);
+        }else{
+            DoDirectoryVideos(DoDirName);
+        }   
     }
 
     if (argc-file_index == 2){

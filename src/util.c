@@ -163,21 +163,9 @@ char ** GetSortedDir(char * Directory, int * NumFiles)
     for (;;){
         struct dirent * dp;
         struct stat buf;
-        int l;
         dp = readdir(dirp);
         if (dp == NULL) break;
         //printf("name: %s %d %d\n",dp->d_name, (int)dp->d_off, (int)dp->d_reclen);
-
-
-        // Check that name ends in ".jpg", ".jpeg", or ".JPG", etc...
-        l = strlen(dp->d_name);
-        if (l < 5) continue;
-        if (dp->d_name[l-1] != 'g' && dp->d_name[l-1] != 'G') continue;
-        if (dp->d_name[l-2] == 'e' || dp->d_name[l-2] == 'E') l-= 1;
-        if (dp->d_name[l-2] != 'p' && dp->d_name[l-2] != 'P') continue;
-        if (dp->d_name[l-3] != 'j' && dp->d_name[l-3] != 'J') continue;
-        if (dp->d_name[l-4] != '.') continue;
-        //printf("use: %s\n",dp->d_name);
 
         // Check that it's a regular file.
         stat(CatPath(Directory, dp->d_name), &buf);
@@ -217,7 +205,7 @@ void FreeDir(char ** FileNames, int NumEntries)
 //-----------------------------------------------------------------------------------
 // Make a name from the file date.
 //-----------------------------------------------------------------------------------
-void PicDestFromTime(char * DestPath, const char * KeepPixDir, time_t PicTime, char * NameSuffix)
+static void DestNameFromTime(char * DestPath, const char * KeepPixDir, time_t PicTime, char * NameSuffix)
 {
     struct tm tm;
     char * p;
@@ -238,19 +226,27 @@ void PicDestFromTime(char * DestPath, const char * KeepPixDir, time_t PicTime, c
 
     // Using this rule, make a subdiretories for date and for hour.
     p += strftime(p, PATH_MAX, SaveNames, &tm);
-    sprintf(p, "%s.jpg",NameSuffix);
+    sprintf(p, "%s",NameSuffix);
 }
 
 //-----------------------------------------------------------------------------------
-// Back up a photo that is of interest or applies to tiemelapse.
+// Back up a photo or video file that is of interest or applies to tiemelapse.
 //-----------------------------------------------------------------------------------
-char * BackupPicture(char * Name, time_t mtime, int DiffMag)
+char * BackupImageFile(char * Name, time_t mtime, int DiffMag)
 {
     static char DstPath[500];
     static char SuffixChar = ' ';
     static time_t LastSaveTime;
+    char * extension;
+    int a;
 
     if (SaveDir[0] == '\0') return NULL; // Picture saving not enabled.
+    
+    // Get extension (.jpg or .mp4) of file we started with.
+    extension = "\0";
+    for (a=0;Name[a];a++){
+        if (Name[a] == '.') extension = Name+a;
+    }
 
     {
         char NameSuffix[20];
@@ -262,8 +258,8 @@ char * BackupPicture(char * Name, time_t mtime, int DiffMag)
             SuffixChar = ' ';
             LastSaveTime = mtime;
         }
-        sprintf(NameSuffix, "%c%04d",SuffixChar, DiffMag);
-        PicDestFromTime(DstPath, SaveDir, mtime, NameSuffix);
+        sprintf(NameSuffix, "%c%04d%s",SuffixChar, DiffMag, extension);
+        DestNameFromTime(DstPath, SaveDir, mtime, NameSuffix);
         EnsurePathExists(DstPath);
         CopyFile(Name, DstPath);
     }

@@ -40,17 +40,21 @@ extern FILE * Log;
 extern int BrightnessChangeRestart;
 extern int SendTriggerSignals;
 
-
 extern char SaveDir[200];
 extern char SaveNames[200];
-
 
 extern Regions_t Regions;
 
 extern Region_t MouseDetectRegion;
 
 extern time_t LastPic_mtime;
-extern int GateDelay; // In frames, no motion before inching gate closed.
+extern int GateDelay; // In frames, how long no motion before inching gate closed.
+
+
+// Vidoe segment mode:
+extern int VidMode; // Video mode flag
+extern char VidDecomposeCmd[200];
+
 
 // compare.c functions
 TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, char * DebugImgName);
@@ -70,6 +74,6 @@ void run_blink_program(void);
 char * CatPath(char *Dir, char * FileName);
 char ** GetSortedDir(char * Directory, int * NumFiles);
 void FreeDir(char ** FileNames, int NumEntries);
-char * BackupPicture(char * Name, time_t mtime, int DiffMag);
+char * BackupImageFile(char * Name, time_t mtime, int DiffMag);
 int CopyFile(char * src, char * dest);
 void LogFileMaintain(void);

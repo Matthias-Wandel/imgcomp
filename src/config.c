@@ -197,12 +197,16 @@ static int parse_parameter (const char * tag, const char * value)
 
     } else if (keymatch(tag, "dodir", 5)) {
         // Scale the output image by a fraction M/N. */
-        strncpy(DoDirName,value, sizeof(DoDirName)-1);
+        strncpy(DoDirName, value, sizeof(DoDirName)-1);
 		FollowDir = 0;
 		
     } else if (keymatch(tag, "followdir", 6)) {
         strncpy(DoDirName,value, sizeof(DoDirName)-1);
         FollowDir = 1;
+    } else if (keymatch(tag, "vidmode", 7)) {
+        if (sscanf(value, "%d", &VidMode) != 1) return -1;
+    } else if (keymatch(tag, "viddecomposecmd", 15)) {
+        strncpy(VidDecomposeCmd, value, sizeof(VidDecomposeCmd)-1);
     } else {
         fprintf(stderr,"argument %s not understood\n",tag);
         return -1;	   // bogus switch
