@@ -22,6 +22,7 @@
 #else
     #include <dirent.h>
     #include <unistd.h>
+    #include <errno.h>
 #endif
 
 #include "imgcomp.h"
@@ -130,12 +131,14 @@ static int ProcessImage(LastPic_t * New, int DeleteProcessed)
         if (FollowDir){
             // When real-time following, the timestamp is more useful than the file name
             char TimeString[10];
-            strftime(TimeString, 10, "%H%M%S", localtime(&LastPic_mtime));
+            strftime(TimeString, 10, "%H%M%S ", localtime(&LastPic_mtime));
             fprintf(Log,TimeString);
         }else{
-            fprintf(Log,"%s:",LastPics[0].Name+LastPics[0].nind);
+            fprintf(Log,"%s: ",LastPics[0].Name+LastPics[0].nind);
         }
-        fprintf(Log," %3d at (%4d,%4d) ", Trig.DiffLevel, Trig.x*ScaleDenom, Trig.y*ScaleDenom);
+        if (Trig.DiffLevel){
+            fprintf(Log,"%3d @(%4d,%4d) ", Trig.DiffLevel, Trig.x*ScaleDenom, Trig.y*ScaleDenom);
+        }
 
         if (LastPics[0].DiffMag > Sensitivity){
             LastPics[0].IsMotion = 1;
@@ -228,13 +231,13 @@ static int ProcessImage(LastPic_t * New, int DeleteProcessed)
 //-----------------------------------------------------------------------------------
 // Process a whole directory of files.
 //-----------------------------------------------------------------------------------
+static int NumProcessed;
 static int DoDirectoryFunc(char * Directory, int DeleteProcessed)
 {
     char ** FileNames;
     int NumEntries;
     int a;
     int ReadExif;
-    int NumProcessed;
     int SawMotion;
     
     SawMotion = 0;
@@ -325,7 +328,7 @@ int DoDirectory(char * Directory)
     for (;;){
         a = DoDirectoryFunc(Directory, FollowDir);
         if (FollowDir){
-            b = manage_raspistill(a);
+            b = manage_raspistill(NumProcessed);
             if (b) Raspistill_restarted = 1;
             if (LogToFile[0] != '\0') LogFileMaintain();
             sleep(1);
@@ -373,8 +376,7 @@ int DoDirectoryVideos(char * Directory)
             strcpy(FFCmd+infileindex, VidFileName);
             strcat(FFCmd, VidDecomposeCmd+infileindex+8);
             sprintf(FFCmd+strlen(FFCmd), " temp/sf%02d_%%02d.jpg",seq);
-            seq = seq+1;
-            if (seq >= 3) seq = 0;
+            if (++seq >= 100) seq = 0;
             
             printf("%s\n",FFCmd);
             
@@ -389,11 +391,13 @@ int DoDirectoryVideos(char * Directory)
             }
             
             // Now should have some files in temp dir.
-            Saw_motion = DoDirectoryFunc("temp", 1);
-            //if (Saw_motion){
+            Saw_motion = DoDirectoryFunc("temp", 0);
+            if (Saw_motion){
+                printf("Vid has motion\n");
                 // Copy it (not move, because we typically go from ram disk to flash
                 
-            //}
+                
+            }
             
             if (FollowDir){
                 printf("Delete video %s\n",VidFileName);
