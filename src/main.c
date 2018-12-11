@@ -167,7 +167,7 @@ static int ProcessImage(LastPic_t * New, int DeleteProcessed)
         if (SinceMotionFrames <= PostMotionKeep+1 || LastPics[2].IsTimelapse){
             // If it's motion, pre-motion, or timelapse, save it.
             if (SaveDir[0]){
-                BackupImageFile(LastPics[2].Name, LastPics[2].mtime, LastPics[2].DiffMag);
+                BackupImageFile(LastPics[2].Name, LastPics[2].DiffMag);
             }
         }
         SinceMotionFrames += 1;
@@ -369,7 +369,7 @@ int DoDirectoryVideos(char * Directory)
 
         for (a=0;a<NumEntries;a++){
             strcpy(VidFileName, CatPath(Directory, FileNames[a]));
-            printf("do video '%s' %d\n",VidFileName, infileindex);
+            printf("Process video video '%s' %d\n",VidFileName, infileindex);
             
             strncpy(FFCmd, VidDecomposeCmd, infileindex);
             FFCmd[infileindex] = 0;
@@ -378,8 +378,7 @@ int DoDirectoryVideos(char * Directory)
             sprintf(FFCmd+strlen(FFCmd), " temp/sf%02d_%%02d.jpg",seq);
             if (++seq >= 100) seq = 0;
             
-            printf("%s\n",FFCmd);
-            
+            //printf("%s\n",FFCmd);
 
             errno = 0;
             ret = system(FFCmd);
@@ -391,12 +390,11 @@ int DoDirectoryVideos(char * Directory)
             }
             
             // Now should have some files in temp dir.
-            Saw_motion = DoDirectoryFunc("temp", 0);
+            Saw_motion = DoDirectoryFunc("temp", 1);
             if (Saw_motion){
-                printf("Vid has motion\n");
+                printf("Vid has motion %d\n", Saw_motion);
                 // Copy it (not move, because we typically go from ram disk to flash
-                
-                
+                BackupImageFile(VidFileName, Saw_motion);
             }
             
             if (FollowDir){

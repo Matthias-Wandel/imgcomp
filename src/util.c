@@ -232,16 +232,24 @@ static void DestNameFromTime(char * DestPath, const char * KeepPixDir, time_t Pi
 //-----------------------------------------------------------------------------------
 // Back up a photo or video file that is of interest or applies to tiemelapse.
 //-----------------------------------------------------------------------------------
-char * BackupImageFile(char * Name, time_t mtime, int DiffMag)
+char * BackupImageFile(char * Name, int DiffMag)
 {
     static char DstPath[500];
     static char SuffixChar = ' ';
     static time_t LastSaveTime;
     char * extension;
     int a;
-
+    struct stat statbuf;    
+    time_t mtime;
+    
     if (SaveDir[0] == '\0') return NULL; // Picture saving not enabled.
     
+    if (stat(Name, &statbuf) == -1) {
+        perror(Name);
+        exit(1);
+    }
+    mtime = statbuf.st_mtime;
+        
     // Get extension (.jpg or .mp4) of file we started with.
     extension = "\0";
     for (a=0;Name[a];a++){

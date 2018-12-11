@@ -74,6 +74,6 @@ void run_blink_program(void);
 char * CatPath(char *Dir, char * FileName);
 char ** GetSortedDir(char * Directory, int * NumFiles);
 void FreeDir(char ** FileNames, int NumEntries);
-char * BackupImageFile(char * Name, time_t mtime, int DiffMag);
+char * BackupImageFile(char * Name, int DiffMag);
 int CopyFile(char * src, char * dest);
 void LogFileMaintain(void);
