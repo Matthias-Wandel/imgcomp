@@ -368,10 +368,10 @@ int DoDirectoryVideos(char * Directory)
             return 0;
         } 
         
-        if (NumEntries > 1) printf("%d files to process\n",NumEntries);
+        if (NumEntries > 1) fprintf(Log,"%d files to process\n",NumEntries);
         for (a=0;a<NumEntries;a++){
             strcpy(VidFileName, CatPath(Directory, FileNames[a]));
-            printf("Process video '%s'\n",VidFileName);
+            fprintf(Log,"Vidfile:%s\n",VidFileName);
             
             strncpy(FFCmd, VidDecomposeCmd, infileindex);
             FFCmd[infileindex] = 0;
@@ -395,7 +395,7 @@ printf("---------------------------------\n");
             // Now should have some files in temp dir.
             Saw_motion = DoDirectoryFunc(TempDirName, 1);
             if (Saw_motion){
-                printf("Vid has motion %d\n", Saw_motion);
+                fprintf(Log,"Vid has motion %d\n", Saw_motion);
                 // Copy it (not move, because we typically go from ram disk to flash
                 BackupImageFile(VidFileName, Saw_motion);
             }
@@ -417,7 +417,6 @@ printf("---------------------------------\n");
         }
         
     }
-printf("do directory videos end\n");        
     return a;
 }
 
