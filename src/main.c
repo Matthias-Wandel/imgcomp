@@ -349,28 +349,29 @@ int DoDirectoryVideos(char * Directory)
     int infileindex;
     static int seq;
     Raspistill_restarted = 0;
-    printf("command = %s\n", VidDecomposeCmd);
     infileindex = strstr(VidDecomposeCmd, "<infile>")-VidDecomposeCmd;
     
     if (infileindex <= 0){
         fprintf(stderr, "Must specify '<infile>' as part of videodecomposecmd\n");
         exit(-1);
     }
-    
+
     for (;;){
         char ** FileNames;
         int NumEntries;
         char VidFileName[200];
         char FFCmd[300];
         int Saw_motion;
-        
         FileNames = GetSortedDir(Directory, &NumEntries);
-        if (FileNames == NULL) return 0;
-        if (NumEntries == 0) return 0;
-
+        if (FileNames == NULL){
+            fprintf(stderr, "Could not read dir %s\n",Directory);
+            return 0;
+        } 
+        
+        if (NumEntries > 1) printf("%d files to process\n",NumEntries);
         for (a=0;a<NumEntries;a++){
             strcpy(VidFileName, CatPath(Directory, FileNames[a]));
-            printf("Process video video '%s' %d\n",VidFileName, infileindex);
+            printf("Process video '%s'\n",VidFileName);
             
             strncpy(FFCmd, VidDecomposeCmd, infileindex);
             FFCmd[infileindex] = 0;
@@ -389,6 +390,7 @@ int DoDirectoryVideos(char * Directory)
                 printf("Error on command %s\n",FFCmd);
                 continue;
             }
+printf("---------------------------------\n");            
             
             // Now should have some files in temp dir.
             Saw_motion = DoDirectoryFunc(TempDirName, 1);
@@ -399,21 +401,23 @@ int DoDirectoryVideos(char * Directory)
             }
             
             if (FollowDir){
-                printf("Delete video %s\n",VidFileName);
+                //printf("Delete video %s\n",VidFileName);
                 unlink(VidFileName);
             }
         }
+        FreeDir(FileNames, NumEntries); // Free up the whole directory structure.
         
         if (FollowDir){
             int b = manage_raspistill(NumProcessed);
             if (b) Raspistill_restarted = 1;
             if (LogToFile[0] != '\0') LogFileMaintain();
-            sleep(1);
+            sleep(2);
         }else{
             break;
         }
         
     }
+printf("do directory videos end\n");        
     return a;
 }
 
@@ -514,7 +518,7 @@ int main(int argc, char **argv)
             DoDirectory(DoDirName);
         }else{
             if (TempDirName[0] == 0){
-                fprintf(stderr, "must specify tempdir for video mode");
+                fprintf(stderr, "must specify tempdir for video mode\n");
                 exit(-1);
             }
             DoDirectoryVideos(DoDirName);
