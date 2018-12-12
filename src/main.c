@@ -33,6 +33,7 @@ char * progname;  // program name for error messages
 char DoDirName[200];
 char SaveDir[200];
 char SaveNames[200];
+char TempDirName[200];
 int FollowDir = 0;
 int ScaleDenom;
 int SpuriousReject = 0;
@@ -172,7 +173,7 @@ static int ProcessImage(LastPic_t * New, int DeleteProcessed)
         }
         SinceMotionFrames += 1;
         
-        fprintf(Log," %d %d ",rzaveragebright, NoMousePic.RzAverageBright-20);
+        //fprintf(Log," %d %d ",rzaveragebright, NoMousePic.RzAverageBright-20);
         
         fprintf(Log,"\n");
 
@@ -375,7 +376,7 @@ int DoDirectoryVideos(char * Directory)
             FFCmd[infileindex] = 0;
             strcpy(FFCmd+infileindex, VidFileName);
             strcat(FFCmd, VidDecomposeCmd+infileindex+8);
-            sprintf(FFCmd+strlen(FFCmd), " temp/sf%02d_%%02d.jpg",seq);
+            sprintf(FFCmd+strlen(FFCmd), " %s/sf%02d_%%02d.jpg",TempDirName, seq);
             if (++seq >= 100) seq = 0;
             
             //printf("%s\n",FFCmd);
@@ -390,7 +391,7 @@ int DoDirectoryVideos(char * Directory)
             }
             
             // Now should have some files in temp dir.
-            Saw_motion = DoDirectoryFunc("temp", 1);
+            Saw_motion = DoDirectoryFunc(TempDirName, 1);
             if (Saw_motion){
                 printf("Vid has motion %d\n", Saw_motion);
                 // Copy it (not move, because we typically go from ram disk to flash
@@ -399,11 +400,18 @@ int DoDirectoryVideos(char * Directory)
             
             if (FollowDir){
                 printf("Delete video %s\n",VidFileName);
-                //unlink(VidFileName);
+                unlink(VidFileName);
             }
         }
         
-        break;
+        if (FollowDir){
+            int b = manage_raspistill(NumProcessed);
+            if (b) Raspistill_restarted = 1;
+            if (LogToFile[0] != '\0') LogFileMaintain();
+            sleep(1);
+        }else{
+            break;
+        }
         
     }
     return a;
@@ -498,14 +506,17 @@ int main(int argc, char **argv)
         ProcessDiffMap(MapPic);
         free(MapPic);
     }
-
-  
+ 
     if (DoDirName[0] && file_index == argc){
         // if dodir is specified in config file, but files are specified
         // on the command line, do the files instead.
         if (!VidMode){
             DoDirectory(DoDirName);
         }else{
+            if (TempDirName[0] == 0){
+                fprintf(stderr, "must specify tempdir for video mode");
+                exit(-1);
+            }
             DoDirectoryVideos(DoDirName);
         }   
     }

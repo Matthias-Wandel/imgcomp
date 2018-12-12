@@ -1,6 +1,6 @@
 //----------------------------------------------------------------------------
 // imgcomp structures and function prototypes
-// Matthias Wandel 2015
+// Matthias Wandel 2015-2018
 //
 // Imgcomp is licensed under GPL v2 (see README.txt)
 //----------------------------------------------------------------------------
@@ -35,6 +35,7 @@ extern int NewestAverageBright;
 extern int Verbosity;
 extern char LogToFile[200];
 extern char MoveLogNames[200];
+extern char TempDirName[200];
 extern FILE * Log;
 
 extern int BrightnessChangeRestart;

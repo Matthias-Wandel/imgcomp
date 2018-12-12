@@ -37,6 +37,7 @@ void usage (void)// complain about bad command line
      " -followdir <srcdir>  Do dir and monitor for new images\n"
      " -savedir <saveto>    Where to save images with changes\n"
      " -savenames <scheme>  Output naming scheme.  Uses strftime\n"
+     " -tempdir <dir>       Where to put temp images for video mode\n"
      "                      to format the output name.  May include\n"
      "                      '/' characters for directories.\n"
      " -sensitivity N       Set sensitivity.  Lower=more sensitive\n"
@@ -203,6 +204,8 @@ static int parse_parameter (const char * tag, const char * value)
     } else if (keymatch(tag, "followdir", 6)) {
         strncpy(DoDirName,value, sizeof(DoDirName)-1);
         FollowDir = 1;
+    } else if (keymatch(tag, "tempdir", 6)) {
+        strncpy(TempDirName,value, sizeof(DoDirName)-1);
     } else if (keymatch(tag, "vidmode", 7)) {
         if (sscanf(value, "%d", &VidMode) != 1) return -1;
     } else if (keymatch(tag, "viddecomposecmd", 15)) {
