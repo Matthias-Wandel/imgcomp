@@ -145,9 +145,11 @@ int manage_raspistill(int NewImages)
         goto force_restart;
     }
 
-    if (SecondsSinceImage > 5){
-        // Not getting any images for 5 seconds.  Probably something went wrong with raspistill.
-        fprintf(Log,"No images timeout.  Relaunch  raspistill\n");
+    
+    if (SecondsSinceImage > (VidMode ? 10 : 5)){
+        // Not getting any images for 5 seconds or vide ofiles for 10.
+        // Probably something went wrong with raspistill or raspivid.
+        fprintf(Log,"No images timeout.  Relaunch raspistill/vid\n");
         goto force_restart;
     }
 
