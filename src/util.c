@@ -148,7 +148,7 @@ DirEntry_t * GetSortedDir(char * Directory, int * NumFiles)
     int NumAllocated;
     DIR * dirp;
 
-    NumAllocated = 8;
+    NumAllocated = 10;
     FileNames = malloc(sizeof (DirEntry_t) * NumAllocated);
 
     NumFileNames = 0;
@@ -172,7 +172,6 @@ DirEntry_t * GetSortedDir(char * Directory, int * NumFiles)
         if (!S_ISREG(buf.st_mode)) continue; // not a file.
 
         if (NumFileNames >= NumAllocated){
-            printf("realloc\n");
             NumAllocated *= 2;
             FileNames = realloc(FileNames, sizeof (DirEntry_t) * NumAllocated);
         }

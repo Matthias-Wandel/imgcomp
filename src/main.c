@@ -363,6 +363,8 @@ int DoDirectoryVideos(char * DirName)
         char VidFileName[200];
         char FFCmd[300];
         int Saw_motion;
+        NumProcessed = 0;
+        
         FileNames = GetSortedDir(DirName, &NumEntries);
         if (FileNames == NULL){
             fprintf(stderr, "Could not read dir %s\n",DirName);
