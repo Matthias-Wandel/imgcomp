@@ -371,8 +371,10 @@ int DoDirectoryVideos(char * DirName)
         
         if (NumEntries > 1) printf("%d files to process\n",NumEntries);
         for (a=0;a<NumEntries;a++){
+            time_t now;
+            time(&now);
             strcpy(VidFileName, CatPath(DirName, FileNames[a].FileName));
-            printf("Process video '%s'\n",VidFileName);
+            printf("Process video '%s' aged %d\n",VidFileName, (int)(now-FileNames[a].ATime));
             
             strncpy(FFCmd, VidDecomposeCmd, infileindex);
             FFCmd[infileindex] = 0;
@@ -381,7 +383,7 @@ int DoDirectoryVideos(char * DirName)
             sprintf(FFCmd+strlen(FFCmd), " %s/sf%02d_%%02d.jpg",TempDirName, seq);
             if (++seq >= 100) seq = 0;
             
-            //printf("%s\n",FFCmd);
+            printf("Cmd: %s\n",FFCmd);
 
             errno = 0;
             ret = system(FFCmd);
@@ -511,6 +513,13 @@ int main(int argc, char **argv)
         ProcessDiffMap(MapPic);
         free(MapPic);
     }
+    
+    
+    // These directories are likely to be on ramdisk, so they may need re-creating.
+    if (FollowDir) EnsurePathExists(DoDirName,0);
+    if (TempDirName[0]) EnsurePathExists(TempDirName,0);
+        
+    
  
     if (DoDirName[0] && file_index == argc){
         // if dodir is specified in config file, but files are specified

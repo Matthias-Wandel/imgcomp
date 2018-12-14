@@ -73,10 +73,12 @@ void run_blink_program(void);
 
 // util.c functions
 char * CatPath(char *Dir, char * FileName);
+int EnsurePathExists(const char * FileName, int filepath);
 
 typedef struct {
     unsigned int FileSize;
-    unsigned int MTime;
+    long MTime;
+    long ATime;
     char FileName[50];
 }DirEntry_t;
 

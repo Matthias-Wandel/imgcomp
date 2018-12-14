@@ -70,7 +70,7 @@ char * CatPath(char *Dir, char * FileName)
 //--------------------------------------------------------------------------------
 // Ensure that a path exists
 //--------------------------------------------------------------------------------
-int EnsurePathExists(const char * FileName)
+int EnsurePathExists(const char * FileName, int filepath)
 {
     char NewPath[PATH_MAX*2];
     int a;
@@ -79,13 +79,13 @@ int EnsurePathExists(const char * FileName)
     // Extract the path component of the file name.
     strcpy(NewPath, FileName);
     a = strlen(NewPath);
+    if (filepath) a--;
     for (;;){
-        a--;
         if (a == 0){
             NewPath[0] = 0;
             break;    
         }
-        if (NewPath[a] == '/'){
+        if (NewPath[a] == '/' || NewPath[a] == 0){
             struct stat dummy;
             NewPath[a] = 0;
             if (stat(NewPath, &dummy) == 0){
@@ -99,12 +99,13 @@ int EnsurePathExists(const char * FileName)
                     break;
                 }else{
                     // Its a file.
-                    fprintf(stderr,"Can't create path '%s' due to file conflict\n",NewPath);
-                    return 0;
+                    fprintf(Log,"Can't create path '%s' due to file conflict\n",NewPath);
+                    exit(-1);
                 }
             }
             if (LastSlash == 0) LastSlash = a;
         }
+        a--;
     }
 
     // Now work forward.
@@ -118,11 +119,11 @@ int EnsurePathExists(const char * FileName)
             #ifdef _WIN32
                 if (NewPath[1] == ':' && strlen(NewPath) == 2) continue;
             #endif
-            //printf("mkdir %s\n",NewPath);
+            fprintf(Log,"Make directory %s\n",NewPath);
             if (mkdir(NewPath,0777)){
-                fprintf(stderr,"Could not create directory '%s'\n",NewPath);
+                fprintf(Log,"Could not create directory '%s'\n",NewPath);
                 // Failed to create directory.
-                return 0;
+                exit(-1);
             }
         }
     }
@@ -182,6 +183,7 @@ DirEntry_t * GetSortedDir(char * Directory, int * NumFiles)
         }
         strncpy(FileNames[NumFileNames].FileName,dp->d_name,40);
         FileNames[NumFileNames].MTime = buf.st_mtime;
+        FileNames[NumFileNames].ATime = buf.st_atime;
         FileNames[NumFileNames].FileSize = buf.st_size;
         NumFileNames += 1;
     }
@@ -268,7 +270,7 @@ char * BackupImageFile(char * Name, int DiffMag)
         }
         sprintf(NameSuffix, "%c%04d%s",SuffixChar, DiffMag, extension);
         DestNameFromTime(DstPath, SaveDir, mtime, NameSuffix);
-        EnsurePathExists(DstPath);
+        EnsurePathExists(DstPath, 1);
         CopyFile(Name, DstPath);
     }
     return DstPath;
@@ -358,7 +360,7 @@ void LogFileMaintain()
                 fprintf(Log,"Log rotate %s --> %s\n", ThisLogTo, NewLogTo);
                 fclose(Log);
                 Log = NULL;
-                EnsurePathExists(ThisLogTo);
+                EnsurePathExists(ThisLogTo, 1);
                 CopyFile(LogToFile, ThisLogTo);
                 unlink(LogToFile);
             }

@@ -65,7 +65,7 @@ static void do_launch_program(char * cmd_string)
 
     // execvp only returns if there is an error.
 
-    fprintf(stderr,"Failed to execute: %s\n",Arguments[0]);
+    fprintf(Log,"Failed to execute: %s\n",Arguments[0]);
     perror("Reason");
     exit(errno);
 }
@@ -130,7 +130,7 @@ int manage_raspistill(int NewImages)
     SecondsSinceLaunch += 1;
     if (NewImages > 0){
         SecondsSinceImage = 0;
-        if (SecondsSinceLaunch <= 2){
+        if (SecondsSinceLaunch <= 2 && BrightnessChangeRestart){
             fprintf(Log,"Exp:%5.1fms Iso:%d  Nm=%d  Bright:%d  av=%5.2f\n",
                 ImageInfo.ExposureTime*1000, ImageInfo.ISOequivalent, 
                 NightMode, NewestAverageBright, RunningAverageBright);
