@@ -91,8 +91,8 @@ time_t LastPic_mtime;
 static int ProcessImage(LastPic_t * New, int DeleteProcessed)
 {
     static int PixSinceDiff;
-    static int MousePresentFrames;
-    static int SawMouse;
+    //static int MousePresentFrames;
+    //static int SawMouse;
 
     LastPics[2] = LastPics[1];
     LastPics[1] = LastPics[0];
@@ -177,8 +177,9 @@ static int ProcessImage(LastPic_t * New, int DeleteProcessed)
         
         fprintf(Log,"\n");
 
+        /*
+        // Mouse gate logic for squeezer experiment
         if (rzaveragebright < NoMousePic.RzAverageBright-20){
-            
             MousePresentFrames += 1;
             if (MousePresentFrames >= 10 && SawMouse == 0){ // adjust
                 // Mouse must be in the box at least 20 frames.
@@ -201,6 +202,7 @@ static int ProcessImage(LastPic_t * New, int DeleteProcessed)
                 }
             }
         }
+        */
         
         Raspistill_restarted = 0;
     }
@@ -235,7 +237,7 @@ static int ProcessImage(LastPic_t * New, int DeleteProcessed)
 static int NumProcessed;
 static int DoDirectoryFunc(char * Directory, int DeleteProcessed)
 {
-    char ** FileNames;
+    DirEntry_t * FileNames;
     int NumEntries;
     int a;
     int ReadExif;
@@ -252,10 +254,10 @@ static int DoDirectoryFunc(char * Directory, int DeleteProcessed)
     for (a=0;a<NumEntries;a++){
         // Don't redo old pictures that we have looked at, but
         // not yet deleted because we may still need them.
-        if (strcmp(LastPics[0].Name+LastPics[0].nind, FileNames[a]) == 0
-           || strcmp(LastPics[1].Name+LastPics[1].nind, FileNames[a]) == 0){
+        if (strcmp(LastPics[0].Name+LastPics[0].nind, FileNames[a].FileName) == 0
+           || strcmp(LastPics[1].Name+LastPics[1].nind, FileNames[a].FileName) == 0){
             // Zero out file name to indicate skip this one.   
-            FileNames[a][0] = 0;
+            FileNames[a].FileName[0] = 0;
         }
     }        
 
@@ -267,7 +269,7 @@ static int DoDirectoryFunc(char * Directory, int DeleteProcessed)
         int l;
        
         // Check that name ends in ".jpg", ".jpeg", or ".JPG", etc...
-        ThisName = FileNames[a];
+        ThisName = FileNames[a].FileName;
         if (ThisName[0] == 0) continue; // We already did this one.
         
         l = strlen(ThisName);
@@ -282,7 +284,6 @@ static int DoDirectoryFunc(char * Directory, int DeleteProcessed)
         strcpy(NewPic.Name, CatPath(Directory, ThisName));
         NewPic.nind = strlen(Directory)+1;
 
-        //printf("sorted dir: %s\n",FileNames[a]);
         NewPic.Image = LoadJPEG(NewPic.Name, ScaleDenom, 0, ReadExif);
         if (NewPic.Image == NULL){
             fprintf(Log, "Failed to load %s\n",NewPic.Name);
@@ -343,7 +344,7 @@ int DoDirectory(char * Directory)
 //-----------------------------------------------------------------------------------
 // Process a whole directory of video files.
 //-----------------------------------------------------------------------------------
-int DoDirectoryVideos(char * Directory)
+int DoDirectoryVideos(char * DirName)
 {
     int a,ret;
     int infileindex;
@@ -357,20 +358,20 @@ int DoDirectoryVideos(char * Directory)
     }
 
     for (;;){
-        char ** FileNames;
+        DirEntry_t * FileNames;
         int NumEntries;
         char VidFileName[200];
         char FFCmd[300];
         int Saw_motion;
-        FileNames = GetSortedDir(Directory, &NumEntries);
+        FileNames = GetSortedDir(DirName, &NumEntries);
         if (FileNames == NULL){
-            fprintf(stderr, "Could not read dir %s\n",Directory);
+            fprintf(stderr, "Could not read dir %s\n",DirName);
             return 0;
         } 
         
         if (NumEntries > 1) printf("%d files to process\n",NumEntries);
         for (a=0;a<NumEntries;a++){
-            strcpy(VidFileName, CatPath(Directory, FileNames[a]));
+            strcpy(VidFileName, CatPath(DirName, FileNames[a].FileName));
             printf("Process video '%s'\n",VidFileName);
             
             strncpy(FFCmd, VidDecomposeCmd, infileindex);

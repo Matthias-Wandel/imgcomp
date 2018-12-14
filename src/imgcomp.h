@@ -73,8 +73,15 @@ void run_blink_program(void);
 
 // util.c functions
 char * CatPath(char *Dir, char * FileName);
-char ** GetSortedDir(char * Directory, int * NumFiles);
-void FreeDir(char ** FileNames, int NumEntries);
+
+typedef struct {
+    unsigned int FileSize;
+    unsigned int MTime;
+    char FileName[50];
+}DirEntry_t;
+
+DirEntry_t * GetSortedDir(char * Directory, int * NumFiles);
+void FreeDir(DirEntry_t * FileNames, int NumEntries);
 char * BackupImageFile(char * Name, int DiffMag);
 int CopyFile(char * src, char * dest);
 void LogFileMaintain(void);

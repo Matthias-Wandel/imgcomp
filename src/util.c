@@ -129,28 +129,26 @@ int EnsurePathExists(const char * FileName)
     return 1;
 }
 
-
-
 //-----------------------------------------------------------------------------------
 // Compare file names to sort directory.
 //-----------------------------------------------------------------------------------
 static int fncmpfunc (const void * a, const void * b)
 {
-    return strcmp(*(char **)a, *(char **)b);
+    return strcmp(  ((DirEntry_t*)a)->FileName, ((DirEntry_t*)b)->FileName  );
 }
 
 //-----------------------------------------------------------------------------------
 // Read a directory and sort it.
 //-----------------------------------------------------------------------------------
-char ** GetSortedDir(char * Directory, int * NumFiles)
+DirEntry_t * GetSortedDir(char * Directory, int * NumFiles)
 {
-    char ** FileNames;
+    DirEntry_t * FileNames;
     int NumFileNames;
     int NumAllocated;
     DIR * dirp;
 
-    NumAllocated = 5;
-    FileNames = malloc(sizeof (char *) * NumAllocated);
+    NumAllocated = 6;
+    FileNames = malloc(sizeof (DirEntry_t) * NumAllocated);
 
     NumFileNames = 0;
   
@@ -163,6 +161,7 @@ char ** GetSortedDir(char * Directory, int * NumFiles)
     for (;;){
         struct dirent * dp;
         struct stat buf;
+        int l;
         dp = readdir(dirp);
         if (dp == NULL) break;
         //printf("name: %s %d %d\n",dp->d_name, (int)dp->d_off, (int)dp->d_reclen);
@@ -172,12 +171,19 @@ char ** GetSortedDir(char * Directory, int * NumFiles)
         if (!S_ISREG(buf.st_mode)) continue; // not a file.
 
         if (NumFileNames >= NumAllocated){
-            //printf("realloc\n");
+            printf("realloc\n");
             NumAllocated *= 2;
-            FileNames = realloc(FileNames, sizeof (char *) * NumAllocated);
+            FileNames = realloc(FileNames, sizeof (DirEntry_t) * NumAllocated);
         }
-
-        FileNames[NumFileNames++] = strdup(dp->d_name);
+        l = strlen(dp->d_name);
+        if (l >= 40){
+            printf("Filename too long %s",dp->d_name);
+            continue;
+        }
+        strncpy(FileNames[NumFileNames].FileName,dp->d_name,40);
+        FileNames[NumFileNames].MTime = buf.st_mtime;
+        FileNames[NumFileNames].FileSize = buf.st_size;
+        NumFileNames += 1;
     }
     closedir(dirp);
 
@@ -191,15 +197,9 @@ char ** GetSortedDir(char * Directory, int * NumFiles)
 //-----------------------------------------------------------------------------------
 // Unallocate directory structure
 //-----------------------------------------------------------------------------------
-void FreeDir(char ** FileNames, int NumEntries)
+void FreeDir(DirEntry_t * FileNames, int NumEntries)
 {
-    int a;
-    // Free it up again.
-    for (a=0;a<NumEntries;a++){
-        free(FileNames[a]);
-        FileNames[a] = NULL;
-    }
-    free(FileNames);
+    free (FileNames);
 }
 
 //-----------------------------------------------------------------------------------
