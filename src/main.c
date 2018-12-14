@@ -377,7 +377,7 @@ int DoDirectoryVideos(char * DirName)
             time(&now);
             age = now-FileNames[a].ATime;
             fprintf(Log, "Video '%s' aged %ld ",FileNames[a].FileName, age);
-            if (age < 2){
+            if (age < 6){
                 fprintf(Log,"(Wait)\n");
                 continue;
             }else{
