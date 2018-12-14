@@ -369,7 +369,7 @@ int DoDirectoryVideos(char * DirName)
             return 0;
         } 
         
-        if (NumEntries > 1) printf("%d files to process\n",NumEntries);
+        if (NumEntries > 1) fprintf(Log,"%d files to process\n",NumEntries);
         for (a=0;a<NumEntries;a++){
             time_t now, age;
             time(&now);
@@ -402,7 +402,7 @@ int DoDirectoryVideos(char * DirName)
             // Now should have some files in temp dir.
             Saw_motion = DoDirectoryFunc(TempDirName, 1);
             if (Saw_motion){
-                printf("Vid has motion %d\n", Saw_motion);
+                fprintf(Log,"Vid has motion %d\n", Saw_motion);
                 // Copy it (not move, because we typically go from ram disk to flash
                 BackupImageFile(VidFileName, Saw_motion);
             }
@@ -424,7 +424,6 @@ int DoDirectoryVideos(char * DirName)
         }
         
     }
-printf("do directory videos end\n");        
     return a;
 }
 
