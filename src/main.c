@@ -371,11 +371,18 @@ int DoDirectoryVideos(char * DirName)
         
         if (NumEntries > 1) printf("%d files to process\n",NumEntries);
         for (a=0;a<NumEntries;a++){
-            time_t now;
+            time_t now, age;
             time(&now);
-            strcpy(VidFileName, CatPath(DirName, FileNames[a].FileName));
-            printf("Process video '%s' aged %d\n",VidFileName, (int)(now-FileNames[a].ATime));
+            age = now-FileNames[a].ATime;
+            fprintf(Log, "Video '%s' aged %ld ",FileNames[a].FileName, age);
+            if (age < 2){
+                fprintf(Log,"(Wait)\n");
+                continue;
+            }else{
+                fprintf(Log,"Process...\n");
+            }
             
+            strcpy(VidFileName, CatPath(DirName, FileNames[a].FileName));
             strncpy(FFCmd, VidDecomposeCmd, infileindex);
             FFCmd[infileindex] = 0;
             strcpy(FFCmd+infileindex, VidFileName);
@@ -383,8 +390,6 @@ int DoDirectoryVideos(char * DirName)
             sprintf(FFCmd+strlen(FFCmd), " %s/sf%02d_%%02d.jpg",TempDirName, seq);
             if (++seq >= 100) seq = 0;
             
-            printf("Cmd: %s\n",FFCmd);
-
             errno = 0;
             ret = system(FFCmd);
             if (ret || errno){
@@ -393,7 +398,6 @@ int DoDirectoryVideos(char * DirName)
                 printf("Error on command %s\n",FFCmd);
                 continue;
             }
-printf("---------------------------------\n");            
             
             // Now should have some files in temp dir.
             Saw_motion = DoDirectoryFunc(TempDirName, 1);
@@ -414,7 +418,7 @@ printf("---------------------------------\n");
             int b = manage_raspistill(NumProcessed);
             if (b) Raspistill_restarted = 1;
             if (LogToFile[0] != '\0') LogFileMaintain();
-            sleep(2);
+            sleep(1);
         }else{
             break;
         }

@@ -148,7 +148,7 @@ DirEntry_t * GetSortedDir(char * Directory, int * NumFiles)
     int NumAllocated;
     DIR * dirp;
 
-    NumAllocated = 6;
+    NumAllocated = 8;
     FileNames = malloc(sizeof (DirEntry_t) * NumAllocated);
 
     NumFileNames = 0;
