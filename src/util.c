@@ -189,7 +189,7 @@ DirEntry_t * GetSortedDir(char * Directory, int * NumFiles)
     closedir(dirp);
 
     // Now sort the names (could be in random order)
-    qsort(FileNames, NumFileNames, sizeof(char **), fncmpfunc);
+    qsort(FileNames, NumFileNames, sizeof(DirEntry_t), fncmpfunc);
 
     *NumFiles = NumFileNames;
     return FileNames;
