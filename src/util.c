@@ -76,16 +76,27 @@ int EnsurePathExists(const char * FileName, int filepath)
     int a;
     int LastSlash = 0;
 
+    //printf("Ensure path exists '%s' %d\n",FileName, filepath);
+
     // Extract the path component of the file name.
     strcpy(NewPath, FileName);
     a = strlen(NewPath);
-    if (filepath) a--;
+    
+    if (!filepath){
+        // If it's not a path to a file, add a trailing slash for the existing
+        // code to work properly.
+        if (NewPath[a-1] != '/'){
+            NewPath[a++] = '/';
+        }
+    }
+    
     for (;;){
+        a--;
         if (a == 0){
             NewPath[0] = 0;
             break;    
         }
-        if (NewPath[a] == '/' || NewPath[a] == 0){
+        if (NewPath[a] == '/'){
             struct stat dummy;
             NewPath[a] = 0;
             if (stat(NewPath, &dummy) == 0){
@@ -99,30 +110,28 @@ int EnsurePathExists(const char * FileName, int filepath)
                     break;
                 }else{
                     // Its a file.
+                    printf("Can't create path '%s' due to file conflict\n",NewPath);
                     fprintf(Log,"Can't create path '%s' due to file conflict\n",NewPath);
                     exit(-1);
                 }
             }
             if (LastSlash == 0) LastSlash = a;
         }
-        a--;
     }
 
     // Now work forward.
-    printf("Existing First dir: '%s' a = %d\n",NewPath,a);
-
     for(;FileName[a];a++){
-        printf("'%c'\n",FileName[a]);
+        //printf("%d/%d: '%c'\n",a,LastSlash,FileName[a]);
         if (FileName[a] == '/' || a == 0){
             if (a == LastSlash) break;
             NewPath[a] = FileName[a];
-            //printf("make dir '%s'\n",NewPath);
-            #ifdef _WIN32
+              #ifdef _WIN32
                 if (NewPath[1] == ':' && strlen(NewPath) == 2) continue;
             #endif
             fprintf(Log,"Make directory %s\n",NewPath);
-            printf("Make directory %s\n",NewPath);
+            
             if (mkdir(NewPath,0777)){
+                printf("Could not create directory '%s'\n",NewPath);
                 fprintf(Log,"Could not create directory '%s'\n",NewPath);
                 // Failed to create directory.
                 exit(-1);
@@ -290,8 +299,6 @@ int CopyFile(char * src, char * dest)
     #define BUF_SIZE 8192
     char buf[BUF_SIZE];
 
-    printf("Copy %s --> %s\n",src,dest);
-
     // Get file modification time from old file.
     stat(src, &statbuf);
 
@@ -337,7 +344,6 @@ int CopyFile(char * src, char * dest)
         mtime.modtime = statbuf.st_mtime;
         utime(dest, &mtime);
     }
-printf("copy done\n"    );
     return 0;
 }
 
@@ -360,13 +366,10 @@ void LogFileMaintain()
             if (Log != NULL){
                 printf("Log rotate %s --> %s\n", ThisLogTo, NewLogTo);
                 fprintf(Log,"Log rotate %s --> %s\n", ThisLogTo, NewLogTo);
+                EnsurePathExists(ThisLogTo, 1);
                 fclose(Log);
                 Log = NULL;
-                printf("ensure\n");
-                EnsurePathExists(ThisLogTo, 1);
-                printf("copy\n");
                 CopyFile(LogToFile, ThisLogTo);
-                printf("unlink\n");
                 unlink(LogToFile);
             }
             strcpy(ThisLogTo, NewLogTo);
@@ -374,7 +377,6 @@ void LogFileMaintain()
     }
     
     if (Log == NULL){
-        printf("open new log file\n");
         Log = fopen(LogToFile,"w");
         if (Log == NULL){
             fprintf(stderr, "Failed to open log file %s\n",LogToFile);
