@@ -24,6 +24,7 @@ static ImgMap_t * DiffVal = NULL;
 static ImgMap_t * WeightMap = NULL;
 
 static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold);
+static TriggerInfo_t SearchDiffMaxWindow_aim(Region_t Region, int threshold);
 
 int rzaveragebright;
 //----------------------------------------------------------------------------------------
@@ -472,13 +473,15 @@ TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, char * DebugImgNa
         // Try to gauge the difference noise (assuming two thirds of the image
         // has not changed)
 
-        Trigger = SearchDiffMaxWindow(MainReg, threshold);
+        Trigger = SearchDiffMaxWindow_aim(MainReg, threshold);
         return Trigger;
     }
 }
 
 //----------------------------------------------------------------------------------------
 // Search for an N x N window with the maximum differences in it.
+// This algorithm is optimized for rejecting spurious differences outdoors
+// where grass and leaves can cause a lot of weak spurious motion.
 //----------------------------------------------------------------------------------------
 static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold)
 {
@@ -603,4 +606,79 @@ static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold)
     return retval;
 }
 
+
+
+//----------------------------------------------------------------------------------------
+// Algorithm for detecting where a person might be and aim a fan or heater.
+// window in X direction only.  Not worried about spurious differences, but need
+// more consistent X-values.
+//----------------------------------------------------------------------------------------
+static TriggerInfo_t SearchDiffMaxWindow_aim(Region_t Region, int threshold)
+{
+    int row,col, width;
+    TriggerInfo_t retval;
+    static int DiffCol[1000];
+    unsigned char *diffrow;
+    memset(&retval, 0, sizeof(retval));
+    
+    // Scale down by this factor before applying windowing algorithm to look for max localized change
+    #define SCALEF 4
+    #define ROOF(x) ((x+SCALEF-1)/SCALEF)
+
+    // these determine the window over which to look for the change (after scaling)    
+    memset(DiffCol, 0, sizeof(DiffCol));
+    width = DiffVal->w;
+    
+    for (row=Region.y1;row<Region.y2;row++){
+        diffrow = &DiffVal->values[width*row];
+        for (col=Region.x1;col<Region.x2;col++){
+            int d = diffrow[col] - threshold;
+            if (d > 0){
+                DiffCol[col] += diffrow[col];
+            }
+        }
+    }
+    
+    for (col=Region.x1;col<Region.x2;col++){
+        printf("%3d: %5d  ",col,DiffCol[col]);
+        if ((col & 7) == 0) printf("\n");
+    }
+    
+    {
+        // Now lests look for max window comprising no more than 20% of the image width.
+        // windowing hopefully cuts down on spurious other bits.
+        int wwidth, wsum;
+        int wsummax, wposmax;
+        double weighted_sum;
+        int xpos;
+        wwidth = (Region.x2-Region.x1)/5;
+        wsum = 0;
+        wsummax = 0;
+        for (col=Region.x1;col<Region.x2;col++){
+            wsum+= DiffCol[col]; // remove at start of window.
+            if (col-wwidth > 0){
+                wsum -= DiffCol[col-wwidth];
+                if (wsum > wsummax){
+                    wsummax = wsum;
+                    wposmax = col-wwidth;
+                }
+            }
+        }
+        
+        // Now that we have a window, work out a weighted avarage of motion within the window.
+        weighted_sum = 0;
+        for (col=wposmax;col<wposmax+wwidth;col++){
+            weighted_sum += DiffCol[col]*col;
+        }
+        xpos = (int)(weighted_sum/wsummax);
+        
+        printf("\nwindow max: %d at %d-%d  weight at %d",wsummax, wposmax,wposmax+wwidth, xpos);
+        
+        retval.x = xpos;
+        retval.y = 0;  // No x value computed.
+        retval.DiffLevel = wsummax/1000; // So scale is kind of comprable with other algorithm
+    }
+    
+    return retval;
+}
 
