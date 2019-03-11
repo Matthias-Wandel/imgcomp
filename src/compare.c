@@ -23,8 +23,8 @@ typedef struct {
 static ImgMap_t * DiffVal = NULL;
 static ImgMap_t * WeightMap = NULL;
 
+#define AIM_HEATER
 static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold);
-static TriggerInfo_t SearchDiffMaxWindow_aim(Region_t Region, int threshold);
 
 int rzaveragebright;
 //----------------------------------------------------------------------------------------
@@ -473,11 +473,12 @@ TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, char * DebugImgNa
         // Try to gauge the difference noise (assuming two thirds of the image
         // has not changed)
 
-        Trigger = SearchDiffMaxWindow_aim(MainReg, threshold);
+        Trigger = SearchDiffMaxWindow(MainReg, threshold);
         return Trigger;
     }
 }
 
+#ifndef AIM_HEATER
 //----------------------------------------------------------------------------------------
 // Search for an N x N window with the maximum differences in it.
 // This algorithm is optimized for rejecting spurious differences outdoors
@@ -607,13 +608,13 @@ static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold)
 }
 
 
-
+#else
 //----------------------------------------------------------------------------------------
 // Algorithm for detecting where a person might be and aim a fan or heater.
 // window in X direction only.  Not worried about spurious differences, but need
 // more consistent X-values.
 //----------------------------------------------------------------------------------------
-static TriggerInfo_t SearchDiffMaxWindow_aim(Region_t Region, int threshold)
+static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold)
 {
     int row,col, width;
     TriggerInfo_t retval;
@@ -639,10 +640,10 @@ static TriggerInfo_t SearchDiffMaxWindow_aim(Region_t Region, int threshold)
         }
     }
     
-    for (col=Region.x1;col<Region.x2;col++){
-        printf("%3d: %5d  ",col,DiffCol[col]);
-        if ((col & 7) == 0) printf("\n");
-    }
+    //for (col=Region.x1;col<Region.x2;col++){
+    //    printf("%3d: %5d  ",col,DiffCol[col]);
+    //    if ((col & 7) == 0) printf("\n");
+    //}
     
     {
         // Now lests look for max window comprising no more than 20% of the image width.
@@ -653,7 +654,7 @@ static TriggerInfo_t SearchDiffMaxWindow_aim(Region_t Region, int threshold)
         int xpos;
         wwidth = (Region.x2-Region.x1)/5;
         wsum = 0;
-        wsummax = 0;
+        wsummax = wposmax = 0;
         for (col=Region.x1;col<Region.x2;col++){
             wsum+= DiffCol[col]; // remove at start of window.
             if (col-wwidth > 0){
@@ -672,7 +673,7 @@ static TriggerInfo_t SearchDiffMaxWindow_aim(Region_t Region, int threshold)
         }
         xpos = (int)(weighted_sum/wsummax);
         
-        printf("\nwindow max: %d at %d-%d  weight at %d",wsummax, wposmax,wposmax+wwidth, xpos);
+        //printf("\nwindow max: %d at %d-%d  weight at %d",wsummax, wposmax,wposmax+wwidth, xpos);
         
         retval.x = xpos;
         retval.y = 0;  // No x value computed.
@@ -681,4 +682,4 @@ static TriggerInfo_t SearchDiffMaxWindow_aim(Region_t Region, int threshold)
     
     return retval;
 }
-
+#endif

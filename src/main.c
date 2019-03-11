@@ -176,6 +176,24 @@ static int ProcessImage(LastPic_t * New, int DeleteProcessed)
         //fprintf(Log," %d %d ",rzaveragebright, NoMousePic.RzAverageBright-20);
         
         fprintf(Log,"\n");
+        
+        
+        if (Trig.DiffLevel > Sensitivity){
+            char showx[1001];
+            int xs, a;
+            for (a=0;a<100;a++){
+                showx[a] = '.';
+            }
+            showx[100] = '\0';
+            xs = (Trig.x*100)/(1920/4);
+            if (xs < 0) xs = 0;
+            if (xs > 98) xs = 98;
+            
+            showx[xs] = '#';
+            showx[xs+1] = '#';
+            printf("%s %d\n",showx, Trig.DiffLevel);
+        }
+        
 
         /*
         // Mouse gate logic for squeezer experiment
@@ -197,8 +215,6 @@ static int ProcessImage(LastPic_t * New, int DeleteProcessed)
                     SawMouse = 0;
                     fprintf(Log,"Move the gate\n");
                     run_blink_program(); // Reusing this function to operate the gate
-                    
-                    
                 }
             }
         }
@@ -333,7 +349,8 @@ int DoDirectory(char * Directory)
             b = manage_raspistill(NumProcessed);
             if (b) Raspistill_restarted = 1;
             if (LogToFile[0] != '\0') LogFileMaintain();
-            sleep(1);
+            //sleep(1);
+            usleep(200000);
         }else{
             break;
         }
@@ -465,6 +482,10 @@ int main(int argc, char **argv)
     strcpy(SaveNames, "%m%d/%H/%m%d-%H%M%S");
 
 
+    InitUDP("192.168.0.128");
+    SendUDP(1,2,3);
+    return 0;
+    
     for (argn = 1; argn < argc; argn++) {
         //printf("argn = %d\n",argn);
         char * arg;

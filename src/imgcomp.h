@@ -87,3 +87,8 @@ void FreeDir(DirEntry_t * FileNames, int NumEntries);
 char * BackupImageFile(char * Name, int DiffMag);
 int CopyFile(char * src, char * dest);
 void LogFileMaintain(void);
+
+
+// send_udp.c functions
+void SendUDP(int x, int y, int level);
+int InitUDP(char * HostName);
