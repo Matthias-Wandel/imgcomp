@@ -52,10 +52,10 @@
 //-------------------------------------------------------------------------------------
 // Structure for a test UDP packet.
 typedef struct {
-    int   StepTo;
-    short Ident;
-    short Sequence;
-    char  Message[1500];
+    int Ident;
+    int Level;
+    int xpos;
+    int ypos;
 }Udp_t;
 
 //-------------------------------------------------------------------------------------
@@ -75,18 +75,17 @@ static int UdpPayloadLength = -1;
 //--------------------------------------------------------------------------
 void SendUDP(int Pos)
 {
-    static USHORT udp_seq;
     int datasize;
     int wrote;
     Udp_t Buf;
-    udp_seq += 1;
     
     memset(&Buf, 0, sizeof(Buf));
 
-    Buf.Sequence = udp_seq;
-    Buf.StepTo = Pos;
     Buf.Ident = UDP_MAGIC;
-    datasize = 8;
+    Buf.Level = 1000;
+    Buf.xpos = Pos;
+    Buf.ypos = 0;
+    datasize = sizeof(Udp_t);
 
     wrote = sendto(sockUDP,(char *)&Buf, datasize, 0,(struct sockaddr*)&dest, sizeof(struct sockaddr_in));
 
@@ -102,7 +101,7 @@ void SendUDP(int Pos)
         fprintf(stdout,"Wrote %d bytes of %d\n",wrote, datasize);
     }
 
-    printf("Sent UDP packet seq %d\n",udp_seq);
+    printf("Sent UDP packet, x=%d\n",Pos);
 }
 
 //----------------------------------------------------------------------------------
@@ -195,6 +194,11 @@ int main(int argc, char **argv)
 	    local.sin_addr.s_addr = INADDR_ANY;
 
       	local.sin_port = htons(PortNum);
+//        if (HostName){
+//            // Bind to a different UDP port if sending a packet so 
+//            // I can run both on the same machine.
+//            local.sin_port = htons(PortNum+1);
+//        }
         sockUDP = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 
         if (sockUDP == INVALID_SOCKET){
@@ -280,9 +284,9 @@ int CheckUdp()
                 Udp_t * Udp;
                 Udp = (Udp_t *) recvbuf;
                 
-                printf("%d byte UDP from %s ",bread, inet_ntoa(from.sin_addr));
-                printf("Seq=%d  StepTo:%d\n", Udp->Sequence, Udp->StepTo);
-                PosRequested = Udp->StepTo;
+                printf("Got %d byte UDP from %s ",bread, inet_ntoa(from.sin_addr));
+                printf("x=%d  y=%d\n", Udp->xpos, Udp->ypos);
+                PosRequested = Udp->xpos;
             }   
             
             printf("\n");
@@ -293,7 +297,7 @@ int CheckUdp()
 }
 
 
-
+#ifndef _WIN32
 //-----------------------------------------------------------------------------------
 //  This program based on "How to access GPIO registers from C-code on the Raspberry-Pi
 //  Example program
@@ -382,13 +386,14 @@ void setup_io()
 #define STEP_ENA (1<<21)  // GPIO21: Enable
 #define STEP_DIR (1<<26)  // GPIO26: Direction
 #define STEP_CLK (1<<20)  // GPIO20: Clock
-
+#endif
 int CurrentPos = 0;
 int IsEnabled = FALSE;
 int Direction = 0;
 
 void RunStepping(void)
 {
+#ifndef _WIN32
     // Set up gpi pointer for direct register access
 	setup_io();
 
@@ -401,19 +406,20 @@ void RunStepping(void)
 
     GPIO_SET = STEP_ENA | STEP_DIR;
     GPIO_CLR = STEP_CLK | STEP_ENA;
-
     GPIO_SET = STEP_ENA;
+    GPIO_CLR = STEP_CLK;
+#endif
 
     PosRequested = 0;
     CurrentPos = -800; // Just to have some initial work.
     for (;;){
         int FromTarget;
-        GPIO_CLR = STEP_CLK;
-        if (CheckUdp()){
+                if (CheckUdp()){
             printf("UDP pos request: %d\n",PosRequested);
         }
         
         FromTarget = PosRequested - CurrentPos;
+#ifndef _WIN32
         if (FromTarget != 0){
             int newdir;
             if (!IsEnabled){
@@ -443,5 +449,7 @@ void RunStepping(void)
         }
        
         usleep(500);
+        GPIO_CLR = STEP_CLK;
+#endif
     }
 }
