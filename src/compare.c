@@ -70,7 +70,7 @@ static double AverageBright(MemImage_t * pic, Region_t Region, ImgMap_t* WeightM
     if (redpix){
         // rzaveragebright is the average brightness over the red "high emphasis" zone,
         // kind of a hack of the high emphasis zone to detect if the mouse is in the box.
-        rzaveragebright = rzaverage * 0.25 / redpix;
+        rzaveragebright = (int)(rzaverage * 0.25 / redpix);
         //printf("red zone average %5.1f %d pix\n",rzaveragebright, redpix);
     }else{
         rzaveragebright = 0;

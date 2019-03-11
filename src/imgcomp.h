@@ -77,8 +77,8 @@ int EnsurePathExists(const char * FileName, int filepath);
 
 typedef struct {
     unsigned int FileSize;
-    long MTime;
-    long ATime;
+    time_t MTime;
+    time_t ATime;
     char FileName[50];
 }DirEntry_t;
 
