@@ -194,11 +194,12 @@ int main(int argc, char **argv)
 	    local.sin_addr.s_addr = INADDR_ANY;
 
       	local.sin_port = htons(PortNum);
-//        if (HostName){
-//            // Bind to a different UDP port if sending a packet so 
-//            // I can run both on the same machine.
-//            local.sin_port = htons(PortNum+1);
-//        }
+        if (HostName){
+            // Bind to a different UDP port if just running it for sending a UDP
+            // packet because we need the port free for the listening side running
+            // on the same computer.
+            local.sin_port = htons(PortNum+1);
+        }
         sockUDP = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 
         if (sockUDP == INVALID_SOCKET){
@@ -414,7 +415,7 @@ void RunStepping(void)
     CurrentPos = -800; // Just to have some initial work.
     for (;;){
         int FromTarget;
-                if (CheckUdp()){
+        if (CheckUdp()){
             printf("UDP pos request: %d\n",PosRequested);
         }
         
@@ -435,15 +436,16 @@ void RunStepping(void)
                     GPIO_CLR = STEP_DIR;
                 }
                 Direction = newdir;
-                usleep(2000);
+                usleep(1000);
             }            
             
             GPIO_SET = STEP_CLK;
             CurrentPos += Direction > 0 ? 1 : -1;
+	        usleep(500);
         }else{
             // At destination.
             if (IsEnabled){
-                usleep(2000);
+                usleep(1000);
                 GPIO_CLR = STEP_ENA;
             }
         }
