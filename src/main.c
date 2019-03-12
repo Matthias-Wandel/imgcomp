@@ -191,7 +191,7 @@ static int ProcessImage(LastPic_t * New, int DeleteProcessed)
             }
             showx[colwidth] = '\0';
             xrep = (Trig.x*120)/(1920/4)-60;
-            xs = (Trig.x*colwidth)/(1920/4);
+            xs = (Trig.x*colwidth)/(1820/4);
             if (xs < 0) xs = 0;
             if (xs > colwidth-3) xs = colwidth-3;
            

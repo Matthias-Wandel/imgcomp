@@ -442,14 +442,22 @@ void RunStepping(void)
         
         FromTarget = PosRequested - CurrentPos;
         {
+            int NewDelay;
             int AbsFrom = FromTarget > 0 ? FromTarget : -FromTarget;
             if (AbsFrom){
-                StepDelay = 100*2000/AbsFrom;
+                NewDelay = 100*700/AbsFrom;
             }else{
-                StepDelay = 10000;
+                NewDelay = 10000;
             }
-            if (StepDelay < 400) StepDelay = 400;
-            if (StepDelay > 20000) StepDelay = 20000;
+            if (NewDelay < 400) NewDelay = 400;
+            if (NewDelay > 20000) NewDelay = 20000;
+            
+            if (StepDelay > NewDelay){
+                StepDelay -= 1;
+            }else{
+                StepDelay = NewDelay;
+            }
+            StepDelay = NewDelay;
         }
         
         
@@ -476,7 +484,8 @@ void RunStepping(void)
             CurrentPos += Direction > 0 ? 1 : -1;
 	        usleep(StepDelay);
         }else{
-            // At destination.
+            // At destination.  Turn off enable
+            // to save some power.
             if (IsEnabled){
                 usleep(1000);
                 GPIO_CLR = STEP_ENA;
