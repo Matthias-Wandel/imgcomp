@@ -56,6 +56,7 @@ typedef struct {
     int Level;
     int xpos;
     int ypos;
+    int IsAdjust;
 }Udp_t;
 
 //-------------------------------------------------------------------------------------
@@ -73,7 +74,7 @@ static int UdpPayloadLength = -1;
 //--------------------------------------------------------------------------
 // Form and send a UDP packet
 //--------------------------------------------------------------------------
-void SendUDP(int Pos)
+void SendUDP(int Pos, int IsDelta)
 {
     int datasize;
     int wrote;
@@ -85,6 +86,7 @@ void SendUDP(int Pos)
     Buf.Level = 1000;
     Buf.xpos = Pos;
     Buf.ypos = 0;
+    Buf.IsAdjust = IsDelta;
     datasize = sizeof(Udp_t);
 
     wrote = sendto(sockUDP,(char *)&Buf, datasize, 0,(struct sockaddr*)&dest, sizeof(struct sockaddr_in));
@@ -119,6 +121,7 @@ void Usage(char *progname)
 
 void RunStepping(void);
 int PosRequested;
+int DeltaRequested;
 
 //--------------------------------------------------------------------------
 // Main
@@ -141,6 +144,13 @@ int main(int argc, char **argv)
         HostName = argv[1];
     }
     if (argc > 2){
+        DeltaRequested = 0;
+        if (argv[2][0] == '-') DeltaRequested = 1;
+        if (argv[2][0] == '+'){
+            DeltaRequested = 1;
+            argv[2]++;
+        }
+        
         sscanf(argv[2],"%d",&PosRequested);
     }
 
@@ -229,7 +239,7 @@ int main(int argc, char **argv)
 
     if (HostName){
         // Just send a UDP packet.
-        SendUDP(PosRequested);
+        SendUDP(PosRequested, DeltaRequested);
     }else{
         printf("listening on UDP\n");
         RunStepping();
@@ -240,7 +250,7 @@ int main(int argc, char **argv)
 //--------------------------------------------------------------------------
 // Check if new UDP packet is here
 //--------------------------------------------------------------------------
-int CheckUdp(int * NewPos)
+int CheckUdp(int * NewPos, int * IsDelta)
 {
     char recvbuf[MAX_PACKET];
     FD_SET rws;
@@ -285,12 +295,11 @@ int CheckUdp(int * NewPos)
                 Udp_t * Udp;
                 Udp = (Udp_t *) recvbuf;
                 
-                printf("Got %d byte UDP from %s ",bread, inet_ntoa(from.sin_addr));
-                printf("x=%d  y=%d\n", Udp->xpos, Udp->ypos);
+                printf("UDP from %s ", inet_ntoa(from.sin_addr));
+                printf("x=%d  y=%d  %s\n", Udp->xpos, Udp->ypos, Udp->IsAdjust ? "Adj":"");
                 *NewPos = Udp->xpos;
+                *IsDelta = Udp->IsAdjust;
             }   
-            
-            printf("\n");
         }
         return TRUE;
     }
@@ -417,15 +426,25 @@ void RunStepping(void)
     for (;;){
         int FromTarget;
         int PosRecvd;
+        int IsDelta;
        
-        if (CheckUdp(&PosRecvd)){
-            printf("UDP pos request: %d\n",PosRecvd);
-            PosRequested = (int)(PosRecvd * 10);
+        if (CheckUdp(&PosRecvd, &IsDelta)){
+            //printf("UDP pos request: %d\n",PosRecvd);
+            PosRecvd = PosRecvd * 10;
+            if (!IsDelta){
+                // New motion position to aim for.
+                PosRequested = PosRecvd;
+            }else{
+                // Adjust the reference position (fix offsets)
+                CurrentPos -= PosRecvd;
+            }
         }
+        
+        FromTarget = PosRequested - CurrentPos;
         {
             int AbsFrom = FromTarget > 0 ? FromTarget : -FromTarget;
             if (AbsFrom){
-                StepDelay = 100*3000/AbsFrom;
+                StepDelay = 100*2000/AbsFrom;
             }else{
                 StepDelay = 10000;
             }
@@ -433,7 +452,7 @@ void RunStepping(void)
             if (StepDelay > 20000) StepDelay = 20000;
         }
         
-        FromTarget = PosRequested - CurrentPos;
+        
 #ifndef _WIN32
         if (FromTarget != 0){
             int newdir;
