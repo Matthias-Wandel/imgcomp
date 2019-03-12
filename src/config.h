@@ -23,6 +23,7 @@ extern int Raspistill_restarted;
 extern int TimelapseInterval;
 extern char raspistill_cmd[200];
 extern char blink_cmd[200];
+extern char UdpDest[30];
 
 
 void usage (void);// complain about bad command line 

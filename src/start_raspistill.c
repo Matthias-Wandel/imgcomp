@@ -146,7 +146,7 @@ int manage_raspistill(int NewImages)
     }
 
     
-    if (SecondsSinceImage > (VidMode ? 10 : 5)){
+    if (SecondsSinceImage > (VidMode ? 10 : 20)){
         // Not getting any images for 5 seconds or vide ofiles for 10.
         // Probably something went wrong with raspistill or raspivid.
         fprintf(Log,"No images timeout.  Relaunch raspistill/vid\n");

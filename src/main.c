@@ -55,6 +55,7 @@ int Raspistill_restarted;
 int TimelapseInterval;
 char raspistill_cmd[200];
 char blink_cmd[200];
+char UdpDest[30];
 //-----------------------------------------
 // Tightening gap experiment hack
 int GateDelay;
@@ -192,6 +193,8 @@ static int ProcessImage(LastPic_t * New, int DeleteProcessed)
             showx[xs] = '#';
             showx[xs+1] = '#';
             printf("%s %d\n",showx, Trig.DiffLevel);
+            
+            SendUDP(xs,0, Trig.DiffLevel);
         }
         
 
@@ -481,11 +484,6 @@ int main(int argc, char **argv)
     SaveDir[0] = 0;
     strcpy(SaveNames, "%m%d/%H/%m%d-%H%M%S");
 
-
-    InitUDP("192.168.0.128");
-    SendUDP(1,2,3);
-    return 0;
-    
     for (argn = 1; argn < argc; argn++) {
         //printf("argn = %d\n",argn);
         char * arg;
@@ -507,7 +505,9 @@ int main(int argc, char **argv)
         Log = NULL;
         LogFileMaintain();
     }
-
+    
+    
+    if (UdpDest[0]) InitUDP(UdpDest);
 
     // Adjust region of interest to scale.
     ScaleRegion(&Regions.DetectReg, ScaleDenom);

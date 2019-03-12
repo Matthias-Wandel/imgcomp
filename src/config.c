@@ -53,7 +53,9 @@ void usage (void)// complain about bad command line
      " -verbose or -debug   Emit more verbose output\n"
      " -logtofile           Log to file instead of stdout\n"
      " -movelognames <schme> Rotate log files, scheme works just like\n"
-     "                      it does for savenames\n");
+     "                      it does for savenames\n"
+     " -sendudp <ipaddr>    Send UDP packets for motion detection\n"
+     );
    
     exit(-1);
 }
@@ -210,13 +212,14 @@ static int parse_parameter (const char * tag, const char * value)
         if (sscanf(value, "%d", &VidMode) != 1) return -1;
     } else if (keymatch(tag, "viddecomposecmd", 15)) {
         strncpy(VidDecomposeCmd, value, sizeof(VidDecomposeCmd)-1);
-    } else {
+    } else if (keymatch(tag, "sendudp", 7)) {
+        strncpy(UdpDest,value, sizeof(UdpDest)-1);
+    }else{
         fprintf(stderr,"argument %s not understood\n",tag);
         return -1;	   // bogus switch
         bad_value:
         fprintf(stderr, "Value of %s=%s\n not understood\n",tag,value);
         return -1;
-
     }
     return 2;
 }
@@ -317,7 +320,7 @@ void read_config_file()
         a = parse_parameter(s,value);
         if (a < 0){
 no_good:            
-            fprintf(stderr, "Error on line %d of imgcomp.conf",linenum);
+            fprintf(stderr, "Error on line %d of imgcomp.conf\n",linenum);
             exit(-1);
         }
 

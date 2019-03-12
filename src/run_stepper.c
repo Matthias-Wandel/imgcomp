@@ -240,7 +240,7 @@ int main(int argc, char **argv)
 //--------------------------------------------------------------------------
 // Check if new UDP packet is here
 //--------------------------------------------------------------------------
-int CheckUdp()
+int CheckUdp(int * NewPos)
 {
     char recvbuf[MAX_PACKET];
     FD_SET rws;
@@ -287,7 +287,7 @@ int CheckUdp()
                 
                 printf("Got %d byte UDP from %s ",bread, inet_ntoa(from.sin_addr));
                 printf("x=%d  y=%d\n", Udp->xpos, Udp->ypos);
-                PosRequested = Udp->xpos;
+                *NewPos = Udp->xpos;
             }   
             
             printf("\n");
@@ -391,6 +391,7 @@ void setup_io()
 int CurrentPos = 0;
 int IsEnabled = FALSE;
 int Direction = 0;
+int StepDelay = 5000;
 
 void RunStepping(void)
 {
@@ -412,11 +413,24 @@ void RunStepping(void)
 #endif
 
     PosRequested = 0;
-    CurrentPos = -800; // Just to have some initial work.
+    //CurrentPos = -800; // Just to have some initial work.
     for (;;){
         int FromTarget;
-        if (CheckUdp()){
-            printf("UDP pos request: %d\n",PosRequested);
+        int PosRecvd;
+       
+        if (CheckUdp(&PosRecvd)){
+            printf("UDP pos request: %d\n",PosRecvd);
+            PosRequested = (int)(PosRecvd * 10);
+        }
+        {
+            int AbsFrom = FromTarget > 0 ? FromTarget : -FromTarget;
+            if (AbsFrom){
+                StepDelay = 100*3000/AbsFrom;
+            }else{
+                StepDelay = 10000;
+            }
+            if (StepDelay < 400) StepDelay = 400;
+            if (StepDelay > 20000) StepDelay = 20000;
         }
         
         FromTarget = PosRequested - CurrentPos;
@@ -441,7 +455,7 @@ void RunStepping(void)
             
             GPIO_SET = STEP_CLK;
             CurrentPos += Direction > 0 ? 1 : -1;
-	        usleep(500);
+	        usleep(StepDelay);
         }else{
             // At destination.
             if (IsEnabled){
@@ -450,7 +464,7 @@ void RunStepping(void)
             }
         }
        
-        usleep(500);
+        usleep(StepDelay);
         GPIO_CLR = STEP_CLK;
 #endif
     }
