@@ -430,7 +430,7 @@ void RunStepping(void)
        
         if (CheckUdp(&PosRecvd, &IsDelta)){
             //printf("UDP pos request: %d\n",PosRecvd);
-            PosRecvd = PosRecvd * 10;
+            PosRecvd = PosRecvd * 9;
             if (!IsDelta){
                 // New motion position to aim for.
                 PosRequested = PosRecvd;

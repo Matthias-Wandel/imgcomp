@@ -183,20 +183,25 @@ static int ProcessImage(LastPic_t * New, int DeleteProcessed)
         if (Trig.DiffLevel > Sensitivity){
             char showx[1001];
             int xs, a;
-            for (a=0;a<100;a++){
+            int xrep;
+            const int colwidth=185;
+            
+            for (a=0;a<colwidth;a++){
                 showx[a] = '.';
             }
-            showx[100] = '\0';
-            xs = (Trig.x*100)/(1920/4);
+            showx[colwidth] = '\0';
+            xrep = (Trig.x*120)/(1920/4)-60;
+            xs = (Trig.x*colwidth)/(1920/4);
             if (xs < 0) xs = 0;
-            if (xs > 98) xs = 98;
-            
+            if (xs > colwidth-3) xs = colwidth-3;
+           
             showx[xs] = '#';
             showx[xs+1] = '#';
-            printf("%s %d\n",showx, Trig.DiffLevel);
+            showx[xs+2] = '#';
+            printf("%s %d %d\n",showx, xrep, Trig.DiffLevel);
             
             #ifndef _WIN32
-                SendUDP(xs,0, Trig.DiffLevel);
+                SendUDP(xrep, 0, Trig.DiffLevel);
             #endif
         }
         
