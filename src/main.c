@@ -17,6 +17,7 @@
     #define S_ISREG(m) (((m) & S_IFMT) == S_IFREG)
     #define strdup(a) _strdup(a) 
     extern void sleep(int);
+    extern void usleep(int);    
     #define unlink(n) _unlink(n)
     #define PATH_MAX _MAX_PATH
 #else
@@ -194,7 +195,9 @@ static int ProcessImage(LastPic_t * New, int DeleteProcessed)
             showx[xs+1] = '#';
             printf("%s %d\n",showx, Trig.DiffLevel);
             
-            SendUDP(xs,0, Trig.DiffLevel);
+            #ifndef _WIN32
+                SendUDP(xs,0, Trig.DiffLevel);
+            #endif
         }
         
 
@@ -506,8 +509,9 @@ int main(int argc, char **argv)
         LogFileMaintain();
     }
     
-    
+    #ifndef _WIN32
     if (UdpDest[0]) InitUDP(UdpDest);
+    #endif
 
     // Adjust region of interest to scale.
     ScaleRegion(&Regions.DetectReg, ScaleDenom);

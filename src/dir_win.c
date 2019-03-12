@@ -150,3 +150,10 @@ void sleep(int a)
     printf("Pretending to sleep for %d seconds\n",a);
     getchar();
 }
+
+void usleep(int a)
+{
+    printf("Pretending to sleep for %d microseconds\n",a);
+    getchar();
+}
+
