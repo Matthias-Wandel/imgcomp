@@ -4,6 +4,7 @@
 #define _CRT_SECURE_NO_WARNINGS
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 
 #ifdef _WIN32
     #define WIN32_LEAN_AND_MEAN // To keep windows.h bloat down.    
@@ -401,10 +402,14 @@ int CurrentPos = 0;
 int IsEnabled = FALSE;
 int Direction = 0;
 int StepDelay = 5000;
+int CurrentSpeed = 0;
+int SpeedTarget;
 
+#define ABS(a) (a > 0 ? a : -(a))
 void RunStepping(void)
 {
-#ifndef _WIN32
+    int CurrentSpeed, LastSpeed;
+
     // Set up gpi pointer for direct register access
 	setup_io();
 
@@ -419,18 +424,19 @@ void RunStepping(void)
     GPIO_CLR = STEP_CLK | STEP_ENA;
     GPIO_SET = STEP_ENA;
     GPIO_CLR = STEP_CLK;
-#endif
 
     PosRequested = 0;
-    //CurrentPos = -800; // Just to have some initial work.
+    CurrentSpeed = LastSpeed = 0;
+    CurrentPos = 600; // Just to have some initial work.
     for (;;){
-        int FromTarget;
+        int ToTarget;
         int PosRecvd;
         int IsDelta;
-       
+               
         if (CheckUdp(&PosRecvd, &IsDelta)){
             //printf("UDP pos request: %d\n",PosRecvd);
-            PosRecvd = PosRecvd * 9;
+            //PosRecvd = PosRecvd * 9;
+            PosRecvd = PosRecvd * 32*4;
             if (!IsDelta){
                 // New motion position to aim for.
                 PosRequested = PosRecvd;
@@ -439,61 +445,71 @@ void RunStepping(void)
                 CurrentPos -= PosRecvd;
             }
         }
+        GPIO_CLR = STEP_CLK;
         
-        FromTarget = PosRequested - CurrentPos;
-        {
-            int NewDelay;
-            int AbsFrom = FromTarget > 0 ? FromTarget : -FromTarget;
-            if (AbsFrom){
-                NewDelay = 100*700/AbsFrom;
-            }else{
-                NewDelay = 10000;
-            }
-            if (NewDelay < 400) NewDelay = 400;
-            if (NewDelay > 20000) NewDelay = 20000;
-            
-            if (StepDelay > NewDelay){
-                StepDelay -= 1;
-            }else{
-                StepDelay = NewDelay;
-            }
-            StepDelay = NewDelay;
+        ToTarget = PosRequested - CurrentPos;
+        
+        // Compute speed to try to get to rapm up to, also causing
+        // slowdown ad approaching target.
+        if (ToTarget){
+            SpeedTarget = (int)(sqrt(ABS(ToTarget))*4000);
+            if (SpeedTarget > 400000) SpeedTarget = 400000;
+            if (ToTarget < 0) SpeedTarget = - SpeedTarget;
+        }else{
+            SpeedTarget = 0;
         }
         
+        {
+            // Limit acceleration / deceleration
+            int SpDiff, SpAdjust;
+            SpDiff = SpeedTarget-CurrentSpeed;
+            SpAdjust = SpDiff;
+            if (StepDelay > 2000) StepDelay = 2000;
+            //printf("sdely=%d\n",StepDelay);
+            if (SpAdjust > StepDelay) SpAdjust = StepDelay*2;
+            if (SpAdjust < -StepDelay) SpAdjust = -StepDelay*2;
+            CurrentSpeed += SpAdjust;
+        }
         
-#ifndef _WIN32
-        if (FromTarget != 0){
-            int newdir;
-            if (!IsEnabled){
-                GPIO_SET = STEP_ENA;
-                usleep(1000);
-                IsEnabled = TRUE;
-            }
-            newdir = (FromTarget > 0);
-            if (Direction != newdir){
-                if (Direction){
-                    GPIO_SET = STEP_DIR;
-                }else{
-                    GPIO_CLR = STEP_DIR;
-                }
-                Direction = newdir;
-                usleep(1000);
-            }            
-            
-            GPIO_SET = STEP_CLK;
-            CurrentPos += Direction > 0 ? 1 : -1;
-	        usleep(StepDelay);
-        }else{
-            // At destination.  Turn off enable
-            // to save some power.
-            if (IsEnabled){
-                usleep(1000);
+        // Come to a halt.
+        if (ToTarget == 0 && ABS(CurrentSpeed) < 10000){
+            CurrentSpeed = 0;
+        }
+        
+       
+        // Potentially reverse direction output.
+        if (CurrentSpeed > 0 && LastSpeed <= 0) GPIO_CLR = STEP_DIR;
+        if (CurrentSpeed < 0 && LastSpeed >= 0) GPIO_SET = STEP_DIR;        
+        
+        
+        if (CurrentSpeed == 0){
+            if (ToTarget == 0){
+                // Speed 0.  Came to a stop on target
                 GPIO_CLR = STEP_ENA;
             }
+            usleep(2000);
+            StepDelay = 2000;
+        }else{
+            if (LastSpeed == 0){
+                // Was stopped.  Restart.
+                GPIO_SET = STEP_ENA;
+                usleep(1000);
+            }
+            
+            StepDelay = 10000000/ABS(CurrentSpeed);
+            if (StepDelay > 2000) StepDelay = 2000;
+                 
+            // Send out one pulse.
+            
+            GPIO_SET = STEP_CLK;
+            usleep(StepDelay);
+           
+            CurrentPos += CurrentSpeed > 0 ? 1 : -1;
         }
-       
-        usleep(StepDelay);
-        GPIO_CLR = STEP_CLK;
-#endif
+        
+        //printf("ToTarget = %d  Speed=%d st=%d\n",ToTarget, CurrentSpeed,SpeedTarget);
+        //if (ToTarget == 0 && CurrentSpeed == 0) exit(0);
+        
+        LastSpeed = CurrentSpeed;
     }
 }

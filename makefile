@@ -30,7 +30,7 @@ blink_camera_led: $(SRC)/blink_camera_led.c $(SRC)/pi_model.h
 	$(CC) -o blink_camera_led $(SRC)/blink_camera_led.c
 
 run_stepper: $(SRC)/run_stepper.c $(SRC)/pi_model.h
-	$(CC) -o run_stepper $(SRC)/run_stepper.c
+	$(CC) -lm -o run_stepper $(SRC)/run_stepper.c
 
 libjpeg/libjpeg.a:
 	cd libjpeg; make
