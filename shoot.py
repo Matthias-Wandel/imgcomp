@@ -39,10 +39,10 @@ GPIO.setup(24, GPIO.OUT, initial=False)
 
 
 duration = 0.5
-steps = 48
+steps = 480
 motor = 1
-dir = 0
-delay = 5.0 # Milliseconds
+dir = 1
+delay = 0.5 # Milliseconds
 
 if len(sys.argv) > 1:
     motor = int(float(sys.argv[1]))
@@ -78,19 +78,27 @@ if motor == 3:
 
 print("Motor:"+str(motor)+ "  Dir:"+str(dir)+"  Steps:"+str(steps))
 GPIO.output(g_enable, 0) # enable
-GPIO.output(g_dir, dir)
-sleep(delay)
-duse = delay*2
-print (delay)
-for x in range (0, steps):
-    GPIO.output(g_clk,1)
-    sleep(0.0005)
-    if duse == 0: raw_input(); print x
-    GPIO.output(g_clk,0)
-    sleep(duse)
-    duse = delay;
-sleep(delay)
-#GPIO.output(g_enable, 1)
-#GPIO.output(g_dir, 0)
-
+shots = 2
+for s in range (0,shots):
+    GPIO.output(g_dir, dir)
+    duse = delay*2
+    print (delay)
+    for x in range (0, steps):
+        GPIO.output(g_clk,1)
+        sleep(0.0005)
+        if duse == 0: raw_input(); print x
+        GPIO.output(g_clk,0)
+        sleep(duse)
+        duse = delay;
+    duse = delay*2
+    GPIO.output(g_dir, 0)
+    sleep(0.1)
+    for x in range (0, steps):
+        GPIO.output(g_clk,1)
+        sleep(0.0005)
+        if duse == 0: raw_input(); print x
+        GPIO.output(g_clk,0)
+        sleep(duse)
+        duse = delay;
+    sleep(0.05)
 
