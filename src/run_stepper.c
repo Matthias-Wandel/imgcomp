@@ -416,9 +416,9 @@ int CurrentPos = 0;
 #define TICK_SIZE 200    // Algorithm tick rate, microsconds.  Take at least two ticks per step.
 #define TICK_ERROR 250   // Tick must not exceed this time.
 
-#define NUM_RAMP_STEPS 29
+#define NUM_RAMP_STEPS 30
 static const char RampUp[NUM_RAMP_STEPS]
- = {25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100,103,106,108,110,112,114,116,118,120,122,124,126,128}; // Also use for ramp down.
+ = {25,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100,103,106,108,110,112,114,116,118,120,122,124,126,128}; // Also use for ramp down.
 
 typedef struct {
 	int Pos;
@@ -429,6 +429,7 @@ typedef struct {
 	int CountDown;
 	int Wait; // Start/stop delay.
 	int RampIndex;
+	int RampStretch;
 	int MaxSpeed;
 	
 	// GPIO line definitions
@@ -475,10 +476,10 @@ void DoMotor(stepper_t * motor)
 					
 					// Compute the new speed.
 					motor->RampIndex += 1;
-					if (motor->RampIndex < NUM_RAMP_STEPS) motor->Speed = RampUp[motor->RampIndex];
-					if (ToGoAbs < NUM_RAMP_STEPS){
+					if (motor->RampIndex < NUM_RAMP_STEPS*motor->RampStretch) motor->Speed = RampUp[motor->RampIndex/motor->RampStretch];
+					if (ToGoAbs < NUM_RAMP_STEPS*motor->RampStretch){
 						// Ramp down if getting close.
-						if (RampUp[ToGo] < motor->Speed) motor->Speed = RampUp[ToGoAbs];
+						if (RampUp[ToGo] < motor->Speed) motor->Speed = RampUp[ToGoAbs/motor->RampStretch];
 					}
 					if (motor->Speed > motor->MaxSpeed) motor->Speed = motor->MaxSpeed;
 					
@@ -532,26 +533,29 @@ void RunStepping(void)
     INP_GPIO(24); OUT_GPIO(24);
 
 	motors[0].Pos = 0;
-	motors[0].Target = 850;
+	motors[0].Target = 890;
 	motors[0].ENABLE = STEP_ENA1;
 	motors[0].DIR = STEP_DIR1;
 	motors[0].CLOCK = STEP_CLK1;
 	motors[0].MaxSpeed = 128;
+	motors[0].RampStretch=1;
 	
 
 	motors[1].Pos = 0;
-	//motors[1].Target = 300;
+	motors[1].Target = 1000;
 	motors[1].ENABLE = STEP_ENA2;
 	motors[1].DIR = STEP_DIR2;
 	motors[1].CLOCK = STEP_CLK2;
 	motors[1].MaxSpeed = 128;
+	motors[1].RampStretch=10;
 	
 	motors[2].Pos = 0;
-	//motors[2].Target = -500;
+	motors[2].Target = -500;
 	motors[2].ENABLE = STEP_ENA3;
 	motors[2].DIR = STEP_DIR3;
 	motors[2].CLOCK = STEP_CLK3;
-	motors[2].MaxSpeed = 40;
+	motors[2].MaxSpeed = 50;
+	motors[2].RampStretch=10;
 	
 	flag = 1;
 	
