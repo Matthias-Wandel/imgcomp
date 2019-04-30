@@ -1,10 +1,8 @@
-// UDP / PING program
-// For testing UDP and ICMP behaviours on GPRS.
 //----------------------------------------------------------------------------------
-#define _CRT_SECURE_NO_WARNINGS
+// Module for sending UDP notifcations to stepper program, for aming heater or fan
+//----------------------------------------------------------------------------------
 #include <stdio.h>
 #include <stdlib.h>
-//#include <math.h>
 #include "imgcomp.h"
 
 #ifdef _WIN32
@@ -23,7 +21,6 @@
     #include <linux/net.h>
     #include <netdb.h>
     #include <unistd.h>
-    #include <sys/time.h>
     #include <memory.h>
     typedef unsigned char BYTE;
     typedef unsigned char UCHAR;
@@ -40,15 +37,9 @@
 #endif
 
 
-#define ICMP_ECHO 8
-#define ICMP_ECHOREPLY 0
-
-#define ICMP_MIN 8 // minimum 8 byte icmp packet (just header)
 
 #define MAGIC_ID 0xf581     // Magic value to identify pings from this program.
-
 #define MAGIC_PORTNUM 7777   // Magic port number for UDP pings (this is the port Joe picked for his app)
-
 #define UDP_MAGIC 0x46c1
 
 //-------------------------------------------------------------------------------------
@@ -64,11 +55,8 @@ typedef struct {
 //-------------------------------------------------------------------------------------
 
 #define STATUS_FAILED 0xFFFF
-#define DEF_PACKET_SIZE 32
-#define MAX_PACKET 1024
 
 struct sockaddr_in dest;
-
 static SOCKET sockUDP;
 
 //--------------------------------------------------------------------------
@@ -76,9 +64,14 @@ static SOCKET sockUDP;
 //--------------------------------------------------------------------------
 void SendUDP(int x, int y, int level)
 {
-    int datasize;
     int wrote;
+    int datasize;
     Udp_t Buf;
+    
+    if (!dest.sin_port){
+        fprintf(stderr, "UDP not initialized\n");
+        exit(-1);
+    }
     
     memset(&Buf, 0, sizeof(Buf));
 
@@ -87,6 +80,7 @@ void SendUDP(int x, int y, int level)
     Buf.xpos = x;
     Buf.ypos = y;
     Buf.IsAdjust = 0;
+
     datasize = sizeof(Udp_t);
 
     wrote = sendto(sockUDP,(char *)&Buf, datasize, 0,(struct sockaddr*)&dest, sizeof(struct sockaddr_in));
@@ -103,13 +97,8 @@ void SendUDP(int x, int y, int level)
         fprintf(stdout,"Wrote %d bytes of %d\n",wrote, datasize);
     }
 
-    printf("Sent UDP packet x=%d y=%d level %d\n",x,y,level);
+    //printf("Sent UDP packet, x=%d\n",x);
 }
-
-
-void RunStepping(void);
-int PosRequested;
-int DeltaRequested;
 
 //--------------------------------------------------------------------------
 // Main
@@ -122,17 +111,11 @@ int InitUDP(char * HostName)
 
     struct hostent * hp;
     unsigned int addr=0;
-    unsigned short PortNum = MAGIC_PORTNUM;
-
-    #ifdef _WIN32
-        if (WSAStartup(MAKEWORD(1,1),&wsaData) != 0){
-            fprintf(stderr,"WSAStartup failed: %d\n",GetLastError());
-                ExitProcess(STATUS_FAILED);
-        }
-    #endif
+    unsigned short PortNum = MAGIC_PORTNUM; // Use a different port, leave this for listener
 
     //-------------------------------------------------------------------
     // Resolve the remote address
+    printf("Init UDP to %s",HostName);
 
     memset(&dest,0,sizeof(struct sockaddr_in));
 
@@ -173,13 +156,7 @@ int InitUDP(char * HostName)
     	local.sin_family = AF_INET;
 	    local.sin_addr.s_addr = INADDR_ANY;
 
-      	local.sin_port = htons(PortNum);
-        if (HostName){
-            // Bind to a different UDP port if just running it for sending a UDP
-            // packet because we need the port free for the listening side running
-            // on the same computer.
-            local.sin_port = htons(PortNum+1);
-        }
+      	local.sin_port = htons(PortNum+2);
         sockUDP = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 
         if (sockUDP == INVALID_SOCKET){
@@ -204,8 +181,7 @@ int InitUDP(char * HostName)
             #endif
     	}
     }
+
     return 0;
 }
-
-
 
