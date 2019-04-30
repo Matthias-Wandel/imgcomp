@@ -324,7 +324,8 @@ int CheckUdp(int * NewPos, int * IsDelta)
     #define BCM2708_PERI_BASE        0x20000000 // For raspberry pi model B+
 #endif
 
-#define GPIO_BASE                (BCM2708_PERI_BASE + 0x200000) /* GPIO controller */
+#define GPIO_BASE                (BCM2708_PERI_BASE + 0x200000) // GPIO controller
+#define TIMER_BASE               (BCM2708_PERI_BASE + 0x3000)   // Interrupt registers (with timer)
  
 //#include <stdio.h>
 //#include <stdlib.h>
@@ -335,11 +336,10 @@ int CheckUdp(int * NewPos, int * IsDelta)
 #define PAGE_SIZE (4*1024)
 #define BLOCK_SIZE (4*1024)
  
-int  mem_fd;
-void *gpio_map;
  
 // I/O access
 volatile unsigned *gpio;
+volatile unsigned *timerreg;
   
 // GPIO setup macros. Always use INP_GPIO(x) before using OUT_GPIO(x) or SET_GPIO_ALT(x,y)
 #define INP_GPIO(g) *(gpio+((g)/10)) &= ~(7<<(((g)%10)*3))
@@ -357,16 +357,18 @@ volatile unsigned *gpio;
 #define GPIO_PULL *(gpio+37) // Pull up/pull down
 #define GPIO_PULLCLK0 *(gpio+38) // Pull up/pull down clock
  
-void setup_io();
- 
 #include <fcntl.h>
 #include <sys/mman.h>
 
+void TestTimer(void);
 //--------------------------------------------------------------------------------
 // Set up a memory regions to access GPIO
 //--------------------------------------------------------------------------------
-void setup_io()
+volatile unsigned * setup_io(int io_base, int io_range)
 {
+	int  mem_fd;
+	void *gpio_map;
+
     // open /dev/mem 
 	if ((mem_fd = open("/dev/mem", O_RDWR|O_SYNC) ) < 0) {
 	    printf("can't open /dev/mem \n");
@@ -376,11 +378,11 @@ void setup_io()
 	/* mmap GPIO */
 	gpio_map = mmap(
 		NULL,             //Any adddress in our space will do
-		BLOCK_SIZE,       //Map length
+		io_range,       //Map length
 		PROT_READ|PROT_WRITE,// Enable reading & writting to mapped memory
 		MAP_SHARED,       //Shared with other processes
 		mem_fd,           //File to map
-		GPIO_BASE         //Offset to GPIO peripheral
+		io_base           //Offset to peripheral
 	);
 
 	close(mem_fd); //No need to keep mem_fd open after mmap
@@ -391,12 +393,18 @@ void setup_io()
 	}
 
 	// Always use volatile pointer!
-	gpio = (volatile unsigned *)gpio_map;
+	return (volatile unsigned *) gpio_map;
 }
 
-#define STEP_ENA (1<<21)  // GPIO21: Enable
-#define STEP_DIR (1<<26)  // GPIO26: Direction
-#define STEP_CLK (1<<20)  // GPIO20: Clock
+// Definitions for tilt motor (motor 2)
+//#define STEP_ENA (1<<15)  // GPIO22 Enable
+//#define STEP_DIR (1<<17)  // GPIO23 Direction
+//#define STEP_CLK (1<<18)  // GPIO24 Clock
+
+// Definitions for turret motor (motor 3)
+#define STEP_ENA (1<<22)  // GPIO22 Enable
+#define STEP_DIR (1<<23)  // GPIO23 Direction
+#define STEP_CLK (1<<24)  // GPIO24 Clock
 #endif
 int CurrentPos = 0;
 int IsEnabled = FALSE;
@@ -408,17 +416,16 @@ int SpeedTarget;
 #define ABS(a) (a > 0 ? a : -(a))
 void RunStepping(void)
 {
-    int CurrentSpeed, LastSpeed;
-
     // Set up gpi pointer for direct register access
-	setup_io();
+	gpio = setup_io(GPIO_BASE, BLOCK_SIZE);
+	timerreg = setup_io(TIMER_BASE, BLOCK_SIZE);
 
-    INP_GPIO(21); // must use INP_GPIO before we can use OUT_GPIO
-    OUT_GPIO(21);
-    INP_GPIO(26);
-    OUT_GPIO(26);
-    INP_GPIO(20);
-    OUT_GPIO(20);
+    INP_GPIO(22); // must use INP_GPIO before we can use OUT_GPIO
+    OUT_GPIO(22);
+    INP_GPIO(23);
+    OUT_GPIO(23);
+    INP_GPIO(24);
+    OUT_GPIO(24);
 
     GPIO_SET = STEP_ENA | STEP_DIR;
     GPIO_CLR = STEP_CLK | STEP_ENA;
@@ -426,8 +433,7 @@ void RunStepping(void)
     GPIO_CLR = STEP_CLK;
 
     PosRequested = 0;
-    CurrentSpeed = LastSpeed = 0;
-    CurrentPos = 600; // Just to have some initial work.
+    CurrentPos = 100; // Just to have some initial work.
     for (;;){
         int ToTarget;
         int PosRecvd;
@@ -448,68 +454,97 @@ void RunStepping(void)
         GPIO_CLR = STEP_CLK;
         
         ToTarget = PosRequested - CurrentPos;
+		if (ToTarget > 0){
+			GPIO_CLR = STEP_DIR;
+		}else{
+			GPIO_SET = STEP_DIR;        
+		}
+		if (ToTarget){
+			GPIO_CLR = STEP_ENA;
+		}else{
+			GPIO_SET = STEP_ENA;
+			TestTimer();
+			exit(0);
+		}
         
-        // Compute speed to try to get to rapm up to, also causing
-        // slowdown ad approaching target.
-        if (ToTarget){
-            SpeedTarget = (int)(sqrt(ABS(ToTarget))*4000);
-            if (SpeedTarget > 400000) SpeedTarget = 400000;
-            if (ToTarget < 0) SpeedTarget = - SpeedTarget;
-        }else{
-            SpeedTarget = 0;
-        }
-        
-        {
-            // Limit acceleration / deceleration
-            int SpDiff, SpAdjust;
-            SpDiff = SpeedTarget-CurrentSpeed;
-            SpAdjust = SpDiff;
-            if (StepDelay > 2000) StepDelay = 2000;
-            //printf("sdely=%d\n",StepDelay);
-            if (SpAdjust > StepDelay) SpAdjust = StepDelay*2;
-            if (SpAdjust < -StepDelay) SpAdjust = -StepDelay*2;
-            CurrentSpeed += SpAdjust;
-        }
-        
-        // Come to a halt.
-        if (ToTarget == 0 && ABS(CurrentSpeed) < 10000){
-            CurrentSpeed = 0;
-        }
-        
-       
-        // Potentially reverse direction output.
-        if (CurrentSpeed > 0 && LastSpeed <= 0) GPIO_CLR = STEP_DIR;
-        if (CurrentSpeed < 0 && LastSpeed >= 0) GPIO_SET = STEP_DIR;        
-        
-        
-        if (CurrentSpeed == 0){
-            if (ToTarget == 0){
-                // Speed 0.  Came to a stop on target
-                GPIO_CLR = STEP_ENA;
-            }
-            usleep(2000);
-            StepDelay = 2000;
-        }else{
-            if (LastSpeed == 0){
-                // Was stopped.  Restart.
-                GPIO_SET = STEP_ENA;
-                usleep(1000);
-            }
-            
-            StepDelay = 10000000/ABS(CurrentSpeed);
-            if (StepDelay > 2000) StepDelay = 2000;
-                 
-            // Send out one pulse.
-            
-            GPIO_SET = STEP_CLK;
-            usleep(StepDelay);
+        // Send out one pulse.
+        GPIO_SET = STEP_CLK;
+        usleep(500);
+		GPIO_CLR = STEP_CLK;
+		usleep(500);
+		
            
-            CurrentPos += CurrentSpeed > 0 ? 1 : -1;
+        if (ToTarget){
+			CurrentPos += ToTarget > 0 ? 1 : -1;
         }
         
-        //printf("ToTarget = %d  Speed=%d st=%d\n",ToTarget, CurrentSpeed,SpeedTarget);
-        //if (ToTarget == 0 && CurrentSpeed == 0) exit(0);
-        
-        LastSpeed = CurrentSpeed;
+        //printf("ToTarget = %d\n",ToTarget);
     }
 }
+
+
+char OutString[100];
+double input, output;
+void TestTimer(void)
+{
+    int time1,time2,a, cycles;
+    printf("timer is: \n%d\n%d\n",*(timerreg+1),*(timerreg+1));
+    printf("timer is: \n%d\n%d\n",*(timerreg+1),*(timerreg+1));
+    
+    for (a=0;a<=50;a++){
+        time1 = *(timerreg+1);
+        usleep(a);
+        //sleep(1);
+        if (0){
+           int PosRecvd;
+           int IsDelta;
+           CheckUdp(&PosRecvd, &IsDelta);
+        }
+        time2 = *(timerreg+1);
+        printf("usleep %d: ticked %d\n",a,time2-time1);
+        if (a >=10) a += 4;
+        if (a >=100) a += 5;
+    }
+    
+    printf("looking for delays...\n");
+    for (cycles=0;;cycles++){
+        int DelayBins[15];
+        int StartTime;
+        int t1,t2,diff;
+        int missing;
+        int longest ;
+        memset(DelayBins, 0, sizeof(DelayBins));;
+        missing=longest=0;
+        t2 = StartTime = *(timerreg+1);
+        for (;;){
+            t1 = *(timerreg+1);
+            diff = t1-t2;
+            if (diff > longest) longest = diff;
+            if (diff >= 1){
+                missing += diff-1;
+                for (a=0;a<15;a++){
+                    diff >>= 1;
+                    if (diff == 0){
+                        DelayBins[a] += 1;
+                        break;
+                    }
+                }
+            }
+            t2 = t1;
+            if (t2-StartTime > 1000000){
+                break;
+            }
+        }
+        diff = 1;
+        printf("%5d  ",missing);
+        for (a=0;a<15;a++){
+            printf("%4d",DelayBins[a]);
+            diff <<= 1;
+        }
+        printf(" l=%d\n",longest);
+    }
+}
+
+// Notes:
+// Calling CheckUdp adds about 650 microseconds!
+// Calling uSleep adds 60 microseconds + specified time.
