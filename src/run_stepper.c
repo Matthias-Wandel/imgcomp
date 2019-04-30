@@ -396,90 +396,201 @@ volatile unsigned * setup_io(int io_base, int io_range)
 	return (volatile unsigned *) gpio_map;
 }
 
-// Definitions for tilt motor (motor 2)
-//#define STEP_ENA (1<<15)  // GPIO22 Enable
-//#define STEP_DIR (1<<17)  // GPIO23 Direction
-//#define STEP_CLK (1<<18)  // GPIO24 Clock
+// Definitions for bor draw motor (motor 1)
+#define STEP_ENA1 (1<<2)  // GPIO2 Enable
+#define STEP_DIR1 (1<<3)  // GPIO3 Direction
+#define STEP_CLK1 (1<<4)  // GPIO4 Clock
 
-// Definitions for turret motor (motor 3)
-#define STEP_ENA (1<<22)  // GPIO22 Enable
-#define STEP_DIR (1<<23)  // GPIO23 Direction
-#define STEP_CLK (1<<24)  // GPIO24 Clock
+// Definitions for tilt motor (motor 2)
+#define STEP_ENA2 (1<<15)  // GPIO15 Enable
+#define STEP_DIR2 (1<<17)  // GPIO17 Direction
+#define STEP_CLK2 (1<<18)  // GPIO18 Clock
+
+// Definitions for turret rotate motor (motor 3)
+#define STEP_ENA3 (1<<22)  // GPIO22 Enable
+#define STEP_DIR3 (1<<23)  // GPIO23 Direction
+#define STEP_CLK3 (1<<24)  // GPIO24 Clock
 #endif
 int CurrentPos = 0;
-int IsEnabled = FALSE;
-int Direction = 0;
-int StepDelay = 5000;
-int CurrentSpeed = 0;
-int SpeedTarget;
+
+#define TICK_SIZE 200    // Algorithm tick rate, microsconds.  Take at least two ticks per step.
+#define TICK_ERROR 250   // Tick must not exceed this time.
+
+#define NUM_RAMP_STEPS 29
+static const char RampUp[NUM_RAMP_STEPS]
+ = {25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100,103,106,108,110,112,114,116,118,120,122,124,126,128}; // Also use for ramp down.
+
+typedef struct {
+	int Pos;
+	int Target;
+	//unsigned char RampUp[20,30,40,50,60,70,70,90,100,105,110,115,120,124,128]; // Also use for ramp down.
+	int Speed; // 128 = 1 tick per clock on/off, 64 = 2 ticks per, 1 = 256 ticks per.
+	int Dir;  // 1 or -1.
+	int CountDown;
+	int Wait; // Start/stop delay.
+	int RampIndex;
+	int MaxSpeed;
+	
+	// GPIO line definitions
+	unsigned int ENABLE;
+	unsigned int DIR;
+	unsigned int CLOCK;
+}stepper_t;
+
+stepper_t motors[3];
 
 #define ABS(a) (a > 0 ? a : -(a))
+
+
+void DoMotor(stepper_t * motor)
+{
+	int ToGo;
+		
+	if (motor->Wait){
+		motor->Wait -= 1;
+	}else{
+		ToGo = motor->Target - motor->Pos;
+		
+		if (ToGo){
+			int ToGoAbs;
+			ToGoAbs = ToGo;
+			if(ToGo < 0) ToGoAbs = -ToGo;
+			if (motor->Speed == 0){
+				// Motor was not running.  Enable and set direction.
+				GPIO_CLR = motor->ENABLE; // Enable the motor.
+				if (ToGo > 0){ // Set direction.
+					GPIO_SET = motor->DIR;
+				}else{
+					GPIO_CLR = motor->DIR;
+				}
+				motor->RampIndex = 0;
+				motor->Speed = RampUp[motor->RampIndex];
+				motor->Dir = ToGo > 0 ? 1 : -1;
+				motor->CountDown = 127;
+				motor->Wait = 1;
+			}else{
+				motor->CountDown -= motor->Speed;
+				if (motor->CountDown < 0){
+					motor->Pos += motor->Dir; // This completes this clock cycle.
+					
+					// Compute the new speed.
+					motor->RampIndex += 1;
+					if (motor->RampIndex < NUM_RAMP_STEPS) motor->Speed = RampUp[motor->RampIndex];
+					if (ToGoAbs < NUM_RAMP_STEPS){
+						// Ramp down if getting close.
+						if (RampUp[ToGo] < motor->Speed) motor->Speed = RampUp[ToGoAbs];
+					}
+					if (motor->Speed > motor->MaxSpeed) motor->Speed = motor->MaxSpeed;
+					
+					if (motor->Pos != motor->Target){
+						// Start the next step.
+						motor->CountDown += 256;
+						// 128 and above means clock high.
+						GPIO_SET = motor->CLOCK;
+					}else{
+						motor->Wait = 1;
+					}
+				}else if (motor->CountDown < 128){
+					GPIO_CLR = motor->CLOCK;
+					// 127 or below means clock low.
+				}
+			}
+		}else{
+			if (motor->Speed){
+				GPIO_SET = motor->ENABLE; // turn off the motor.
+				motor->Speed = 0;
+			}
+		}
+	}
+	//printf("Cl:%d Wait %d  ToGo:%3d  CntDwn:%3d Speed%3d\n",motor->CountDown > 128, motor->Wait, motor->Target - motor->Pos, motor->CountDown, motor->Speed);
+}
+
+
 void RunStepping(void)
 {
+	int time1, time2;
+	int numticks;
+	int flag;
+	stepper_t * motor;
     // Set up gpi pointer for direct register access
 	gpio = setup_io(GPIO_BASE, BLOCK_SIZE);
 	timerreg = setup_io(TIMER_BASE, BLOCK_SIZE);
 
-    INP_GPIO(22); // must use INP_GPIO before we can use OUT_GPIO
-    OUT_GPIO(22);
-    INP_GPIO(23);
-    OUT_GPIO(23);
-    INP_GPIO(24);
-    OUT_GPIO(24);
+	// Motor 1:
+    INP_GPIO(2); OUT_GPIO(2);
+    INP_GPIO(3); OUT_GPIO(3);
+    INP_GPIO(4); OUT_GPIO(4);
 
-    GPIO_SET = STEP_ENA | STEP_DIR;
-    GPIO_CLR = STEP_CLK | STEP_ENA;
-    GPIO_SET = STEP_ENA;
-    GPIO_CLR = STEP_CLK;
+	// Motor 2:
+    INP_GPIO(15); OUT_GPIO(15);
+    INP_GPIO(17); OUT_GPIO(17);
+    INP_GPIO(18); OUT_GPIO(18);
 
-    PosRequested = 0;
-    CurrentPos = 100; // Just to have some initial work.
-    for (;;){
-        int ToTarget;
-        int PosRecvd;
-        int IsDelta;
-               
-        if (CheckUdp(&PosRecvd, &IsDelta)){
-            //printf("UDP pos request: %d\n",PosRecvd);
-            //PosRecvd = PosRecvd * 9;
-            PosRecvd = PosRecvd * 32*4;
-            if (!IsDelta){
-                // New motion position to aim for.
-                PosRequested = PosRecvd;
-            }else{
-                // Adjust the reference position (fix offsets)
-                CurrentPos -= PosRecvd;
-            }
-        }
-        GPIO_CLR = STEP_CLK;
-        
-        ToTarget = PosRequested - CurrentPos;
-		if (ToTarget > 0){
-			GPIO_CLR = STEP_DIR;
-		}else{
-			GPIO_SET = STEP_DIR;        
+	// Motor 3:
+    INP_GPIO(22); OUT_GPIO(22);
+    INP_GPIO(23); OUT_GPIO(23);
+    INP_GPIO(24); OUT_GPIO(24);
+
+	motors[0].Pos = 0;
+	motors[0].Target = 850;
+	motors[0].ENABLE = STEP_ENA1;
+	motors[0].DIR = STEP_DIR1;
+	motors[0].CLOCK = STEP_CLK1;
+	motors[0].MaxSpeed = 128;
+	
+
+	motors[1].Pos = 0;
+	//motors[1].Target = 300;
+	motors[1].ENABLE = STEP_ENA2;
+	motors[1].DIR = STEP_DIR2;
+	motors[1].CLOCK = STEP_CLK2;
+	motors[1].MaxSpeed = 128;
+	
+	motors[2].Pos = 0;
+	//motors[2].Target = -500;
+	motors[2].ENABLE = STEP_ENA3;
+	motors[2].DIR = STEP_DIR3;
+	motors[2].CLOCK = STEP_CLK3;
+	motors[2].MaxSpeed = 40;
+	
+	flag = 1;
+	
+	numticks = 0;
+	time1 = *(timerreg+1);
+	for(;;){
+		for (;;){ // Busywait for next tick interval (usleep system call has too much jitter)
+			int delta;
+			time2 = *(timerreg+1);
+			delta = time2-time1;
+			if (delta >= TICK_SIZE){
+				if (delta > TICK_ERROR){
+					printf("tick too long!");
+					time2 = *(timerreg+1);
+				}
+				time1 = time2;
+				break;
+			}
 		}
-		if (ToTarget){
-			GPIO_CLR = STEP_ENA;
-		}else{
-			GPIO_SET = STEP_ENA;
-			TestTimer();
-			exit(0);
-		}
-        
-        // Send out one pulse.
-        GPIO_SET = STEP_CLK;
-        usleep(500);
-		GPIO_CLR = STEP_CLK;
-		usleep(500);
+		numticks ++;
 		
-           
-        if (ToTarget){
-			CurrentPos += ToTarget > 0 ? 1 : -1;
-        }
-        
-        //printf("ToTarget = %d\n",ToTarget);
-    }
+		DoMotor(&motors[0]);
+		DoMotor(&motors[1]);
+		DoMotor(&motors[2]);
+		
+		if (motors[0].Speed == 0 && motors[1].Speed == 0 && motors[2].Speed == 0){
+			if (flag){
+				printf("return home\n");
+				flag = 0;
+				motors[0].Target = 0;
+				motors[1].Target = 0;
+				motors[2].Target = 0;
+			}else{
+				break;
+			}
+		}			
+	}
+	return;
+
 }
 
 
