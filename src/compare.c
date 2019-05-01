@@ -23,7 +23,8 @@ typedef struct {
 static ImgMap_t * DiffVal = NULL;
 static ImgMap_t * WeightMap = NULL;
 
-#define AIM_HEATER
+//#define AIM_HEATER
+#define FIND_REDSPOT
 static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold);
 
 int rzaveragebright;
@@ -136,7 +137,7 @@ void FillWeightMap(int width, int height)
         }
     }
 
-	ShowWeightMap();
+	//ShowWeightMap();
 	
 }
 
@@ -200,7 +201,7 @@ void ProcessDiffMap(MemImage_t * MapPic)
 	ShowWeightMap();
 }
 
-
+#ifndef FIND_REDSPOT
 //----------------------------------------------------------------------------------------
 // Compare two images in memory
 //----------------------------------------------------------------------------------------
@@ -478,6 +479,105 @@ TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, char * DebugImgNa
     }
 }
 
+#else // FIND_REDSPOT
+
+
+
+
+
+
+
+
+
+//----------------------------------------------------------------------------------------
+// Don't compare.  Only look for a red spot the second picture
+//----------------------------------------------------------------------------------------
+TriggerInfo_t ComparePix(MemImage_t * igore, MemImage_t * pic1, char * DebugImgName)
+{
+    int width, height, bPerRow;
+    int row, col;
+
+    TriggerInfo_t RetVal;
+    RetVal.x = RetVal.y = 0;
+    RetVal.DiffLevel = -1;
+
+    if (Verbosity){
+        printf("\ncompare pictures %dx%d %d\n", pic1->width, pic1->height, pic1->components);
+    }
+
+    width = pic1->width;
+    height = pic1->height;
+    bPerRow = width * 3;    
+
+    if (DiffVal != NULL && (width != DiffVal->w || height != DiffVal->h)){
+        // DiffVal allocated size is wrong.
+        free(DiffVal);
+        free(WeightMap);
+        DiffVal = NULL;
+    }
+	
+    if (DiffVal == NULL){
+        DiffVal = malloc(offsetof(ImgMap_t, values) + sizeof(DiffVal->values[0])*width*height);
+        DiffVal->w = width; DiffVal->h = height;
+        if (!WeightMap){
+            FillWeightMap(width,height);
+        }else{
+            if (WeightMap->w != width || WeightMap->h != height){
+                fprintf(stderr,"diff map image size mismatch\n");
+                exit(-1);
+            }
+        }
+    }
+
+    memset(DiffVal->values, 0,  sizeof(DiffVal->values)*width*height);
+
+
+    // Compute redness
+    for (row=0;row<height;){
+        unsigned char * p1;
+		unsigned char * diffrow;
+        p1 = pic1->pixels+row*bPerRow;
+        diffrow = &DiffVal->values[width*row];
+		for (col=0;col<width;col++){
+			// Data is in order red, green, blue.
+			int red,green,blue;
+			red = p1[0];
+			green = p1[1];
+			blue = p1[2];
+			
+			if (red > 50 && red > green*4 && red > blue*4){
+				// If red is 4x as big as green or blue, it's sufficiently red.
+				diffrow[col] = 88;
+			}else{
+				diffrow[col] = 0;
+			}
+
+			p1 += 3;
+   	    }
+		row++;
+	}
+
+	{
+		TriggerInfo_t Trigger;
+		Region_t Reg;
+		Reg.x1 = Reg.y1 = 0;
+		Reg.x2 = width;
+		Reg.y2 = height;
+
+		Trigger = SearchDiffMaxWindow(Reg, 0);
+		return Trigger;
+	}
+}
+#endif
+
+
+
+
+
+
+
+
+
 #ifndef AIM_HEATER
 //----------------------------------------------------------------------------------------
 // Search for an N x N window with the maximum differences in it.
@@ -487,17 +587,18 @@ TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, char * DebugImgNa
 static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold)
 {
     int row,col;
+	const int scalef = 6;
     TriggerInfo_t retval;
-    
+   
     // Scale down by this factor before applying windowing algorithm to look for max localized change
-    #define SCALEF 4
-    #define ROOF(x) ((x+SCALEF-1)/SCALEF)
+    #define ROOF(x) ((x+scalef-1)/scalef)
 
     // these determine the window over over which to look for the change (after scaling)    
-    const int wind_w = 4, wind_h = 4;
+    const int wind_w = 8, wind_h = 8;
     
     static int * Diff4 = NULL;
-    static int * Diff4b = NULL;
+    static int * Diff4Cum = NULL;
+    static int * Diff4C2 = NULL;
     static int width4, height4;
     if (width4 != ROOF(DiffVal->w) || height4 != ROOF(DiffVal->h) || Diff4 == NULL){
         // Size has changed.  Reallocate.
@@ -505,10 +606,10 @@ static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold)
         width4 = ROOF(DiffVal->w);
         height4 = ROOF(DiffVal->h);
         Diff4 = malloc(sizeof(int)*width4*height4);
-        Diff4b = malloc(sizeof(int)*width4*height4);        
+        Diff4Cum = malloc(sizeof(int)*width4*height4);       
+		Diff4C2 = malloc(sizeof(int)*width4*height4);
     }
-
-    // Compute scaled down array of differences.
+    // Compute scaled down array of differences.  Destination: Diff4[]
     {
         int width = DiffVal->w;
         memset(Diff4, 0, sizeof(int)*width4*height4);
@@ -519,14 +620,14 @@ static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold)
             diffrow = &DiffVal->values[width*row];
             ExRow = &WeightMap->values[width*row];
 
-            width4row = &Diff4[width4*(row/SCALEF)];
+            width4row = &Diff4[width4*(row/scalef)];
             for (col=Region.x1;col<Region.x2;col++){
                 int d = diffrow[col] - threshold;
                 if (d > 0){
-                    width4row[col/SCALEF] += d;
+                    width4row[col/scalef] += d;
                     if (ExRow[col] > 1){
                         // Double weight region
-                        width4row[col/SCALEF] += d;
+                        width4row[col/scalef] += d;
                     }
                 }
             }
@@ -534,19 +635,20 @@ static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold)
     }
 
     if (Verbosity > 1){
-        // Show the array.
+        
+		printf("Scaled difference array\n");
         for (row=0;row<height4;row++){
             for (col=0;col<width4;col++) printf("%3d",Diff4[row*width4+col]/100);
             printf("\n");
         }
     }
     
-    // Transform array to sum of wind_h rows
-    memset(Diff4b, 0, sizeof(int)*width4*height4);
+    // Transform array to column sums wind_h above.  Diff4[] --> Diff4Cum[]
+    memset(Diff4Cum, 0, sizeof(int)*width4*height4);
     for (row=0;row<height4;row++){
         int *oldrow, *newrow, *addrow;
-        oldrow = &Diff4b[width4*(row-1)];
-        newrow = &Diff4b[width4*row];
+        oldrow = &Diff4Cum[width4*(row-1)];
+        newrow = &Diff4Cum[width4*row];
         
         addrow = &Diff4[width4*row];
         if (row >= wind_h){
@@ -565,7 +667,7 @@ static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold)
         }
     }
 
-    // Transform array to sum of wind_w rows, while also looking for maximum.
+    // Transform array to sum of wind_w to the left.  Diff4Cum[] --> Diff4C2
     {
         int maxval, maxr, maxc;
         maxval = maxr = maxc = 0;
@@ -573,8 +675,8 @@ static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold)
         for (row=0;row<height4;row++){
             int *srcrow, *destrow;
             int s;
-            srcrow = &Diff4b[width4*row];
-            destrow = &Diff4[width4*row];
+            srcrow = &Diff4Cum[width4*row];
+            destrow = &Diff4C2[width4*row];
             s = 0;
             for (col=0;col<width4;col++){
                 s += srcrow[col];
@@ -587,19 +689,44 @@ static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold)
                 }
             }
         }
-        if (Verbosity) printf("max v=%d at r=%d,c=%d\n",maxval/100, maxr, maxc);
-        retval.x = maxc * SCALEF - wind_w * SCALEF / 2;
-        retval.y = maxr * SCALEF - wind_h * SCALEF / 2;
+        if (Verbosity) printf("window max v=%d at col=%d,row=%d\n",maxval/100, maxc, maxr);
+        retval.x = maxc * scalef - wind_w * scalef / 2;
+        retval.y = maxr * scalef - wind_h * scalef / 2;
         if (retval.x < 0) retval.x = 0;
         if (retval.y < 0) retval.y = 0;
         retval.DiffLevel = maxval / 100;
+
+		row = maxr-wind_h+1;
+		if (row < 0) row = 0;
+		//if (Verbosity) printf("Window contents.  Cols %d-%d Rows %d-%d\n",maxc-wind_w+1,maxc,row,maxr);
+		{
+			double xsum, ysum;
+			int sum;
+			xsum = ysum = sum = 0;
+			for (;row<=maxr;row++){
+				col = maxc-wind_w+1;
+				if (col < 0) col = 0;
+				for(;col<=maxc;col++){
+					int v = Diff4[row*width4+col];
+					xsum += col*v;
+					ysum += row*v;
+					sum += v;
+					//printf("%3d",Diff4[row*width4+col]/100);
+				}
+				//printf("\n");
+			}
+			if (Verbosity) printf("Exact r,c= col=%5.1f, row=%5.1f\n",xsum*1.0/sum, ysum*1.0/sum);
+			retval.x = (int)(xsum*scalef*4/sum)+scalef*4/2;
+			retval.y = (int)(ysum*scalef*4/sum)+scalef*4/2;
+			printf("Picture coordinates: x,y = %d,%d\n",retval.x, retval.y);
+		}
     }
    
-    if (Verbosity > 1){ 
+    if (Verbosity > 2){ 
         // Show the array.
-        printf("Window sums\n");
+        printf("Window sums\n",Verbosity);
         for (row=0;row<height4;row++){
-            for (col=0;col<width4;col++) printf("%3d",Diff4[row*width4+col]/100);
+            for (col=0;col<width4;col++) printf("%3d",Diff4C2[row*width4+col]/100);
             printf("\n");
         }
     }
@@ -607,8 +734,8 @@ static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold)
     return retval;
 }
 
-
 #else
+
 //----------------------------------------------------------------------------------------
 // Algorithm for detecting where a person might be and aim a fan or heater.
 // window in X direction only.  Not worried about spurious differences, but need
