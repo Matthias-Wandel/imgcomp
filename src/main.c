@@ -361,7 +361,7 @@ int DoDirectory(char * Directory)
             if (b) Raspistill_restarted = 1;
             if (LogToFile[0] != '\0') LogFileMaintain();
             //sleep(1);
-            usleep(200000);
+            usleep(500000);
         }else{
             break;
         }

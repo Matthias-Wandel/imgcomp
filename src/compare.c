@@ -724,7 +724,7 @@ static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold)
    
     if (Verbosity > 2){ 
         // Show the array.
-        printf("Window sums\n",Verbosity);
+        printf("Window sums\n");
         for (row=0;row<height4;row++){
             for (col=0;col<width4;col++) printf("%3d",Diff4C2[row*width4+col]/100);
             printf("\n");

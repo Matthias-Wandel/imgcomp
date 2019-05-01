@@ -136,7 +136,7 @@ int manage_raspistill(int NewImages)
                 NightMode, NewestAverageBright, RunningAverageBright);
         }
     }else{
-        fprintf(Log,"No new images, %d\n",SecondsSinceImage);
+        if (SecondsSinceImage > 2) fprintf(Log,"No new images, %d\n",SecondsSinceImage);
     }
 
     if (raspistill_pid == 0){
