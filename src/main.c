@@ -140,7 +140,7 @@ static int ProcessImage(LastPic_t * New, int DeleteProcessed)
             fprintf(Log,"%s: ",LastPics[0].Name+LastPics[0].nind);
         }
         if (Trig.DiffLevel){
-            fprintf(Log,"%3d @(%4d,%4d) ", Trig.DiffLevel, Trig.x*ScaleDenom, Trig.y*ScaleDenom);
+            fprintf(Log,"%3d @(%4d,%4d) ", Trig.DiffLevel, Trig.x, Trig.y);
         }
 
         if (LastPics[0].DiffMag > Sensitivity){
@@ -183,25 +183,22 @@ static int ProcessImage(LastPic_t * New, int DeleteProcessed)
         if (Trig.DiffLevel > Sensitivity){
             char showx[1001];
             int xs, a;
-            int xrep;
-            const int colwidth=185;
+            const int colwidth=120;
             
             for (a=0;a<colwidth;a++){
                 showx[a] = '.';
             }
             showx[colwidth] = '\0';
-            xrep = (Trig.x*120)/(1920/4)-60;
-            xs = (Trig.x*colwidth)/(1820/4);
+            xs = (Trig.x*colwidth)/(1920);
             if (xs < 0) xs = 0;
             if (xs > colwidth-3) xs = colwidth-3;
            
             showx[xs] = '#';
             showx[xs+1] = '#';
-            showx[xs+2] = '#';
-            printf("%s %d %d\n",showx, xrep, Trig.DiffLevel);
+            printf("%s %d,%d\n",showx, Trig.x, Trig.y);
             
             #ifndef _WIN32
-                SendUDP(xrep, 0, Trig.DiffLevel);
+                //SendUDP(Trig.x, Trig.y, Trig.DiffLevel);
             #endif
         }
         

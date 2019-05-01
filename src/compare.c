@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <memory.h>
 #include "imgcomp.h"
+#include "config.h"
 
 int NewestAverageBright;
 int NightMode;
@@ -31,6 +32,7 @@ int rzaveragebright;
 //----------------------------------------------------------------------------------------
 // Calculate average brightness of an image.
 //----------------------------------------------------------------------------------------
+#ifndef FIND_REDSPOT
 static double AverageBright(MemImage_t * pic, Region_t Region, ImgMap_t* WeightMap)
 {
     double baverage, rzaverage;
@@ -81,7 +83,7 @@ static double AverageBright(MemImage_t * pic, Region_t Region, ImgMap_t* WeightM
     
     return baverage * 0.25 / DetectionPixels; // Multiply by 4 again.
 }
-
+#endif
 //----------------------------------------------------------------------------------------
 //----------------------------------------------------------------------------------------
 static void ShowWeightMap()
@@ -716,9 +718,9 @@ static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold)
 				//printf("\n");
 			}
 			if (Verbosity) printf("Exact r,c= col=%5.1f, row=%5.1f\n",xsum*1.0/sum, ysum*1.0/sum);
-			retval.x = (int)(xsum*scalef*4/sum)+scalef*4/2;
-			retval.y = (int)(ysum*scalef*4/sum)+scalef*4/2;
-			printf("Picture coordinates: x,y = %d,%d\n",retval.x, retval.y);
+			retval.x = (int)(xsum*scalef*ScaleDenom/sum)+scalef*ScaleDenom/2;
+			retval.y = (int)(ysum*scalef*ScaleDenom/sum)+scalef*ScaleDenom/2;
+			if (Verbosity) printf("Picture coordinates: x,y = %d,%d\n",retval.x, retval.y);
 		}
     }
    
