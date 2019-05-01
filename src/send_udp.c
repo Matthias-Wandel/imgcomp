@@ -70,7 +70,7 @@ void SendUDP(int x, int y, int level)
     
     if (!dest.sin_port){
         fprintf(stderr, "UDP not initialized\n");
-        exit(-1);
+		return;
     }
     
     memset(&Buf, 0, sizeof(Buf));
