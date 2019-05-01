@@ -21,7 +21,7 @@ $(OBJ)/%.o:$(SRC)/%.c $(SRC)/imgcomp.h
 	${CC} $(CFLAGS) -c $< -o $@
 
 imgcomp: $(objs) libjpeg/libjpeg.a
-	${CC} -o imgcomp $(objs) libjpeg/libjpeg.a
+	${CC} -lm -o imgcomp $(objs) libjpeg/libjpeg.a
 
 $(SRC)/pi_model.h:
 	$(SRC)/identify_pi >> $(SRC)/pi_model.h

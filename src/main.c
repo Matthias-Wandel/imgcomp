@@ -12,6 +12,7 @@
 #include <sys/stat.h>
 #include <string.h>
 #include <time.h>
+#include <math.h>
 #ifdef _WIN32
     #include "readdir.h"
     #define S_ISREG(m) (((m) & S_IFMT) == S_IFREG)
@@ -86,6 +87,40 @@ static time_t NextTimelapsePix;
 static LastPic_t NoMousePic;
 
 time_t LastPic_mtime;
+
+
+//-----------------------------------------------------------------------------------
+// Convert 120 degree fishey coordinates to pan and tilt.
+//-----------------------------------------------------------------------------------
+static void GeometryConvert(TriggerInfo_t Trig)
+{
+	int x,y, mag;
+	double px, py,ta;
+	double pan,tilt;
+	
+	// Center-referenced coordinates.
+	x = Trig.x-1920/2;
+	y = Trig.y-1440/2;
+	mag = sqrt(x*x+y*y); // Magnitude from center.
+	
+	// Now convert fisheye coordinates to planar coordinates.
+	// Image 1920 pixels covers 120 degrees, then convert to radians.
+	ta = tan(mag * 120.0/1920 * 3.1415/180);
+	px = (ta*x)/mag;
+	py = (ta*y)/mag;
+	printf("px,py = %5.2f,%5.2f  ",px,py);
+	
+	// Now convert planar coordinates to pan angle and elevation.
+	pan = atan(px)*180/3.1415;
+	
+	tilt = atan(py/sqrt(1+px*px))*180/3.1415;
+	tilt = py/sqrt(1+px*px);
+	
+	printf("Pan: %5.1f tilt:%5.3f\n",pan,tilt);
+	
+	
+}
+
 
 //-----------------------------------------------------------------------------------
 // Figure out which images should be saved.
@@ -469,6 +504,21 @@ static void ScaleRegion (Region_t * Reg, int Denom)
 int main(int argc, char **argv)
 {
     int file_index, a, argn;
+
+
+	{
+		TriggerInfo_t test;
+		int a;
+		for (a=0;a<=1920;a+=128){
+			test.x = a;
+			test.y = 720-128*3;
+			GeometryConvert(test);
+		}
+		return 0;
+		
+		
+	}
+
     
     Log = stdout;
 
