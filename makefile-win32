@@ -24,5 +24,5 @@ $(OBJECTS_IMGCOMP): src\$(@B).c src\imgcomp.h
 imgcomp.exe: $(OBJECTS_IMGCOMP)
     $(LINKER) $(LINKCON) -OUT:imgcomp.exe libjpeg\libjpeg.lib $(OBJECTS_IMGCOMP)
 
-run_stepper.exe: src\run_stepper.c
-    cl -W3 -orun_stepper.exe src\run_stepper.c ws2_32.lib
+run_stepper.exe: src\stepper_ip.c
+    cl -W3 -orun_stepper.exe src\stepper_ip.c ws2_32.lib
