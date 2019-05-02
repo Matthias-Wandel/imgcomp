@@ -157,8 +157,8 @@ volatile unsigned * setup_io(int io_base, int io_range)
 #endif
 int CurrentPos = 0;
 
-#define TICK_SIZE 200    // Algorithm tick rate, microsconds.  Take at least two ticks per step.
-#define TICK_ERROR 250   // Tick must not exceed this time.
+#define TICK_SIZE 300    // Algorithm tick rate, microsconds.  Take at least two ticks per step.
+#define TICK_ERROR 350   // Tick must not exceed this time.
 
 #define NUM_RAMP_STEPS 30
 static const char RampUp[NUM_RAMP_STEPS]
@@ -264,6 +264,7 @@ void DoMotor(stepper_t * motor)
 		motor->Wait -= 1;
 	}else{
 		ToGo = motor->Target - motor->Pos;
+		//printf("to go:%d Target:%d pos:%d\n",ToGo,motor->Target,motor->Pos);
 		
 		if (ToGo){
 			int ToGoAbs;
@@ -325,7 +326,8 @@ void RunStepping(void)
 	int time1, time2;
 	int numticks;
 	int flag;
-	stepper_t * motor;
+	int IsIdle;
+
     // Set up gpi pointer for direct register access
 	gpio = setup_io(GPIO_BASE, BLOCK_SIZE);
 	timerreg = setup_io(TIMER_BASE, BLOCK_SIZE);
@@ -367,20 +369,22 @@ void RunStepping(void)
 	motors[2].ENABLE = STEP_ENA3;
 	motors[2].DIR = STEP_DIR3;
 	motors[2].CLOCK = STEP_CLK3;
-	motors[2].MaxSpeed = 50;
-	motors[2].RampStretch=10;
+	motors[2].MaxSpeed = 128;
+	motors[2].RampStretch=15;
 	
 	flag = 0;
+	IsIdle = 0;
 	
 	numticks = 0;
 	time1 = *(timerreg+1);
+	
 	for(;;){
 		for (;;){ // Busywait for next tick interval (usleep system call has too much jitter)
 			int delta;
 			time2 = *(timerreg+1);
 			delta = time2-time1;
 			if (delta >= TICK_SIZE){
-				if (delta > TICK_ERROR){
+				if (delta > TICK_ERROR && IsIdle == 0){
 					printf("tick too long!");
 					time2 = *(timerreg+1);
 				}
@@ -399,13 +403,15 @@ void RunStepping(void)
 		 && motors[2].Speed == 0){
 			// All motions complete.  Look for new instructions
 			int xDeg,yDeg,z,fire,isdelta;
+			if (!IsIdle) printf("motion done  %d %d\n", motors[2].Pos, motors[1].Pos);
+			IsIdle = 1;
 			
-			CheckUdp(&xDeg,&yDeg,&fire,&isdelta);
-			
-			//int CheckUdp(int * XDeg, int * YDeg, int * IsFire, int * IsDelta);
-			// Use coordinates as inputs for the motors.
-			motors[2].Target = xDeg * 972 / 1000;
-			motors[1].Target = yDeg * 311 / 1000;
+			if (CheckUdp(&xDeg,&yDeg,&fire,&isdelta)){
+				// Use coordinates as inputs for the motors.
+				motors[2].Target = -xDeg * 972 * 4 / 1000;
+				motors[1].Target = yDeg * 3110 / 1000;
+				printf("Target steps %d,%d",motors[2].Target, motors[1].Target);
+			}
 			/*
 			if (flag){
 				printf("return home\n");
@@ -418,7 +424,9 @@ void RunStepping(void)
 				break;
 			}
 			*/
-		}			
+		 }else{
+			 IsIdle = 0;
+		 }
 	}
 	return;
 
