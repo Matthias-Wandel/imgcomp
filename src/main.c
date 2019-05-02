@@ -1,4 +1,4 @@
-//-----------------------------------------------------------------------------------
+ //-----------------------------------------------------------------------------------
 // Simple tool for monitor continuously captured images for changes
 // and saving changed images, as well as an image every N seconds for timelapses.
 // Matthias Wandel 2015
@@ -90,35 +90,37 @@ time_t LastPic_mtime;
 
 
 //-----------------------------------------------------------------------------------
-// Convert 120 degree fishey coordinates to pan and tilt.
+// Convert picture coordinates from 120 degree fishey lens
+// to pan and tilt angles for cap shooter.
 //-----------------------------------------------------------------------------------
-static void GeometryConvert(TriggerInfo_t Trig)
+static void GeometryConvert(TriggerInfo_t  * Trig)
 {
-	int x,y, mag;
+	double x,y, magxy, mag_rad;
 	double px, py,ta;
 	double pan,tilt;
 	
 	// Center-referenced coordinates.
-	x = Trig.x-1920/2;
-	y = Trig.y-1440/2;
-	mag = sqrt(x*x+y*y); // Magnitude from center.
+	x = (Trig->x-1920/2)/1920.0;
+	y = -(Trig->y-1440/2)/1920.0;
+	magxy = sqrt(x*x+y*y); // Magnitude from center.
 	
-	// Now convert fisheye coordinates to planar coordinates.
-	// Image 1920 pixels covers 120 degrees, then convert to radians.
-	ta = tan(mag * 120.0/1920 * 3.1415/180);
-	px = (ta*x)/mag;
-	py = (ta*y)/mag;
+	// Convert to degrees from center and correct for lens distortion
+	mag_rad = magxy * (109 + magxy*magxy * 21);
+	mag_rad = mag_rad * 3.1415/180; // Convert to radians.
+	
+	// Now convert to planar coordinates.
+	ta = tan(mag_rad);
+	px = (ta*x)/magxy; // px and py are in "screen" meters from center
+	py = (ta*y)/magxy;
 	printf("px,py = %5.2f,%5.2f  ",px,py);
 	
-	// Now convert planar coordinates to pan angle and elevation.
+	// Now convert planar coordinates to pan angle and elevation, in degrees.
 	pan = atan(px)*180/3.1415;
-	
 	tilt = atan(py/sqrt(1+px*px))*180/3.1415;
-	tilt = py/sqrt(1+px*px);
 	
-	printf("Pan: %5.1f tilt:%5.3f\n",pan,tilt);
-	
-	
+	printf("Pan: %5.1f tilt:%5.1f\n",pan,tilt);
+	Trig->x = (int)(pan*10); // Return it as tenth's of a degree
+	Trig->y = (int)(tilt*10);
 }
 
 
@@ -231,9 +233,11 @@ static int ProcessImage(LastPic_t * New, int DeleteProcessed)
             showx[xs] = '#';
             showx[xs+1] = '#';
             printf("%s %d,%d\n",showx, Trig.x, Trig.y);
+			
+			GeometryConvert(&Trig);
             
             #ifndef _WIN32
-                //SendUDP(Trig.x, Trig.y, Trig.DiffLevel);
+                SendUDP(Trig.x, Trig.y, Trig.DiffLevel);
             #endif
         }
         
@@ -393,7 +397,7 @@ int DoDirectory(char * Directory)
             if (b) Raspistill_restarted = 1;
             if (LogToFile[0] != '\0') LogFileMaintain();
             //sleep(1);
-            usleep(500000);
+            usleep(100000);
         }else{
             break;
         }
@@ -505,20 +509,17 @@ int main(int argc, char **argv)
 {
     int file_index, a, argn;
 
-
+if (0)
 	{
 		TriggerInfo_t test;
 		int a;
 		for (a=0;a<=1920;a+=128){
 			test.x = a;
-			test.y = 720-128*3;
-			GeometryConvert(test);
+			test.y = 720;
+			GeometryConvert(&test);
 		}
 		return 0;
-		
-		
 	}
-
     
     Log = stdout;
 

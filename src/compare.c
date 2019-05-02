@@ -547,8 +547,8 @@ TriggerInfo_t ComparePix(MemImage_t * igore, MemImage_t * pic1, char * DebugImgN
 			green = p1[1];
 			blue = p1[2];
 			
-			if (red > 50 && red > green*4 && red > blue*4){
-				// If red is 4x as big as green or blue, it's sufficiently red.
+			if (red > 40 && red > green*3 && red > blue*3){
+				// If red is 3x as big as green or blue, it's sufficiently red.
 				diffrow[col] = 88;
 			}else{
 				diffrow[col] = 0;
