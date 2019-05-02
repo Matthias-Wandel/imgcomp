@@ -83,7 +83,7 @@ void SendUDP(int Pan, int Tilt, int IsDelta)
     memset(&Buf, 0, sizeof(Buf));
 
     Buf.Ident = UDP_MAGIC;
-    Buf.Level = 1000;
+    Buf.Level = 0;
     Buf.xpos = Pan;
     Buf.ypos = Tilt;
     Buf.IsAdjust = IsDelta;
@@ -120,7 +120,7 @@ void Usage(char *progname)
 }
 
 void RunStepping(void);
-int PosRequested;
+int PanRequested, TiltRequested;
 int DeltaRequested;
 
 //--------------------------------------------------------------------------
@@ -151,7 +151,11 @@ int main(int argc, char **argv)
             argv[2]++;
         }
         
-        sscanf(argv[2],"%d",&PosRequested);
+        sscanf(argv[2],"%d",&PanRequested);
+		
+		if (argc > 3){
+			sscanf(argv[3],"%d",&TiltRequested);
+		}
     }
 
     #ifdef _WIN32
@@ -239,7 +243,7 @@ int main(int argc, char **argv)
 
     if (HostName){
         // Just send a UDP packet.
-        SendUDP(PosRequested, DeltaRequested);
+        SendUDP(PanRequested, TiltRequested, DeltaRequested);
     }else{
         printf("listening on UDP\n");
         RunStepping();
@@ -298,7 +302,7 @@ int CheckUdp(int * XDeg, int * YDeg, int * IsFire, int * IsDelta)
                 printf("UDP from %s ", inet_ntoa(from.sin_addr));
                 printf("pan=%5.1f  Tilt=%5.1f %s\n", Udp->xpos/10.0, Udp->ypos/10.0, Udp->IsAdjust ? "Adj":"");
                 *XDeg = Udp->xpos;
-				*YDeg = Udp->xpos;
+				*YDeg = Udp->ypos;
 				*IsFire = Udp->Level > 100 ? 1 : 0;
                 *IsDelta = Udp->IsAdjust;
             }   
@@ -315,10 +319,10 @@ int CheckUdp(int * XDeg, int * YDeg, int * IsFire, int * IsDelta)
 //--------------------------------------------------------------------------
 void RunStepping(void)
 {
-	int PosRecvd, IsDelta;
+	int Pan,Tilt,Fire,IsDelta;
     for (;;){
-        if (CheckUdp(&PosRecvd, &IsDelta)){
-            printf("UDP pos request: %d  isdelta:%d\n",PosRecvd, IsDelta);
+        if (CheckUdp(&Pan, &Tilt, &Fire, &IsDelta)){
+            printf("UDP pos request: %d,%d  f=%d  isdelta:%d\n",Pan, Tilt, Fire, IsDelta);
         }
 	}
 }
