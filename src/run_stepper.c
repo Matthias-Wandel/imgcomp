@@ -38,7 +38,7 @@
     typedef struct timeval TIMEVAL;
 #endif
 
-int CheckUdp(int * NewPos, int * IsDelta);
+int CheckUdp(int * XDeg, int * YDeg, int * IsFire, int * IsDelta);
 
 
 //-------------------------------------------------------------------------------------
@@ -201,9 +201,8 @@ void TestTimer(void)
         usleep(a);
         //sleep(1);
         if (0){
-           int PosRecvd;
-           int IsDelta;
-           CheckUdp(&PosRecvd, &IsDelta);
+			int x,y,a,b;
+            CheckUdp(&x,&y,&a,&b);
         }
         time2 = *(timerreg+1);
         printf("usleep %d: ticked %d\n",a,time2-time1);
@@ -303,7 +302,7 @@ void DoMotor(stepper_t * motor)
 						// 128 and above means clock high.
 						GPIO_SET = motor->CLOCK;
 					}else{
-						motor->Wait = 1;
+						motor->Wait = 20;
 					}
 				}else if (motor->CountDown < 128){
 					GPIO_CLR = motor->CLOCK;
@@ -356,7 +355,7 @@ void RunStepping(void)
 	
 
 	motors[1].Pos = 0;
-	motors[1].Target = 1420;// 1420 is about 45 degrees.
+	motors[1].Target = 0; //Tilt is 31.1 steps per degree.
 	motors[1].ENABLE = STEP_ENA2;
 	motors[1].DIR = STEP_DIR2;
 	motors[1].CLOCK = STEP_CLK2;
@@ -364,14 +363,14 @@ void RunStepping(void)
 	motors[1].RampStretch=10;
 	
 	motors[2].Pos = 0;
-	motors[2].Target = -874*2;
+	motors[2].Target = 0; // turret is 9.72 steps per degree.
 	motors[2].ENABLE = STEP_ENA3;
 	motors[2].DIR = STEP_DIR3;
 	motors[2].CLOCK = STEP_CLK3;
 	motors[2].MaxSpeed = 50;
 	motors[2].RampStretch=10;
 	
-	flag = 1;
+	flag = 0;
 	
 	numticks = 0;
 	time1 = *(timerreg+1);
@@ -395,7 +394,19 @@ void RunStepping(void)
 		DoMotor(&motors[1]);
 		DoMotor(&motors[2]);
 		
-		if (motors[0].Speed == 0 && motors[1].Speed == 0 && motors[2].Speed == 0){
+		if (motors[0].Speed == 0 && motors[0].Wait == 0 
+		 && motors[1].Speed == 0 && motors[1].Wait == 0 
+		 && motors[2].Speed == 0){
+			// All motions complete.  Look for new instructions
+			int xDeg,yDeg,z,fire,isdelta;
+			
+			CheckUdp(&xDeg,&yDeg,&fire,&isdelta);
+			
+			//int CheckUdp(int * XDeg, int * YDeg, int * IsFire, int * IsDelta);
+			// Use coordinates as inputs for the motors.
+			motors[2].Target = xDeg * 972 / 1000;
+			motors[1].Target = yDeg * 311 / 1000;
+			/*
 			if (flag){
 				printf("return home\n");
 				flag = 0;
@@ -406,6 +417,7 @@ void RunStepping(void)
 			}else{
 				break;
 			}
+			*/
 		}			
 	}
 	return;

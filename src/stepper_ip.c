@@ -74,7 +74,7 @@ static int UdpPayloadLength = -1;
 //--------------------------------------------------------------------------
 // Form and send a UDP packet
 //--------------------------------------------------------------------------
-void SendUDP(int Pos, int IsDelta)
+void SendUDP(int Pan, int Tilt, int IsDelta)
 {
     int datasize;
     int wrote;
@@ -84,8 +84,8 @@ void SendUDP(int Pos, int IsDelta)
 
     Buf.Ident = UDP_MAGIC;
     Buf.Level = 1000;
-    Buf.xpos = Pos;
-    Buf.ypos = 0;
+    Buf.xpos = Pan;
+    Buf.ypos = Tilt;
     Buf.IsAdjust = IsDelta;
     datasize = sizeof(Udp_t);
 
@@ -103,7 +103,7 @@ void SendUDP(int Pos, int IsDelta)
         fprintf(stdout,"Wrote %d bytes of %d\n",wrote, datasize);
     }
 
-    printf("Sent UDP packet, x=%d\n",Pos);
+    printf("Sent UDP packet, Pan=%5.1f, Tilt=%5.1f\n",Pan/10.0, Tilt/10.0);
 }
 
 //----------------------------------------------------------------------------------
@@ -250,7 +250,7 @@ int main(int argc, char **argv)
 //--------------------------------------------------------------------------
 // Check if new UDP packet is here
 //--------------------------------------------------------------------------
-int CheckUdp(int * NewPos, int * IsDelta)
+int CheckUdp(int * XDeg, int * YDeg, int * IsFire, int * IsDelta)
 {
     char recvbuf[MAX_PACKET];
     FD_SET rws;
@@ -296,8 +296,10 @@ int CheckUdp(int * NewPos, int * IsDelta)
                 Udp = (Udp_t *) recvbuf;
                 
                 printf("UDP from %s ", inet_ntoa(from.sin_addr));
-                printf("x=%d  y=%d  %s\n", Udp->xpos, Udp->ypos, Udp->IsAdjust ? "Adj":"");
-                *NewPos = Udp->xpos;
+                printf("pan=%5.1f  Tilt=%5.1f %s\n", Udp->xpos/10.0, Udp->ypos/10.0, Udp->IsAdjust ? "Adj":"");
+                *XDeg = Udp->xpos;
+				*YDeg = Udp->xpos;
+				*IsFire = Udp->Level > 100 ? 1 : 0;
                 *IsDelta = Udp->IsAdjust;
             }   
         }
