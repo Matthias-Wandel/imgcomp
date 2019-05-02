@@ -38,27 +38,8 @@
     typedef struct timeval TIMEVAL;
 #endif
 
+int CheckUdp(int * NewPos, int * IsDelta);
 
-#define ICMP_ECHO 8
-#define ICMP_ECHOREPLY 0
-
-#define ICMP_MIN 8 // minimum 8 byte icmp packet (just header)
-
-#define MAGIC_ID 0xf581     // Magic value to identify pings from this program.
-
-#define MAGIC_PORTNUM 7777   // Magic port number for UDP pings (this is the port Joe picked for his app)
-
-#define UDP_MAGIC 0x46c1
-
-//-------------------------------------------------------------------------------------
-// Structure for a test UDP packet.
-typedef struct {
-    int Ident;
-    int Level;
-    int xpos;
-    int ypos;
-    int IsAdjust;
-}Udp_t;
 
 //-------------------------------------------------------------------------------------
 
@@ -66,246 +47,9 @@ typedef struct {
 #define DEF_PACKET_SIZE 32
 #define MAX_PACKET 1024
 
-struct sockaddr_in dest;
-
-static SOCKET sockUDP;
-
-static int UdpPayloadLength = -1;
-
-//--------------------------------------------------------------------------
-// Form and send a UDP packet
-//--------------------------------------------------------------------------
-void SendUDP(int Pos, int IsDelta)
-{
-    int datasize;
-    int wrote;
-    Udp_t Buf;
-    
-    memset(&Buf, 0, sizeof(Buf));
-
-    Buf.Ident = UDP_MAGIC;
-    Buf.Level = 1000;
-    Buf.xpos = Pos;
-    Buf.ypos = 0;
-    Buf.IsAdjust = IsDelta;
-    datasize = sizeof(Udp_t);
-
-    wrote = sendto(sockUDP,(char *)&Buf, datasize, 0,(struct sockaddr*)&dest, sizeof(struct sockaddr_in));
-
-    if (wrote == SOCKET_ERROR){
-        perror("UDP sendto failed");
-
-        #ifndef _WIN32
-            printf("On Linux, This eventually happens if the destination port is unreacable and Uping is not root\n");
-        #endif
-        exit(-1);
-    }
-    if (wrote < datasize ) {
-        fprintf(stdout,"Wrote %d bytes of %d\n",wrote, datasize);
-    }
-
-    printf("Sent UDP packet, x=%d\n",Pos);
-}
-
-//----------------------------------------------------------------------------------
-// Command line help...
-//----------------------------------------------------------------------------------
-void Usage(char *progname)
-{
-    
-    fprintf(stderr,"Usage:\n");
-    fprintf(stderr,"%s [host] [pos]\n",progname);
-    fprintf(stderr,"Options:\n");
-    
-    exit(-1);
-}
-
 void RunStepping(void);
 int PosRequested;
 int DeltaRequested;
-
-//--------------------------------------------------------------------------
-// Main
-//--------------------------------------------------------------------------
-int main(int argc, char **argv)
-{
-    #ifdef _WIN32
-        WSADATA wsaData;
-    #endif
-
-    struct hostent * hp;
-    unsigned int addr=0;
-    unsigned short PortNum = MAGIC_PORTNUM;
-    char * HostName = NULL;
-    char String[500];
-
-    memset(String, 0, sizeof(String));
-
-    if (argc > 1){
-        HostName = argv[1];
-    }
-    if (argc > 2){
-        DeltaRequested = 0;
-        if (argv[2][0] == '-') DeltaRequested = 1;
-        if (argv[2][0] == '+'){
-            DeltaRequested = 1;
-            argv[2]++;
-        }
-        
-        sscanf(argv[2],"%d",&PosRequested);
-    }
-
-    #ifdef _WIN32
-        if (WSAStartup(MAKEWORD(1,1),&wsaData) != 0){
-            fprintf(stderr,"WSAStartup failed: %d\n",GetLastError());
-                ExitProcess(STATUS_FAILED);
-        }
-    #endif
-
-    //-------------------------------------------------------------------
-    // Resolve the remote address
-
-    memset(&dest,0,sizeof(struct sockaddr_in));
-
-    if (HostName){
-        hp = gethostbyname(HostName);
-
-        if (hp == NULL){
-            // If address is not a host name, assume its a x.x.x.x format address.
-            addr = inet_addr(HostName);
-            if (addr == INADDR_NONE) {
-                // Not a number format address either.  Give up.
-                fprintf(stderr,"Unable to resolve %s\n",HostName);
-                exit(-1);
-            }
-            dest.sin_addr.s_addr = addr;
-            dest.sin_family = AF_INET;
-
-        }else{
-            // Resolved to a host name.
-            memcpy(&(dest.sin_addr),hp->h_addr,hp->h_length);
-            dest.sin_family = hp->h_addrtype;
-        }
-    }else{
-        // No host name specified.  Use loopback address by default.
-        printf("No host name specified.  Using 'loopback' as target\n");
-        addr = inet_addr("127.0.0.1");
-        dest.sin_addr.s_addr = addr;
-        dest.sin_family = AF_INET;
-    }
-
-    dest.sin_port = htons(PortNum); 
-
-    //-------------------------------------------------------------------
-    // Open socket for reception of regular UDP packets.
-    {
-        struct sockaddr_in local;
-
-    	local.sin_family = AF_INET;
-	    local.sin_addr.s_addr = INADDR_ANY;
-
-      	local.sin_port = htons(PortNum);
-        if (HostName){
-            // Bind to a different UDP port if just running it for sending a UDP
-            // packet because we need the port free for the listening side running
-            // on the same computer.
-            local.sin_port = htons(PortNum+1);
-        }
-        sockUDP = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-
-        if (sockUDP == INVALID_SOCKET){
-            perror("couldn't create UDP socket");
-            exit(-1);
-        }
-
-    	if (bind(sockUDP,(struct sockaddr*)&local,sizeof(local) ) == SOCKET_ERROR) {
-    	    #ifdef _WIN32
-                int err;
-                err = WSAGetLastError();
-                if (err != WSAEADDRINUSE){
-    		        perror("bind() failed with error");
-            		WSACleanup();
-                    exit(-1);
-                }else{
-                    printf("Listen port already in use\n");
-                }
-            #else
-                perror("bind failed");
-                exit(-1);
-            #endif
-    	}
-    }
-
-    //-------------------------------------------------------------------
-
-    if (HostName){
-        // Just send a UDP packet.
-        SendUDP(PosRequested, DeltaRequested);
-    }else{
-        printf("listening on UDP\n");
-        RunStepping();
-    }
-    return 0;
-}
-
-//--------------------------------------------------------------------------
-// Check if new UDP packet is here
-//--------------------------------------------------------------------------
-int CheckUdp(int * NewPos, int * IsDelta)
-{
-    char recvbuf[MAX_PACKET];
-    FD_SET rws;
-    int bread;
-    struct sockaddr_in from;
-    int fromlen = sizeof(from);
-    int a;
-
-    {
-        // Check for stuff that might come back.
-        TIMEVAL timeout;
-
-        FD_ZERO(&rws);
-        FD_SET(sockUDP, &rws);
-        #ifndef _WIN32
-            FD_SET(STDIN_FILENO, &rws);
-        #endif
-        timeout.tv_sec = 0;
-        timeout.tv_usec = 500;
-
-        a = select(10, &rws, NULL, NULL, &timeout);
-        if (a == 0){
-            // There is no received data.
-            return FALSE;
-        }
-    }
-
-    // Check the UDP socket.
-    if (FD_ISSET(sockUDP, &rws)){
-        memset(recvbuf, 0, sizeof(recvbuf));
-        bread = recvfrom(sockUDP,recvbuf,MAX_PACKET,0,(struct sockaddr*)&from, &fromlen);
-        if (bread == SOCKET_ERROR){
-            // This happens after we sent something out to another machine and the port is 
-            // unavailable.  Under Linux, but not under windows, we subsequently get a socket
-            // error - probably on account of the ICMP port unreachable packet that comes back.
-            perror("UDP socket error");
-            #ifndef _WIN32
-                printf("(could be caused by destination port unreachable)\n");
-            #endif
-        }else{
-            {    
-                Udp_t * Udp;
-                Udp = (Udp_t *) recvbuf;
-                
-                printf("UDP from %s ", inet_ntoa(from.sin_addr));
-                printf("x=%d  y=%d  %s\n", Udp->xpos, Udp->ypos, Udp->IsAdjust ? "Adj":"");
-                *NewPos = Udp->xpos;
-                *IsDelta = Udp->IsAdjust;
-            }   
-        }
-        return TRUE;
-    }
-    return FALSE;
-}
 
 
 #ifndef _WIN32
@@ -443,163 +187,9 @@ stepper_t motors[3];
 #define ABS(a) (a > 0 ? a : -(a))
 
 
-void DoMotor(stepper_t * motor)
-{
-	int ToGo;
-		
-	if (motor->Wait){
-		motor->Wait -= 1;
-	}else{
-		ToGo = motor->Target - motor->Pos;
-		
-		if (ToGo){
-			int ToGoAbs;
-			ToGoAbs = ToGo;
-			if(ToGo < 0) ToGoAbs = -ToGo;
-			if (motor->Speed == 0){
-				// Motor was not running.  Enable and set direction.
-				GPIO_CLR = motor->ENABLE; // Enable the motor.
-				if (ToGo > 0){ // Set direction.
-					GPIO_SET = motor->DIR;
-				}else{
-					GPIO_CLR = motor->DIR;
-				}
-				motor->RampIndex = 0;
-				motor->Speed = RampUp[motor->RampIndex];
-				motor->Dir = ToGo > 0 ? 1 : -1;
-				motor->CountDown = 127;
-				motor->Wait = 1;
-			}else{
-				motor->CountDown -= motor->Speed;
-				if (motor->CountDown < 0){
-					motor->Pos += motor->Dir; // This completes this clock cycle.
-					
-					// Compute the new speed.
-					motor->RampIndex += 1;
-					if (motor->RampIndex < NUM_RAMP_STEPS*motor->RampStretch) motor->Speed = RampUp[motor->RampIndex/motor->RampStretch];
-					if (ToGoAbs < NUM_RAMP_STEPS*motor->RampStretch){
-						// Ramp down if getting close.
-						if (RampUp[ToGo] < motor->Speed) motor->Speed = RampUp[ToGoAbs/motor->RampStretch];
-					}
-					if (motor->Speed > motor->MaxSpeed) motor->Speed = motor->MaxSpeed;
-					
-					if (motor->Pos != motor->Target){
-						// Start the next step.
-						motor->CountDown += 256;
-						// 128 and above means clock high.
-						GPIO_SET = motor->CLOCK;
-					}else{
-						motor->Wait = 1;
-					}
-				}else if (motor->CountDown < 128){
-					GPIO_CLR = motor->CLOCK;
-					// 127 or below means clock low.
-				}
-			}
-		}else{
-			if (motor->Speed){
-				GPIO_SET = motor->ENABLE; // turn off the motor.
-				motor->Speed = 0;
-			}
-		}
-	}
-	//printf("Cl:%d Wait %d  ToGo:%3d  CntDwn:%3d Speed%3d\n",motor->CountDown > 128, motor->Wait, motor->Target - motor->Pos, motor->CountDown, motor->Speed);
-}
-
-
-void RunStepping(void)
-{
-	int time1, time2;
-	int numticks;
-	int flag;
-	stepper_t * motor;
-    // Set up gpi pointer for direct register access
-	gpio = setup_io(GPIO_BASE, BLOCK_SIZE);
-	timerreg = setup_io(TIMER_BASE, BLOCK_SIZE);
-
-	// Motor 1:
-    INP_GPIO(2); OUT_GPIO(2);
-    INP_GPIO(3); OUT_GPIO(3);
-    INP_GPIO(4); OUT_GPIO(4);
-
-	// Motor 2:
-    INP_GPIO(15); OUT_GPIO(15);
-    INP_GPIO(17); OUT_GPIO(17);
-    INP_GPIO(18); OUT_GPIO(18);
-
-	// Motor 3:
-    INP_GPIO(22); OUT_GPIO(22);
-    INP_GPIO(23); OUT_GPIO(23);
-    INP_GPIO(24); OUT_GPIO(24);
-
-	motors[0].Pos = 0;
-	motors[0].Target = 890;
-	motors[0].ENABLE = STEP_ENA1;
-	motors[0].DIR = STEP_DIR1;
-	motors[0].CLOCK = STEP_CLK1;
-	motors[0].MaxSpeed = 128;
-	motors[0].RampStretch=1;
-	
-
-	motors[1].Pos = 0;
-	motors[1].Target = 1000;
-	motors[1].ENABLE = STEP_ENA2;
-	motors[1].DIR = STEP_DIR2;
-	motors[1].CLOCK = STEP_CLK2;
-	motors[1].MaxSpeed = 128;
-	motors[1].RampStretch=10;
-	
-	motors[2].Pos = 0;
-	motors[2].Target = -500;
-	motors[2].ENABLE = STEP_ENA3;
-	motors[2].DIR = STEP_DIR3;
-	motors[2].CLOCK = STEP_CLK3;
-	motors[2].MaxSpeed = 50;
-	motors[2].RampStretch=10;
-	
-	flag = 1;
-	
-	numticks = 0;
-	time1 = *(timerreg+1);
-	for(;;){
-		for (;;){ // Busywait for next tick interval (usleep system call has too much jitter)
-			int delta;
-			time2 = *(timerreg+1);
-			delta = time2-time1;
-			if (delta >= TICK_SIZE){
-				if (delta > TICK_ERROR){
-					printf("tick too long!");
-					time2 = *(timerreg+1);
-				}
-				time1 = time2;
-				break;
-			}
-		}
-		numticks ++;
-		
-		DoMotor(&motors[0]);
-		DoMotor(&motors[1]);
-		DoMotor(&motors[2]);
-		
-		if (motors[0].Speed == 0 && motors[1].Speed == 0 && motors[2].Speed == 0){
-			if (flag){
-				printf("return home\n");
-				flag = 0;
-				motors[0].Target = 0;
-				motors[1].Target = 0;
-				motors[2].Target = 0;
-			}else{
-				break;
-			}
-		}			
-	}
-	return;
-
-}
-
-
-char OutString[100];
-double input, output;
+//-------------------------------------------------------------------------------------
+// Test real-time performance of busywaiting using the microsecond hw timer register
+//-------------------------------------------------------------------------------------
 void TestTimer(void)
 {
     int time1,time2,a, cycles;
@@ -663,3 +253,163 @@ void TestTimer(void)
 // Notes:
 // Calling CheckUdp adds about 650 microseconds!
 // Calling uSleep adds 60 microseconds + specified time.
+
+//-------------------------------------------------------------------------------------
+// Motor routine - do steps if necessary.
+//-------------------------------------------------------------------------------------
+void DoMotor(stepper_t * motor)
+{
+	int ToGo;
+		
+	if (motor->Wait){
+		motor->Wait -= 1;
+	}else{
+		ToGo = motor->Target - motor->Pos;
+		
+		if (ToGo){
+			int ToGoAbs;
+			ToGoAbs = ToGo;
+			if(ToGo < 0) ToGoAbs = -ToGo;
+			if (motor->Speed == 0){
+				// Motor was not running.  Enable and set direction.
+				GPIO_CLR = motor->ENABLE; // Enable the motor.
+				if (ToGo > 0){ // Set direction.
+					GPIO_SET = motor->DIR;
+				}else{
+					GPIO_CLR = motor->DIR;
+				}
+				motor->RampIndex = 0;
+				motor->Speed = RampUp[motor->RampIndex];
+				motor->Dir = ToGo > 0 ? 1 : -1;
+				motor->CountDown = 127;
+				motor->Wait = 1;
+			}else{
+				motor->CountDown -= motor->Speed;
+				if (motor->CountDown < 0){
+					motor->Pos += motor->Dir; // This completes this clock cycle.
+					
+					// Compute the new speed.
+					motor->RampIndex += 1;
+					if (motor->RampIndex < NUM_RAMP_STEPS*motor->RampStretch) motor->Speed = RampUp[motor->RampIndex/motor->RampStretch];
+					if (ToGoAbs < NUM_RAMP_STEPS*motor->RampStretch){
+						// Ramp down if getting close.
+						if (RampUp[ToGo] < motor->Speed) motor->Speed = RampUp[ToGoAbs/motor->RampStretch];
+					}
+					if (motor->Speed > motor->MaxSpeed) motor->Speed = motor->MaxSpeed;
+					
+					if (motor->Pos != motor->Target){
+						// Start the next step.
+						motor->CountDown += 256;
+						// 128 and above means clock high.
+						GPIO_SET = motor->CLOCK;
+					}else{
+						motor->Wait = 1;
+					}
+				}else if (motor->CountDown < 128){
+					GPIO_CLR = motor->CLOCK;
+					// 127 or below means clock low.
+				}
+			}
+		}else{
+			if (motor->Speed){
+				//GPIO_SET = motor->ENABLE; // turn off the motor.
+				motor->Speed = 0;
+			}
+		}
+	}
+	//printf("Cl:%d Wait %d  ToGo:%3d  CntDwn:%3d Speed%3d\n",motor->CountDown > 128, motor->Wait, motor->Target - motor->Pos, motor->CountDown, motor->Speed);
+}
+
+
+void RunStepping(void)
+{
+	int time1, time2;
+	int numticks;
+	int flag;
+	stepper_t * motor;
+    // Set up gpi pointer for direct register access
+	gpio = setup_io(GPIO_BASE, BLOCK_SIZE);
+	timerreg = setup_io(TIMER_BASE, BLOCK_SIZE);
+
+	// Motor 1:
+    INP_GPIO(2); OUT_GPIO(2);
+    INP_GPIO(3); OUT_GPIO(3);
+    INP_GPIO(4); OUT_GPIO(4);
+
+	// Motor 2:
+    INP_GPIO(15); OUT_GPIO(15);
+    INP_GPIO(17); OUT_GPIO(17);
+    INP_GPIO(18); OUT_GPIO(18);
+
+	// Motor 3:
+    INP_GPIO(22); OUT_GPIO(22);
+    INP_GPIO(23); OUT_GPIO(23);
+    INP_GPIO(24); OUT_GPIO(24);
+
+	motors[0].Pos = 0;
+	motors[0].Target = 0;//890; // 890 is stroke for fire.
+	motors[0].ENABLE = STEP_ENA1;
+	motors[0].DIR = STEP_DIR1;
+	motors[0].CLOCK = STEP_CLK1;
+	motors[0].MaxSpeed = 128;
+	motors[0].RampStretch=1;
+	
+
+	motors[1].Pos = 0;
+	motors[1].Target = 1420;// 1420 is about 45 degrees.
+	motors[1].ENABLE = STEP_ENA2;
+	motors[1].DIR = STEP_DIR2;
+	motors[1].CLOCK = STEP_CLK2;
+	motors[1].MaxSpeed = 128;
+	motors[1].RampStretch=10;
+	
+	motors[2].Pos = 0;
+	motors[2].Target = -874*2;
+	motors[2].ENABLE = STEP_ENA3;
+	motors[2].DIR = STEP_DIR3;
+	motors[2].CLOCK = STEP_CLK3;
+	motors[2].MaxSpeed = 50;
+	motors[2].RampStretch=10;
+	
+	flag = 1;
+	
+	numticks = 0;
+	time1 = *(timerreg+1);
+	for(;;){
+		for (;;){ // Busywait for next tick interval (usleep system call has too much jitter)
+			int delta;
+			time2 = *(timerreg+1);
+			delta = time2-time1;
+			if (delta >= TICK_SIZE){
+				if (delta > TICK_ERROR){
+					printf("tick too long!");
+					time2 = *(timerreg+1);
+				}
+				time1 = time2;
+				break;
+			}
+		}
+		numticks ++;
+		
+		DoMotor(&motors[0]);
+		DoMotor(&motors[1]);
+		DoMotor(&motors[2]);
+		
+		if (motors[0].Speed == 0 && motors[1].Speed == 0 && motors[2].Speed == 0){
+			if (flag){
+				printf("return home\n");
+				flag = 0;
+				motors[0].Target = 0;
+				motors[1].Target = 0;
+				motors[2].Target = 0;
+				sleep(4);
+			}else{
+				break;
+			}
+		}			
+	}
+	return;
+
+}
+
+
