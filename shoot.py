@@ -81,14 +81,17 @@ GPIO.output(g_enable, 0) # enable
 shots = 2
 for s in range (0,shots):
     GPIO.output(g_dir, dir)
-    duse = delay*2
-    print (delay)
+    duse = delay*3
     for x in range (0, steps):
         GPIO.output(g_clk,1)
         sleep(0.0005)
         if duse == 0: raw_input(); print x
         GPIO.output(g_clk,0)
         sleep(duse)
+        if x < 5:
+            duse = delay*2
+        else:
+            duse = delay
         duse = delay;
     duse = delay*2
     GPIO.output(g_dir, 0)
