@@ -20,7 +20,7 @@ int CheckUdp(int * XDeg, int * YDeg, int * IsFire, int * IsDelta);
 #define TICK_SIZE 200    // Algorithm tick rate, microsconds.  Take at least two ticks per step.
 #define TICK_ERROR 250   // Tick must not exceed this time.
 
-//#define SHOOT_MODE 1
+#define SHOOT_MODE 1
 
 //-----------------------------------------------------------------------------------
 //  This program based on "How to access GPIO registers from C-code on the Raspberry-Pi
@@ -299,7 +299,7 @@ void Init(void)
 	motors[0].Pos = 0;
 	motors[0].Target = 0;//890; // 890 is stroke for fire.
 	#ifdef SHOOT_MODE
-	motors[0].Target = 840;
+	motors[0].Target = 875;
 	#endif
 	motors[0].ENABLE = STEP_ENA1;
 	motors[0].DIR = STEP_DIR1;
@@ -380,7 +380,7 @@ void RunStepping(void)
 			
 			#ifdef SHOOT_MODE // Shoot cap mode.
 			if (flag == 0){
-				usleep(50000); // Allow time for cap to drop.
+				usleep(70000); // Allow time for cap to drop.
 				motors[0].Target = 0; // Then return draw.
 				flag += 1;
 			}else if (flag == 1){
