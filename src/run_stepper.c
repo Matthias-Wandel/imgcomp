@@ -1,81 +1,38 @@
-// UDP / PING program
-// For testing UDP and ICMP behaviours on GPRS.
+//----------------------------------------------------------------------------------
+// Multi-stepper motor driving program to use with my cap shooter.
+// Busy-waits using timer reigsters and sequences stepper motors
+// system call latency too long so just busy wait instead.
 //----------------------------------------------------------------------------------
 #define _CRT_SECURE_NO_WARNINGS
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-
-#ifdef _WIN32
-    #define WIN32_LEAN_AND_MEAN // To keep windows.h bloat down.    
-    #ifdef OLD_WINSOCK
-        #include <winsock.h>
-    #else
-        #include <winsock2.h>
-    #endif
-    #include <conio.h>
-#else
-    #include <sys/types.h>
-    #include <sys/socket.h>
-    #include <netinet/in.h>
-    #include <arpa/inet.h>
-    #include <linux/net.h>
-    #include <netdb.h>
-    #include <unistd.h>
-    #include <sys/time.h>
-    #include <memory.h>
-    typedef unsigned char BYTE;
-    typedef unsigned char UCHAR;
-    typedef unsigned short USHORT;
-    typedef unsigned long ULONG;
-    typedef int SOCKET;
-    typedef int BOOL;
-    #define FALSE 0
-    #define TRUE 1
-    #define SOCKET_ERROR -1
-    #define INVALID_SOCKET -1
-    typedef fd_set FD_SET;
-    typedef struct timeval TIMEVAL;
-#endif
+#include <unistd.h>
+#include <memory.h>
+#include <fcntl.h>
+#include <sys/mman.h>
+typedef int BOOL;
+#define FALSE 0
+#define TRUE 1
 
 int CheckUdp(int * XDeg, int * YDeg, int * IsFire, int * IsDelta);
 
+#define TICK_SIZE 200    // Algorithm tick rate, microsconds.  Take at least two ticks per step.
+#define TICK_ERROR 250   // Tick must not exceed this time.
 
-//-------------------------------------------------------------------------------------
+//#define SHOOT_MODE 1
 
-#define STATUS_FAILED 0xFFFF
-#define DEF_PACKET_SIZE 32
-#define MAX_PACKET 1024
-
-void RunStepping(void);
-int PosRequested;
-int DeltaRequested;
-
-
-#ifndef _WIN32
 //-----------------------------------------------------------------------------------
 //  This program based on "How to access GPIO registers from C-code on the Raspberry-Pi
 //  Example program
-//  Blinks camerae LED on raspberry Pi model B+ and Raspberry Pi 2 model B
 //-----------------------------------------------------------------------------------
 
-#define RASPBERRY_PI 2
-#if RASPBERRY_PI == 2 
-    // it's a rapsberry pi 2.  Peripherals are mapped in a different location.
-    #define BCM2708_PERI_BASE        0x3f000000 // For Raspberry pi 2 model B
-#endif
-#if RASPBERRY_PI == 1
-    #define BCM2708_PERI_BASE        0x20000000 // For raspberry pi model B+
-#endif
+// Must run on rasperry pi 2 or 3 (pi 1 is single core only, can't monopolize a core)
+#define BCM2708_PERI_BASE        0x3f000000 // For Raspberry pi 2 model B
 
 #define GPIO_BASE                (BCM2708_PERI_BASE + 0x200000) // GPIO controller
 #define TIMER_BASE               (BCM2708_PERI_BASE + 0x3000)   // Interrupt registers (with timer)
- 
-//#include <stdio.h>
-//#include <stdlib.h>
-//#include <fcntl.h>
-//#include <sys/mman.h>
-//#include <unistd.h>
+
  
 #define PAGE_SIZE (4*1024)
 #define BLOCK_SIZE (4*1024)
@@ -101,10 +58,8 @@ volatile unsigned *timerreg;
 #define GPIO_PULL *(gpio+37) // Pull up/pull down
 #define GPIO_PULLCLK0 *(gpio+38) // Pull up/pull down clock
  
-#include <fcntl.h>
-#include <sys/mman.h>
 
-void TestTimer(void);
+
 //--------------------------------------------------------------------------------
 // Set up a memory regions to access GPIO
 //--------------------------------------------------------------------------------
@@ -154,11 +109,8 @@ volatile unsigned * setup_io(int io_base, int io_range)
 #define STEP_ENA3 (1<<22)  // GPIO22 Enable
 #define STEP_DIR3 (1<<23)  // GPIO23 Direction
 #define STEP_CLK3 (1<<24)  // GPIO24 Clock
-#endif
-int CurrentPos = 0;
 
-#define TICK_SIZE 300    // Algorithm tick rate, microsconds.  Take at least two ticks per step.
-#define TICK_ERROR 350   // Tick must not exceed this time.
+int CurrentPos = 0;
 
 #define NUM_RAMP_STEPS 30
 static const char RampUp[NUM_RAMP_STEPS]
@@ -320,15 +272,12 @@ void DoMotor(stepper_t * motor)
 	//printf("Cl:%d Wait %d  ToGo:%3d  CntDwn:%3d Speed%3d\n",motor->CountDown > 128, motor->Wait, motor->Target - motor->Pos, motor->CountDown, motor->Speed);
 }
 
-
-void RunStepping(void)
+//-------------------------------------------------------------------------------------
+// Init GPIO and motor states.
+//-------------------------------------------------------------------------------------
+void Init(void)
 {
-	int time1, time2;
-	int numticks;
-	int flag;
-	int IsIdle;
-
-    // Set up gpi pointer for direct register access
+	// Set up gpi pointer for direct register access
 	gpio = setup_io(GPIO_BASE, BLOCK_SIZE);
 	timerreg = setup_io(TIMER_BASE, BLOCK_SIZE);
 
@@ -349,12 +298,14 @@ void RunStepping(void)
 
 	motors[0].Pos = 0;
 	motors[0].Target = 0;//890; // 890 is stroke for fire.
+	#ifdef SHOOT_MODE
+	motors[0].Target = 840;
+	#endif
 	motors[0].ENABLE = STEP_ENA1;
 	motors[0].DIR = STEP_DIR1;
 	motors[0].CLOCK = STEP_CLK1;
 	motors[0].MaxSpeed = 128;
 	motors[0].RampStretch=1;
-	
 
 	motors[1].Pos = 0;
 	motors[1].Target = 0; //Tilt is 31.1 steps per degree.
@@ -371,6 +322,20 @@ void RunStepping(void)
 	motors[2].CLOCK = STEP_CLK3;
 	motors[2].MaxSpeed = 128;
 	motors[2].RampStretch=15;
+
+}
+
+//-------------------------------------------------------------------------------------
+// Steper busywait main timer loop.
+//-------------------------------------------------------------------------------------
+void RunStepping(void)
+{
+	int time1, time2;
+	int numticks;
+	int flag;
+	int IsIdle;
+
+	Init();
 	
 	flag = 0;
 	IsIdle = 0;
@@ -403,7 +368,7 @@ void RunStepping(void)
 		 && motors[2].Speed == 0){
 			// All motions complete.  Look for new instructions
 			int xDeg,yDeg,z,fire,isdelta;
-			if (!IsIdle) printf("motion done  %d %d\n", motors[2].Pos, motors[1].Pos);
+			if (!IsIdle) printf("Motion complete.  Look for commands\n");
 			IsIdle = 1;
 			
 			if (CheckUdp(&xDeg,&yDeg,&fire,&isdelta)){
@@ -412,24 +377,22 @@ void RunStepping(void)
 				motors[1].Target = yDeg * 3110 / 1000;
 				printf("Target steps %d,%d",motors[2].Target, motors[1].Target);
 			}
-			/*
-			if (flag){
-				printf("return home\n");
-				flag = 0;
-				motors[0].Target = 0;
-				motors[1].Target = 0;
-				motors[2].Target = 0;
-				sleep(4);
-			}else{
-				break;
+			
+			#ifdef SHOOT_MODE // Shoot cap mode.
+			if (flag == 0){
+				usleep(50000); // Allow time for cap to drop.
+				motors[0].Target = 0; // Then return draw.
+				flag += 1;
+			}else if (flag == 1){
+				usleep(10000); // Make sure things are settled.
+				// Turn off motor 0 driver.
+				GPIO_SET = motors[0].ENABLE;
+				exit(0);
 			}
-			*/
+			#endif
 		 }else{
 			 IsIdle = 0;
 		 }
 	}
 	return;
-
 }
-
-
