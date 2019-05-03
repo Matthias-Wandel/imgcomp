@@ -385,7 +385,7 @@ void RunStepping(void)
 				motors[1].Target = yDeg * 3110 / 1000;
 				printf("Target steps %d,%d",motors[2].Target, motors[1].Target);
 				
-				if (time1-last_fired > 1000000*4){ // If it's been 4 seconds, fire again.
+				if ((unsigned)(time1-last_fired) > 1000000*4){ // If it's been 4 seconds, fire again.
 					if (time1-last_seen < 800000){ // And this isn't the first report in a long time.
 						motors[0].Target = SHOT_DRAW_STEPS;
 						taking_shot = SHOT_DRAW_DELAY;
