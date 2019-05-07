@@ -18,7 +18,7 @@ typedef int BOOL;
 int CheckUdp(int * XDeg, int * YDeg, int * IsFire, int * IsDelta);
 
 #define TICK_SIZE 200    // Algorithm tick rate, microsconds.  Take at least two ticks per step.
-#define TICK_ERROR 250   // Tick must not exceed this time.
+#define TICK_ERROR 300   // Tick must not exceed this time.
 
 //#define SHOOT_MODE 1
 
@@ -115,9 +115,9 @@ volatile unsigned * setup_io(int io_base, int io_range)
 
 int CurrentPos = 0;
 
-#define NUM_RAMP_STEPS 30
+#define NUM_RAMP_STEPS 28
 static const char RampUp[NUM_RAMP_STEPS]
- = {25,28,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100,103,106,108,110,112,114,116,118,120,122,124,126,128}; // Also use for ramp down.
+ = {30,35,40,45,50,55,60,65,70,75,80,85,90,95,100,103,106,108,110,112,114,116,118,120,122,124,126,128}; // Also use for ramp down.
 
 typedef struct {
 	int Pos;
@@ -315,7 +315,7 @@ void Init(void)
 	motors[1].ENABLE = STEP_ENA2;
 	motors[1].DIR = STEP_DIR2;
 	motors[1].CLOCK = STEP_CLK2;
-	motors[1].MaxSpeed = 80;
+	motors[1].MaxSpeed = 60;
 	motors[1].RampStretch=10;
 	
 	motors[2].Pos = 0;
@@ -323,8 +323,8 @@ void Init(void)
 	motors[2].ENABLE = STEP_ENA3;
 	motors[2].DIR = STEP_DIR3;
 	motors[2].CLOCK = STEP_CLK3;
-	motors[2].MaxSpeed = 50;
-	motors[2].RampStretch=15;
+	motors[2].MaxSpeed = 128;
+	motors[2].RampStretch=12;
 
 }
 
@@ -339,6 +339,7 @@ void RunStepping(void)
 	int IsIdle;
 	int taking_shot, last_fired;
 	int last_seen;
+	int GoHome;
 
 	Init();
 	
@@ -349,6 +350,7 @@ void RunStepping(void)
 	numticks = 0;
 	last_fired = 0;
 	time1 = *(timerreg+1);
+	GoHome = 0;
 	
 	for(;;){
 		for (;;){ // Busywait for next tick interval (usleep system call has too much jitter)
@@ -357,7 +359,7 @@ void RunStepping(void)
 			delta = time2-time1;
 			if (delta >= TICK_SIZE){
 				if (delta > TICK_ERROR && IsIdle == 0){
-					printf("tick too long!");
+					printf("tick too long!\n");
 					time2 = *(timerreg+1);
 				}
 				time1 = time2;
@@ -376,14 +378,14 @@ void RunStepping(void)
 		 && motors[2].Speed == 0){
 			// All motions complete.  Look for new instructions
 			int xDeg,yDeg,z,fire,isdelta;
-			if (!IsIdle) printf("Motion complete.  Look for commands\n");
+			if (!IsIdle) printf("Motion complete.\n");
 			IsIdle = 1;
 			
 			if (CheckUdp(&xDeg,&yDeg,&fire,&isdelta)){
 				// Use coordinates as inputs for the motors.
 				motors[2].Target = -xDeg * 972 * 4 / 1000;
 				motors[1].Target = yDeg * 3110 / 1000;
-				printf("Target steps %d,%d",motors[2].Target, motors[1].Target);
+				printf("Target steps %d,%d\n",motors[2].Target, motors[1].Target);
 				
 				if ((unsigned)(time1-last_fired) > 1000000*4){ // If it's been 4 seconds, fire again.
 					if (time1-last_seen < 800000){ // And this isn't the first report in a long time.
@@ -393,10 +395,20 @@ void RunStepping(void)
 					}
 				}
 				last_seen = time1;
+				GoHome = 0;
 			}
-			if (time1-last_seen > 8000000){
-				// Nothing seen for a while.  Return home.
-				motors[1].Target = motors[2].Target = 0;
+			if (time1-last_seen > 6000000){
+				if (!GoHome){
+					// Nothing seen for a while.  Return home.
+					printf("No commands.  Return home\n");
+					motors[1].Target = motors[2].Target = 0;
+					GoHome = 1;
+				}else{
+					if (time1-last_seen > 10000000){
+						// Disable the motors a bit later.
+						GPIO_SET = motors[0].ENABLE | motors[1].ENABLE | motors[2].ENABLE;
+					}
+				}
 			}
 			/*
 			if ((numticks & 32767) == 0){

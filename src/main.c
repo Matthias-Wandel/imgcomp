@@ -509,18 +509,6 @@ int main(int argc, char **argv)
 {
     int file_index, a, argn;
 
-if (0)
-	{
-		TriggerInfo_t test;
-		int a;
-		for (a=0;a<=1920;a+=128){
-			test.x = a;
-			test.y = 720;
-			GeometryConvert(&test);
-		}
-		return 0;
-	}
-    
     Log = stdout;
 
     printf("Imgcomp version 0.9 (Nov 2018) by Matthias Wandel\n\n");
