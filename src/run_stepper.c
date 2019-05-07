@@ -17,8 +17,8 @@ typedef int BOOL;
 
 int CheckUdp(int * XDeg, int * YDeg, int * IsFire, int * IsDelta);
 
-#define TICK_SIZE 200    // Algorithm tick rate, microsconds.  Take at least two ticks per step.
-#define TICK_ERROR 300   // Tick must not exceed this time.
+#define TICK_SIZE 150    // Algorithm tick rate, microsconds.  Take at least two ticks per step.
+#define TICK_ERROR 200   // Tick must not exceed this time.
 
 //#define SHOOT_MODE 1
 
@@ -115,9 +115,9 @@ volatile unsigned * setup_io(int io_base, int io_range)
 
 int CurrentPos = 0;
 
-#define NUM_RAMP_STEPS 28
+#define NUM_RAMP_STEPS 29
 static const char RampUp[NUM_RAMP_STEPS]
- = {30,35,40,45,50,55,60,65,70,75,80,85,90,95,100,103,106,108,110,112,114,116,118,120,122,124,126,128}; // Also use for ramp down.
+ = {25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100,103,106,108,110,112,114,116,118,120,122,124,126,128}; // Also use for ramp down.
 
 typedef struct {
 	int Pos;
@@ -301,9 +301,6 @@ void Init(void)
 
 	motors[0].Pos = 0;
 	motors[0].Target = 0;
-	#ifdef SHOOT_MODE
-	motors[0].Target = SHOT_DRAW_STEPS;
-	#endif
 	motors[0].ENABLE = STEP_ENA1;
 	motors[0].DIR = STEP_DIR1;
 	motors[0].CLOCK = STEP_CLK1;
@@ -315,7 +312,7 @@ void Init(void)
 	motors[1].ENABLE = STEP_ENA2;
 	motors[1].DIR = STEP_DIR2;
 	motors[1].CLOCK = STEP_CLK2;
-	motors[1].MaxSpeed = 60;
+	motors[1].MaxSpeed = 50;
 	motors[1].RampStretch=10;
 	
 	motors[2].Pos = 0;
@@ -323,7 +320,7 @@ void Init(void)
 	motors[2].ENABLE = STEP_ENA3;
 	motors[2].DIR = STEP_DIR3;
 	motors[2].CLOCK = STEP_CLK3;
-	motors[2].MaxSpeed = 128;
+	motors[2].MaxSpeed = 100;
 	motors[2].RampStretch=12;
 
 }
@@ -366,13 +363,21 @@ void RunStepping(void)
 				break;
 			}
 		}
-		if (numticks == 0) last_fired = time1;
-		numticks ++;
-		
 		DoMotor(&motors[0]);
 		DoMotor(&motors[1]);
 		DoMotor(&motors[2]);
 		
+		if (numticks == 0){
+			last_fired = time1;
+			#ifdef SHOOT_MODE
+				numticks++;
+				goto shoot_test;
+				
+			#endif
+		}
+		numticks ++;
+		
+	
 		if (motors[0].Speed == 0 && motors[0].Wait == 0 
 		 && motors[1].Speed == 0 && motors[1].Wait == 0 
 		 && motors[2].Speed == 0){
@@ -389,6 +394,8 @@ void RunStepping(void)
 				
 				if ((unsigned)(time1-last_fired) > 1000000*4){ // If it's been 4 seconds, fire again.
 					if (time1-last_seen < 800000){ // And this isn't the first report in a long time.
+						shoot_test:
+						printf("shoot");
 						motors[0].Target = SHOT_DRAW_STEPS;
 						taking_shot = SHOT_DRAW_DELAY;
 						last_fired = time1;
@@ -397,28 +404,22 @@ void RunStepping(void)
 				last_seen = time1;
 				GoHome = 0;
 			}
-			if (time1-last_seen > 6000000){
+			if (time1-last_seen > 5000000){
 				if (!GoHome){
 					// Nothing seen for a while.  Return home.
 					printf("No commands.  Return home\n");
 					motors[1].Target = motors[2].Target = 0;
 					GoHome = 1;
 				}else{
-					if (time1-last_seen > 10000000){
+					if (time1-last_seen > 8000000){
 						// Disable the motors a bit later.
 						GPIO_SET = motors[0].ENABLE | motors[1].ENABLE | motors[2].ENABLE;
+						#ifdef SHOOT_MODE
+						exit(0);
+						#endif
 					}
 				}
 			}
-			/*
-			if ((numticks & 32767) == 0){
-				// test fire every few seconds.
-				printf("fire");
-				motors[0].Target = SHOT_DRAW_STEPS;
-				taking_shot = SHOT_DRAW_DELAY;
-			}
-			*/
-			
 			
 			if (taking_shot){
 				if (motors[0].Speed == 0 && motors[0].Wait == 0){
@@ -431,19 +432,6 @@ void RunStepping(void)
 				}
 			}
 			
-			
-			#ifdef SHOOT_MODE // Shoot cap mode.
-			if (flag == 0){
-				usleep(70000); // Allow time for cap to drop.
-				motors[0].Target = 0; // Then return draw.
-				flag += 1;
-			}else if (flag == 1){
-				usleep(10000); // Make sure things are settled.
-				// Turn off motor 0 driver.
-				GPIO_SET = motors[0].ENABLE;
-				exit(0);
-			}
-			#endif
 		 }else{
 			 IsIdle = 0;
 		 }
