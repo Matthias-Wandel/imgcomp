@@ -17,8 +17,8 @@ typedef int BOOL;
 
 int CheckUdp(int * XDeg, int * YDeg, int * IsFire, int * IsDelta);
 
-#define TICK_SIZE 150    // Algorithm tick rate, microsconds.  Take at least two ticks per step.
-#define TICK_ERROR 200   // Tick must not exceed this time.
+#define TICK_SIZE 200    // Algorithm tick rate, microsconds.  Take at least two ticks per step.
+#define TICK_ERROR 250   // Tick must not exceed this time.
 
 //#define SHOOT_MODE 1
 
