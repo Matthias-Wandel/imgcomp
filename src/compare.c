@@ -25,7 +25,7 @@ static ImgMap_t * DiffVal = NULL;
 static ImgMap_t * WeightMap = NULL;
 
 //#define AIM_HEATER
-#define FIND_REDSPOT
+//efine FIND_REDSPOT
 static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold);
 
 int rzaveragebright;

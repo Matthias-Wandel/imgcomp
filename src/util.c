@@ -244,7 +244,7 @@ static void DestNameFromTime(char * DestPath, const char * KeepPixDir, time_t Pi
 //-----------------------------------------------------------------------------------
 // Back up a photo or video file that is of interest or applies to tiemelapse.
 //-----------------------------------------------------------------------------------
-char * BackupImageFile(char * Name, int DiffMag)
+char * BackupImageFile(char * Name, int DiffMag, int DoNotCopy)
 {
     static char DstPath[500];
     static char SuffixChar = ' ';
@@ -281,7 +281,7 @@ char * BackupImageFile(char * Name, int DiffMag)
         sprintf(NameSuffix, "%c%04d%s",SuffixChar, DiffMag, extension);
         DestNameFromTime(DstPath, SaveDir, mtime, NameSuffix);
         EnsurePathExists(DstPath, 1);
-        CopyFile(Name, DstPath);
+        if (!DoNotCopy) CopyFile(Name, DstPath);
     }
     return DstPath;
 }

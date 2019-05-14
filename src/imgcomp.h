@@ -84,7 +84,7 @@ typedef struct {
 
 DirEntry_t * GetSortedDir(char * Directory, int * NumFiles);
 void FreeDir(DirEntry_t * FileNames, int NumEntries);
-char * BackupImageFile(char * Name, int DiffMag);
+char * BackupImageFile(char * Name, int DiffMag, int DoNotCopy);
 int CopyFile(char * src, char * dest);
 void LogFileMaintain(void);
 

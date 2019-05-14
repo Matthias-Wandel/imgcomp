@@ -1,5 +1,5 @@
 
-aquire_cmd = raspivid -o /ramdisk/vid/vid%02d.h264 --mode 2 -t 12000000 -g 20 -sg 8000
+aquire_cmd = raspivid -o /ramdisk/vid/vid%02d.h264 --mode 4 -t 12000000 -g 20 -sg 10000
 viddecomposecmd = ffmpeg -hide_banner -loglevel panic -nostdin -skip_frame nokey -i <infile> -vsync 0 -r 30 -f image2
 
 vidmode = 1

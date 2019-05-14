@@ -207,7 +207,7 @@ static int ProcessImage(LastPic_t * New, int DeleteProcessed)
         if (SinceMotionFrames <= PostMotionKeep+1 || LastPics[2].IsTimelapse){
             // If it's motion, pre-motion, or timelapse, save it.
             if (SaveDir[0]){
-                BackupImageFile(LastPics[2].Name, LastPics[2].DiffMag);
+                BackupImageFile(LastPics[2].Name, LastPics[2].DiffMag, 0);
             }
         }
         SinceMotionFrames += 1;
@@ -237,7 +237,7 @@ static int ProcessImage(LastPic_t * New, int DeleteProcessed)
 			GeometryConvert(&Trig);
             
             #ifndef _WIN32
-                SendUDP(Trig.x, Trig.y, Trig.DiffLevel);
+                if (UdpDest[0]) SendUDP(Trig.x, Trig.y, Trig.DiffLevel);
             #endif
         }
         
@@ -468,9 +468,26 @@ int DoDirectoryVideos(char * DirName)
             // Now should have some files in temp dir.
             Saw_motion = DoDirectoryFunc(TempDirName, 1);
             if (Saw_motion){
+				char * DstName;
+				char * Ext;
                 fprintf(Log,"Vid has motion %d\n", Saw_motion);
-                // Copy it (not move, because we typically go from ram disk to flash
-                BackupImageFile(VidFileName, Saw_motion);
+                // Make filename, but don't copy the file.
+                DstName = BackupImageFile(VidFileName, Saw_motion,1);
+				
+				Ext = strstr(DstName, ".h264");
+				if (Ext) strcpy(Ext, ".mp4"); // Change xtension to .mp4
+				
+				if (DstName){
+					sprintf(FFCmd,"MP4Box -add %s \"%s\"",VidFileName, DstName);
+printf("Command: %s\n",FFCmd);					
+					errno = 0;
+					ret = system(FFCmd);
+					if (ret || errno){
+						if (errno) perror("system");
+						printf("Error on command %s\n",FFCmd);
+						continue;
+					}
+				}
             }
             
             if (FollowDir){
