@@ -32,6 +32,7 @@ typedef struct {
 
 MemImage_t MemImage;
 extern int NewestAverageBright;
+extern int MsPerFrame;
 extern int Verbosity;
 extern char LogToFile[200];
 extern char MoveLogNames[200];
@@ -58,7 +59,7 @@ extern char VidDecomposeCmd[200];
 
 
 // compare.c functions
-TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, char * DebugImgName);
+TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, int DarkenOnly, char * DebugImgName);
 void ProcessDiffMap(MemImage_t * MapPic);
 
 // jpeg2mem.c functions

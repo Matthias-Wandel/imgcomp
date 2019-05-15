@@ -38,6 +38,7 @@ void usage (void)// complain about bad command line
      " -savedir <saveto>    Where to save images with changes\n"
      " -savenames <scheme>  Output naming scheme.  Uses strftime\n"
      " -tempdir <dir>       Where to put temp images for video mode\n"
+	 " -msperframe <ms>     Change default frame interval (alters timeouts)\n"
      "                      to format the output name.  May include\n"
      "                      '/' characters for directories.\n"
      " -sensitivity N       Set sensitivity.  Lower=more sensitive\n"

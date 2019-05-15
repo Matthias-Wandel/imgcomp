@@ -1,3 +1,11 @@
+Cap shooter work:
+Stepper driver multi threaded
+Stepper driver precalculated curves
+Imgcomp compare to older steady state image (detect static new object)
+Imgcomp stop modes based on colors seen?
+
+
+
 To do next:
 
 Review relaunch logic for dark images

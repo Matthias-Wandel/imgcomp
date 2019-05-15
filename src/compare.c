@@ -25,7 +25,7 @@ static ImgMap_t * DiffVal = NULL;
 static ImgMap_t * WeightMap = NULL;
 
 //#define AIM_HEATER
-//efine FIND_REDSPOT
+//#define FIND_REDSPOT
 static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold);
 
 int rzaveragebright;
@@ -206,8 +206,10 @@ void ProcessDiffMap(MemImage_t * MapPic)
 #ifndef FIND_REDSPOT
 //----------------------------------------------------------------------------------------
 // Compare two images in memory
+// Pic1 is previous pic, pic2 is latest pic.
+// DarkenOnly: Set 1 if we only want to see stuff that got darker.
 //----------------------------------------------------------------------------------------
-TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, char * DebugImgName)
+TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, int DarkenOnly, char * DebugImgName)
 {
     int width, height, bPerRow;
     int row, col;
@@ -402,9 +404,18 @@ TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, char * DebugImgNa
                     dg = (p1[1]*m1i - p2[1]*m2i);
                     db = (p1[2]*m1i - p2[2]*m2i);
 
-                    if (dr < 0) dr = -dr;
-                    if (dg < 0) dg = -dg;
-                    if (db < 0) db = -db;
+					if (DarkenOnly){
+						// If image 2 pixel values were bigger, something
+						// got brighter.  Squirrel is darker than background,
+						// so anything that got brither might be where the squirrel *was*
+						if (dg*2+db+dg < 0) dr = dg = db = 0;
+					}else{
+						if (dr < 0) dr = -dr;
+						if (dg < 0) dg = -dg;
+						if (db < 0) db = -db;
+					}
+					
+					
                     dcomp = (dr + dg*2 + db);     // Put more emphasis on green
                     dcomp = dcomp >> 8;           // Remove the *256 from fixed point aritmetic multiply
 

@@ -43,6 +43,7 @@ int PostMotionKeep = 0;
 
 int BrightnessChangeRestart = 1;
 int SendTriggerSignals = 0;
+int MsPerFrame;
 
 char DiffMapFileName[200];
 Regions_t Regions;
@@ -130,8 +131,6 @@ static void GeometryConvert(TriggerInfo_t  * Trig)
 static int ProcessImage(LastPic_t * New, int DeleteProcessed)
 {
     static int PixSinceDiff;
-    //static int MousePresentFrames;
-    //static int SawMouse;
 
     LastPics[2] = LastPics[1];
     LastPics[1] = LastPics[0];
@@ -156,7 +155,7 @@ static int ProcessImage(LastPic_t * New, int DeleteProcessed)
         Trig.DiffLevel = Trig.x = Trig.y = 0;
 
         if (LastPics[2].Image){
-            Trig = ComparePix(LastPics[1].Image, LastPics[0].Image, NULL);
+            Trig = ComparePix(LastPics[1].Image, LastPics[0].Image, 0, NULL);
         }
         LastPics[0].RzAverageBright = rzaveragebright;
         
@@ -188,7 +187,7 @@ static int ProcessImage(LastPic_t * New, int DeleteProcessed)
             LastPics[0].IsMotion && LastPics[1].IsMotion
             && LastPics[2].DiffMag < (Sensitivity>>1)){
             // Compare to picture before last picture.
-            Trig = ComparePix(LastPics[0].Image, LastPics[2].Image, NULL);
+            Trig = ComparePix(LastPics[0].Image, LastPics[2].Image, 0, NULL);
 
             //printf("Diff with pix before last: %d\n",Trig.DiffLevel);
             if (Trig.DiffLevel < Sensitivity){
@@ -241,39 +240,13 @@ static int ProcessImage(LastPic_t * New, int DeleteProcessed)
             #endif
         }
         
-
-        /*
-        // Mouse gate logic for squeezer experiment
-        if (rzaveragebright < NoMousePic.RzAverageBright-20){
-            MousePresentFrames += 1;
-            if (MousePresentFrames >= 10 && SawMouse == 0){ // adjust
-                // Mouse must be in the box at least 20 frames.
-                SawMouse = 1;
-                fprintf(Log,"Mouse entered!\n");
-            }
-        }else{
-            if (MousePresentFrames){
-                MousePresentFrames = 0;
-                fprintf(Log,"Mouse left box!\n");
-                SinceMotionFrames = 0; // Just to be on the safe side.
-            }
-            if (SinceMotionFrames == GateDelay && GateDelay != 0){ 
-                if (SawMouse){
-                    SawMouse = 0;
-                    fprintf(Log,"Move the gate\n");
-                    run_blink_program(); // Reusing this function to operate the gate
-                }
-            }
-        }
-        */
-        
         Raspistill_restarted = 0;
     }
 
     if (LastPics[2].Image != NULL){
         // Third picture now falls out of the window.  Free it and delete it.
         
-        if (SinceMotionFrames > 200){ // adjust
+        if (SinceMotionFrames > 100){ // adjust
             // If it's been 200 images ince we saw motion, save this image
             // as a background image for later mouse detection.
             //printf("Save image as background");
@@ -479,7 +452,6 @@ int DoDirectoryVideos(char * DirName)
 				
 				if (DstName){
 					sprintf(FFCmd,"MP4Box -add %s \"%s\"",VidFileName, DstName);
-printf("Command: %s\n",FFCmd);					
 					errno = 0;
 					ret = system(FFCmd);
 					if (ret || errno){
@@ -536,6 +508,7 @@ int main(int argc, char **argv)
     ScaleDenom = 4;
     DoDirName[0] = '\0';
     Sensitivity = 10;
+	MsPerFrame = 250;
     Regions.DetectReg.x1 = 0;
     Regions.DetectReg.x2 = 1000000;
     Regions.DetectReg.y1 = 0;
@@ -632,7 +605,7 @@ int main(int argc, char **argv)
         pic2 = LoadJPEG(argv[file_index+1], ScaleDenom, 0, 0);
         if (pic1 && pic2){
             Verbosity = 2;
-            ComparePix(pic1, pic2, "diff.ppm");
+            ComparePix(pic1, pic2, 0, "diff.ppm");
         }
         free(pic1);
         free(pic2);

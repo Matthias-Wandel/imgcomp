@@ -117,8 +117,8 @@ static int launch_raspistill(void)
 //-----------------------------------------------------------------------------------
 // Parse command line and launch.
 //-----------------------------------------------------------------------------------
-static int SecondsSinceImage = 0;
-static int SecondsSinceLaunch = 0;
+static int MsSinceImage = 0;
+static int MsSinceLaunch = 0;
 static int InitialAverageBright;
 static int InitialBrSum;
 static int InitialNumBr;
@@ -126,17 +126,17 @@ static double RunningAverageBright;
 
 int manage_raspistill(int NewImages)
 {
-    SecondsSinceImage += 1;
-    SecondsSinceLaunch += 1;
+    MsSinceImage += MsPerFrame;
+    MsSinceLaunch += MsPerFrame;
     if (NewImages > 0){
-        SecondsSinceImage = 0;
-        if (SecondsSinceLaunch <= 2 && BrightnessChangeRestart){
+        MsSinceImage = 0;
+        if (MsSinceLaunch <= MsPerFrame*2 && BrightnessChangeRestart){
             fprintf(Log,"Exp:%5.1fms Iso:%d  Nm=%d  Bright:%d  av=%5.2f\n",
                 ImageInfo.ExposureTime*1000, ImageInfo.ISOequivalent, 
                 NightMode, NewestAverageBright, RunningAverageBright);
         }
     }else{
-        if (SecondsSinceImage >= 5) fprintf(Log,"No new images, %d\n",SecondsSinceImage);
+        if (MsSinceImage >= MsPerFrame*5) fprintf(Log,"No new images, %d\n",MsSinceImage/1000);
     }
 
     if (raspistill_pid == 0){
@@ -146,14 +146,14 @@ int manage_raspistill(int NewImages)
     }
 
     
-    if (SecondsSinceImage > (VidMode ? 10 : 20)){
+    if (MsSinceImage/MsPerFrame > (VidMode ? 5 : 30)){
         // Not getting any images for 5 seconds or vide ofiles for 10.
         // Probably something went wrong with raspistill or raspivid.
         fprintf(Log,"No images timeout.  Relaunch raspistill/vid\n");
         goto force_restart;
     }
 
-    if (SecondsSinceLaunch > 72000){
+    if (MsSinceLaunch/MsPerFrame > 7200){
         fprintf(Log,"2 hour raspistill relaunch\n");
         goto force_restart;
     }
@@ -162,7 +162,7 @@ int manage_raspistill(int NewImages)
         // If brightness of image changes a lot, restart raspistill, because
         // raspistill doesn't normally do running exposure adjustments.
         
-        if (SecondsSinceLaunch > 3 && InitialNumBr < 4 && NewImages){
+        if (MsSinceLaunch > 3000 && InitialNumBr < 4 && NewImages){
             fprintf(Log,"Brightness average in: %d\n",NewestAverageBright);
             InitialBrSum += NewestAverageBright;
             InitialNumBr += 1;
@@ -179,7 +179,7 @@ int manage_raspistill(int NewImages)
         RunningAverageBright = RunningAverageBright * 0.95 + NewestAverageBright * 0.05;
 
         // If brightness changes by more than 20%, relaunch.
-        if (SecondsSinceLaunch > 10){
+        if (MsSinceLaunch > 10000){
             double Ratio;
             Ratio = RunningAverageBright / InitialAverageBright;
             if (Ratio < 1) Ratio = 1/Ratio;
@@ -205,8 +205,8 @@ int manage_raspistill(int NewImages)
     
 force_restart:
     launch_raspistill();
-    SecondsSinceImage = 0;
-    SecondsSinceLaunch = 0;
+    MsSinceImage = 0;
+    MsSinceLaunch = 0;
     InitialBrSum = InitialNumBr = 0;
     return 1;
 }
