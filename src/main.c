@@ -64,7 +64,7 @@ char UdpDest[30];
 //-----------------------------------------
 // Tightening gap experiment hack
 int GateDelay;
-static int SinceMotionFrames = 1000;
+static int SinceMotionCycles = 1000;
 //extern int rzaveragebright; // Kind of a hack for mouse detection.  Detect mouse by brightness
                             // in the red (high sensitivity) region of the diffmap.
 
@@ -199,16 +199,15 @@ static int ProcessImage(LastPic_t * New, int DeleteProcessed)
         if (LastPics[0].IsMotion) fprintf(Log,"(motion) ");
         if (LastPics[0].IsTimelapse) fprintf(Log,"(time) ");
 
-        if (LastPics[1].IsMotion) SinceMotionFrames = 0;
+        if (LastPics[1].IsMotion) SinceMotionCycles = 0;
 
-        if (SinceMotionFrames <= PostMotionKeep+1 || LastPics[2].IsTimelapse){
+        if (SinceMotionCycles <= PostMotionKeep+1 || LastPics[2].IsTimelapse){
             // If it's motion, pre-motion, or timelapse, save it.
             if (SaveDir[0]){
                 BackupImageFile(LastPics[2].Name, LastPics[2].DiffMag, 0);
             }
         }
-        SinceMotionFrames += 1;
-        
+                
         fprintf(Log,"\n");
         
 #ifdef SQUIRREL_MODE
@@ -260,12 +259,13 @@ static int ProcessImage(LastPic_t * New, int DeleteProcessed)
     if (LastPics[2].Image){
         // Third picture now falls out of the window.  Free it and delete it.
         
-        if (SinceMotionFrames*MsPerCycle > 30000){
+        if (SinceMotionCycles*MsPerCycle > 10000){
             // If it's been 30 seconds since we saw motion, save this image
             // as a background image for later mouse detection.
             if (BaselinePic.Image){
                 free(BaselinePic.Image);
             }
+			printf("baseline %d %d\n",SinceMotionCycles, MsPerCycle);
             BaselinePic = LastPics[2];
         }else{
 			
@@ -357,6 +357,7 @@ static int DoDirectoryFunc(char * Directory, int DeleteProcessed)
 
         NumProcessed += 1;
     }
+	SinceMotionCycles += 1;
 
     FreeDir(FileNames, NumEntries); // Free up the whole directory structure.
     FileNames = NULL;
