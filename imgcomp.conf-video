@@ -1,7 +1,8 @@
 
-aquire_cmd = raspivid -o /ramdisk/vid/vid%02d.h264 --mode 4 -t 12000000 -g 20 -sg 10000
+aquire_cmd = raspivid -o /ramdisk/vid/vid%02d.h264 --mode 4 -t 12000000 -g 20 -sg 15000
 viddecomposecmd = ffmpeg -hide_banner -loglevel panic -nostdin -skip_frame nokey -i <infile> -vsync 0 -r 30 -f image2
 
+mspercycle = 250
 vidmode = 1
 followdir = /ramdisk/vid
 tempdir = /ramdisk/tmp
@@ -9,6 +10,7 @@ savedir = saved
 brmonitor = 0
 sensitivity = 200
 timelapse = 60
+
 
 
 #this one is too slow.

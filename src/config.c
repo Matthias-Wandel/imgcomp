@@ -38,7 +38,7 @@ void usage (void)// complain about bad command line
      " -savedir <saveto>    Where to save images with changes\n"
      " -savenames <scheme>  Output naming scheme.  Uses strftime\n"
      " -tempdir <dir>       Where to put temp images for video mode\n"
-	 " -msperframe <ms>     Change default frame interval (alters timeouts)\n"
+	 " -mspercycle <ms>     Change default check interval (alters timeouts)\n"
      "                      to format the output name.  May include\n"
      "                      '/' characters for directories.\n"
      " -sensitivity N       Set sensitivity.  Lower=more sensitive\n"
@@ -186,6 +186,8 @@ static int parse_parameter (const char * tag, const char * value)
         if (!ParseRegion(&Regions.DetectReg, value)) goto bad_value;
     } else if (keymatch(tag, "gatedelay", 9)) {
         if (sscanf(value, "%d", &GateDelay) != 1) return -1;
+    } else if (keymatch(tag, "mspercycle", 10)) {
+        if (sscanf(value, "%d", &MsPerCycle) != 1) return -1;
     } else if (keymatch(tag, "exclude", 4)) {
         if (Regions.NumExcludeReg >= MAX_EXCLUDE_REGIONS){
             fprintf(stderr, "too many exclude regions");

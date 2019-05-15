@@ -32,7 +32,7 @@ typedef struct {
 
 MemImage_t MemImage;
 extern int NewestAverageBright;
-extern int MsPerFrame;
+extern int MsPerCycle; // HOw often to check for new images.
 extern int Verbosity;
 extern char LogToFile[200];
 extern char MoveLogNames[200];

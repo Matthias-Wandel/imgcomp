@@ -126,17 +126,19 @@ static double RunningAverageBright;
 
 int manage_raspistill(int NewImages)
 {
-    MsSinceImage += MsPerFrame;
-    MsSinceLaunch += MsPerFrame;
+    MsSinceImage += MsPerCycle;
+    MsSinceLaunch += MsPerCycle;
     if (NewImages > 0){
         MsSinceImage = 0;
-        if (MsSinceLaunch <= MsPerFrame*2 && BrightnessChangeRestart){
+        if (MsSinceLaunch <= MsPerCycle*2 && BrightnessChangeRestart){
             fprintf(Log,"Exp:%5.1fms Iso:%d  Nm=%d  Bright:%d  av=%5.2f\n",
                 ImageInfo.ExposureTime*1000, ImageInfo.ISOequivalent, 
                 NightMode, NewestAverageBright, RunningAverageBright);
         }
     }else{
-        if (MsSinceImage >= MsPerFrame*5) fprintf(Log,"No new images, %d\n",MsSinceImage/1000);
+        if (MsSinceImage >= VidMode ? 15000 : 2000){
+			fprintf(Log,"No new images, %d\n",MsSinceImage/1000);
+		}
     }
 
     if (raspistill_pid == 0){
@@ -146,14 +148,14 @@ int manage_raspistill(int NewImages)
     }
 
     
-    if (MsSinceImage/MsPerFrame > (VidMode ? 5 : 30)){
+    if (MsSinceImage/MsPerCycle > (VidMode ? 20 : 5)){
         // Not getting any images for 5 seconds or vide ofiles for 10.
         // Probably something went wrong with raspistill or raspivid.
-        fprintf(Log,"No images timeout.  Relaunch raspistill/vid\n");
+        fprintf(Log,"No images for %d sec.  Relaunch raspistill/vid\n",MsSinceImage/MsPerCycle);
         goto force_restart;
     }
 
-    if (MsSinceLaunch/MsPerFrame > 7200){
+    if (MsSinceLaunch/MsPerCycle > 7200){
         fprintf(Log,"2 hour raspistill relaunch\n");
         goto force_restart;
     }

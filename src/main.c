@@ -43,7 +43,7 @@ int PostMotionKeep = 0;
 
 int BrightnessChangeRestart = 1;
 int SendTriggerSignals = 0;
-int MsPerFrame;
+int MsPerCycle;
 
 char DiffMapFileName[200];
 Regions_t Regions;
@@ -370,7 +370,7 @@ int DoDirectory(char * Directory)
             if (b) Raspistill_restarted = 1;
             if (LogToFile[0] != '\0') LogFileMaintain();
             //sleep(1);
-            usleep(100000);
+            usleep(MsPerCycle);
         }else{
             break;
         }
@@ -412,9 +412,9 @@ int DoDirectoryVideos(char * DirName)
         for (a=0;a<NumEntries;a++){
             time_t now, age;
             time(&now);
-            age = now-FileNames[a].ATime;
+            age = now-FileNames[a].MTime;
             fprintf(Log, "Video '%s' aged %ld ",FileNames[a].FileName, age);
-            if (age < 6){
+            if (age < 2){
                 fprintf(Log,"(Wait)\n");
                 continue;
             }else{
@@ -463,7 +463,7 @@ int DoDirectoryVideos(char * DirName)
             }
             
             if (FollowDir){
-                //printf("Delete video %s\n",VidFileName);
+                printf("Delete video %s\n",VidFileName);
                 unlink(VidFileName);
             }
         }
@@ -508,7 +508,7 @@ int main(int argc, char **argv)
     ScaleDenom = 4;
     DoDirName[0] = '\0';
     Sensitivity = 10;
-	MsPerFrame = 250;
+	MsPerCycle = 500; // Check interval
     Regions.DetectReg.x1 = 0;
     Regions.DetectReg.x2 = 1000000;
     Regions.DetectReg.y1 = 0;
