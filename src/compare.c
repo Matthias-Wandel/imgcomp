@@ -329,8 +329,8 @@ TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, int DarkenOnly, c
         unsigned char * p1, *p2, *pd = NULL;
         unsigned char * ExRow;
         unsigned char * diffrow;
-        p1 = pic1->pixels+row*bPerRow;
-        p2 = pic2->pixels+row*bPerRow;
+        p1 = pic1->pixels+row*bPerRow + MainReg.x1*3;
+        p2 = pic2->pixels+row*bPerRow + MainReg.x1*3;
         diffrow = &DiffVal->values[width*row];
         ExRow = &WeightMap->values[width*row];
         if (DebugImgName) pd = DiffOut->pixels+row*bPerRow;
