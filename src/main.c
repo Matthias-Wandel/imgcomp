@@ -59,11 +59,13 @@ int TimelapseInterval;
 char raspistill_cmd[200];
 char blink_cmd[200];
 char UdpDest[30];
+
+#define SQUIRREL_MODE 1
 //-----------------------------------------
 // Tightening gap experiment hack
 int GateDelay;
 static int SinceMotionFrames = 1000;
-extern int rzaveragebright; // Kind of a hack for mouse detection.  Detect mouse by brightness
+//extern int rzaveragebright; // Kind of a hack for mouse detection.  Detect mouse by brightness
                             // in the red (high sensitivity) region of the diffmap.
 
 //-----------------------------------------
@@ -80,12 +82,12 @@ typedef struct {
     int DiffMag;
     int IsTimelapse;
     int IsMotion;
-    int RzAverageBright;
+    //int RzAverageBright;
 }LastPic_t;
 
 static LastPic_t LastPics[3];
 static time_t NextTimelapsePix;
-static LastPic_t NoMousePic;
+static LastPic_t BaselinePic;
 
 time_t LastPic_mtime;
 
@@ -151,15 +153,12 @@ static int ProcessImage(LastPic_t * New, int DeleteProcessed)
             NextTimelapsePix -= (NextTimelapsePix % TimelapseInterval);
         }
 
-        // compare with previosu picture.
+        // compare with previous picture.
         Trig.DiffLevel = Trig.x = Trig.y = 0;
 
         if (LastPics[2].Image){
             Trig = ComparePix(LastPics[1].Image, LastPics[0].Image, 0, NULL);
         }
-        LastPics[0].RzAverageBright = rzaveragebright;
-        
-       
 
         if (Trig.DiffLevel >= Sensitivity && PixSinceDiff > 5 && Raspistill_restarted){
             fprintf(Log,"Ignoring diff caused by raspistill restart\n");
@@ -173,7 +172,7 @@ static int ProcessImage(LastPic_t * New, int DeleteProcessed)
             strftime(TimeString, 10, "%H%M%S ", localtime(&LastPic_mtime));
             fprintf(Log,TimeString);
         }else{
-            fprintf(Log,"%s: ",LastPics[0].Name+LastPics[0].nind);
+            fprintf(Log,"\n%s: ",LastPics[0].Name+LastPics[0].nind);
         }
         if (Trig.DiffLevel){
             fprintf(Log,"%3d @(%4d,%4d) ", Trig.DiffLevel, Trig.x, Trig.y);
@@ -187,7 +186,7 @@ static int ProcessImage(LastPic_t * New, int DeleteProcessed)
             LastPics[0].IsMotion && LastPics[1].IsMotion
             && LastPics[2].DiffMag < (Sensitivity>>1)){
             // Compare to picture before last picture.
-            Trig = ComparePix(LastPics[0].Image, LastPics[2].Image, 0, NULL);
+            Trig = ComparePix(LastPics[2].Image, LastPics[0].Image, 0, NULL);
 
             //printf("Diff with pix before last: %d\n",Trig.DiffLevel);
             if (Trig.DiffLevel < Sensitivity){
@@ -211,11 +210,24 @@ static int ProcessImage(LastPic_t * New, int DeleteProcessed)
         }
         SinceMotionFrames += 1;
         
-        //fprintf(Log," %d %d ",rzaveragebright, NoMousePic.RzAverageBright-20);
+        //fprintf(Log," %d %d ",rzaveragebright, BaselinePic.RzAverageBright-20);
         
         fprintf(Log,"\n");
         
-        
+#ifdef SQUIRREL_MODE
+		Trig.DiffLevel = 0; // Ignore motion trigger.  Replace with darkness trigger.
+		// That way we see squirrel when it isn't moving, and won't trigger on
+		// absence of squirrel (squirrel is darker than background)
+		if (BaselinePic.Image != NULL){
+			TriggerInfo_t Squirrel;
+			// See if something got darker compared to baseline image.
+			Squirrel = ComparePix(BaselinePic.Image, LastPics[0].Image, 1, NULL);
+		    if (Squirrel.DiffLevel > Sensitivity){
+				Trig = Squirrel;
+			}
+		}
+#endif
+
         if (Trig.DiffLevel > Sensitivity){
             char showx[1001];
             int xs, a;
@@ -246,14 +258,14 @@ static int ProcessImage(LastPic_t * New, int DeleteProcessed)
     if (LastPics[2].Image != NULL){
         // Third picture now falls out of the window.  Free it and delete it.
         
-        if (SinceMotionFrames > 100){ // adjust
-            // If it's been 200 images ince we saw motion, save this image
+        if (SinceMotionFrames*MsPerCycle > 30000){
+            // If it's been 30 seconds since we saw motion, save this image
             // as a background image for later mouse detection.
             //printf("Save image as background");
-            if (NoMousePic.Image != NULL){
-                free(NoMousePic.Image);
+            if (BaselinePic.Image != NULL){
+                free(BaselinePic.Image);
             }
-            NoMousePic = LastPics[2];
+            BaselinePic = LastPics[2];
         }else{
             free(LastPics[2].Image);
         }
