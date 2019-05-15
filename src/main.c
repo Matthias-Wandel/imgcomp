@@ -82,7 +82,6 @@ typedef struct {
     int DiffMag;
     int IsTimelapse;
     int IsMotion;
-    //int RzAverageBright;
 }LastPic_t;
 
 static LastPic_t LastPics[3];
@@ -210,22 +209,25 @@ static int ProcessImage(LastPic_t * New, int DeleteProcessed)
         }
         SinceMotionFrames += 1;
         
-        //fprintf(Log," %d %d ",rzaveragebright, BaselinePic.RzAverageBright-20);
-        
         fprintf(Log,"\n");
         
 #ifdef SQUIRREL_MODE
 		Trig.DiffLevel = 0; // Ignore motion trigger.  Replace with darkness trigger.
 		// That way we see squirrel when it isn't moving, and won't trigger on
 		// absence of squirrel (squirrel is darker than background)
-		if (BaselinePic.Image != NULL){
+
+		if (BaselinePic.Image){
 			TriggerInfo_t Squirrel;
 			// See if something got darker compared to baseline image.
 			Squirrel = ComparePix(BaselinePic.Image, LastPics[0].Image, 1, NULL);
 		    if (Squirrel.DiffLevel > Sensitivity){
-				Trig = Squirrel;
+				Trig.x = Squirrel.x;
+				Trig.y = Squirrel.y;
+				Trig.DiffLevel = Squirrel.DiffLevel;
+				// Only keep .Motion from original one.
 			}
 		}
+		
 #endif
 
         if (Trig.DiffLevel > Sensitivity){
@@ -248,25 +250,25 @@ static int ProcessImage(LastPic_t * New, int DeleteProcessed)
 			GeometryConvert(&Trig);
             
             #ifndef _WIN32
-                if (UdpDest[0]) SendUDP(Trig.x, Trig.y, Trig.DiffLevel);
+                if (UdpDest[0]) SendUDP(Trig.x, Trig.y, Trig.DiffLevel, Trig.Motion);
             #endif
         }
         
         Raspistill_restarted = 0;
     }
 
-    if (LastPics[2].Image != NULL){
+    if (LastPics[2].Image){
         // Third picture now falls out of the window.  Free it and delete it.
         
         if (SinceMotionFrames*MsPerCycle > 30000){
             // If it's been 30 seconds since we saw motion, save this image
             // as a background image for later mouse detection.
-            //printf("Save image as background");
-            if (BaselinePic.Image != NULL){
+            if (BaselinePic.Image){
                 free(BaselinePic.Image);
             }
             BaselinePic = LastPics[2];
         }else{
+			
             free(LastPics[2].Image);
         }
     }
@@ -381,8 +383,7 @@ int DoDirectory(char * Directory)
             b = manage_raspistill(NumProcessed);
             if (b) Raspistill_restarted = 1;
             if (LogToFile[0] != '\0') LogFileMaintain();
-            //sleep(1);
-            usleep(MsPerCycle);
+            usleep(MsPerCycle*1000);
         }else{
             break;
         }

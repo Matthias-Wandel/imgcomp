@@ -4,6 +4,10 @@
 #-------------------------------------------------------------
 OBJ=obj
 SRC=src
+
+# with debug:
+#CFLAGS:= $(CFLAGS) -O3 -Wall -g
+
 CFLAGS:= $(CFLAGS) -O3 -Wall
 
 all: objdir imgcomp blink_camera_led run_stepper

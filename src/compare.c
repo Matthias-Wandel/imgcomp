@@ -207,6 +207,7 @@ TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, int DarkenOnly, c
     TriggerInfo_t RetVal;
     RetVal.x = RetVal.y = 0;
     RetVal.DiffLevel = -1;
+	RetVal.Motion = 0;
 
     if (Verbosity){
         printf("\ncompare pictures %dx%d %d\n", pic1->width, pic1->height, pic1->components);
@@ -714,7 +715,7 @@ static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold)
         retval.y = maxr * scalef - wind_h * scalef / 2;
         if (retval.x < 0) retval.x = 0;
         if (retval.y < 0) retval.y = 0;
-        retval.DiffLevel = maxval / 100;
+        retval.DiffLevel = retval.Motion = maxval / 100;
 
 		row = maxr-wind_h+1;
 		if (row < 0) row = 0;
@@ -824,7 +825,7 @@ static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold)
         
         retval.x = xpos;
         retval.y = 0;  // No x value computed.
-        retval.DiffLevel = wsummax/1000; // So scale is kind of comprable with other algorithm
+        retval.DiffLevel = retvale.Motion = wsummax/1000; // So scale is kind of comprable with other algorithm
     }
     
     return retval;

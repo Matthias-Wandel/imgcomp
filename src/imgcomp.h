@@ -28,6 +28,7 @@ typedef struct {
 typedef struct {
     int DiffLevel;
     int x, y;
+	int Motion;
 }TriggerInfo_t;
 
 MemImage_t MemImage;
@@ -91,5 +92,5 @@ void LogFileMaintain(void);
 
 
 // send_udp.c functions
-void SendUDP(int x, int y, int level);
+void SendUDP(int x, int y, int level, int motion);
 int InitUDP(char * HostName);

@@ -57,6 +57,7 @@ typedef struct {
     int xpos;
     int ypos;
     int IsAdjust;
+	int Motion;
 }Udp_t;
 
 //-------------------------------------------------------------------------------------
@@ -87,6 +88,7 @@ void SendUDP(int Pan, int Tilt, int IsDelta)
     Buf.xpos = Pan;
     Buf.ypos = Tilt;
     Buf.IsAdjust = IsDelta;
+	Buf.Motion = 0;
     datasize = sizeof(Udp_t);
 
     wrote = sendto(sockUDP,(char *)&Buf, datasize, 0,(struct sockaddr*)&dest, sizeof(struct sockaddr_in));
@@ -254,7 +256,7 @@ int main(int argc, char **argv)
 //--------------------------------------------------------------------------
 // Check if new UDP packet is here
 //--------------------------------------------------------------------------
-int CheckUdp(int * XDeg, int * YDeg, int * IsFire, int * IsDelta)
+int CheckUdp(int * XDeg, int * YDeg, int * Level, int * Motion, int * IsDelta)
 {
     char recvbuf[MAX_PACKET];
     FD_SET rws;
@@ -303,7 +305,8 @@ int CheckUdp(int * XDeg, int * YDeg, int * IsFire, int * IsDelta)
                 printf("pan=%5.1f  Tilt=%5.1f %s\n", Udp->xpos/10.0, Udp->ypos/10.0, Udp->IsAdjust ? "Adj":"");
                 *XDeg = Udp->xpos;
 				*YDeg = Udp->ypos;
-				*IsFire = Udp->Level > 100 ? 1 : 0;
+				*Level = Udp->Level;
+				*Motion = Udp->Motion;
                 *IsDelta = Udp->IsAdjust;
             }   
         }

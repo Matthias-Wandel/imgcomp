@@ -50,6 +50,7 @@ typedef struct {
     int xpos;
     int ypos;
     int IsAdjust;
+	int Motion;
 }Udp_t;
 
 //-------------------------------------------------------------------------------------
@@ -62,7 +63,7 @@ static SOCKET sockUDP;
 //--------------------------------------------------------------------------
 // Form and send a UDP packet
 //--------------------------------------------------------------------------
-void SendUDP(int x, int y, int level)
+void SendUDP(int x, int y, int level, int motion)
 {
     int wrote;
     int datasize;
@@ -77,6 +78,7 @@ void SendUDP(int x, int y, int level)
 
     Buf.Ident = UDP_MAGIC;
     Buf.Level = level;
+	Buf.Motion = motion;
     Buf.xpos = x;
     Buf.ypos = y;
     Buf.IsAdjust = 0;

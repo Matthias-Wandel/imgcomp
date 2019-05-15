@@ -15,7 +15,7 @@ typedef int BOOL;
 #define FALSE 0
 #define TRUE 1
 
-int CheckUdp(int * XDeg, int * YDeg, int * IsFire, int * IsDelta);
+int CheckUdp(int * XDeg, int * YDeg, int * Level, int * Motion, int * IsDelta);
 
 #define TICK_SIZE 200    // Algorithm tick rate, microsconds.  Take at least two ticks per step.
 #define TICK_ERROR 250   // Tick must not exceed this time.
@@ -147,7 +147,7 @@ stepper_t motors[3];
 //-------------------------------------------------------------------------------------
 void TestTimer(void)
 {
-    int time1,time2,a, cycles;
+    int time1,time2,a, motion,cycles;
     printf("timer is: \n%d\n%d\n",*(timerreg+1),*(timerreg+1));
     printf("timer is: \n%d\n%d\n",*(timerreg+1),*(timerreg+1));
     
@@ -157,7 +157,7 @@ void TestTimer(void)
         //sleep(1);
         if (0){
 			int x,y,a,b;
-            CheckUdp(&x,&y,&a,&b);
+            CheckUdp(&x,&y,&a,&motion,&b);
         }
         time2 = *(timerreg+1);
         printf("usleep %d: ticked %d\n",a,time2-time1);
@@ -382,11 +382,11 @@ void RunStepping(void)
 		 && motors[1].Speed == 0 && motors[1].Wait == 0 
 		 && motors[2].Speed == 0){
 			// All motions complete.  Look for new instructions
-			int xDeg,yDeg,z,fire,isdelta;
+			int xDeg,yDeg,z,fire,isdelta,motion;
 			if (!IsIdle) printf("Motion complete.\n");
 			IsIdle = 1;
 			
-			if (CheckUdp(&xDeg,&yDeg,&fire,&isdelta)){
+			if (CheckUdp(&xDeg,&yDeg,&fire,&isdelta,&motion)){
 				// Use coordinates as inputs for the motors.
 				motors[2].Target = -xDeg * 972 * 4 / 1000;
 				motors[1].Target = yDeg * 3110 / 1000;
