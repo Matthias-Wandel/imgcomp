@@ -69,6 +69,7 @@ static double AverageBright(MemImage_t * pic, Region_t Region, ImgMap_t* WeightM
 }
 #endif
 //----------------------------------------------------------------------------------------
+// Show detection weight map array.
 //----------------------------------------------------------------------------------------
 static void ShowWeightMap()
 {
@@ -333,7 +334,7 @@ TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, int DarkenOnly, c
         ExRow = &WeightMap->values[width*row];
         if (DebugImgName) pd = DiffOut->pixels+row*bPerRow;
 
-        if (NightMode){
+        /*if (NightMode){
             for (col=MainReg.x1;col<MainReg.x2;col+= 2){
                 unsigned char * pn;
                 int b1, b2, dcomp;
@@ -379,11 +380,13 @@ TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, int DarkenOnly, c
                 p2 += 6;
             }
             row+=2;
-        }else{
+        }else*/
+		{
             for (col=MainReg.x1;col<MainReg.x2;col++){
                 if (ExRow[col]){
                     // Data is in order red, green, blue.
-                    int dr,dg,db, dcomp;
+                    int dr,dg,db;
+					int dcomp;
                     dr = (p1[0]*m1i - p2[0]*m2i);
                     dg = (p1[1]*m1i - p2[1]*m2i);
                     db = (p1[2]*m1i - p2[2]*m2i);
@@ -392,18 +395,23 @@ TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, int DarkenOnly, c
 						// If image 2 pixel values were bigger, something
 						// got brighter.  Squirrel is darker than background,
 						// so anything that got brither might be where the squirrel *was*
-						if (dg*2+db+dg < 0) dr = dg = db = 0;
+						dcomp = (dr + dg*2 + db) >> 8;
+						if (dcomp < 0){
+							dcomp = 0;
+							dr = dg = db = 0;
+						}
 					}else{
 						if (dr < 0) dr = -dr;
 						if (dg < 0) dg = -dg;
 						if (db < 0) db = -db;
+						dcomp = (dr + dg*2 + db) >> 8; // Put more emphasis on green
 					}
-					
-					
-                    dcomp = (dr + dg*2 + db);     // Put more emphasis on green
-                    dcomp = dcomp >> 8;           // Remove the *256 from fixed point aritmetic multiply
 
                     if (dcomp >= 256) dcomp = 255;// put it in a histogram.
+					if (dcomp < 0){
+						fprintf(stderr,"Internal error dcomp\n");
+						dcomp = 0;
+					}
                     DiffHist[dcomp] += 1;
                     diffrow[col] = dcomp;
 
