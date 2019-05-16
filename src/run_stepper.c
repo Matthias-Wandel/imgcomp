@@ -18,11 +18,12 @@ typedef int BOOL;
 int CheckUdp(int * XDeg, int * YDeg, int * Level, int * Motion, int * IsDelta);
 
 #define TICK_SIZE 200    // Algorithm tick rate, microsconds.  Take at least two ticks per step.
-#define TICK_ERROR 250   // Tick must not exceed this time.
+#define TICK_ERROR 280   // Tick must not exceed this time.
 
 //#define SHOOT_MODE 1
 
 #define SHOT_DRAW_STEPS 875
+//#define SHOT_DRAW_STEPS 650 // Not far enough to actually fire.
 #define SHOT_DRAW_DELAY 150
 
 //-----------------------------------------------------------------------------------
@@ -154,7 +155,6 @@ void TestTimer(void)
     for (a=0;a<=50;a++){
         time1 = *(timerreg+1);
         usleep(a);
-        //sleep(1);
         if (0){
 			int x,y,a,b;
             CheckUdp(&x,&y,&a,&motion,&b);
@@ -390,8 +390,52 @@ void RunStepping(void)
 				// Use coordinates as inputs for the motors.
 				motors[2].Target = -xDeg * 972 * 4 / 1000;
 				motors[1].Target = yDeg * 3110 / 1000;
-				printf("Target steps %d,%d\n",motors[2].Target, motors[1].Target);
+				//printf("Target steps %d,%d\n",motors[2].Target, motors[1].Target);
 				
+				{
+					#define HISTLEN 6
+					static int XHist[HISTLEN];
+					static int YHist[HISTLEN];
+					static int LastShotX=-1000, LastShotY;
+					int a;
+					int XMin,XMax,YMin,YMax;
+					XMin = XMax = xDeg;
+					YMin = YMax = yDeg;
+					for (a=1;a<HISTLEN;a++){
+						// Scroll and find min/max.
+						if (XHist[a] < XMin) XMin = XHist[a];
+						if (XHist[a] > XMax) XMax = XHist[a];
+						if (YHist[a] < YMin) YMin = YHist[a];
+						if (YHist[a] > YMax) YMax = YHist[a];
+						XHist[a-1] = XHist[a];
+						YHist[a-1] = YHist[a];
+					}
+					// New entries.
+					XHist[HISTLEN-1] = xDeg;
+					YHist[HISTLEN-1] = yDeg;
+					
+					printf("Range: X: %d - %d    Y: %d - %d    Time:%d  " ,XMin,XMax,YMin, YMax,(time1-last_fired)/1000000);
+					if (XMax-XMin < 5 && YMax-YMin < 5){
+						int OldLoc = 0;
+						printf("staying put  ");
+						if (LastShotX-xDeg < 3 && LastShotX-xDeg > -3 &&
+								LastShotY-yDeg < 3 && LastShotY-yDeg > -3){
+							OldLoc = 1;
+							// Don't shoot the same spot twice.
+							printf("old spot ");
+						}
+						if (!OldLoc && time1-last_fired > 8 * 1000000){
+							printf("Shoot now!  ");
+							motors[0].Target = SHOT_DRAW_STEPS;
+							taking_shot = SHOT_DRAW_DELAY;
+							last_fired = time1;
+							LastShotX = xDeg;
+							LastShotY = yDeg;
+						}
+					}
+					printf("\n");
+				}
+				/*
 				if ((unsigned)(time1-last_fired) > 1000000*4){ // If it's been 4 seconds, fire again.
 					if (time1-last_seen < 800000){ // And this isn't the first report in a long time.
 						shoot_test:
@@ -401,8 +445,11 @@ void RunStepping(void)
 						last_fired = time1;
 					}
 				}
+				*/
 				last_seen = time1;
 				GoHome = 0;
+				
+				
 			}
 			if (time1-last_seen > 5000000){
 				if (!GoHome){

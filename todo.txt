@@ -1,6 +1,7 @@
 Cap shooter work:
 Stepper driver multi threaded
 Stepper driver precalculated curves
+Only shoot when target stops moving.
 Imgcomp do not shoot modes based on color spots?
 
 

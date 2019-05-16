@@ -64,9 +64,8 @@ char UdpDest[30];
 //-----------------------------------------
 // Tightening gap experiment hack
 int GateDelay;
-static int SinceMotionCycles = 1000;
-//extern int rzaveragebright; // Kind of a hack for mouse detection.  Detect mouse by brightness
-                            // in the red (high sensitivity) region of the diffmap.
+static int SinceMotionPix = 1000;
+static int SinceMotionMs = 0;
 
 //-----------------------------------------
 // Video mode hack
@@ -175,6 +174,7 @@ static int ProcessImage(LastPic_t * New, int DeleteProcessed)
         }
         if (Trig.DiffLevel){
             fprintf(Log,"%3d @(%4d,%4d) ", Trig.DiffLevel, Trig.x, Trig.y);
+			SinceMotionMs = 0;
         }
 
         if (LastPics[0].DiffMag > Sensitivity){
@@ -199,9 +199,9 @@ static int ProcessImage(LastPic_t * New, int DeleteProcessed)
         if (LastPics[0].IsMotion) fprintf(Log,"(motion) ");
         if (LastPics[0].IsTimelapse) fprintf(Log,"(time) ");
 
-        if (LastPics[1].IsMotion) SinceMotionCycles = 0;
+        if (LastPics[1].IsMotion) SinceMotionPix = 0;
 
-        if (SinceMotionCycles <= PostMotionKeep+1 || LastPics[2].IsTimelapse){
+        if (SinceMotionPix <= PostMotionKeep+1 || LastPics[2].IsTimelapse){
             // If it's motion, pre-motion, or timelapse, save it.
             if (SaveDir[0]){
                 BackupImageFile(LastPics[2].Name, LastPics[2].DiffMag, 0);
@@ -225,9 +225,13 @@ static int ProcessImage(LastPic_t * New, int DeleteProcessed)
 				Trig.DiffLevel = Squirrel.DiffLevel;
 				// Only keep .Motion from original one.
 			}
+		}else{
+			printf("No baseline %d s\n",SinceMotionMs/1000);
 		}
 		
 #endif
+
+		SinceMotionPix += 1;
 
         if (Trig.DiffLevel > Sensitivity){
             char showx[1001];
@@ -257,19 +261,23 @@ static int ProcessImage(LastPic_t * New, int DeleteProcessed)
     }
 
     if (LastPics[2].Image){
+		static int PrintFlag;
         // Third picture now falls out of the window.  Free it and delete it.
         
-        if (SinceMotionCycles*MsPerCycle > 10000){
+        if (SinceMotionMs > 4000 || (SinceMotionMs > 2000 && !BaselinePic.Image)){
             // If it's been 30 seconds since we saw motion, save this image
-            // as a background image for later mouse detection.
+            // as a background image for later squirrel detection
             if (BaselinePic.Image){
                 free(BaselinePic.Image);
             }
-			printf("baseline %d %d\n",SinceMotionCycles, MsPerCycle);
             BaselinePic = LastPics[2];
+			if (!PrintFlag){
+				printf("Baselining\n");
+				PrintFlag = 1;
+			}
         }else{
-			
             free(LastPics[2].Image);
+			if (SinceMotionMs < 1000) PrintFlag = 0;
         }
     }
     
@@ -357,10 +365,11 @@ static int DoDirectoryFunc(char * Directory, int DeleteProcessed)
 
         NumProcessed += 1;
     }
-	SinceMotionCycles += 1;
-
+	
     FreeDir(FileNames, NumEntries); // Free up the whole directory structure.
     FileNames = NULL;
+
+	SinceMotionMs += MsPerCycle;
 
     //if (SawMotion){
     //    run_blink_program();
