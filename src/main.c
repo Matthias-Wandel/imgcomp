@@ -60,7 +60,7 @@ char raspistill_cmd[200];
 char blink_cmd[200];
 char UdpDest[30];
 
-#define SQUIRREL_MODE 1
+//#define SQUIRREL_MODE 1
 //-----------------------------------------
 // Tightening gap experiment hack
 int GateDelay;
@@ -233,7 +233,8 @@ static int ProcessImage(LastPic_t * New, int DeleteProcessed)
 
 		SinceMotionPix += 1;
 
-        if (Trig.DiffLevel > Sensitivity){
+		
+        if (Trig.DiffLevel > Sensitivity && UdpDest[0]){
             char showx[1001];
             int xs, a;
             const int colwidth=120;
@@ -264,7 +265,7 @@ static int ProcessImage(LastPic_t * New, int DeleteProcessed)
 		static int PrintFlag;
         // Third picture now falls out of the window.  Free it and delete it.
         
-        if (SinceMotionMs > 4000 || (SinceMotionMs > 2000 && !BaselinePic.Image)){
+        if (UdpDest[0] && (SinceMotionMs > 4000 || (SinceMotionMs > 2000 && !BaselinePic.Image))){
             // If it's been 30 seconds since we saw motion, save this image
             // as a background image for later squirrel detection
             if (BaselinePic.Image){
