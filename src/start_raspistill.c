@@ -170,7 +170,7 @@ int manage_raspistill(int NewImages)
             InitialNumBr += 1;
             // Save average brightness and reset averaging.
             if (InitialNumBr == 4){
-                InitialAverageBright = (InitialBrSum+2) / 5;
+                InitialAverageBright = (InitialBrSum+2) / 4;
                 if (InitialAverageBright == 0) InitialAverageBright = 1; // Avoid division by zero.
                 RunningAverageBright = InitialAverageBright;
                 fprintf(Log,"Initial brightness average = %d\n",InitialAverageBright);
@@ -186,7 +186,8 @@ int manage_raspistill(int NewImages)
             Ratio = RunningAverageBright / InitialAverageBright;
             if (Ratio < 1) Ratio = 1/Ratio;
             if (Ratio > 1.2){
-                fprintf(Log,"Brightness change by 20%%.  Force restart\n");
+                fprintf(Log,"Brightness change by 20%%  (is %d was %d)  Force restart\n",
+				       (int)RunningAverageBright,(int)InitialAverageBright);
                 goto force_restart;
             }
         }
