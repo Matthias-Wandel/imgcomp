@@ -322,10 +322,10 @@ int CheckUdp(int * XDeg, int * YDeg, int * Level, int * Motion, int * IsDelta)
 //--------------------------------------------------------------------------
 void RunStepping(void)
 {
-	int Pan,Tilt,Fire,IsDelta;
+	int Pan,Tilt,Fire,Motion,IsDelta;
     for (;;){
-        if (CheckUdp(&Pan, &Tilt, &Fire, &IsDelta)){
-            printf("UDP pos request: %d,%d  f=%d  isdelta:%d\n",Pan, Tilt, Fire, IsDelta);
+        if (CheckUdp(&Pan, &Tilt, &Fire, &Motion, &IsDelta)){
+            printf("UDP pos request: %d,%d  f=%d  motion=%d isdelta:%d\n",Pan, Tilt, Fire, Motion, IsDelta);
         }
 	}
 }
