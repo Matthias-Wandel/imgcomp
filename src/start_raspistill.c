@@ -180,8 +180,8 @@ int manage_raspistill(int NewImages)
         // 20 second time constant brightness averaging.
         RunningAverageBright = RunningAverageBright * 0.95 + NewestAverageBright * 0.05;
 
-        // If brightness changes by more than 20%, relaunch.
-        if (MsSinceLaunch > 10000){
+        // If brightness changes by more than 20%, relaunch, but only if its not too dark.
+        if (MsSinceLaunch > 10000 && (RunningAverageBright > 25 || InitialAverageBright > 25)){
             double Ratio;
             Ratio = RunningAverageBright / InitialAverageBright;
             if (Ratio < 1) Ratio = 1/Ratio;
