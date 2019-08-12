@@ -1,4 +1,4 @@
- //-----------------------------------------------------------------------------------
+//-----------------------------------------------------------------------------------
 // Simple tool for monitor continuously captured images for changes
 // and saving changed images, as well as an image every N seconds for timelapses.
 // Matthias Wandel 2015
@@ -393,7 +393,7 @@ int DoDirectory(char * Directory)
         if (FollowDir){
             b = manage_raspistill(NumProcessed);
             if (b) Raspistill_restarted = 1;
-            if (LogToFile[0] != '\0') LogFileMaintain();
+            if (LogToFile[0] != '\0') LogFileMaintain(0);
             usleep(MsPerCycle*1000);
         }else{
             break;
@@ -496,7 +496,7 @@ int DoDirectoryVideos(char * DirName)
         if (FollowDir){
             int b = manage_raspistill(NumProcessed);
             if (b) Raspistill_restarted = 1;
-            if (LogToFile[0] != '\0') LogFileMaintain();
+            if (LogToFile[0] != '\0') LogFileMaintain(0);
             sleep(1);
         }else{
             break;
@@ -541,6 +541,7 @@ int main(int argc, char **argv)
     TimelapseInterval = 0;
     SaveDir[0] = 0;
     strcpy(SaveNames, "%m%d/%H/%m%d-%H%M%S");
+	LastPic_mtime = time(NULL); // Log names are based on this time, need before images.
 
     for (argn = 1; argn < argc; argn++) {
         //printf("argn = %d\n",argn);
@@ -561,7 +562,7 @@ int main(int argc, char **argv)
     
     if (LogToFile[0] != '\0'){
         Log = NULL;
-        LogFileMaintain();
+        LogFileMaintain(0);
     }
     
     #ifndef _WIN32
