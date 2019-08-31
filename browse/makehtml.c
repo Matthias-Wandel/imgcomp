@@ -69,7 +69,7 @@ void MakeHtmlOutput(Dir_t * Dir)
 		fprintf(HtmlFile, "<a href=\"pix/%s%s\">",Dir->HtmlPath, Images.Entries[a].Name);
 		if (a % SkipFactor == 0){
 			//fprintf(HtmlFile, "<img src=\"pix/%s%s\"",Dir->HtmlPath, Images.Entries[a].Name);		
-			fprintf(HtmlFile, "<img src=\"thumb.cgi?pix/%s%s\"",Dir->HtmlPath, Images.Entries[a].Name);
+			fprintf(HtmlFile, "<img src=\"tb.cgi?pix/%s%s\"",Dir->HtmlPath, Images.Entries[a].Name);
 			fprintf(HtmlFile, " width=320 height=240>");
 		}else{
 			fprintf(HtmlFile, "<big><big>#</big></big>");
