@@ -350,7 +350,7 @@ int CopyFile(char * src, char * dest)
 //-----------------------------------------------------------------------------------
 // Open and / or rotate logfiles
 //-----------------------------------------------------------------------------------
-void LogFileMaintain()
+void LogFileMaintain(int ForceLogSave)
 {
     static char ThisLogTo[PATH_MAX];
     char NewLogTo[PATH_MAX];
@@ -362,6 +362,12 @@ void LogFileMaintain()
     
     if (MoveLogNames[0]){
         strftime(NewLogTo, PATH_MAX, MoveLogNames, localtime(&LastPic_mtime));
+		if (ForceLogSave){
+			// Just change the old name, so it gets backed up, and not overwritten
+			// by new log after reboot.
+			strcat(ThisLogTo, " reboot");
+			printf("modified log name: %s\n",ThisLogTo);
+		}
         if (strcmp(ThisLogTo, NewLogTo)){
             if (Log != NULL){
                 printf("Log rotate %s --> %s\n", ThisLogTo, NewLogTo);

@@ -122,14 +122,17 @@ static int MsSinceLaunch = 0;
 static int InitialAverageBright;
 static int InitialBrSum;
 static int InitialNumBr;
+static int NumTotalImages;
 static double RunningAverageBright;
 
 int manage_raspistill(int NewImages)
 {
+	int timeout;
     MsSinceImage += MsPerCycle;
     MsSinceLaunch += MsPerCycle;
     if (NewImages > 0){
         MsSinceImage = 0;
+		NumTotalImages += NewImages;
         if (MsSinceLaunch <= MsPerCycle*2 && BrightnessChangeRestart){
             fprintf(Log,"Exp:%5.1fms Iso:%d  Nm=%d  Bright:%d  av=%5.2f\n",
                 ImageInfo.ExposureTime*1000, ImageInfo.ISOequivalent, 
@@ -147,12 +150,32 @@ int manage_raspistill(int NewImages)
         goto force_restart;
     }
 
-    
-    if (MsSinceImage/MsPerCycle > (VidMode ? 20 : 5)){
+    timeout = (VidMode ? 20 : 5) * MsPerCycle;
+    if (MsSinceImage > timeout){
         // Not getting any images for 5 seconds or vide ofiles for 10.
         // Probably something went wrong with raspistill or raspivid.
-        fprintf(Log,"No images for %d sec.  Relaunch raspistill/vid\n",MsSinceImage/MsPerCycle);
-        goto force_restart;
+		if (MsSinceLaunch > timeout){
+			if (MsSinceImage > timeout * 3){
+				if (NumTotalImages >= 5){
+					fprintf(Log,"Relaunch raspistill didn't fix.  Reboot!.  (%d sec since image)\n",MsSinceImage/1000);
+					// force rotation of log.
+					LogFileMaintain(1);
+					MsSinceImage = 0; // dummy for now.
+					printf("Reboot now\n");
+					system("reboot");
+					exit(0);
+				}else{
+					// Less than 5 images.  Probably left over from last run.
+					fprintf(Log,"Raspistill never worked! Give up. %d sec\n",MsSinceImage/1000);
+					LogFileMaintain(1);
+					// A reboot wouldn't fix this!
+					exit(0);
+				}
+			}else{
+				fprintf(Log,"No images for %d sec.  Relaunch raspistill/vid\n",MsSinceImage/1000);
+				goto force_restart;
+			}
+		}
     }
 
     if (MsSinceLaunch/MsPerCycle > 7200){
@@ -208,7 +231,6 @@ int manage_raspistill(int NewImages)
     
 force_restart:
     launch_raspistill();
-    MsSinceImage = 0;
     MsSinceLaunch = 0;
     InitialBrSum = InitialNumBr = 0;
     return 1;
