@@ -1,0 +1,5 @@
+#!/bin/bash
+# Must run this script as root.
+cp epeg /usr/local/bin
+cp -a libepeg* /usr/local/lib
+ldconfig
