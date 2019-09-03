@@ -188,13 +188,11 @@ void ProcessDiffMap(MemImage_t * MapPic)
 	ShowWeightMap();
 }
 
-#ifndef FIND_REDSPOT
 //----------------------------------------------------------------------------------------
 // Compare two images in memory
 // Pic1 is previous pic, pic2 is latest pic.
-// DarkenOnly: Set 1 if we only want to see stuff that got darker.
 //----------------------------------------------------------------------------------------
-TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, int DarkenOnly, char * DebugImgName)
+TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, char * DebugImgName)
 {
     int width, height, bPerRow;
     int row, col;
@@ -335,113 +333,54 @@ TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, int DarkenOnly, c
         ExRow = &WeightMap->values[width*row];
         if (DebugImgName) pd = DiffOut->pixels+row*bPerRow;
 
-        /*if (NightMode){
-            for (col=MainReg.x1;col<MainReg.x2;col+= 2){
-                unsigned char * pn;
-                int b1, b2, dcomp;
-                if (ExRow[col]){
-                    // Add up four pixels for noise reduction.
-                    b1 = (p1[0]+p1[1]*2+p1[2] + p1[3]+p1[4]*2+p1[5]);
-                    pn = p1+bPerRow;
-                    b1 += (pn[0]+pn[1]*2+pn[2] + pn[3]+pn[4]*2+pn[5]);
+        for (col=MainReg.x1;col<MainReg.x2;col++){
+            if (ExRow[col]){
+                // Data is in order red, green, blue.
+                int dr,dg,db;
+				int dcomp;
+                dr = (p1[0]*m1i - p2[0]*m2i);
+                dg = (p1[1]*m1i - p2[1]*m2i);
+                db = (p1[2]*m1i - p2[2]*m2i);
 
-                    b2 = (p2[0]+p2[1]*2+p2[2] + p2[3]+p2[4]*2+p2[5]);
-                    pn = p2+bPerRow;
-                    b2 += (pn[0]+pn[1]*2+pn[2] + pn[3]+pn[4]*2+pn[5]);
+				if (dr < 0) dr = -dr;
+				if (dg < 0) dg = -dg;
+				if (db < 0) db = -db;
+				dcomp = (dr + dg*2 + db) >> 8; // Put more emphasis on green
+				
 
-                    dcomp = b2*m2i-b1*m1i; // Differentce with ratio applied.
+                if (dcomp >= 256) dcomp = 255;// put it in a histogram.
+				if (dcomp < 0){
+					fprintf(stderr,"Internal error dcomp\n");
+					dcomp = 0;
+				}
+                DiffHist[dcomp] += 1;
+                diffrow[col] = dcomp;
 
-                    if (dcomp < 0){
-                        // difference might be on account of m1i > m2i.
-                        // Try it without multiplication difference.
-                        dcomp = b2*m1i-b1*m1i;
-                        if (dcomp > 0){
-                            // if difference now positive, the whole difference seen may
-                            // be because m1i > m2i.  So call it zero.
-                            dcomp = 0;
-                        }
-                    }
-
-                    dcomp = dcomp >> 9;
-
-                    if (DebugImgName){
-                        pd[1] = pd[4] = dcomp > 0 ? dcomp : 0; // Green = img2 brighter
-                        pd[0] = pd[3] = dcomp < 0 ? -dcomp : 0; // Red = img1 brigher.
-                        pd[2] = pd[5] = 0;
-                    }
-
-                    if (dcomp < 0) dcomp = -dcomp;
-                    if (dcomp > 255) dcomp = 255;// put it in a histogram.
-                    DiffHist[dcomp] += 4; // Did four pixels, so add 4.
-                    diffrow[col] = dcomp;
+        
+                if (DebugImgName){
+                    // Save the difference image, scaled 4x.
+                    if (dr > 256) dr = 256;
+                    if (dg > 256) dg = 256;
+                    if (db > 256) db = 256;
+                    pd[0] = dr;
+                    pd[1] = dg;
+                    pd[2] = db;;
                 }
-
-                pd += 6;
-                p1 += 6;
-                p2 += 6;
             }
-            row+=2;
-        }else*/
-		{
-            for (col=MainReg.x1;col<MainReg.x2;col++){
-                if (ExRow[col]){
-                    // Data is in order red, green, blue.
-                    int dr,dg,db;
-					int dcomp;
-                    dr = (p1[0]*m1i - p2[0]*m2i);
-                    dg = (p1[1]*m1i - p2[1]*m2i);
-                    db = (p1[2]*m1i - p2[2]*m2i);
 
-					if (DarkenOnly){
-						// If image 2 pixel values were bigger, something
-						// got brighter.  Squirrel is darker than background,
-						// so anything that got brither might be where the squirrel *was*
-						dcomp = (dr + dg*2 + db) >> 8;
-						if (dcomp < 0){
-							dcomp = 0;
-							dr = dg = db = 0;
-						}
-					}else{
-						if (dr < 0) dr = -dr;
-						if (dg < 0) dg = -dg;
-						if (db < 0) db = -db;
-						dcomp = (dr + dg*2 + db) >> 8; // Put more emphasis on green
-					}
-
-                    if (dcomp >= 256) dcomp = 255;// put it in a histogram.
-					if (dcomp < 0){
-						fprintf(stderr,"Internal error dcomp\n");
-						dcomp = 0;
-					}
-                    DiffHist[dcomp] += 1;
-                    diffrow[col] = dcomp;
-
-            
-                    if (DebugImgName){
-                        // Save the difference image, scaled 4x.
-                        if (dr > 256) dr = 256;
-                        if (dg > 256) dg = 256;
-                        if (db > 256) db = 256;
-                        pd[0] = dr;
-                        pd[1] = dg;
-                        pd[2] = db;;
-                    }
-                }
-
-                pd += 3;
-                p1 += 3;
-                p2 += 3;
-            }
-            row++;
+            pd += 3;
+            p1 += 3;
+            p2 += 3;
         }
+        row++;
     }
+
 
     if (DebugImgName){
         WritePpmFile(DebugImgName,DiffOut);
         free(DiffOut);
     }
-
-    
+   
 
     if (Verbosity > 1){
         for (a=0;a<60;a+= 2){
@@ -484,112 +423,6 @@ TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, int DarkenOnly, c
         return Trigger;
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-#else // FIND_REDSPOT
-//----------------------------------------------------------------------------------------
-// Don't compare.  Only look for a red spot the second picture
-//----------------------------------------------------------------------------------------
-TriggerInfo_t ComparePix(MemImage_t * igore, MemImage_t * pic1, char * DebugImgName)
-{
-    int width, height, bPerRow;
-    int row, col;
-
-    TriggerInfo_t RetVal;
-    RetVal.x = RetVal.y = 0;
-    RetVal.DiffLevel = -1;
-
-    if (Verbosity){
-        printf("\ncompare pictures %dx%d %d\n", pic1->width, pic1->height, pic1->components);
-    }
-
-    width = pic1->width;
-    height = pic1->height;
-    bPerRow = width * 3;    
-
-    if (DiffVal != NULL && (width != DiffVal->w || height != DiffVal->h)){
-        // DiffVal allocated size is wrong.
-        free(DiffVal);
-        free(WeightMap);
-        DiffVal = NULL;
-    }
-	
-    if (DiffVal == NULL){
-        DiffVal = malloc(offsetof(ImgMap_t, values) + sizeof(DiffVal->values[0])*width*height);
-        DiffVal->w = width; DiffVal->h = height;
-        if (!WeightMap){
-            FillWeightMap(width,height);
-        }else{
-            if (WeightMap->w != width || WeightMap->h != height){
-                fprintf(stderr,"diff map image size mismatch\n");
-                exit(-1);
-            }
-        }
-    }
-
-    memset(DiffVal->values, 0,  sizeof(DiffVal->values)*width*height);
-
-
-    // Compute redness
-    for (row=0;row<height;){
-        unsigned char * p1;
-		unsigned char * diffrow;
-        p1 = pic1->pixels+row*bPerRow;
-        diffrow = &DiffVal->values[width*row];
-		for (col=0;col<width;col++){
-			// Data is in order red, green, blue.
-			int red,green,blue;
-			red = p1[0];
-			green = p1[1];
-			blue = p1[2];
-			
-			
-			if (red > 100 && red > green*3 && red > blue*3){
-				// If red is 3x as big as green or blue, it's sufficiently red.
-				diffrow[col] = 88;
-			}else{
-				diffrow[col] = 0;
-			}
-			/*
-			diffrow[col] = 0;
-			if (red > 75){
-				if (blue > green * 2){
-					if (blue * 10 > red * 6 && blue * 10 < red * 9){
-						if (blue > green * 2){
-							diffrow[col] = 88;
-						}
-					}
-				}
-			}
-			*/
-
-			p1 += 3;
-   	    }
-		row++;
-	}
-
-	{
-		TriggerInfo_t Trigger;
-		Region_t Reg;
-		Reg.x1 = Reg.y1 = 0;
-		Reg.x2 = width;
-		Reg.y2 = height;
-
-		Trigger = SearchDiffMaxWindow(Reg, 0);
-		return Trigger;
-	}
-}
-#endif
 
 
 

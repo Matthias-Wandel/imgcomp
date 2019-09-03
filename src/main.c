@@ -60,7 +60,6 @@ char raspistill_cmd[200];
 char blink_cmd[200];
 char UdpDest[30];
 
-//#define SQUIRREL_MODE 1
 //-----------------------------------------
 // Tightening gap experiment hack
 int GateDelay;
@@ -155,7 +154,7 @@ static int ProcessImage(LastPic_t * New, int DeleteProcessed)
         Trig.DiffLevel = Trig.x = Trig.y = 0;
 
         if (LastPics[2].Image){
-            Trig = ComparePix(LastPics[1].Image, LastPics[0].Image, 0, NULL);
+            Trig = ComparePix(LastPics[1].Image, LastPics[0].Image, NULL);
         }
 
         if (Trig.DiffLevel >= Sensitivity && PixSinceDiff > 5 && Raspistill_restarted){
@@ -185,7 +184,7 @@ static int ProcessImage(LastPic_t * New, int DeleteProcessed)
             LastPics[0].IsMotion && LastPics[1].IsMotion
             && LastPics[2].DiffMag < (Sensitivity>>1)){
             // Compare to picture before last picture.
-            Trig = ComparePix(LastPics[2].Image, LastPics[0].Image, 0, NULL);
+            Trig = ComparePix(LastPics[2].Image, LastPics[0].Image, NULL);
 
             //printf("Diff with pix before last: %d\n",Trig.DiffLevel);
             if (Trig.DiffLevel < Sensitivity){
@@ -209,28 +208,6 @@ static int ProcessImage(LastPic_t * New, int DeleteProcessed)
         }
                 
         fprintf(Log,"\n");
-        
-#ifdef SQUIRREL_MODE
-		Trig.DiffLevel = 0; // Ignore motion trigger.  Replace with darkness trigger.
-		// That way we see squirrel when it isn't moving, and won't trigger on
-		// absence of squirrel (squirrel is darker than background)
-
-		if (BaselinePic.Image){
-			TriggerInfo_t Squirrel;
-			// See if something got darker compared to baseline image.
-			Squirrel = ComparePix(BaselinePic.Image, LastPics[0].Image, 1, NULL);
-		    if (Squirrel.DiffLevel > Sensitivity){
-				Trig.x = Squirrel.x;
-				Trig.y = Squirrel.y;
-				Trig.DiffLevel = Squirrel.DiffLevel;
-				// Only keep .Motion from original one.
-			}
-		}else{
-			printf("No baseline %d s\n",SinceMotionMs/1000);
-		}
-		
-#endif
-
 		SinceMotionPix += 1;
 
 		
@@ -630,7 +607,7 @@ int main(int argc, char **argv)
         pic2 = LoadJPEG(argv[file_index+1], ScaleDenom, 0, 0);
         if (pic1 && pic2){
             Verbosity = 2;
-            ComparePix(pic1, pic2, 0, "diff.ppm");
+            ComparePix(pic1, pic2, "diff.ppm");
         }
         free(pic1);
         free(pic2);
