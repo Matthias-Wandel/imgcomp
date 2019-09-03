@@ -56,7 +56,7 @@ Dir_t * CollectDir(char * HtmlPath)
 	if (strlen(HtmlPath) > 2){
 		char ThisDir[100];
 		VarList Siblings;
-		int a;
+		unsigned a;
 		int LastSlash = 0;
 		Siblings.NumEntries = Siblings.NumAllocated = 0;
 		Siblings.Entries = NULL;
