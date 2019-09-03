@@ -23,11 +23,8 @@ typedef struct {
 static ImgMap_t * DiffVal = NULL;
 static ImgMap_t * WeightMap = NULL;
 
-//#define AIM_HEATER
-//#define FIND_REDSPOT
 static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold);
 
-//int rzaveragebright;
 //----------------------------------------------------------------------------------------
 // Calculate average brightness of an image.
 //----------------------------------------------------------------------------------------
@@ -71,21 +68,21 @@ static double AverageBright(MemImage_t * pic, Region_t Region, ImgMap_t* WeightM
 //----------------------------------------------------------------------------------------
 static void ShowWeightMap()
 {
-	int row, width, height;
+    int row, width, height;
     width = WeightMap->w;
     height = WeightMap->h;
-	printf("Weight map:  '-' = ignore, '1' = normal, '#' = 2x weight\n");
-	
+    printf("Weight map:  '-' = ignore, '1' = normal, '#' = 2x weight\n");
+
     for (row=0;row<height;row+=4){
         int r;
-		printf("   ");
+        printf("   ");
         for (r=0;r<width;r+=4){
-			switch (WeightMap->values[row*width+r]){
-				case 0: putchar('-');break;
-				case 1: putchar('1');break;
-				case 2: putchar('#');break;
-				default: putchar('?'); break;
-			}
+            switch (WeightMap->values[row*width+r]){
+                case 0: putchar('-');break;
+                case 1: putchar('1');break;
+                case 2: putchar('#');break;
+                default: putchar('?'); break;
+            }
         }
         printf("\n");
     }
@@ -121,9 +118,8 @@ void FillWeightMap(int width, int height)
             memset(&WeightMap->values[row*width+Reg.x1], 0, Reg.x2-Reg.x1);
         }
     }
-
-	//ShowWeightMap();
-	
+    
+    ShowWeightMap();
 }
 
 //----------------------------------------------------------------------------------------
@@ -182,8 +178,8 @@ void ProcessDiffMap(MemImage_t * MapPic)
 
     Regions.DetectReg.y1 = firstrow;
     Regions.DetectReg.y2 = lastrow;
-	
-	ShowWeightMap();
+
+    ShowWeightMap();
 }
 
 //----------------------------------------------------------------------------------------
@@ -203,7 +199,7 @@ TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, char * DebugImgNa
     TriggerInfo_t RetVal;
     RetVal.x = RetVal.y = 0;
     RetVal.DiffLevel = -1;
-	RetVal.Motion = 0;
+    RetVal.Motion = 0;
 
     if (Verbosity){
         printf("\ncompare pictures %dx%d %d\n", pic1->width, pic1->height, pic1->components);
@@ -465,7 +461,7 @@ static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold)
         height4 = ROOF(DiffVal->h);
         Diff4 = malloc(sizeof(int)*width4*height4);
         Diff4Cum = malloc(sizeof(int)*width4*height4);       
-		Diff4C2 = malloc(sizeof(int)*width4*height4);
+        Diff4C2 = malloc(sizeof(int)*width4*height4);
     }
     // Compute scaled down array of differences.  Destination: Diff4[]
     {
@@ -554,30 +550,30 @@ static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold)
         if (retval.y < 0) retval.y = 0;
         retval.DiffLevel = retval.Motion = maxval / 100;
 
-		row = maxr-wind_h+1;
-		if (row < 0) row = 0;
-		//if (Verbosity) printf("Window contents.  Cols %d-%d Rows %d-%d\n",maxc-wind_w+1,maxc,row,maxr);
-		if (maxval > 0){
-			double xsum, ysum;
-			int sum;
-			xsum = ysum = sum = 0;
-			for (;row<=maxr;row++){
-				col = maxc-wind_w+1;
-				if (col < 0) col = 0;
-				for(;col<=maxc;col++){
-					int v = Diff4[row*width4+col];
-					xsum += col*v;
-					ysum += row*v;
-					sum += v;
-					//printf("%3d",Diff4[row*width4+col]/100);
-				}
-				//printf("\n");
-			}
-			if (Verbosity) printf("Exact r,c= col=%5.1f, row=%5.1f\n",xsum*1.0/sum, ysum*1.0/sum);
-			retval.x = (int)(xsum*scalef*ScaleDenom/sum)+scalef*ScaleDenom/2;
-			retval.y = (int)(ysum*scalef*ScaleDenom/sum)+scalef*ScaleDenom/2;
-			if (Verbosity) printf("Picture coordinates: x,y = %d,%d\n",retval.x, retval.y);
-		}
+        row = maxr-wind_h+1;
+        if (row < 0) row = 0;
+        //if (Verbosity) printf("Window contents.  Cols %d-%d Rows %d-%d\n",maxc-wind_w+1,maxc,row,maxr);
+        if (maxval > 0){
+            double xsum, ysum;
+            int sum;
+            xsum = ysum = sum = 0;
+            for (;row<=maxr;row++){
+                col = maxc-wind_w+1;
+                if (col < 0) col = 0;
+                for(;col<=maxc;col++){
+                    int v = Diff4[row*width4+col];
+                    xsum += col*v;
+                    ysum += row*v;
+                    sum += v;
+                    //printf("%3d",Diff4[row*width4+col]/100);
+                }
+                //printf("\n");
+            }
+            if (Verbosity) printf("Exact r,c= col=%5.1f, row=%5.1f\n",xsum*1.0/sum, ysum*1.0/sum);
+            retval.x = (int)(xsum*scalef*ScaleDenom/sum)+scalef*ScaleDenom/2;
+            retval.y = (int)(ysum*scalef*ScaleDenom/sum)+scalef*ScaleDenom/2;
+            if (Verbosity) printf("Picture coordinates: x,y = %d,%d\n",retval.x, retval.y);
+        }
     }
    
     if (Verbosity > 2){ 
