@@ -8,17 +8,15 @@ typedef struct {
     char   Name[160];
 
     // File specific:
-    int    Size;        // File size
+    int    DaySecond;
 
-    // Dir specific:
-    void * Subdir; // Points at subdirectory data (if the element is for a directory)
 }DirEntry;
 
 //-------------------------------------------------------------------
 // Structure for a variable length list.   Used for lists of files and subdirs.
 typedef struct {
-    unsigned NumEntries;
-    unsigned NumAllocated;
+    int NumEntries;
+    int NumAllocated;
     DirEntry * Entries;
 }VarList;
 

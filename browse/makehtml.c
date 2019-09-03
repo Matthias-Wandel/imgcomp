@@ -24,21 +24,23 @@ void MakeHtmlOutput(Dir_t * Dir)
     VarList Directories;
 
     FILE * HtmlFile;
-    char HtmlFileName[500];
-    unsigned int a;
+    int a, b;
 	int SkipFactor;
+	int FullresThumbs = 0;
+	int LastDaySeconds;
+	int BreakSeconds;
+	int BreakIndices[20];
+	int NumBreakIndices = 0;
 
     Images = Dir->Images;
     Directories = Dir->Dirs;    
 
-    //CombinePaths(HtmlFileName, Dir->FullPath, Dir->IndexName);
+	#ifdef _WIN32
+		FullresThumbs = 1;
+	#endif
+
 
 	HtmlFile = stdout;
-    //HtmlFile = fopen(HtmlFileName, "w");
-    if (HtmlFile == NULL){
-       printf("Could not open '%s' for write\n",HtmlFileName);
-        exit(-1);
-    }
 
     // Header of file.
     fprintf(HtmlFile, "<html>\n");
@@ -58,26 +60,70 @@ void MakeHtmlOutput(Dir_t * Dir)
 	if (Images.NumEntries){
 		fprintf(HtmlFile,"%s: %d Images<p>\n",Dir->HtmlPath, Images.NumEntries);
 	}
-	// If there are a LOT of images, don't show all of them!
-	SkipFactor = 1;
-	if (Images.NumEntries > 40) SkipFactor = 2;
-	if (Images.NumEntries > 80) SkipFactor = 3;
-	if (Images.NumEntries > 200) SkipFactor = 4;
-	if (Images.NumEntries > 300) SkipFactor = 5;
-
-    for (a=0;a<Images.NumEntries;a++){
-		fprintf(HtmlFile, "<a href=\"pix/%s%s\">",Dir->HtmlPath, Images.Entries[a].Name);
-		if (a % SkipFactor == 0){
-			//fprintf(HtmlFile, "<img src=\"pix/%s%s\"",Dir->HtmlPath, Images.Entries[a].Name);		
-			fprintf(HtmlFile, "<img src=\"tb.cgi?pix/%s%s\"",Dir->HtmlPath, Images.Entries[a].Name);
-			fprintf(HtmlFile, " width=320 height=240>");
-		}else{
-			fprintf(HtmlFile, "<big><big>#</big></big>");
+	
+	LastDaySeconds = -1000;
+	for (a=0;a<Images.NumEntries;a++){
+		int DaySeconds;
+		char * Name;
+		Name = Images.Entries[a].Name;
+		DaySeconds = ((Name[5]-'0') * 10 + (Name[6]-'0'))*3600
+	               + ((Name[7]-'0') * 10 + (Name[8]-'0'))*60
+				   + ((Name[9]-'0') * 10 + (Name[10]-'0'));
+		
+		if (DaySeconds-LastDaySeconds > 30){
+			BreakIndices[NumBreakIndices++] = a;
+			printf("\n");
+			if (NumBreakIndices > 19) break;
 		}
-		fprintf(HtmlFile, "</a>\n");
-    }
-
-   
-    if (HtmlFile != stdout) fclose(HtmlFile);
+		LastDaySeconds = DaySeconds;
+				   
+	}
+	BreakIndices[NumBreakIndices] = Images.NumEntries;
+	
+	
+	for (b=0;b<NumBreakIndices;b++){
+		int start, num;
+		char TimeStr[10];
+		char * Name;
+		start = BreakIndices[b];
+		num = BreakIndices[b+1]-BreakIndices[b];
+	
+		// If there are a LOT of images, don't show all of them!
+		SkipFactor = 1;
+		if (num > 40) SkipFactor = 2;
+		if (num > 80) SkipFactor = 3;
+		if (num > 200) SkipFactor = 4;
+		if (num > 300) SkipFactor = 5;
+		
+		Name = Images.Entries[start].Name;
+		TimeStr[0] = Name[5];
+		TimeStr[1] = Name[6];
+		TimeStr[2] = ':';
+		TimeStr[3] = Name[7];
+		TimeStr[4] = Name[8];
+		TimeStr[5] = ':';
+		TimeStr[6] = Name[9];
+		TimeStr[7] = Name[10];
+		TimeStr[8] = '\0';
+		printf("<p>%s<br>",TimeStr);
+	
+		for (a=0;a<num;a++){
+			fprintf(HtmlFile, "<a href=\"pix/%s%s\">",Dir->HtmlPath, Images.Entries[a+start].Name);
+			if (a % SkipFactor == 0){
+				if (FullresThumbs){
+					fprintf(HtmlFile, "<img src=\"pix/%s%s\"",Dir->HtmlPath, Images.Entries[a+start].Name);
+				}else{
+					fprintf(HtmlFile, "<img src=\"tb.cgi?pix/%s%s\"",Dir->HtmlPath, Images.Entries[a+start].Name);
+				}
+				fprintf(HtmlFile, " width=320 height=240>");
+			}else{
+				fprintf(HtmlFile, "<big><big>#</big></big>");
+			}
+			fprintf(HtmlFile, "</a>\n");
+		}
+	}
+		
+	printf("<p>(end)\n");
+	if (HtmlFile != stdout) fclose(HtmlFile);
 }
 

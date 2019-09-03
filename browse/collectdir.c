@@ -90,7 +90,6 @@ time_t CollectDirectory(char * PathName, VarList * Files, VarList * Dirs, char *
             if (ThisOne.Name[0] == '.'){ 
                 continue;
             }
-			ThisOne.Size = 0;
             AddToList(Dirs, &ThisOne);
         }else{
             if (Patterns != NULL){
@@ -104,7 +103,7 @@ time_t CollectDirectory(char * PathName, VarList * Files, VarList * Dirs, char *
                     lp = strlen(Patterns[a]);
                     if (l > lp){
                         if (ExtCheck(entry->d_name+l-lp, Patterns[a]) == 0){
-                            ThisOne.Size = filestat.st_size;
+                            //ThisOne.Size = filestat.st_size;
                             AddToList(Files, &ThisOne);
                             if (filestat.st_mtime > newest){
                                 newest = filestat.st_mtime;
@@ -123,7 +122,7 @@ time_t CollectDirectory(char * PathName, VarList * Files, VarList * Dirs, char *
 //----------------------------------------------------------------------------------
 // Collect information for a directory.  Windows version.
 //----------------------------------------------------------------------------------
-time_t CollectDirectory(char * PathName, VarList * Files, char * Patterns[])
+time_t CollectDirectory(char * PathName, VarList * Files, VarList * Dirs, char * Patterns[])
 {
     char MatchPath[500];
 
@@ -167,7 +166,7 @@ time_t CollectDirectory(char * PathName, VarList * Files, char * Patterns[])
                     lp = strlen(Patterns[a]);
                     if (l > lp){
                         if (ExtCheck(finddata.name+l-lp, Patterns[a]) == 0){
-                            ThisOne.Size = finddata.size;
+                            //ThisOne.Size = finddata.size;
                             AddToList(Files, &ThisOne);
                             if (finddata.time_write > newest){
                                 newest = finddata.time_write;
