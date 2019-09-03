@@ -169,10 +169,10 @@ static int ProcessImage(LastPic_t * New, int DeleteProcessed)
             strftime(TimeString, 10, "%H%M%S ", localtime(&LastPic_mtime));
             fprintf(Log,TimeString);
         }else{
-            fprintf(Log,"\n%s: ",LastPics[0].Name+LastPics[0].nind);
+            fprintf(Log,"%s: ",LastPics[0].Name+LastPics[0].nind);
         }
         if (Trig.DiffLevel){
-            fprintf(Log,"%3d ", Trig.DiffLevel);
+            fprintf(Log,"%4d ", Trig.DiffLevel);
 			if (Trig.DiffLevel >= 2){
 				fprintf(Log,"@(%4d,%4d) ", Trig.x, Trig.y);
 			}
@@ -266,7 +266,6 @@ static int ProcessImage(LastPic_t * New, int DeleteProcessed)
         //printf("Delete %s\n",LastPics[2].Name);
         unlink(LastPics[2].Name);
     }
-
     return LastPics[0].IsMotion;
 }
 
