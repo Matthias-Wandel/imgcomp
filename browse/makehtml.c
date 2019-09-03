@@ -24,13 +24,12 @@ void MakeHtmlOutput(Dir_t * Dir)
     VarList Directories;
 
     FILE * HtmlFile;
-    int a, b;
+    unsigned a, b;
 	int SkipFactor;
 	int FullresThumbs = 0;
 	int LastDaySeconds;
-	int BreakSeconds;
 	int BreakIndices[20];
-	int NumBreakIndices = 0;
+	unsigned NumBreakIndices = 0;
 
     Images = Dir->Images;
     Directories = Dir->Dirs;    
@@ -38,7 +37,6 @@ void MakeHtmlOutput(Dir_t * Dir)
 	#ifdef _WIN32
 		FullresThumbs = 1;
 	#endif
-
 
 	HtmlFile = stdout;
 
@@ -50,10 +48,27 @@ void MakeHtmlOutput(Dir_t * Dir)
 		"  body { font-family: sans-serif; font-size: 24;}\n"
 		"  img { vertical-align: middle; margin-bottom: 5px; }\n"
 		"</style></head>\n");
+		
+	if (strlen(Dir->HtmlPath) > 2){
+		// To navigate up one directory.
+		int LastSlash = 0;
+		char UpDir[100];
+		for (a=0;Dir->HtmlPath[a] && a < 99;a++){
+			if (Dir->HtmlPath[a] == '/' && Dir->HtmlPath[a+1]) LastSlash = a;
+		}
+		memcpy(UpDir, Dir->HtmlPath, LastSlash);
+		UpDir[LastSlash] = '\0';
+		
+		fprintf(HtmlFile,"<a href=\"view.cgi?%s\">[Up:%s]</a><p>\n",UpDir,UpDir);
+	}
 
     for (a=0;a<Directories.NumEntries;a++){
 		fprintf(HtmlFile, "<a href=\"view.cgi?%s%s\">%s</a>\n",Dir->HtmlPath, Directories.Entries[a].Name, Directories.Entries[a].Name);
-		if ((a & 3) == 3) fprintf(HtmlFile, "<br>\n"); // Put two links per line.
+		if ((a % 10 ) == 9){
+			fprintf(HtmlFile, "<p>\n"); // Put four links per line.
+		}else{
+			fprintf(HtmlFile, " &nbsp; \n"); // Put four links per line.
+		}
     }
 	
 	fprintf(HtmlFile,"<p>\n");
@@ -82,7 +97,7 @@ void MakeHtmlOutput(Dir_t * Dir)
 	
 	
 	for (b=0;b<NumBreakIndices;b++){
-		int start, num;
+		unsigned start, num;
 		char TimeStr[10];
 		char * Name;
 		start = BreakIndices[b];
@@ -90,10 +105,10 @@ void MakeHtmlOutput(Dir_t * Dir)
 	
 		// If there are a LOT of images, don't show all of them!
 		SkipFactor = 1;
-		if (num > 40) SkipFactor = 2;
-		if (num > 80) SkipFactor = 3;
-		if (num > 200) SkipFactor = 4;
-		if (num > 300) SkipFactor = 5;
+		if (num > 15) SkipFactor = 2;
+		if (num > 30) SkipFactor = 3;
+		if (num > 60) SkipFactor = 4;
+		if (num > 120) SkipFactor = 5;
 		
 		Name = Images.Entries[start].Name;
 		TimeStr[0] = Name[5];

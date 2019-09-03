@@ -15,16 +15,15 @@ typedef struct {
 //-------------------------------------------------------------------
 // Structure for a variable length list.   Used for lists of files and subdirs.
 typedef struct {
-    int NumEntries;
-    int NumAllocated;
+    unsigned NumEntries;
+    unsigned NumAllocated;
     DirEntry * Entries;
 }VarList;
 
 //-------------------------------------------------------------------
 // Structure for a subdirectory.  Sort of like an I-node for the directory.
 typedef struct {
-    // Statistics on this directory and descending directories:
-    char      HtmlPath[300]; // Path to what is pointed to.
+    char      HtmlPath[200]; // Path to what is pointed to.
     VarList   Dirs;   // List of subdirectories.
     VarList   Images; // List of Image files in this directory.
 }Dir_t;

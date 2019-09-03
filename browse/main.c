@@ -55,8 +55,6 @@ Dir_t * CollectDir(char * HtmlPath)
    
     SortDirContents(Dir);
 		
-	MakeHtmlOutput(Dir);
-
     return Dir;
 }
 
@@ -104,8 +102,11 @@ int main(int argc, char ** argv)
 		}
 	}
 	
-
-    CollectDir(HtmlPath);
+	{
+		Dir_t * Col;
+		Col = CollectDir(HtmlPath);
+		MakeHtmlOutput(Col);
+	}
     return 0;
 }
 
