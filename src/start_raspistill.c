@@ -26,7 +26,6 @@
 
 static int raspistill_pid = 0;
 static int blink_led_pid = 0;
-extern int NightMode;
 
 //-----------------------------------------------------------------------------------
 // Parse command line and launch.
@@ -134,9 +133,9 @@ int manage_raspistill(int NewImages)
         MsSinceImage = 0;
 		NumTotalImages += NewImages;
         if (MsSinceLaunch <= MsPerCycle*2 && BrightnessChangeRestart){
-            fprintf(Log,"Exp:%5.1fms Iso:%d  Nm=%d  Bright:%d  av=%5.2f\n",
+            fprintf(Log,"Exp:%5.1fms Iso:%d  Bright:%d  av=%5.2f\n",
                 ImageInfo.ExposureTime*1000, ImageInfo.ISOequivalent, 
-                NightMode, NewestAverageBright, RunningAverageBright);
+                NewestAverageBright, RunningAverageBright);
         }
     }else{
         if (MsSinceImage >= (VidMode ? 15000 : 2000)){

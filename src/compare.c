@@ -14,7 +14,6 @@
 #include "config.h"
 
 int NewestAverageBright;
-int NightMode;
 
 typedef struct {
     int w, h;
@@ -32,7 +31,6 @@ static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold);
 //----------------------------------------------------------------------------------------
 // Calculate average brightness of an image.
 //----------------------------------------------------------------------------------------
-#ifndef FIND_REDSPOT
 static double AverageBright(MemImage_t * pic, Region_t Region, ImgMap_t* WeightMap)
 {
     double baverage;//
@@ -67,7 +65,7 @@ static double AverageBright(MemImage_t * pic, Region_t Region, ImgMap_t* WeightM
    
     return baverage * 0.25 / DetectionPixels; // Multiply by 4 again.
 }
-#endif
+
 //----------------------------------------------------------------------------------------
 // Show detection weight map array.
 //----------------------------------------------------------------------------------------
@@ -283,10 +281,8 @@ TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, char * DebugImgNa
         if (b1average < 0.5) b1average = 0.5; // Avoid possible division by zero.
         if (b2average < 0.5) b2average = 0.5;
 
-        NightMode = 0;
         if (b1average < 15 || b2average < 15){
             if (Verbosity > 0) printf("Using night mode diff\n");
-            NightMode = 1;
         }
 
         m1 = 80/b1average;
@@ -308,18 +304,8 @@ TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, char * DebugImgNa
 
         if (Verbosity) printf("Brightness adjust multipliers:  m1 = %5.2f  m2=%5.2f\n",m1,m2);
 
-        if (!NightMode || b2average > b1average){
-            m1i = (int)(m1*256+0.5);
-            m2i = (int)(m2*256+0.5);
-        }else{
-            // Swap images and multipliers so that pic2 is the brighter one.
-            // this makes giving it slack easier.
-            MemImage_t * temp;
-            temp = pic1; pic1=pic2; pic2=temp;
-            m1i = (int)(m2*256+0.5);  // m1 should always be bigger.
-            m2i = (int)(m1*256+0.5);
-            if (Verbosity) printf("swapped images m1i=%d m2i=%d\n",m1i,m2i);
-        }
+        m1i = (int)(m1*256+0.5);
+        m2i = (int)(m2*256+0.5);
     }
 
     // Compute differences
@@ -337,34 +323,52 @@ TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, char * DebugImgNa
             if (ExRow[col]){
                 // Data is in order red, green, blue.
                 int dr,dg,db;
-				int dcomp;
+                int dcomp;
+                int max;
+                {
+                    // Find maximum of red green or blue for either picture after adjustment.
+                    int max1, max2;
+                    max1 = p1[0];
+                    if (p1[1] > max1) max1 = p1[1];
+                    if (p1[2] > max1) max1 = p1[2];
+                    max1 *= m1i;
+                    max2 = p2[0];
+                    if (p2[1] > max1) max1 = p2[1];
+                    if (p2[2] > max1) max1 = p2[2];
+                    max2 *= m2i;
+                    max = max2 > max1 ? max2 : max1;
+                    max = max >> 8;
+                    if (max < 40) max = 40; // Don't allow under 40 to avoid amlifying dark noise.
+                }
+
+                
                 dr = (p1[0]*m1i - p2[0]*m2i);
                 dg = (p1[1]*m1i - p2[1]*m2i);
                 db = (p1[2]*m1i - p2[2]*m2i);
+                
+                if (dr < 0) dr = -dr;
+                if (dg < 0) dg = -dg;
+                if (db < 0) db = -db;
+                dcomp = (dr + dg*2 + db) >> 8; // Put more emphasis on green
+                dcomp = dcomp * 120/max; // Adjust for dark parts of image.
 
-				if (dr < 0) dr = -dr;
-				if (dg < 0) dg = -dg;
-				if (db < 0) db = -db;
-				dcomp = (dr + dg*2 + db) >> 8; // Put more emphasis on green
-				
 
                 if (dcomp >= 256) dcomp = 255;// put it in a histogram.
-				if (dcomp < 0){
-					fprintf(stderr,"Internal error dcomp\n");
-					dcomp = 0;
-				}
+                if (dcomp < 0){
+                    fprintf(stderr,"Internal error dcomp\n");
+                    dcomp = 0;
+                }
                 DiffHist[dcomp] += 1;
                 diffrow[col] = dcomp;
-
         
                 if (DebugImgName){
                     // Save the difference image, scaled 4x.
-                    if (dr > 256) dr = 256;
-                    if (dg > 256) dg = 256;
-                    if (db > 256) db = 256;
+                    dr=(dr*60/max)>> 6; if (dr > 255) dr = 255;
+                    dg=(dg*60/max)>> 6; if (dg > 255) dg = 255;
+                    db=(db*60/max)>> 6; if (db > 255) db = 255;
                     pd[0] = dr;
                     pd[1] = dg;
-                    pd[2] = db;;
+                    pd[2] = db;
                 }
             }
 
