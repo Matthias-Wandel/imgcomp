@@ -172,7 +172,10 @@ static int ProcessImage(LastPic_t * New, int DeleteProcessed)
             fprintf(Log,"\n%s: ",LastPics[0].Name+LastPics[0].nind);
         }
         if (Trig.DiffLevel){
-            fprintf(Log,"%3d @(%4d,%4d) ", Trig.DiffLevel, Trig.x, Trig.y);
+            fprintf(Log,"%3d ", Trig.DiffLevel);
+			if (Trig.DiffLevel >= 2){
+				fprintf(Log,"@(%4d,%4d) ", Trig.x, Trig.y);
+			}
 			SinceMotionMs = 0;
         }
 
