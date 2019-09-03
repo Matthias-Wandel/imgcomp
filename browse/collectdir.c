@@ -92,7 +92,7 @@ time_t CollectDirectory(char * PathName, VarList * Files, VarList * Dirs, char *
             }
             AddToList(Dirs, &ThisOne);
         }else{
-            if (Patterns != NULL){
+            if (Patterns != NULL && Files != NULL){
                 // Reject anything that does not end in one of the specified patterns.
                 l=strlen(entry->d_name);
                 for (a=0;;a++){
@@ -116,6 +116,10 @@ time_t CollectDirectory(char * PathName, VarList * Files, VarList * Dirs, char *
         }
     }
     closedir(dirpt);
+	
+    if (Files) SortList(Files);
+	SortList(Dirs);
+
     return newest;
 }
 #else
@@ -156,7 +160,7 @@ time_t CollectDirectory(char * PathName, VarList * Files, VarList * Dirs, char *
                 }
             }
         }else{
-            if (Patterns != NULL){
+            if (Patterns != NULL && Files != NULL){
                 // Reject anything that does not end in one of the specified patterns.
                 l=strlen(finddata.name);
                 //if (l < 5) goto next; // Too short a name to contain '.jpg'
@@ -181,6 +185,9 @@ time_t CollectDirectory(char * PathName, VarList * Files, VarList * Dirs, char *
         if (_findnext(find_handle, &finddata) != 0) break;
     }
     _findclose(find_handle);
+	
+	if (Files) SortList(Files);
+	SortList(Dirs);
 
     // Return time of newest file.
     return newest;

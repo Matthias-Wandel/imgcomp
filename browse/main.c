@@ -28,6 +28,7 @@ Dir_t * CollectDir(char * HtmlPath)
     Dir_t * Dir;
     VarList * Subdirs;
     VarList * Images;
+	char DirName[300];
 
     Dir = (Dir_t *) malloc(sizeof(Dir_t));
     memset(Dir, 0, sizeof(Dir_t));
@@ -47,13 +48,52 @@ Dir_t * CollectDir(char * HtmlPath)
     }
 	strcpy(Dir->HtmlPath, HtmlPath);
 
-	{
-		char DirName[300];
-		sprintf(DirName, "pix/%s",HtmlPath);
-		CollectDirectory(DirName, Images, Subdirs, ImageExtensions);
-	}
+	sprintf(DirName, "pix/%s",HtmlPath);
+	CollectDirectory(DirName, Images, Subdirs, ImageExtensions);
    
-    SortDirContents(Dir);
+
+	// Look for previous and next.
+	if (strlen(HtmlPath) > 2){
+		char ThisDir[100];
+		VarList Siblings;
+		int a;
+		int LastSlash = 0;
+		Siblings.NumEntries = Siblings.NumAllocated = 0;
+		Siblings.Entries = NULL;
+		
+		for (a=0;HtmlPath[a] && a < 99;a++){
+			if (HtmlPath[a-1] == '/' && HtmlPath[a]) LastSlash = a;
+		}
+		memcpy(Dir->Parent, HtmlPath, LastSlash);
+		Dir->Parent[LastSlash-1] = '\0';
+		strcpy(ThisDir, HtmlPath+LastSlash);
+		a = strlen(ThisDir);
+		if (ThisDir[a-1] == '/') ThisDir[a-1] = '\0';
+				
+		//printf("<a href=\"view.cgi?%s\">[Parent:%s]</a><p>\n",Dir->Parent,Dir->Parent);
+		
+		sprintf(DirName, "pix/%s",Dir->Parent);
+		
+		CollectDirectory(DirName, NULL, &Siblings, NULL);
+		//printf("<p>%d siblings to %s  %s<p>",Siblings.NumEntries, DirName, ThisDir);
+		
+		for (a=0;a<Siblings.NumEntries;a++){
+			char * slash;
+			//printf("%s<br>\n",Siblings.Entries[a].Name);
+			slash = "";
+			if (Dir->Parent[0]) slash = "/";
+			if (strcmp(Siblings.Entries[a].Name, ThisDir) == 0){
+				if (a > 0){
+					sprintf(Dir->Previous, "%s%s%s", Dir->Parent, slash, Siblings.Entries[a-1].Name);
+				}
+				if (a < Siblings.NumEntries-1){
+					sprintf(Dir->Next, "%s%s%s", Dir->Parent, slash, Siblings.Entries[a+1].Name);
+				}
+				//printf("Here!");
+			}
+		}
+		
+	}
 		
     return Dir;
 }

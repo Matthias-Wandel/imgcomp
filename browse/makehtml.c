@@ -50,16 +50,13 @@ void MakeHtmlOutput(Dir_t * Dir)
 		"</style></head>\n");
 		
 	if (strlen(Dir->HtmlPath) > 2){
-		// To navigate up one directory.
-		int LastSlash = 0;
-		char UpDir[100];
-		for (a=0;Dir->HtmlPath[a] && a < 99;a++){
-			if (Dir->HtmlPath[a] == '/' && Dir->HtmlPath[a+1]) LastSlash = a;
-		}
-		memcpy(UpDir, Dir->HtmlPath, LastSlash);
-		UpDir[LastSlash] = '\0';
-		
-		fprintf(HtmlFile,"<a href=\"view.cgi?%s\">[Up:%s]</a><p>\n",UpDir,UpDir);
+		fprintf(HtmlFile,"<a href=\"view.cgi?%s\">[Up:%s]</a><p>\n",Dir->Parent,Dir->Parent);
+	}
+	if (Dir->Previous[0]){
+		fprintf(HtmlFile,"<a href=\"view.cgi?%s\">[Prev:%s]</a><p>\n",Dir->Previous,Dir->Previous);
+	}
+	if (Dir->Next[0]){
+		fprintf(HtmlFile,"<a href=\"view.cgi?%s\">[Next:%s]</a><p>\n",Dir->Next,Dir->Next);
 	}
 
     for (a=0;a<Directories.NumEntries;a++){

@@ -192,17 +192,8 @@ static int SortCompareNames(const void * el1,  const void * el2)
 //----------------------------------------------------------------------------------
 // Create browsable HTML index files for the directories.
 //----------------------------------------------------------------------------------
-void SortDirContents(Dir_t * Dir)
+void SortList(VarList * List)
 {
-    VarList Images;
-    VarList Directories;
-
-    Images = Dir->Images;
-    Directories = Dir->Dirs;    
-
-    // Sort FileList.
-    qsort( Images.Entries, Images.NumEntries, sizeof(DirEntry), SortCompareNames);
-
-    // Sort the directories.
-    qsort( Directories.Entries, Directories.NumEntries, sizeof(DirEntry), SortCompareNames);
+    // Sort file or directory list.
+    qsort( List->Entries, List->NumEntries, sizeof(DirEntry), SortCompareNames);
 }
