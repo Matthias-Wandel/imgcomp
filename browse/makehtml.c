@@ -28,7 +28,7 @@ void MakeHtmlOutput(Dir_t * Dir)
 	int SkipFactor;
 	int FullresThumbs = 0;
 	int LastDaySeconds;
-	int BreakIndices[20];
+	int BreakIndices[61];
 	unsigned NumBreakIndices = 0;
 
     Images = Dir->Images;
@@ -56,8 +56,9 @@ void MakeHtmlOutput(Dir_t * Dir)
 		fprintf(HtmlFile,"<a href=\"view.cgi?%s\">[Prev:%s]</a>\n",Dir->Previous,Dir->Previous);
 	}
 	if (Dir->Next[0]){
-		fprintf(HtmlFile,"<a href=\"view.cgi?%s\">[Next:%s]</a><p>\n",Dir->Next,Dir->Next);
+		fprintf(HtmlFile,"<a href=\"view.cgi?%s\">[Next:%s]</a>\n",Dir->Next,Dir->Next);
 	}
+    fprintf(HtmlFile, "<p>\n");
 
     for (a=0;a<Directories.NumEntries;a++){
 
@@ -103,10 +104,10 @@ void MakeHtmlOutput(Dir_t * Dir)
 	               + ((Name[7]-'0') * 10 + (Name[8]-'0'))*60
 				   + ((Name[9]-'0') * 10 + (Name[10]-'0'));
 		
-		if (DaySeconds-LastDaySeconds > 30){
+		if (DaySeconds-LastDaySeconds > 60){
 			BreakIndices[NumBreakIndices++] = a;
 			printf("\n");
-			if (NumBreakIndices > 19) break;
+			if (NumBreakIndices > 60) break;
 		}
 		LastDaySeconds = DaySeconds;
 				   
@@ -123,10 +124,10 @@ void MakeHtmlOutput(Dir_t * Dir)
 	
 		// If there are a LOT of images, don't show all of them!
 		SkipFactor = 1;
-		if (num > 15) SkipFactor = 2;
-		if (num > 30) SkipFactor = 3;
-		if (num > 60) SkipFactor = 4;
-		if (num > 120) SkipFactor = 5;
+		if (num > 10) SkipFactor = 2;
+		if (num > 20) SkipFactor = 3;
+		if (num > 30) SkipFactor = 4;
+		if (num > 60) SkipFactor = 5;
 		
 		Name = Images.Entries[start].Name;
 		TimeStr[0] = Name[5];

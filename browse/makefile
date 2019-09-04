@@ -15,7 +15,7 @@ OBJECTS_MAKEHTML = $(OBJ)/main.o \
 
 
 $(OBJ)/%.o:%.c view.h
-	${CC} -O3 -Wall -Wformat-truncation=0 -c $< -o $@
+	${CC} -O3 -Wall -c $< -o $@
 
 view.cgi: ${OBJECTS_MAKEHTML}
 	${CC} -o view.cgi ${OBJECTS_MAKEHTML}
