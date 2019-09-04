@@ -43,16 +43,13 @@ int ExtCheck(char * Ext, char * Pattern)
 //----------------------------------------------------------------------------------
 // Collect information for a directory.  Linux version.
 //----------------------------------------------------------------------------------
-time_t CollectDirectory(char * PathName, VarList * Files, VarList * Dirs, char * Patterns[])
+void CollectDirectory(char * PathName, VarList * Files, VarList * Dirs, char * Patterns[])
 {
     char FullPath[400];
     DIR * dirpt;
     struct stat filestat;
-    time_t newest;
     unsigned l;
     int a;
-
-    newest = 0;
 
     //printf("DIR: '%s'\n",DirName);
 
@@ -65,7 +62,7 @@ time_t CollectDirectory(char * PathName, VarList * Files, VarList * Dirs, char *
 
     if (dirpt == NULL){
          printf("Error: could not read dir: %s\n",strerror(errno));
-         return newest;
+         return;
     }
 
     for (;;){
@@ -87,10 +84,12 @@ time_t CollectDirectory(char * PathName, VarList * Files, VarList * Dirs, char *
 
         if(S_ISDIR(filestat.st_mode)){
             // Exclude non real paths.
-            if (ThisOne.Name[0] == '.'){ 
-                continue;
+            if (Dirs){
+                if (ThisOne.Name[0] == '.'){ 
+                    continue;
+                }
+                AddToList(Dirs, &ThisOne);
             }
-            AddToList(Dirs, &ThisOne);
         }else{
             if (Patterns != NULL && Files != NULL){
                 // Reject anything that does not end in one of the specified patterns.
@@ -105,9 +104,6 @@ time_t CollectDirectory(char * PathName, VarList * Files, VarList * Dirs, char *
                         if (ExtCheck(entry->d_name+l-lp, Patterns[a]) == 0){
                             //ThisOne.Size = filestat.st_size;
                             AddToList(Files, &ThisOne);
-                            if (filestat.st_mtime > newest){
-                                newest = filestat.st_mtime;
-                            }
                             break;
                         }
                     }
@@ -118,9 +114,7 @@ time_t CollectDirectory(char * PathName, VarList * Files, VarList * Dirs, char *
     closedir(dirpt);
 	
     if (Files) SortList(Files);
-	SortList(Dirs);
-
-    return newest;
+	if (Dirs) SortList(Dirs);
 }
 #else
 //----------------------------------------------------------------------------------
@@ -133,11 +127,8 @@ time_t CollectDirectory(char * PathName, VarList * Files, VarList * Dirs, char *
     // For getting directory list...
     struct _finddata_t finddata;
     long find_handle;
-    time_t newest;
     int l;
     int a;
-
-    newest = 0;
 
     CombinePaths(MatchPath, PathName, "*");
 
@@ -172,9 +163,6 @@ time_t CollectDirectory(char * PathName, VarList * Files, VarList * Dirs, char *
                         if (ExtCheck(finddata.name+l-lp, Patterns[a]) == 0){
                             //ThisOne.Size = finddata.size;
                             AddToList(Files, &ThisOne);
-                            if (finddata.time_write > newest){
-                                newest = finddata.time_write;
-                            }
                             break;
                         }
                     }
@@ -188,8 +176,5 @@ time_t CollectDirectory(char * PathName, VarList * Files, VarList * Dirs, char *
 	
 	if (Files) SortList(Files);
 	SortList(Dirs);
-
-    // Return time of newest file.
-    return newest;
 }
 #endif

@@ -50,18 +50,39 @@ void MakeHtmlOutput(Dir_t * Dir)
 		"</style></head>\n");
 		
 	if (strlen(Dir->HtmlPath) > 2){
-		fprintf(HtmlFile,"<a href=\"view.cgi?%s\">[Up:%s]</a><p>\n",Dir->Parent,Dir->Parent);
+		fprintf(HtmlFile,"<a href=\"view.cgi?%s\">[Up:%s]</a>\n",Dir->Parent,Dir->Parent);
 	}
 	if (Dir->Previous[0]){
-		fprintf(HtmlFile,"<a href=\"view.cgi?%s\">[Prev:%s]</a><p>\n",Dir->Previous,Dir->Previous);
+		fprintf(HtmlFile,"<a href=\"view.cgi?%s\">[Prev:%s]</a>\n",Dir->Previous,Dir->Previous);
 	}
 	if (Dir->Next[0]){
 		fprintf(HtmlFile,"<a href=\"view.cgi?%s\">[Next:%s]</a><p>\n",Dir->Next,Dir->Next);
 	}
 
     for (a=0;a<Directories.NumEntries;a++){
-		fprintf(HtmlFile, "<a href=\"view.cgi?%s%s\">%s</a>\n",Dir->HtmlPath, Directories.Entries[a].Name, Directories.Entries[a].Name);
-		if ((a % 10 ) == 9){
+
+        //VarList Dirs;
+        
+        
+		fprintf(HtmlFile, "<a href=\"view.cgi?%s%s\">%s</a>",Dir->HtmlPath, Directories.Entries[a].Name, Directories.Entries[a].Name);
+        
+        // Count how many images in subdirectory.
+        {
+            char SubdirName[200];
+            VarList SubdImages;
+            memset(&SubdImages, 0, sizeof(VarList));
+            snprintf(SubdirName,200,"pix/%s%s",Dir->HtmlPath, Directories.Entries[a].Name);
+            CollectDirectory(SubdirName, &SubdImages, NULL, ImageExtensions);
+            if (SubdImages.NumEntries){
+                fprintf(HtmlFile, "(%d)\n",SubdImages.NumEntries);
+                if (SubdImages.NumEntries < 100) fprintf(HtmlFile, " &nbsp");
+                if (SubdImages.NumEntries < 10) fprintf(HtmlFile, " &nbsp");
+            }
+            free(SubdImages.Entries);
+        }
+        
+        
+		if ((a % 5 ) == 4){
 			fprintf(HtmlFile, "<p>\n"); // Put four links per line.
 		}else{
 			fprintf(HtmlFile, " &nbsp; \n"); // Put four links per line.
@@ -134,8 +155,19 @@ void MakeHtmlOutput(Dir_t * Dir)
 			fprintf(HtmlFile, "</a>\n");
 		}
 	}
-		
-	printf("<p>(end)\n");
+	
+    fprintf(HtmlFile, "<p>\n");    
+	if (strlen(Dir->HtmlPath) > 2){
+		fprintf(HtmlFile,"<a href=\"view.cgi?%s\">[Up:%s]</a>\n",Dir->Parent,Dir->Parent);
+	}
+	if (Dir->Previous[0]){
+		fprintf(HtmlFile,"<a href=\"view.cgi?%s\">[Prev:%s]</a>\n",Dir->Previous,Dir->Previous);
+	}
+	if (Dir->Next[0]){
+		fprintf(HtmlFile,"<a href=\"view.cgi?%s\">[Next:%s]</a>\n",Dir->Next,Dir->Next);
+	}
+
+
 	if (HtmlFile != stdout) fclose(HtmlFile);
 }
 

@@ -6,10 +6,7 @@ typedef struct tm timestruc;
 // Structure for a named directory entry.
 typedef struct {
     char   Name[160];
-
-    // File specific:
     int    DaySecond;
-
 }DirEntry;
 
 //-------------------------------------------------------------------
@@ -34,8 +31,10 @@ typedef struct {
 
 void MakeHtmlOutput(Dir_t * Dir);
 
+extern char * ImageExtensions[];
+
 //-------------------------------------------------------------------
-time_t CollectDirectory(char * PathName, VarList * Files, VarList * Dirs, char * Patterns[]);
+void CollectDirectory(char * PathName, VarList * Files, VarList * Dirs, char * Patterns[]);
 //-------------------------------------------------------------------
 int  CollectDirectoryImages(char * PathName, VarList * Files);
 void CollectDirectoryVideos(char * PathName, VarList * Files);

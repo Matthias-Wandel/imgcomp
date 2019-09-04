@@ -18,7 +18,7 @@
     #include <unistd.h>
 #endif
 
-static char * ImageExtensions[] = {"jpg","jpeg","c",NULL};
+char * ImageExtensions[] = {"jpg","jpeg","c",NULL};
 
 //----------------------------------------------------------------------------------
 // Process one directory.  Returns pointer to summary.
@@ -84,17 +84,17 @@ Dir_t * CollectDir(char * HtmlPath)
 			if (Dir->Parent[0]) slash = "/";
 			if (strcmp(Siblings.Entries[a].Name, ThisDir) == 0){
 				if (a > 0){
-					sprintf(Dir->Previous, "%s%s%s", Dir->Parent, slash, Siblings.Entries[a-1].Name);
+					snprintf(Dir->Previous, 200, "%s%s%s", Dir->Parent, slash, Siblings.Entries[a-1].Name);
 				}
 				if (a < Siblings.NumEntries-1){
-					sprintf(Dir->Next, "%s%s%s", Dir->Parent, slash, Siblings.Entries[a+1].Name);
+					snprintf(Dir->Next, 200, "%s%s%s", Dir->Parent, slash, Siblings.Entries[a+1].Name);
 				}
 				//printf("Here!");
 			}
 		}
 		
 	}
-		
+	
     return Dir;
 }
 
@@ -146,6 +146,10 @@ int main(int argc, char ** argv)
 		Dir_t * Col;
 		Col = CollectDir(HtmlPath);
 		MakeHtmlOutput(Col);
+        
+        free(Col->Dirs.Entries);
+        free(Col->Images.Entries);
+        free(Col);
 	}
     return 0;
 }
