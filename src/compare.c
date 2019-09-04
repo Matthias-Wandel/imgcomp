@@ -513,11 +513,19 @@ static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold)
     fs = 0;
     for (row=0;row<heightSc;row++){
         for (col=0;col<widthSc;col++){
-            int ds, nFat;
+            int ds, nFat, nFatM;
             ds = DiffScaled[row*widthSc+col];
             nFat = (Fatigue[row*widthSc+col]*29 + ds)/30; // Expontential decay on it.
+
+            // Look for largest fatigue also among largest 4 neighbours to use.
+            // Helps address laundry flapping in the wind, sometimes flapping further.
+            nFatM = nFat;
+            if (col > 0        && nFatM < Fatigue[row*widthSc+col-1]) nFatM = Fatigue[row*widthSc+col-1];
+            if (col < widthSc  && nFatM < Fatigue[row*widthSc+col+1]) nFatM = Fatigue[row*widthSc+col+1];
+            if (row > 0        && nFatM < Fatigue[(row-1)*widthSc+col]) nFatM = Fatigue[(row-1)*widthSc+col];
+            if (row < heightSc && nFatM < Fatigue[(row+1)*widthSc+col]) nFatM = Fatigue[(row+1)*widthSc+col];
             
-            ds -= nFat*3;
+            ds -= nFatM*3;
             if (ds < 0) ds = 0;
            
             Fatigue[row*widthSc+col] = nFat;
