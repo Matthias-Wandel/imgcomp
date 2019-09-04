@@ -442,6 +442,8 @@ static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold)
 {
     int row,col;
     TriggerInfo_t retval;
+    int fs;
+    static int SinceFatiguePrint;
     
     // Scale down by this factor before applying windowing algorithm to look for max localized change
 	const int scalef = 6;
@@ -453,38 +455,46 @@ static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold)
     static int * DiffScaled = NULL;
     static int * DiffScaledCum = NULL;
     static int * DiffScaledC2 = NULL;
-    static int width4, height4;
-    if (width4 != ROOF(DiffVal->w) || height4 != ROOF(DiffVal->h) || DiffScaled == NULL){
-        // Size has changed.  Reallocate.
-        free(DiffScaled);
-        width4 = ROOF(DiffVal->w);
-        height4 = ROOF(DiffVal->h);
-        DiffScaled = malloc(sizeof(int)*width4*height4);
-        DiffScaledCum = malloc(sizeof(int)*width4*height4);       
-        DiffScaledC2 = malloc(sizeof(int)*width4*height4);
-    }
+    static int widthSc, heightSc;
     
+    static int * Fatigue = NULL;
+    if (DiffScaled == NULL){
+
+        widthSc = ROOF(DiffVal->w);
+        heightSc = ROOF(DiffVal->h);
+        DiffScaled = malloc(sizeof(int)*widthSc*heightSc);
+        DiffScaledCum = malloc(sizeof(int)*widthSc*heightSc);       
+        DiffScaledC2 = malloc(sizeof(int)*widthSc*heightSc);
+        Fatigue = malloc(sizeof(int)*widthSc*heightSc);
+        memset(Fatigue, 0, sizeof(int)*widthSc*heightSc);
+    }else{
+        if (widthSc != ROOF(DiffVal->w) || heightSc != ROOF(DiffVal->h)){
+            fprintf(stderr, "image size changed, error!");
+            // Could reallocate, but probably other code doesn't handle resizing anyway.
+            exit(-1);
+        }
+    }
     
     // Compute scaled down array of differences.  Destination: DiffScaled[]
     {
         int width = DiffVal->w;
-        memset(DiffScaled, 0, sizeof(int)*width4*height4);
+        memset(DiffScaled, 0, sizeof(int)*widthSc*heightSc);
         for (row=Region.y1;row<Region.y2;row++){
             // Compute difference by column using established threshold value
             unsigned char * diffrow, *ExRow;
-            int * width4row;
+            int * widthScrow;
             diffrow = &DiffVal->values[width*row];
             ExRow = &WeightMap->values[width*row];
 
-            width4row = &DiffScaled[width4*(row/scalef)];
+            widthScrow = &DiffScaled[widthSc*(row/scalef)];
             for (col=Region.x1;col<Region.x2;col++){
                 int d = diffrow[col] - threshold;
                 if (d > 0){
-                    width4row[col/scalef] += d;
+                    widthScrow[col/scalef] += d;
                     if (ExRow[col] > 1){
                         
                         // Double weight region
-                        width4row[col/scalef] += d;
+                        widthScrow[col/scalef] += d;
                     }
                 }
             }
@@ -492,32 +502,67 @@ static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold)
     }
 
     if (Verbosity > 1){
-        
-		printf("Scaled difference array (%d x %d)\n", width4, height4);
-        for (row=0;row<height4;row++){
-            for (col=0;col<width4;col++) printf("%3d",DiffScaled[row*width4+col]/100);
+		printf("Scaled difference array (%d x %d)\n", widthSc, heightSc);
+        for (row=0;row<heightSc;row++){
+            for (col=0;col<widthSc;col++) printf("%3d",DiffScaled[row*widthSc+col]/100);
             printf("\n");
         }
     }
-    
+
+    // Compute motion fatigue and subtract it out.
+    fs = 0;
+    for (row=0;row<heightSc;row++){
+        for (col=0;col<widthSc;col++){
+            int ds, nFat;
+            ds = DiffScaled[row*widthSc+col];
+            nFat = (Fatigue[row*widthSc+col]*29 + ds)/30; // Expontential decay on it.
+            
+            ds -= nFat*3;
+            if (ds < 0) ds = 0;
+           
+            Fatigue[row*widthSc+col] = nFat;
+            DiffScaled[row*widthSc+col] = ds;
+            fs += nFat;
+        }
+    }
+    fs = fs/(heightSc*widthSc);
+
+    if (Verbosity > 1 || (fs > 30 && SinceFatiguePrint > 120)){
+        // Print the fatigure array every two minuts if there is stuff in it.
+		printf("Scaled difference array (%d x %d)\n", widthSc, heightSc);
+        for (row=0;row<heightSc;row++){
+            for (col=0;col<widthSc;col++){
+                int v = Fatigue[row*widthSc+col]/100;
+                if (v == 0){
+                    printf("  .");
+                }else{
+                    printf("%3d",Fatigue[row*widthSc+col]/100);
+                }
+            }
+            printf("\n");
+        }
+        SinceFatiguePrint = 0;
+    }
+    SinceFatiguePrint++;
+
     // Transform array to column sums wind_h above.  DiffScaled[] --> DiffScaledCum[]
-    memset(DiffScaledCum, 0, sizeof(int)*width4*height4);
-    for (row=0;row<height4;row++){
+    memset(DiffScaledCum, 0, sizeof(int)*widthSc*heightSc);
+    for (row=0;row<heightSc;row++){
         int *oldrow, *newrow, *addrow;
-        oldrow = &DiffScaledCum[width4*(row-1)];
-        newrow = &DiffScaledCum[width4*row];
+        oldrow = &DiffScaledCum[widthSc*(row-1)];
+        newrow = &DiffScaledCum[widthSc*row];
         
-        addrow = &DiffScaled[width4*row];
+        addrow = &DiffScaled[widthSc*row];
         if (row >= wind_h){
-            int * subtrow = &DiffScaled[width4*(row-wind_h)];
-            for (col=0;col<width4;col++){
+            int * subtrow = &DiffScaled[widthSc*(row-wind_h)];
+            for (col=0;col<widthSc;col++){
                 newrow[col] = addrow[col]+oldrow[col]-subtrow[col];
             }
         }else{
             if (row == 0){
-                for (col=0;col<width4;col++) newrow[col] = addrow[col];
+                for (col=0;col<widthSc;col++) newrow[col] = addrow[col];
             }else{
-                for (col=0;col<width4;col++){
+                for (col=0;col<widthSc;col++){
                     newrow[col] = addrow[col]+oldrow[col];
                 }
             }
@@ -529,13 +574,13 @@ static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold)
         int maxval, maxr, maxc;
         maxval = maxr = maxc = 0;
         // Transform array to sum of n columns from previous.
-        for (row=0;row<height4;row++){
+        for (row=0;row<heightSc;row++){
             int *srcrow, *destrow;
             int s;
-            srcrow = &DiffScaledCum[width4*row];
-            destrow = &DiffScaledC2[width4*row];
+            srcrow = &DiffScaledCum[widthSc*row];
+            destrow = &DiffScaledC2[widthSc*row];
             s = 0;
-            for (col=0;col<width4;col++){
+            for (col=0;col<widthSc;col++){
                 s += srcrow[col];
                 if (col >= wind_w) s-= srcrow[col-wind_w];
                 destrow[col] = s;
@@ -561,14 +606,14 @@ static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold)
             int sum;
             xsum = ysum = sum = 0;
             for (;row<=maxr;row++){
-                col = maxc-wind_w+1;
+                col = maxc-wind_w+1; 
                 if (col < 0) col = 0;
                 for(;col<=maxc;col++){
-                    int v = DiffScaled[row*width4+col];
+                    int v = DiffScaled[row*widthSc+col];
                     xsum += col*v;
                     ysum += row*v;
                     sum += v;
-                    //printf("%3d",DiffScaled[row*width4+col]/100);
+                    //printf("%3d",DiffScaled[row*widthSc+col]/100);
                 }
                 //printf("\n");
             }
@@ -582,8 +627,8 @@ static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold)
     if (Verbosity > 2){ 
         // Show the array.
         printf("Window sums\n");
-        for (row=0;row<height4;row++){
-            for (col=0;col<width4;col++) printf("%3d",DiffScaledC2[row*width4+col]/100);
+        for (row=0;row<heightSc;row++){
+            for (col=0;col<widthSc;col++) printf("%3d",DiffScaledC2[row*widthSc+col]/100);
             printf("\n");
         }
     }
