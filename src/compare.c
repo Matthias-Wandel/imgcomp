@@ -432,7 +432,7 @@ TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, char * DebugImgNa
 
 
 
-#ifndef AIM_HEATER
+
 //----------------------------------------------------------------------------------------
 // Search for an N x N window with the maximum differences in it.
 // This algorithm is optimized for rejecting spurious differences outdoors
@@ -441,32 +441,34 @@ TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, char * DebugImgNa
 static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold)
 {
     int row,col;
-	const int scalef = 6;
     TriggerInfo_t retval;
-   
+    
     // Scale down by this factor before applying windowing algorithm to look for max localized change
+	const int scalef = 6;
     #define ROOF(x) ((x+scalef-1)/scalef)
 
     // these determine the window over over which to look for the change (after scaling)    
     const int wind_w = 8, wind_h = 8;
     
-    static int * Diff4 = NULL;
-    static int * Diff4Cum = NULL;
-    static int * Diff4C2 = NULL;
+    static int * DiffScaled = NULL;
+    static int * DiffScaledCum = NULL;
+    static int * DiffScaledC2 = NULL;
     static int width4, height4;
-    if (width4 != ROOF(DiffVal->w) || height4 != ROOF(DiffVal->h) || Diff4 == NULL){
+    if (width4 != ROOF(DiffVal->w) || height4 != ROOF(DiffVal->h) || DiffScaled == NULL){
         // Size has changed.  Reallocate.
-        free(Diff4);
+        free(DiffScaled);
         width4 = ROOF(DiffVal->w);
         height4 = ROOF(DiffVal->h);
-        Diff4 = malloc(sizeof(int)*width4*height4);
-        Diff4Cum = malloc(sizeof(int)*width4*height4);       
-        Diff4C2 = malloc(sizeof(int)*width4*height4);
+        DiffScaled = malloc(sizeof(int)*width4*height4);
+        DiffScaledCum = malloc(sizeof(int)*width4*height4);       
+        DiffScaledC2 = malloc(sizeof(int)*width4*height4);
     }
-    // Compute scaled down array of differences.  Destination: Diff4[]
+    
+    
+    // Compute scaled down array of differences.  Destination: DiffScaled[]
     {
         int width = DiffVal->w;
-        memset(Diff4, 0, sizeof(int)*width4*height4);
+        memset(DiffScaled, 0, sizeof(int)*width4*height4);
         for (row=Region.y1;row<Region.y2;row++){
             // Compute difference by column using established threshold value
             unsigned char * diffrow, *ExRow;
@@ -474,12 +476,13 @@ static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold)
             diffrow = &DiffVal->values[width*row];
             ExRow = &WeightMap->values[width*row];
 
-            width4row = &Diff4[width4*(row/scalef)];
+            width4row = &DiffScaled[width4*(row/scalef)];
             for (col=Region.x1;col<Region.x2;col++){
                 int d = diffrow[col] - threshold;
                 if (d > 0){
                     width4row[col/scalef] += d;
                     if (ExRow[col] > 1){
+                        
                         // Double weight region
                         width4row[col/scalef] += d;
                     }
@@ -490,23 +493,23 @@ static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold)
 
     if (Verbosity > 1){
         
-		printf("Scaled difference array\n");
+		printf("Scaled difference array (%d x %d)\n", width4, height4);
         for (row=0;row<height4;row++){
-            for (col=0;col<width4;col++) printf("%3d",Diff4[row*width4+col]/100);
+            for (col=0;col<width4;col++) printf("%3d",DiffScaled[row*width4+col]/100);
             printf("\n");
         }
     }
     
-    // Transform array to column sums wind_h above.  Diff4[] --> Diff4Cum[]
-    memset(Diff4Cum, 0, sizeof(int)*width4*height4);
+    // Transform array to column sums wind_h above.  DiffScaled[] --> DiffScaledCum[]
+    memset(DiffScaledCum, 0, sizeof(int)*width4*height4);
     for (row=0;row<height4;row++){
         int *oldrow, *newrow, *addrow;
-        oldrow = &Diff4Cum[width4*(row-1)];
-        newrow = &Diff4Cum[width4*row];
+        oldrow = &DiffScaledCum[width4*(row-1)];
+        newrow = &DiffScaledCum[width4*row];
         
-        addrow = &Diff4[width4*row];
+        addrow = &DiffScaled[width4*row];
         if (row >= wind_h){
-            int * subtrow = &Diff4[width4*(row-wind_h)];
+            int * subtrow = &DiffScaled[width4*(row-wind_h)];
             for (col=0;col<width4;col++){
                 newrow[col] = addrow[col]+oldrow[col]-subtrow[col];
             }
@@ -521,7 +524,7 @@ static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold)
         }
     }
 
-    // Transform array to sum of wind_w to the left.  Diff4Cum[] --> Diff4C2
+    // Transform array to sum of wind_w to the left.  DiffScaledCum[] --> DiffScaledC2
     {
         int maxval, maxr, maxc;
         maxval = maxr = maxc = 0;
@@ -529,8 +532,8 @@ static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold)
         for (row=0;row<height4;row++){
             int *srcrow, *destrow;
             int s;
-            srcrow = &Diff4Cum[width4*row];
-            destrow = &Diff4C2[width4*row];
+            srcrow = &DiffScaledCum[width4*row];
+            destrow = &DiffScaledC2[width4*row];
             s = 0;
             for (col=0;col<width4;col++){
                 s += srcrow[col];
@@ -561,11 +564,11 @@ static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold)
                 col = maxc-wind_w+1;
                 if (col < 0) col = 0;
                 for(;col<=maxc;col++){
-                    int v = Diff4[row*width4+col];
+                    int v = DiffScaled[row*width4+col];
                     xsum += col*v;
                     ysum += row*v;
                     sum += v;
-                    //printf("%3d",Diff4[row*width4+col]/100);
+                    //printf("%3d",DiffScaled[row*width4+col]/100);
                 }
                 //printf("\n");
             }
@@ -580,7 +583,7 @@ static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold)
         // Show the array.
         printf("Window sums\n");
         for (row=0;row<height4;row++){
-            for (col=0;col<width4;col++) printf("%3d",Diff4C2[row*width4+col]/100);
+            for (col=0;col<width4;col++) printf("%3d",DiffScaledC2[row*width4+col]/100);
             printf("\n");
         }
     }
@@ -588,79 +591,3 @@ static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold)
     return retval;
 }
 
-#else
-
-//----------------------------------------------------------------------------------------
-// Algorithm for detecting where a person might be and aim a fan or heater.
-// window in X direction only.  Not worried about spurious differences, but need
-// more consistent X-values.
-//----------------------------------------------------------------------------------------
-static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold)
-{
-    int row,col, width;
-    TriggerInfo_t retval;
-    static int DiffCol[1000];
-    unsigned char *diffrow;
-    memset(&retval, 0, sizeof(retval));
-    
-    // Scale down by this factor before applying windowing algorithm to look for max localized change
-    #define SCALEF 4
-    #define ROOF(x) ((x+SCALEF-1)/SCALEF)
-
-    // these determine the window over which to look for the change (after scaling)    
-    memset(DiffCol, 0, sizeof(DiffCol));
-    width = DiffVal->w;
-    
-    for (row=Region.y1;row<Region.y2;row++){
-        diffrow = &DiffVal->values[width*row];
-        for (col=Region.x1;col<Region.x2;col++){
-            int d = diffrow[col] - threshold;
-            if (d > 0){
-                DiffCol[col] += diffrow[col];
-            }
-        }
-    }
-    
-    //for (col=Region.x1;col<Region.x2;col++){
-    //    printf("%3d: %5d  ",col,DiffCol[col]);
-    //    if ((col & 7) == 0) printf("\n");
-    //}
-    
-    {
-        // Now lests look for max window comprising no more than 20% of the image width.
-        // windowing hopefully cuts down on spurious other bits.
-        int wwidth, wsum;
-        int wsummax, wposmax;
-        double weighted_sum;
-        int xpos;
-        wwidth = (Region.x2-Region.x1)/5;
-        wsum = 0;
-        wsummax = wposmax = 0;
-        for (col=Region.x1;col<Region.x2;col++){
-            wsum+= DiffCol[col]; // remove at start of window.
-            if (col-wwidth > 0){
-                wsum -= DiffCol[col-wwidth];
-                if (wsum > wsummax){
-                    wsummax = wsum;
-                    wposmax = col-wwidth;
-                }
-            }
-        }
-        
-        // Now that we have a window, work out a weighted avarage of motion within the window.
-        weighted_sum = 0;
-        for (col=wposmax;col<wposmax+wwidth;col++){
-            weighted_sum += DiffCol[col]*col;
-        }
-        xpos = (int)(weighted_sum/wsummax);
-        
-        //printf("\nwindow max: %d at %d-%d  weight at %d",wsummax, wposmax,wposmax+wwidth, xpos);
-        
-        retval.x = xpos;
-        retval.y = 0;  // No x value computed.
-        retval.DiffLevel = retvale.Motion = wsummax/1000; // So scale is kind of comprable with other algorithm
-    }
-    
-    return retval;
-}
-#endif
