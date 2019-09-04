@@ -18,7 +18,7 @@
     #include <unistd.h>
 #endif
 
-char * ImageExtensions[] = {"jpg","jpeg","c",NULL};
+char * ImageExtensions[] = {"jpg","jpeg","txt",NULL};
 
 //----------------------------------------------------------------------------------
 // Process one directory.  Returns pointer to summary.
@@ -69,13 +69,10 @@ Dir_t * CollectDir(char * HtmlPath)
 		strcpy(ThisDir, HtmlPath+LastSlash);
 		a = strlen(ThisDir);
 		if (ThisDir[a-1] == '/') ThisDir[a-1] = '\0';
-				
-		//printf("<a href=\"view.cgi?%s\">[Parent:%s]</a><p>\n",Dir->Parent,Dir->Parent);
 		
 		sprintf(DirName, "pix/%s",Dir->Parent);
 		
 		CollectDirectory(DirName, NULL, &Siblings, NULL);
-		//printf("<p>%d siblings to %s  %s<p>",Siblings.NumEntries, DirName, ThisDir);
 		
 		for (a=0;a<Siblings.NumEntries;a++){
 			char * slash;
@@ -84,12 +81,11 @@ Dir_t * CollectDir(char * HtmlPath)
 			if (Dir->Parent[0]) slash = "/";
 			if (strcmp(Siblings.Entries[a].Name, ThisDir) == 0){
 				if (a > 0){
-					snprintf(Dir->Previous, 200, "%s%s%s", Dir->Parent, slash, Siblings.Entries[a-1].Name);
+					snprintf(Dir->Previous, 200, "%.90s%.1s%.90s", Dir->Parent, slash, Siblings.Entries[a-1].Name);
 				}
 				if (a < Siblings.NumEntries-1){
-					snprintf(Dir->Next, 200, "%s%s%s", Dir->Parent, slash, Siblings.Entries[a+1].Name);
+					snprintf(Dir->Next, 200, "%.90s%.1s%.90s", Dir->Parent, slash, Siblings.Entries[a+1].Name);
 				}
-				//printf("Here!");
 			}
 		}
 		
