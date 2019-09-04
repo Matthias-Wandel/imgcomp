@@ -534,12 +534,12 @@ static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold)
             for (col=0;col<widthSc;col++){
                 int v = Fatigue[row*widthSc+col]/100;
                 if (v == 0){
-                    printf("  .");
+                    fprintf(Log,"  .");
                 }else{
-                    printf("%3d",Fatigue[row*widthSc+col]/100);
+                    fprintf(Log,"%3d",Fatigue[row*widthSc+col]/100);
                 }
             }
-            printf("\n");
+            fprintf(Log,"\n");
         }
         SinceFatiguePrint = 0;
     }
