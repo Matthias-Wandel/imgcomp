@@ -424,15 +424,6 @@ TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, char * DebugImgNa
     }
 }
 
-
-
-
-
-
-
-
-
-
 //----------------------------------------------------------------------------------------
 // Search for an N x N window with the maximum differences in it.
 // This algorithm is optimized for rejecting spurious differences outdoors
@@ -450,7 +441,7 @@ static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold)
     #define ROOF(x) ((x+scalef-1)/scalef)
 
     // these determine the window over over which to look for the change (after scaling)    
-    const int wind_w = 8, wind_h = 8;
+    const int wind_w = 5, wind_h = 8;
     
     static int * DiffScaled = NULL;
     static int * DiffScaledCum = NULL;
