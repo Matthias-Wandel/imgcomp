@@ -511,11 +511,28 @@ static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold)
             fs += nFat;
         }
     }
-    
     fs = fs/(heightSc*widthSc);
     
-    
-    // Subtract out moution fatigue
+    // Show fatigue map from time to time.
+    if (Verbosity > 1 || (fs > 100 && SinceFatiguePrint > 120)){
+        // Print the fatigure array every two minuts if there is stuff in it.
+		fprintf(Log, "Fatigue map (%d x %d) sum=%d\n", widthSc, heightSc, fs);
+        for (row=0;row<heightSc;row++){
+            for (col=0;col<widthSc;col++){
+                int v = Fatigue[row*widthSc+col]/50;
+                if (v == 0){
+                    fprintf(Log," .");
+                }else{
+                    fprintf(Log,"%2d",v);
+                }
+            }
+            fprintf(Log,"\n");
+        }
+        SinceFatiguePrint = 0;
+    }
+    SinceFatiguePrint++;
+
+    // Subtract out motion fatigue
     for (row=0;row<heightSc;row++){
         for (col=0;col<widthSc;col++){
             int ds, nFatM;
@@ -533,25 +550,6 @@ static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold)
             DiffScaled[row*widthSc+col] = ds;
         }
     }
-    
-
-    if (Verbosity > 1 || (fs > 100 && SinceFatiguePrint > 120)){
-        // Print the fatigure array every two minuts if there is stuff in it.
-		fprintf(Log, "Fatigue map (%d x %d) sum=%d\n", widthSc, heightSc, fs);
-        for (row=0;row<heightSc;row++){
-            for (col=0;col<widthSc;col++){
-                int v = Fatigue[row*widthSc+col]/100;
-                if (v == 0){
-                    fprintf(Log,"  .");
-                }else{
-                    fprintf(Log,"%3d",Fatigue[row*widthSc+col]/100);
-                }
-            }
-            fprintf(Log,"\n");
-        }
-        SinceFatiguePrint = 0;
-    }
-    SinceFatiguePrint++;
 
     // Transform array to column sums wind_h above.  DiffScaled[] --> DiffScaledCum[]
     memset(DiffScaledCum, 0, sizeof(int)*widthSc*heightSc);
