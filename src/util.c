@@ -350,19 +350,21 @@ int CopyFile(char * src, char * dest)
 //-----------------------------------------------------------------------------------
 // Open and / or rotate logfiles
 //-----------------------------------------------------------------------------------
-void LogFileMaintain(int ForceLogSave)
+void LogFileMaintain(int ForceLogSaveReboot)
 {
     static char ThisLogTo[PATH_MAX];
     char NewLogTo[PATH_MAX];
+    int HaveLogAlready;
 
     if (LogToFile[0] == 0){
         Log = stdout;
         return;
     }
+    HaveLogAlready = (Log != NULL);
     
     if (MoveLogNames[0]){
         strftime(NewLogTo, PATH_MAX, MoveLogNames, localtime(&LastPic_mtime));
-		if (ForceLogSave){
+		if (ForceLogSaveReboot){
 			// Just change the old name, so it gets backed up, and not overwritten
 			// by new log after reboot.
 			strcat(ThisLogTo, " reboot");
@@ -383,14 +385,20 @@ void LogFileMaintain(int ForceLogSave)
     }
     
     if (Log == NULL){
-        Log = fopen(LogToFile,"w");
+        Log = fopen(LogToFile,"a");
         if (Log == NULL){
             fprintf(stderr, "Failed to open log file %s\n",LogToFile);
             exit(-1);
         }
+        if (HaveLogAlready){
+            fprintf(Log,"Rotated log file (previous %s)\n",ThisLogTo);
+        }else{
+            fprintf(Log,"\n\n----------Restarting imcomp, keep old log---------------\n");
+        }
         if (ThisLogTo[0]){
             strncpy(ThisLogTo, NewLogTo, PATH_MAX);
         }
+        
         return;
     }else{
         fflush(Log); // Do log to ram disk, or this wears out flash!
