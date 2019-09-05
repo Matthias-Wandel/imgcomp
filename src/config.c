@@ -147,10 +147,6 @@ static int parse_parameter (const char * tag, const char * value)
     } else if (keymatch(tag, "timelapse", 5)) {
         // Scale the output image by a fraction M/N.
         if (sscanf(value, "%d", (int *)&TimelapseInterval) != 1) return -1;
-        if (TimelapseInterval < 1){
-            fprintf(stderr,"timelapse interval must be at least 1 second\n");
-            return -1;
-        }
     } else if (keymatch(tag, "aquire_cmd", 4)) {
         // Set output file name.
         strncpy(raspistill_cmd, value, sizeof(raspistill_cmd)-1);
