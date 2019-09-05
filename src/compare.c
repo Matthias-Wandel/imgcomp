@@ -514,7 +514,7 @@ static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold)
     fs = fs/(heightSc*widthSc);
     
     // Show fatigue map from time to time.
-    if (Verbosity > 1 || (fs > 100 && SinceFatiguePrint > 120)){
+    if (Verbosity > 1 || (fs > 75 && SinceFatiguePrint > 120)){
         // Print the fatigure array every two minuts if there is stuff in it.
 		fprintf(Log, "Fatigue map (%d x %d) sum=%d\n", widthSc, heightSc, fs);
         for (row=0;row<heightSc;row++){

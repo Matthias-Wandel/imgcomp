@@ -173,7 +173,7 @@ static int ProcessImage(LastPic_t * New, int DeleteProcessed)
         }
         if (Trig.DiffLevel){
             fprintf(Log,"%4d ", Trig.DiffLevel);
-			if (Trig.DiffLevel >= 5){
+			if (Trig.DiffLevel >= 20){
 				fprintf(Log,"(%4d,%4d) ", Trig.x, Trig.y);
 			}
 			SinceMotionMs = 0;
