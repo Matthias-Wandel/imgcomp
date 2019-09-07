@@ -45,7 +45,7 @@ void MakeHtmlOutput(Dir_t * Dir)
 		"  body { font-family: sans-serif; font-size: 24;}\n"
 		"  img { vertical-align: middle; margin-bottom: 5px; }\n"
         "  p {margin-bottom: 0px}\n"
-        "  div.pix { float:left; width:328px; height:285px;}\n"
+        "  div.pix { float:left; width:321px; height:285px;}\n"
         "  div.pix img { width: 320; height: 240; margin-bottom:2px; display: block; background-color: #c0c0c0;}\n"
 		"</style></head>\n");
 		
