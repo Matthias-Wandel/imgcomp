@@ -23,9 +23,7 @@ void MakeHtmlOutput(Dir_t * Dir)
     VarList Images;
     VarList Directories;
 
-    FILE * HtmlFile;
     unsigned a, b;
-	int SkipFactor;
 	int FullresThumbs = 0;
 	int LastDaySeconds;
 	int BreakIndices[61];
@@ -38,31 +36,33 @@ void MakeHtmlOutput(Dir_t * Dir)
 		FullresThumbs = 1;
 	#endif
 
-	HtmlFile = stdout;
 
     // Header of file.
-    fprintf(HtmlFile, "<html>\n");
+    printf("<html>\n");
 	
-	fprintf(HtmlFile, 
+	printf(
 		"<style type=text/css>\n"
 		"  body { font-family: sans-serif; font-size: 24;}\n"
 		"  img { vertical-align: middle; margin-bottom: 5px; }\n"
+        "  p {margin-bottom: 0px}\n"
+        "  div.pix { float:left; width:328px; height:285px;}\n"
+        "  div.pix img { width: 320; height: 240; margin-bottom:2px; display: block; background-color: #c0c0c0;}\n"
 		"</style></head>\n");
 		
 	if (strlen(Dir->HtmlPath) > 2){
-		fprintf(HtmlFile,"<a href=\"view.cgi?%s\">[Up:%s]</a>\n",Dir->Parent,Dir->Parent);
+		printf("<a href=\"view.cgi?%s\">[Up:%s]</a>\n",Dir->Parent,Dir->Parent);
 	}
 	if (Dir->Previous[0]){
-		fprintf(HtmlFile,"<a href=\"view.cgi?%s\">[Prev:%s]</a>\n",Dir->Previous,Dir->Previous);
+		printf("<a href=\"view.cgi?%s\">[Prev:%s]</a>\n",Dir->Previous,Dir->Previous);
 	}
 	if (Dir->Next[0]){
-		fprintf(HtmlFile,"<a href=\"view.cgi?%s\">[Next:%s]</a>\n",Dir->Next,Dir->Next);
+		printf("<a href=\"view.cgi?%s\">[Next:%s]</a>\n",Dir->Next,Dir->Next);
 	}
-    fprintf(HtmlFile, "<p>\n");
+    printf("<p>\n");
 
     for (a=0;a<Directories.NumEntries;a++){
         
-		fprintf(HtmlFile, "<a href=\"view.cgi?%s%s\">%s</a>",Dir->HtmlPath, Directories.Entries[a].Name, Directories.Entries[a].Name);
+		printf("<a href=\"view.cgi?%s%s\">%s</a>",Dir->HtmlPath, Directories.Entries[a].Name, Directories.Entries[a].Name);
         
         // Count how many images in subdirectory.
         {
@@ -72,24 +72,24 @@ void MakeHtmlOutput(Dir_t * Dir)
             snprintf(SubdirName,210,"pix/%s%s",Dir->HtmlPath, Directories.Entries[a].Name);
             CollectDirectory(SubdirName, &SubdImages, NULL, ImageExtensions);
             if (SubdImages.NumEntries){
-                fprintf(HtmlFile, "(%d)\n",SubdImages.NumEntries);
-                if (SubdImages.NumEntries < 100) fprintf(HtmlFile, " &nbsp");
-                if (SubdImages.NumEntries < 10) fprintf(HtmlFile, " &nbsp");
+                printf("(%d)\n",SubdImages.NumEntries);
+                if (SubdImages.NumEntries < 100) printf(" &nbsp");
+                if (SubdImages.NumEntries < 10) printf(" &nbsp");
             }
             free(SubdImages.Entries);
         }
         
         
 		if ((a % 5 ) == 4){
-			fprintf(HtmlFile, "<p>\n"); // Put four links per line.
+			printf("<p>\n"); // Put four links per line.
 		}else{
-			fprintf(HtmlFile, " &nbsp; \n"); // Put four links per line.
+			printf(" &nbsp; \n"); // Put four links per line.
 		}
     }
 	
-	fprintf(HtmlFile,"<p>\n");
+	printf("<p>\n");
 	if (Images.NumEntries){
-		fprintf(HtmlFile,"%s: %d Images<p>\n",Dir->HtmlPath, Images.NumEntries);
+		printf("%s: %d Images<p>\n",Dir->HtmlPath, Images.NumEntries);
 	}
 	
     // Find time breaks in images.
@@ -106,6 +106,7 @@ void MakeHtmlOutput(Dir_t * Dir)
         }else{
             DaySeconds = 1000000;
         }
+        Images.Entries[a].DaySecond = DaySeconds;
 		
 		if (DaySeconds-LastDaySeconds > 60){
 			BreakIndices[NumBreakIndices++] = a;
@@ -123,10 +124,12 @@ void MakeHtmlOutput(Dir_t * Dir)
 		unsigned start, num;
 		char TimeStr[10];
 		char * Name;
+        int SkipFactor, SkipNum;
 		start = BreakIndices[b];
 		num = BreakIndices[b+1]-BreakIndices[b];
 	
 		// If there are a LOT of images, don't show all of them!
+        SkipNum = 0;
 		SkipFactor = 1;
 		if (num > 10) SkipFactor = 2;
 		if (num > 20) SkipFactor = 3;
@@ -141,46 +144,63 @@ void MakeHtmlOutput(Dir_t * Dir)
             TimeStr[5] = ':';
             TimeStr[6] = Name[9]; TimeStr[7] = Name[10];
             TimeStr[8] = '\0';
-            printf("<p>%s<br>",TimeStr);
+            printf("<p><big>%s</big>\n",TimeStr);
         }
 	
 		for (a=0;a<num;a++){
             char lc;
             char * Name;
+            int dt;
             Name = Images.Entries[a+start].Name;
             lc = Name[strlen(Name)-1];
             if (lc == 'g'){ // It's a jpeg file.
-                fprintf(HtmlFile, "<a href=\"pix/%s%s\">",Dir->HtmlPath, Name);
-                if (a % SkipFactor == 0){
+                if (SkipNum == 0) printf("<div class=\"pix\">\n");
+                printf("<a href=\"pix/%s%s\">",Dir->HtmlPath, Name);
+                if (SkipNum == 0){
                     if (FullresThumbs){
-                        fprintf(HtmlFile, "<img src=\"pix/%s%s\"",Dir->HtmlPath, Name);
+                        printf("<img src=\"pix/%s%s\">",Dir->HtmlPath, Name);
                     }else{
-                        fprintf(HtmlFile, "<img src=\"tb.cgi?pix/%s%s\"",Dir->HtmlPath, Name);
+                        printf("<img src=\"tb.cgi?pix/%s%s\">",Dir->HtmlPath, Name);
                     }
-                    fprintf(HtmlFile, " width=320 height=240>");
+                    if (num > 1){
+                        TimeStr[0] = Name[5]; TimeStr[1] = Name[6];
+                        TimeStr[2] = ':';
+                        TimeStr[3] = Name[7]; TimeStr[4] = Name[8];
+                        TimeStr[5] = ':';
+                        TimeStr[6] = Name[9]; TimeStr[7] = Name[10];
+                        TimeStr[8] = '\0';
+                        printf("%s</a>\n",TimeStr);
+                    }
                 }else{
-                    fprintf(HtmlFile, "<big><big>#</big></big>");
+                    printf(":%c%c", Name[9], Name[10]);
                 }
-                fprintf(HtmlFile, "</a>\n");
+                printf("</a> &nbsp;\n");
+                SkipNum += 1;
             }else{
-                fprintf(HtmlFile, "<p><a href=\"pix/%s%s\">",Dir->HtmlPath, Name);
-                fprintf(HtmlFile, "<p>%s<p>", Name);
+                printf("<p><a href=\"pix/%s%s\">",Dir->HtmlPath, Name);
+                printf("<p>%s<p>", Name);
+            }
+            dt = 0;
+            if (a < num-1) dt = Images.Entries[a+1+start].DaySecond - Images.Entries[a+start].DaySecond;
+            //printf("(%d)",dt);
+            if (SkipNum >= SkipFactor || a >= num-1 || dt > 3){
+                if (dt <= 3 && a < num-1) printf("...");
+                printf("</div>\n");
+                SkipNum = 0;
             }
 		}
+        printf("<br clear=left>\n");
 	}
 	
-    fprintf(HtmlFile, "<p>\n");    
+    printf("<p>\n");    
 	if (strlen(Dir->HtmlPath) > 2){
-		fprintf(HtmlFile,"<a href=\"view.cgi?%s\">[Up:%s]</a>\n",Dir->Parent,Dir->Parent);
+		printf("<a href=\"view.cgi?%s\">[Up:%s]</a>\n",Dir->Parent,Dir->Parent);
 	}
 	if (Dir->Previous[0]){
-		fprintf(HtmlFile,"<a href=\"view.cgi?%s\">[Prev:%s]</a>\n",Dir->Previous,Dir->Previous);
+		printf("<a href=\"view.cgi?%s\">[Prev:%s]</a>\n",Dir->Previous,Dir->Previous);
 	}
 	if (Dir->Next[0]){
-		fprintf(HtmlFile,"<a href=\"view.cgi?%s\">[Next:%s]</a>\n",Dir->Next,Dir->Next);
+		printf("<a href=\"view.cgi?%s\">[Next:%s]</a>\n",Dir->Next,Dir->Next);
 	}
-
-
-	if (HtmlFile != stdout) fclose(HtmlFile);
 }
 
