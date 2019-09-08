@@ -172,9 +172,9 @@ static int ProcessImage(LastPic_t * New, int DeleteProcessed)
             fprintf(Log,"%s: ",LastPics[0].Name+LastPics[0].nind);
         }
         if (Trig.DiffLevel){
-            fprintf(Log,"%4d ", Trig.DiffLevel);
-			if (Trig.DiffLevel >= 20){
-				fprintf(Log,"(%4d,%4d) ", Trig.x, Trig.y);
+            fprintf(Log,"%4d", Trig.DiffLevel);
+			if (Trig.DiffLevel*5 >= Sensitivity){
+				fprintf(Log," (%4d,%4d)", Trig.x, Trig.y);
 			}
 			SinceMotionMs = 0;
         }
@@ -193,13 +193,13 @@ static int ProcessImage(LastPic_t * New, int DeleteProcessed)
             if (Trig.DiffLevel < Sensitivity){
                 // An event that was just one frame.  We assume this was something
                 // spurious, like an insect or a rain drop
-                printf("(spurious %d, ignore) ", Trig.DiffLevel);
+                printf(" (spurious %d, ignore)", Trig.DiffLevel);
                 LastPics[0].IsMotion = 0;
                 LastPics[1].IsMotion = 0;
             }
         }
-        if (LastPics[0].IsMotion) fprintf(Log,"(motion) ");
-        if (LastPics[0].IsTimelapse) fprintf(Log,"(time) ");
+        if (LastPics[0].IsMotion) fprintf(Log," (motion)");
+        if (LastPics[0].IsTimelapse) fprintf(Log," (time)");
 
         if (LastPics[1].IsMotion) SinceMotionPix = 0;
 
