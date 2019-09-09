@@ -18,7 +18,7 @@
     #include <unistd.h>
 #endif
 
-char * ImageExtensions[] = {"jpg","jpeg","txt",NULL};
+char * ImageExtensions[] = {"jpg","jpeg","txt","html",NULL};
 
 //----------------------------------------------------------------------------------
 // Process one directory.  Returns pointer to summary.
