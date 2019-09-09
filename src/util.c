@@ -391,7 +391,7 @@ void LogFileMaintain(int ForceLogSaveReboot)
             exit(-1);
         }
         if (HaveLogAlready){
-            fprintf(Log,"Rotated log file (previous %s)\n",ThisLogTo);
+            fprintf(Log,"<pre>Rotated log file (previous %s)\n",ThisLogTo);
         }else{
             fprintf(Log,"\n\n----------Restarting imcomp, keep old log---------------\n");
         }

@@ -516,16 +516,21 @@ static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold)
     // Show fatigue map from time to time.
     if (Verbosity > 1 || (fs > 60 && SinceFatiguePrint > 60)){
         // Print the fatigure array every two minuts if there is stuff in it.
-		fprintf(Log, "Fatigue map (%d x %d) sum=%d\n", widthSc, heightSc, fs);
+		fprintf(Log, "Fatigue map (%d x %d) sum=%d<small>\n", widthSc, heightSc, fs);
         for (row=0;row<heightSc;row++){
             for (col=0;col<widthSc;col++){
-                static const char digits[]=" .-!=56789ABCDEFGHIJKLMNOPQRSTUVWXYZ@";
                 int v = Fatigue[row*widthSc+col]/50;
-                if (v > 36) v = 36;
-                putchar(digits[v]);
+                //                             00112233445566778899
+                static const char LowDigits[20] = " . - = 3 4~5~6~7=8=9";
+                if (v < 10){
+                    fprintf(Log,"%c%c",LowDigits[v*2],LowDigits[v*2+1]);
+                }else{
+                    fprintf(Log,"%2d",v <= 99 ? v : 99);
+                }
             }
             fprintf(Log,"\n");
         }
+        fprintf(Log, "</small>\n");
         SinceFatiguePrint = 0;
     }
     SinceFatiguePrint++;
