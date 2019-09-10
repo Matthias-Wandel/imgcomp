@@ -18,6 +18,7 @@
     #include <unistd.h>
 #endif
 
+char * FileExtensions[] = {"jpg","jpeg","txt","html",NULL};
 char * ImageExtensions[] = {"jpg","jpeg","txt","html",NULL};
 
 //----------------------------------------------------------------------------------
@@ -49,7 +50,7 @@ Dir_t * CollectDir(char * HtmlPath)
 	strcpy(Dir->HtmlPath, HtmlPath);
 
 	sprintf(DirName, "pix/%s",HtmlPath);
-	CollectDirectory(DirName, Images, Subdirs, ImageExtensions);
+	CollectDirectory(DirName, Images, Subdirs, FileExtensions);
    
 
 	// Look for previous and next.
@@ -90,8 +91,35 @@ Dir_t * CollectDir(char * HtmlPath)
 		}
 		
 	}
-	
     return Dir;
+}
+
+//----------------------------------------------------------------------------------
+// Collect info for making jpeg view.
+//----------------------------------------------------------------------------------
+void DoJpegView(char * ImagePath)
+{
+    char HtmlDir[300];
+    char HtmlFile[300];
+    int a;
+    int lastslash = 0;
+    VarList Images;
+    memset(&Images, 0, sizeof(Images));
+    
+    for (a=0;ImagePath[a];a++){
+        if (ImagePath[a] == '/') lastslash = a;
+    }
+    sprintf(HtmlDir, "pix/%s",ImagePath);
+    HtmlDir[lastslash+1+4] = '\0';
+    
+    sprintf(HtmlFile, "pix/%s",ImagePath);
+    
+    printf("html dir: %s\nFile:%s\n",HtmlDir, HtmlFile);
+    
+	CollectDirectory(HtmlDir, &Images, NULL, ImageExtensions);
+    
+    MakeImageHtmlOutput(ImagePath, HtmlDir, Images);
+    free(Images.Entries);
 }
 
 //----------------------------------------------------------------------------------
@@ -100,14 +128,23 @@ Dir_t * CollectDir(char * HtmlPath)
 int main(int argc, char ** argv)
 {
     int a;
-	char * qenv;
+	char * QueryString;
 	char HtmlPath[300];
-	qenv = getenv("QUERY_STRING");	
+	QueryString = getenv("QUERY_STRING");	
 	
 	HtmlPath [0] = '\0';
-	if (qenv){
+	if (QueryString){
+        int d;
 		printf("Content-Type: text/html\n\n<html>\n"); // html header
-		strcpy(HtmlPath, qenv);
+        
+        // Unescape for "%20"
+        for (a=0,d=0;QueryString[a];a++){
+            if (QueryString[a] == '%' && QueryString[a+1] == '2' && QueryString[a+2] == '0'){
+                HtmlPath[d++] = ' ';
+            }else{
+                HtmlPath[d++] = QueryString[a];
+            }
+        }
 	}
 
     // Parse the command line options.
@@ -127,7 +164,26 @@ int main(int argc, char ** argv)
 			strcpy(HtmlPath, argv[a]);
         }
     }
-	//printf("QUERY_STRING=%s<br>\n",qenv);
+	printf("QUERY_STRING=%s<br>\n",QueryString);
+    printf("HTML path = %s\n",HtmlPath);
+    
+  
+    
+    
+    
+    {
+        int lp = 0;
+        for (a=0;HtmlPath[a];a++){
+            if (HtmlPath[a] == '.') lp = a;
+        }
+        if (lp && (a-lp == 4 || a-lp == 5)){
+            if (HtmlPath[lp+1] == 'j' && HtmlPath[a-1] == 'g'){
+                DoJpegView(HtmlPath);
+                return 0;
+            }
+        }
+    }
+
 
 	{
 		int l;
@@ -137,7 +193,7 @@ int main(int argc, char ** argv)
 			HtmlPath[l+1] = '\0';
 		}
 	}
-	
+
 	{
 		Dir_t * Col;
 		Col = CollectDir(HtmlPath);

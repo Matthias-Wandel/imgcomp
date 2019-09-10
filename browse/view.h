@@ -30,6 +30,7 @@ typedef struct {
 
 
 void MakeHtmlOutput(Dir_t * Dir);
+void MakeImageHtmlOutput(char * ImagePath, char * HtmlDir, VarList Images);
 
 extern char * ImageExtensions[];
 
@@ -38,7 +39,6 @@ void CollectDirectory(char * PathName, VarList * Files, VarList * Dirs, char * P
 //-------------------------------------------------------------------
 int  CollectDirectoryImages(char * PathName, VarList * Files);
 void CollectDirectoryVideos(char * PathName, VarList * Files);
-void ParseDate(timestruc * thisdate, char * Line);
 //-------------------------------------------------------------------
 int  AddToList(VarList * List, DirEntry * Item);
 void RemoveFromList(VarList * List, unsigned int Item);

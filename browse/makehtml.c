@@ -146,7 +146,7 @@ void MakeHtmlOutput(Dir_t * Dir)
             TimeStr[8] = '\0';
             printf("<p><big>%s</big>\n",TimeStr);
         }
-	
+	 
 		for (a=0;a<num;a++){
             char lc;
             char * Name;
@@ -204,3 +204,12 @@ void MakeHtmlOutput(Dir_t * Dir)
 	}
 }
 
+//----------------------------------------------------------------------------------
+// Create a HTML view page.
+//----------------------------------------------------------------------------------
+void MakeImageHtmlOutput(char * ImagePath, char * HtmlDir, VarList Images)
+{
+    printf("Image: %s\n",ImagePath);
+    printf("Directory: %s\n",HtmlDir);
+    printf("Files: %d\n",Images.NumEntries);
+}
