@@ -144,11 +144,9 @@ time_t CollectDirectory(char * PathName, VarList * Files, VarList * Dirs, char *
 
         if (finddata.attrib & _A_SUBDIR){
             if (ThisOne.Name[0] == '.' || ThisOne.Name[0] == '_'){
-                // Skip ".", "..", and "_small" stuff.
+                // Skip ".", ".."
             }else{
-                if (Patterns == NULL){
-                    AddToList(Files, &ThisOne);
-                }
+                AddToList(Dirs, &ThisOne);
             }
         }else{
             if (Patterns != NULL && Files != NULL){
@@ -175,6 +173,6 @@ time_t CollectDirectory(char * PathName, VarList * Files, VarList * Dirs, char *
     _findclose(find_handle);
 	
 	if (Files) SortList(Files);
-	SortList(Dirs);
+	if (Dirs) SortList(Dirs);
 }
 #endif

@@ -19,7 +19,7 @@
 #endif
 
 char * FileExtensions[] = {"jpg","jpeg","txt","html",NULL};
-char * ImageExtensions[] = {"jpg","jpeg","txt","html",NULL};
+char * ImageExtensions[] = {"jpg","jpeg",NULL};
 
 //----------------------------------------------------------------------------------
 // Process one directory.  Returns pointer to summary.
@@ -112,13 +112,13 @@ void DoJpegView(char * ImagePath)
     sprintf(HtmlDir, "pix/%s",ImagePath);
     HtmlDir[lastslash+1+4] = '\0';
     
-    sprintf(HtmlFile, "pix/%s",ImagePath);
+    strcpy(HtmlFile, ImagePath+lastslash+1);
     
     printf("html dir: %s\nFile:%s\n",HtmlDir, HtmlFile);
     
 	CollectDirectory(HtmlDir, &Images, NULL, ImageExtensions);
     
-    MakeImageHtmlOutput(ImagePath, HtmlDir, Images);
+    MakeImageHtmlOutput(HtmlFile, HtmlDir, Images);
     free(Images.Entries);
 }
 
@@ -138,12 +138,14 @@ int main(int argc, char ** argv)
 		printf("Content-Type: text/html\n\n<html>\n"); // html header
         
         // Unescape for "%20"
-        for (a=0,d=0;QueryString[a];a++){
+        for (a=0,d=0;;a++){
             if (QueryString[a] == '%' && QueryString[a+1] == '2' && QueryString[a+2] == '0'){
                 HtmlPath[d++] = ' ';
+                a+= 2;
             }else{
                 HtmlPath[d++] = QueryString[a];
             }
+            if (QueryString[a] == 0) break;
         }
 	}
 
@@ -164,12 +166,8 @@ int main(int argc, char ** argv)
 			strcpy(HtmlPath, argv[a]);
         }
     }
-	printf("QUERY_STRING=%s<br>\n",QueryString);
-    printf("HTML path = %s\n",HtmlPath);
-    
-  
-    
-    
+	//printf("QUERY_STRING=%s<br>\n",QueryString);
+    //printf("HTML path = %s\n",HtmlPath);
     
     {
         int lp = 0;
@@ -183,7 +181,6 @@ int main(int argc, char ** argv)
             }
         }
     }
-
 
 	{
 		int l;

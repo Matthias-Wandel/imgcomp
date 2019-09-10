@@ -207,9 +207,55 @@ void MakeHtmlOutput(Dir_t * Dir)
 //----------------------------------------------------------------------------------
 // Create a HTML view page.
 //----------------------------------------------------------------------------------
-void MakeImageHtmlOutput(char * ImagePath, char * HtmlDir, VarList Images)
+void MakeImageHtmlOutput(char * ImageName, char * HtmlDir, VarList Images)
 {
-    printf("Image: %s\n",ImagePath);
-    printf("Directory: %s\n",HtmlDir);
-    printf("Files: %d\n",Images.NumEntries);
+    int DirIndex;
+    int FoundMatch;
+    int a;
+    int From,To;
+    
+    printf("Directory: %s<br>\n",HtmlDir);
+    printf("Files: %d<br>\n",Images.NumEntries);
+    printf("<img src=\"%s/%s\"><br>\n",HtmlDir,ImageName);
+    printf("<a href=\"%s\">[Dir:%s]</a> &nbsp;\n",HtmlDir, HtmlDir);
+
+    // Find where the image is in the list of files, or at least what is closest.    
+    FoundMatch = DirIndex = 0;
+    for (a=0;a<Images.NumEntries;a++){
+        int d;
+        d = strcmp(ImageName, Images.Entries[a].Name);
+        if (d == 0) FoundMatch = 1;
+        if (d <= 0){
+            DirIndex = a;
+            break;
+        }
+    }
+
+    From = DirIndex-5;
+    if (From < 0) From = 0;
+    To = DirIndex+5;
+    if (To > Images.NumEntries) To = Images.NumEntries;
+    
+    for (a=From;a<To;a++){
+        char * NamePtr;
+        char TimeStr[10];
+        
+        // Extract thetime part of the file name to show.
+        NamePtr = Images.Entries[a].Name;
+        memcpy(TimeStr, NamePtr+5,6);
+        TimeStr[6] = 0;
+        
+        if (a == DirIndex){
+            if (FoundMatch){
+                printf(" <b>[%s]</b> ",TimeStr);
+            }else{
+                printf(" <b>[]</b> ");
+            }
+        }else{
+            printf(" <a href=\"%s%s\">[%s]</a>\n",HtmlDir, ImageName, TimeStr);
+        }
+        
+    }
+    printf("\n");
+    
 }
