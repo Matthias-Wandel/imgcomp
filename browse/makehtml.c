@@ -179,7 +179,7 @@ void MakeHtmlOutput(Dir_t * Dir)
                 printf("</a> &nbsp;\n");
                 SkipNum += 1;
             }else{
-                printf("<p><a href=\"view.cgi?%s%s\">",Dir->HtmlPath, Name);
+                printf("<p><a href=\"pix/%s%s\">",Dir->HtmlPath, Name);
                 printf("<p>%s<p>", Name);
             }
             dt = 0;
