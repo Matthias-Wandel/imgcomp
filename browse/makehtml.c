@@ -39,6 +39,8 @@ void MakeHtmlOutput(Dir_t * Dir)
 
     // Header of file.
     printf("<html>\n");
+    
+    printf("<title>%s</title>\n",Dir->HtmlPath);
 	
 	printf(
 		"<style type=text/css>\n"
@@ -155,7 +157,7 @@ void MakeHtmlOutput(Dir_t * Dir)
             lc = Name[strlen(Name)-1];
             if (lc == 'g'){ // It's a jpeg file.
                 if (SkipNum == 0) printf("<div class=\"pix\">\n");
-                printf("<a href=\"pix/%s%s\">",Dir->HtmlPath, Name);
+                printf("<a href=\"view.cgi?%s%s\">",Dir->HtmlPath, Name);
                 if (SkipNum == 0){
                     if (FullresThumbs){
                         printf("<img src=\"pix/%s%s\">",Dir->HtmlPath, Name);
@@ -177,7 +179,7 @@ void MakeHtmlOutput(Dir_t * Dir)
                 printf("</a> &nbsp;\n");
                 SkipNum += 1;
             }else{
-                printf("<p><a href=\"pix/%s%s\">",Dir->HtmlPath, Name);
+                printf("<p><a href=\"view.cgi?%s%s\">",Dir->HtmlPath, Name);
                 printf("<p>%s<p>", Name);
             }
             dt = 0;
@@ -205,7 +207,7 @@ void MakeHtmlOutput(Dir_t * Dir)
 }
 
 //----------------------------------------------------------------------------------
-// Create a HTML view page.
+// Create a HTML image view page.
 //----------------------------------------------------------------------------------
 void MakeImageHtmlOutput(char * ImageName, char * HtmlDir, VarList Images)
 {
@@ -214,14 +216,22 @@ void MakeImageHtmlOutput(char * ImageName, char * HtmlDir, VarList Images)
     int a;
     int From,To;
     
-    printf("Directory: %s<br>\n",HtmlDir);
-    printf("Files: %d<br>\n",Images.NumEntries);
-    printf("<img src=\"%s/%s\"><br>\n",HtmlDir,ImageName);
-    printf("<a href=\"%s\">[Dir:%s]</a> &nbsp;\n",HtmlDir, HtmlDir);
+    printf("<title>%s</title>\n",ImageName);
+    
+    printf("<style type=text/css>\n"
+           "  body { font-family: sans-serif; font-size: 18;}\n"
+           "  img { vertical-align: middle; margin-bottom: 5px; }\n"
+           "  p {margin-bottom: 0px}\n"
+           "</style></head>\n");
 
+    //printf("<a href=\"pix/%s/%s\">",HtmlDir,ImageName);
+    printf("<img");
+    //printf(" width=950 height=500");
+    printf(" src=\"pix/%s/%s\"></a><br>\n",HtmlDir,ImageName);
+    
     // Find where the image is in the list of files, or at least what is closest.    
     FoundMatch = DirIndex = 0;
-    for (a=0;a<Images.NumEntries;a++){
+    for (a=0;a<(int)Images.NumEntries;a++){
         int d;
         d = strcmp(ImageName, Images.Entries[a].Name);
         if (d == 0) FoundMatch = 1;
@@ -231,31 +241,70 @@ void MakeImageHtmlOutput(char * ImageName, char * HtmlDir, VarList Images)
         }
     }
 
-    From = DirIndex-5;
+    for (a=0;a<(int)Images.NumEntries;a++){
+        int Seconds;
+        char * Name = Images.Entries[a].Name;
+        Seconds = (Name[7]-'0')*600 + (Name[8]-'0')*60
+                + (Name[9]-'0')*10  + (Name[10]-'0');
+        Images.Entries[a].DaySecond = Seconds;
+    }
+
+    #define FROMTO 5
+    From = DirIndex-FROMTO;
     if (From < 0) From = 0;
-    To = DirIndex+5;
-    if (To > Images.NumEntries) To = Images.NumEntries;
+    To = From+FROMTO*2;
+    if (To > (int)Images.NumEntries){
+        To = Images.NumEntries;
+        From = To-FROMTO*2;
+        if (From < 0) From = 0;
+    }
+    
+    printf("<big><b>\n");
+    if (From > 0) printf("<< ");
     
     for (a=From;a<To;a++){
         char * NamePtr;
         char TimeStr[10];
+        int dt;
         
         // Extract thetime part of the file name to show.
         NamePtr = Images.Entries[a].Name;
-        memcpy(TimeStr, NamePtr+5,6);
-        TimeStr[6] = 0;
-        
-        if (a == DirIndex){
-            if (FoundMatch){
-                printf(" <b>[%s]</b> ",TimeStr);
-            }else{
-                printf(" <b>[]</b> ");
+        TimeStr[0] = NamePtr[7];
+        TimeStr[1] = NamePtr[8];
+        TimeStr[2] = ':';
+        TimeStr[3] = NamePtr[9];
+        TimeStr[4] = NamePtr[10];
+        TimeStr[5] = 0;
+
+        if (a > From){
+            dt = Images.Entries[a].DaySecond - Images.Entries[a>0?a-1:0].DaySecond;
+            if (dt > 1){
+                if (dt == 2) printf("&nbsp;");
+                if (dt >= 3 && dt < 5) printf("</b>-<b>&nbsp;");
+                if (dt >= 5 && dt < 10) printf("</b>--<b>&nbsp;");
+                if (dt >= 10 && dt < 20) printf("</b>---<b>&nbsp;");
+                if (dt > 20) printf("&nbsp;||&nbsp;&nbsp;");
             }
+        }
+        
+        if (a == DirIndex && FoundMatch){
+            printf("[%s]\n",TimeStr);
         }else{
-            printf(" <a href=\"%s%s\">[%s]</a>\n",HtmlDir, ImageName, TimeStr);
+            if (a == DirIndex) printf("[??]\n");
+            //printf(" %d ",dt);
+            
+            printf("<a href=\"view.cgi?%s%s\">[%s]</a>\n",HtmlDir, NamePtr, TimeStr);
         }
         
     }
-    printf("\n");
+    if (To < Images.NumEntries) printf(">>");
+    printf("<p>\n");
+    printf("<a href=\"pix/%s/%s\">[Link]</a> ",HtmlDir,ImageName);
+    printf("<a href=\"view.cgi?%s\">[Dir:%s]</a> %d files</a>\n",HtmlDir, HtmlDir, Images.NumEntries);
+    
+    
+    // Show date taken
+    // Show settings
+    
     
 }

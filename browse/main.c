@@ -114,11 +114,11 @@ void DoJpegView(char * ImagePath)
     
     strcpy(HtmlFile, ImagePath+lastslash+1);
     
-    printf("html dir: %s\nFile:%s\n",HtmlDir, HtmlFile);
+    //printf("html dir: %s<br>\nFile:%s<br><hr>\n",HtmlDir+4, HtmlFile);
     
 	CollectDirectory(HtmlDir, &Images, NULL, ImageExtensions);
     
-    MakeImageHtmlOutput(HtmlFile, HtmlDir, Images);
+    MakeImageHtmlOutput(HtmlFile, HtmlDir+4, Images);
     free(Images.Entries);
 }
 
