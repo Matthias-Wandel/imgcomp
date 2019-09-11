@@ -23,7 +23,42 @@ void ErrNonfatal(const char * msg, int a1, int a2)
     fprintf(stderr,"\nNonfatal Error : ");
     fprintf(stderr, msg, a1, a2);
     fprintf(stderr, "\n");
-} 
+}
+
+//--------------------------------------------------------------------------
+// Get 16 bits motorola order (always) for jpeg header stuff.
+//--------------------------------------------------------------------------
+static int Get16m(const void * Short)
+{
+    return (((uchar *)Short)[0] << 8) | ((uchar *)Short)[1];
+}
+
+//--------------------------------------------------------------------------
+// Process a SOFn marker.  This is useful for the image dimensions
+//--------------------------------------------------------------------------
+static void process_SOFn (const uchar * Data, int marker)
+{
+    int data_precision, num_components;
+
+    data_precision = Data[2];
+    ImageInfo.Height = Get16m(Data+3);
+    ImageInfo.Width = Get16m(Data+5);
+    num_components = Data[7];
+
+    if (num_components == 3){
+        //ImageInfo.IsColor = 1;
+    }else{
+        //ImageInfo.IsColor = 0;
+    }
+
+    //ImageInfo.Process = marker;
+
+    if (ShowTags){
+        printf("JPEG image is %uw * %uh, %d color components, %d bits per sample\n",
+                   ImageInfo.Width, ImageInfo.Height, num_components, data_precision);
+    }
+}
+
 
 
 //--------------------------------------------------------------------------
@@ -32,6 +67,8 @@ void ErrNonfatal(const char * msg, int a1, int a2)
 static int FindExifInFile (FILE * infile)
 {
     int a;
+    int have_exif = 0, have_sof= 0;
+    int SectionsRead = 0;
     a = fgetc(infile);
 
     if (a != 0xff || fgetc(infile) != M_SOI){
@@ -60,11 +97,7 @@ static int FindExifInFile (FILE * infile)
             return 0;
         }
 
-        if (marker != M_EXIF){
-            //printf("Image did not start with exif section\n");
-            return 0;
-        }
-  
+ 
         // Read the length of the section.
         lh = fgetc(infile);
         ll = fgetc(infile);
@@ -95,12 +128,41 @@ static int FindExifInFile (FILE * infile)
             fprintf(stderr, "Premature end of file?");
             return 0;
         }
-
-        if (memcmp(Data+2, "Exif", 4) == 0){
-            process_EXIF(Data, itemlen);
-            free(Data);
-            return 1;
+        
+        SectionsRead += 1;
+        
+        switch(marker){        
+            case M_EXIF:
+                if (memcmp(Data+2, "Exif", 4) == 0){
+                    process_EXIF(Data, itemlen);
+                    have_exif = 1;
+                }
+                break;
+            case M_SOF0: 
+            case M_SOF1: 
+            case M_SOF2: 
+            case M_SOF3: 
+            case M_SOF5: 
+            case M_SOF6: 
+            case M_SOF7: 
+            case M_SOF9: 
+            case M_SOF10:
+            case M_SOF11:
+            case M_SOF13:
+            case M_SOF14:
+            case M_SOF15:
+                process_SOFn(Data, marker);
+                have_sof = 1;
+                break;
+                
+            case M_SOS:
+                SectionsRead += 100; //Stop reading stuff!
+                break;
         }
+        free(Data);
+        
+        if (have_exif && have_sof) break;
+        if (SectionsRead > 4) break; // Don't read too far!
     }
     return 0;
 }

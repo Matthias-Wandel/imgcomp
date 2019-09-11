@@ -10,6 +10,7 @@
 #include <time.h>
 #include <stdlib.h>
 #include "view.h"
+#include "../src/jhead.h"
 #ifdef _WIN32
     #include <io.h>
     #include <direct.h>
@@ -99,27 +100,55 @@ Dir_t * CollectDir(char * HtmlPath)
 //----------------------------------------------------------------------------------
 void DoJpegView(char * ImagePath)
 {
-    char HtmlDir[300];
-    char HtmlFile[300];
-    int a;
-    int lastslash = 0;
-    VarList Images;
-    memset(&Images, 0, sizeof(Images));
-    
-    for (a=0;ImagePath[a];a++){
-        if (ImagePath[a] == '/') lastslash = a;
+    float AspectRatio;
+    {
+        char FileName[300];
+        FILE * file;
+        sprintf(FileName, "pix/%s",ImagePath);
+        file = fopen(FileName, "rb");
+        if(file) {
+            ReadExifPart(file);
+        }
     }
-    sprintf(HtmlDir, "pix/%s",ImagePath);
-    HtmlDir[lastslash+1+4] = '\0';
     
-    strcpy(HtmlFile, ImagePath+lastslash+1);
+    AspectRatio = 4/3;
+    if (ImageInfo.Width > 10 && ImageInfo.Height > 10){
+        AspectRatio = (float)ImageInfo.Width / ImageInfo.Height;
+    }
+
+    {
+        char HtmlDir[300];
+        char HtmlFile[300];
+        int a;
+        int lastslash = 0;
+        VarList Images;
+        memset(&Images, 0, sizeof(Images));
+        
+        for (a=0;ImagePath[a];a++){
+            if (ImagePath[a] == '/') lastslash = a;
+        }
+        sprintf(HtmlDir, "pix/%s",ImagePath);
+        HtmlDir[lastslash+1+4] = '\0';
+        
+        strcpy(HtmlFile, ImagePath+lastslash+1);
+        
+        //printf("html dir: %s<br>\nFile:%s<br><hr>\n",HtmlDir+4, HtmlFile);
+        
+        CollectDirectory(HtmlDir, &Images, NULL, ImageExtensions);
+        
+        MakeImageHtmlOutput(HtmlFile, HtmlDir+4, Images, AspectRatio);
+        free(Images.Entries);
+    }
     
-    //printf("html dir: %s<br>\nFile:%s<br><hr>\n",HtmlDir+4, HtmlFile);
-    
-	CollectDirectory(HtmlDir, &Images, NULL, ImageExtensions);
-    
-    MakeImageHtmlOutput(HtmlFile, HtmlDir+4, Images);
-    free(Images.Entries);
+    printf("<pre>");
+    ImageInfo.FlashUsed = -1;
+    ImageInfo.MeteringMode = 0;
+    ImageInfo.ExposureProgram = 0;
+    ImageInfo.CameraMake[0] = 0;
+    ImageInfo.FocalLength = 0;
+    ImageInfo.ApertureFNumber = 0;
+    ImageInfo.Whitebalance = -1;
+    ShowImageInfo(0);
 }
 
 //----------------------------------------------------------------------------------

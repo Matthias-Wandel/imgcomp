@@ -209,25 +209,28 @@ void MakeHtmlOutput(Dir_t * Dir)
 //----------------------------------------------------------------------------------
 // Create a HTML image view page.
 //----------------------------------------------------------------------------------
-void MakeImageHtmlOutput(char * ImageName, char * HtmlDir, VarList Images)
+void MakeImageHtmlOutput(char * ImageName, char * HtmlDir, VarList Images, float AspectRatio)
 {
     int DirIndex;
     int FoundMatch;
     int a;
     int From,To;
+    int ShowWidth;
     
     printf("<title>%s</title>\n",ImageName);
     
     printf("<style type=text/css>\n"
-           "  body { font-family: sans-serif; font-size: 18;}\n"
+           "  body { font-family: sans-serif; font-size: 22;}\n"
            "  img { vertical-align: middle; margin-bottom: 5px; }\n"
            "  p {margin-bottom: 0px}\n"
            "</style></head>\n");
 
-    //printf("<a href=\"pix/%s/%s\">",HtmlDir,ImageName);
-    printf("<img");
-    //printf(" width=950 height=500");
-    printf(" src=\"pix/%s/%s\"></a><br>\n",HtmlDir,ImageName);
+    
+    // Scale it to a resolution that works well on iPad.
+    ShowWidth = 950;
+    if (ShowWidth/AspectRatio > 535) ShowWidth = (int)535 * AspectRatio;
+    printf("<img width=%d height=%d",ShowWidth, (int)(ShowWidth/AspectRatio+0.5));
+    printf(" src=\"pix/%s/%s\"></a><br>\n\n",HtmlDir,ImageName);
     
     // Find where the image is in the list of files, or at least what is closest.    
     FoundMatch = DirIndex = 0;
@@ -250,16 +253,15 @@ void MakeImageHtmlOutput(char * ImageName, char * HtmlDir, VarList Images)
     }
 
     #define FROMTO 5
-    From = DirIndex-FROMTO;
+    From = (DirIndex-FROMTO+2) & ~3;
     if (From < 0) From = 0;
-    To = From+FROMTO*2;
+    To = From+FROMTO*2+1;
     if (To > (int)Images.NumEntries){
         To = Images.NumEntries;
-        From = To-FROMTO*2;
+        From = To-FROMTO*2+1;
         if (From < 0) From = 0;
     }
     
-    printf("<big><b>\n");
     if (From > 0) printf("<< ");
     
     for (a=From;a<To;a++){
@@ -280,10 +282,10 @@ void MakeImageHtmlOutput(char * ImageName, char * HtmlDir, VarList Images)
             dt = Images.Entries[a].DaySecond - Images.Entries[a>0?a-1:0].DaySecond;
             if (dt > 1){
                 if (dt == 2) printf("&nbsp;");
-                if (dt >= 3 && dt < 5) printf("</b>-<b>&nbsp;");
-                if (dt >= 5 && dt < 10) printf("</b>--<b>&nbsp;");
-                if (dt >= 10 && dt < 20) printf("</b>---<b>&nbsp;");
-                if (dt > 20) printf("&nbsp;||&nbsp;&nbsp;");
+                if (dt >= 3 && dt < 5) printf("-&nbsp;");
+                if (dt >= 5 && dt < 10) printf("--&nbsp;");
+                if (dt >= 10 && dt < 20) printf("~~&nbsp;");
+                if (dt > 20) printf("||&nbsp;");
             }
         }
         
@@ -298,13 +300,11 @@ void MakeImageHtmlOutput(char * ImageName, char * HtmlDir, VarList Images)
         
     }
     if (To < Images.NumEntries) printf(">>");
-    printf("<p>\n");
-    printf("<a href=\"pix/%s/%s\">[Link]</a> ",HtmlDir,ImageName);
+    printf("<p>\n\n");
+    printf("<a href=\"pix/%s/%s\">[Link]</a>\n",HtmlDir,ImageName);
     printf("<a href=\"view.cgi?%s\">[Dir:%s]</a> %d files</a>\n",HtmlDir, HtmlDir, Images.NumEntries);
     
     
     // Show date taken
     // Show settings
-    
-    
 }
