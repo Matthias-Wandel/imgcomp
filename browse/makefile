@@ -26,6 +26,6 @@ view.cgi: ${OBJECTS_MAKEHTML} ${OBJECTS_SHARED}
 	${CC} -o view.cgi ${OBJECTS_MAKEHTML} ${OBJECTS_SHARED}
 	cp view.cgi ../../www
 
-tb.cgi:	$(OBJ)/thumb_bat.o
-	${CC} -o tb.cgi $(OBJ)/thumb_bat.o
+tb.cgi:	$(OBJ)/thumb_bat.o 
+	${CC} -o tb.cgi $(OBJ)/thumb_bat.o -ljpeg
 	cp tb.cgi ../../www

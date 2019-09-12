@@ -9,8 +9,8 @@
 #include <malloc.h>
 #include <stddef.h>
 #include <setjmp.h>
-#include "../libjpeg/jpeglib.h"
-#include "../libjpeg/jerror.h"
+#include <jpeglib.h>
+#include <jerror.h>
 #include <time.h>
 #include "imgcomp.h"
 #include "jhead.h"

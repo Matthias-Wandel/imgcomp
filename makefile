@@ -1,5 +1,5 @@
 #-------------------------------------------------------------
-# imgcomp makefile for Linux (compile on raspberry pi or pi2)
+# imgcomp makefile for Linux (compile on raspberry pi)
 # Matthias Wandel 2015
 #-------------------------------------------------------------
 OBJ=obj
@@ -24,8 +24,8 @@ $(OBJ)/main.o $(OBJ)/config.o: $(SRC)/config.h
 $(OBJ)/%.o:$(SRC)/%.c $(SRC)/imgcomp.h
 	${CC} $(CFLAGS) -c $< -o $@
 
-imgcomp: $(objs) libjpeg/libjpeg.a
-	${CC} -lm -o imgcomp $(objs) libjpeg/libjpeg.a
+imgcomp: $(objs)
+	${CC} -lm -o imgcomp $(objs) -ljpeg
 
 $(SRC)/pi_model.h:
 	$(SRC)/identify_pi >> $(SRC)/pi_model.h
@@ -35,10 +35,6 @@ blink_camera_led: $(SRC)/blink_camera_led.c $(SRC)/pi_model.h
 
 run_stepper: $(SRC)/run_stepper.c $(SRC)/stepper_ip.c $(SRC)/pi_model.h
 	$(CC) -lm -o run_stepper $(SRC)/run_stepper.c $(SRC)/stepper_ip.c
-
-libjpeg/libjpeg.a:
-	cd libjpeg; make
-
 
 clean:
 	rm -f $(objs) imgcomp
