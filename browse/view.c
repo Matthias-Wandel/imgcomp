@@ -224,6 +224,16 @@ int main(int argc, char ** argv)
 		}
         
 		Col = CollectDir(HtmlPath);
+
+        // Find first image and read exif header of it to get aspect ratio.
+        for (a=0;a<Col->Images.NumEntries;a++){
+            int l = strlen(Col->Images.Entries[a].Name);
+            if (Col->Images.Entries[a].Name[l-1] == 'g'){
+                sprintf(HtmlPath, "%s%s", Col->HtmlPath, Col->Images.Entries[0].Name);
+                ReadExifHeader(HtmlPath);
+                break;
+            }
+        }
         
 		MakeHtmlOutput(Col);
         

@@ -43,7 +43,7 @@ void MakeHtmlOutput(Dir_t * Dir)
     
     printf("<title>%s</title>\n",Dir->HtmlPath);
     
-	ThumbnailHeight = (int)(240/AspectRatio);
+	ThumbnailHeight = (int)(320/AspectRatio);
 	printf(
 		"<style type=text/css>\n"
 		"  body { font-family: sans-serif; font-size: 24;}\n"
@@ -118,7 +118,6 @@ void MakeHtmlOutput(Dir_t * Dir)
 		
 		if (DaySeconds-LastDaySeconds > 60){
 			BreakIndices[NumBreakIndices++] = a;
-			printf("\n");
 			if (NumBreakIndices > 30) break;
 		}
 		LastDaySeconds = DaySeconds;
@@ -236,6 +235,7 @@ void MakeImageHtmlOutput(char * ImageName, char * HtmlDir, VarList Images)
     // Scale it to a resolution that works well on iPad.
     ShowWidth = 950;
     if (ShowWidth/AspectRatio > 535) ShowWidth = (int)535 * AspectRatio;
+    printf("<center>");
     printf("<img width=%d height=%d",ShowWidth, (int)(ShowWidth/AspectRatio+0.5));
     printf(" src=\"pix/%s/%s\"></a><br>\n\n",HtmlDir,ImageName);
     
@@ -269,7 +269,7 @@ void MakeImageHtmlOutput(char * ImageName, char * HtmlDir, VarList Images)
         if (From < 0) From = 0;
     }
     
-    printf("<center>");
+    
     if (From > 0) printf("<< ");
     
     for (a=From;a<To;a++){
