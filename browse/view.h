@@ -30,9 +30,10 @@ typedef struct {
 
 
 void MakeHtmlOutput(Dir_t * Dir);
-void MakeImageHtmlOutput(char * ImagePath, char * HtmlDir, VarList Images, float AspectRatio);
+void MakeImageHtmlOutput(char * ImagePath, char * HtmlDir, VarList Images);
 
 extern char * ImageExtensions[];
+extern float AspectRatio;
 
 //-------------------------------------------------------------------
 void CollectDirectory(char * PathName, VarList * Files, VarList * Dirs, char * Patterns[]);

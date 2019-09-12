@@ -1,7 +1,6 @@
 //----------------------------------------------------------------------------------
-// makehtml main program
-// Coordinates making of html index files.
-// November 1999 - Sept 2006
+// Main module for web image browser for parsing images produced
+// by my imgcomp program on raspberery pi.
 //---------------------------------------------------------------------------------- 
 #include <stdio.h>
 #include <errno.h>
@@ -19,8 +18,9 @@
     #include <unistd.h>
 #endif
 
-char * FileExtensions[] = {"jpg","jpeg","txt","html",NULL};
+static char * FileExtensions[] = {"jpg","jpeg","txt","html",NULL};
 char * ImageExtensions[] = {"jpg","jpeg",NULL};
+float AspectRatio = 4.0/3;
 
 //----------------------------------------------------------------------------------
 // Process one directory.  Returns pointer to summary.
@@ -96,51 +96,57 @@ Dir_t * CollectDir(char * HtmlPath)
 }
 
 //----------------------------------------------------------------------------------
+// Read exif header of an image to get aspect ratio and other info.
+//----------------------------------------------------------------------------------
+static void ReadExifHeader(char * ImagePath)
+{
+    char FileName[300];
+    FILE * file;
+    sprintf(FileName, "pix/%s",ImagePath);
+    file = fopen(FileName, "rb");
+    if(file) {
+        ReadExifPart(file);
+    }
+    
+    if (ImageInfo.Width > 10 && ImageInfo.Height > 10){
+        AspectRatio = (float)ImageInfo.Width / ImageInfo.Height;
+    }
+}
+
+
+//----------------------------------------------------------------------------------
 // Collect info for making jpeg view.
 //----------------------------------------------------------------------------------
 void DoJpegView(char * ImagePath)
 {
-    float AspectRatio;
-    {
-        char FileName[300];
-        FILE * file;
-        sprintf(FileName, "pix/%s",ImagePath);
-        file = fopen(FileName, "rb");
-        if(file) {
-            ReadExifPart(file);
-        }
-    }
-    
-    AspectRatio = 4/3;
-    if (ImageInfo.Width > 10 && ImageInfo.Height > 10){
-        AspectRatio = (float)ImageInfo.Width / ImageInfo.Height;
-    }
+    char HtmlDir[300];
+    char HtmlFile[300];
+    int a;
+    int lastslash = 0;
+    VarList Images;
+        
+    ReadExifHeader(ImagePath);
 
-    {
-        char HtmlDir[300];
-        char HtmlFile[300];
-        int a;
-        int lastslash = 0;
-        VarList Images;
-        memset(&Images, 0, sizeof(Images));
-        
-        for (a=0;ImagePath[a];a++){
-            if (ImagePath[a] == '/') lastslash = a;
-        }
-        sprintf(HtmlDir, "pix/%s",ImagePath);
-        HtmlDir[lastslash+1+4] = '\0';
-        
-        strcpy(HtmlFile, ImagePath+lastslash+1);
-        
-        //printf("html dir: %s<br>\nFile:%s<br><hr>\n",HtmlDir+4, HtmlFile);
-        
-        CollectDirectory(HtmlDir, &Images, NULL, ImageExtensions);
-        
-        MakeImageHtmlOutput(HtmlFile, HtmlDir+4, Images, AspectRatio);
-        free(Images.Entries);
+    memset(&Images, 0, sizeof(Images));
+    
+    for (a=0;ImagePath[a];a++){
+        if (ImagePath[a] == '/') lastslash = a;
     }
+    sprintf(HtmlDir, "pix/%s",ImagePath);
+    HtmlDir[lastslash+1+4] = '\0';
+    
+    strcpy(HtmlFile, ImagePath+lastslash+1);
+    
+    //printf("html dir: %s<br>\nFile:%s<br><hr>\n",HtmlDir+4, HtmlFile);
+    
+    CollectDirectory(HtmlDir, &Images, NULL, ImageExtensions);
+    
+    MakeImageHtmlOutput(HtmlFile, HtmlDir+4, Images);
+    free(Images.Entries);
+    
     
     printf("<pre>");
+    // Delete uninteresting fields of exif info to not show them.
     ImageInfo.FlashUsed = -1;
     ImageInfo.MeteringMode = 0;
     ImageInfo.ExposureProgram = 0;
@@ -159,6 +165,7 @@ int main(int argc, char ** argv)
     int a;
 	char * QueryString;
 	char HtmlPath[300];
+    int lp;
 	QueryString = getenv("QUERY_STRING");	
 	
 	HtmlPath [0] = '\0';
@@ -198,31 +205,26 @@ int main(int argc, char ** argv)
 	//printf("QUERY_STRING=%s<br>\n",QueryString);
     //printf("HTML path = %s\n",HtmlPath);
     
-    {
-        int lp = 0;
-        for (a=0;HtmlPath[a];a++){
-            if (HtmlPath[a] == '.') lp = a;
-        }
-        if (lp && (a-lp == 4 || a-lp == 5)){
-            if (HtmlPath[lp+1] == 'j' && HtmlPath[a-1] == 'g'){
-                DoJpegView(HtmlPath);
-                return 0;
-            }
-        }
+    
+    lp = 0;
+    for (a=0;HtmlPath[a];a++){
+        if (HtmlPath[a] == '.') lp = a;
     }
-
-	{
+    if (lp && (a-lp == 4 || a-lp == 5) && HtmlPath[lp+1] == 'j' && HtmlPath[a-1] == 'g'){
+        // Path ends with .jpg
+        DoJpegView(HtmlPath);
+    }else{
+        // Doesn't end with .jpg.  Its a directory.
 		int l;
+        Dir_t * Col;
 		l = strlen(HtmlPath);
 		if (l && HtmlPath[l-1] != '/'){
 			HtmlPath[l] = '/';
 			HtmlPath[l+1] = '\0';
 		}
-	}
-
-	{
-		Dir_t * Col;
+        
 		Col = CollectDir(HtmlPath);
+        
 		MakeHtmlOutput(Col);
         
         free(Col->Dirs.Entries);

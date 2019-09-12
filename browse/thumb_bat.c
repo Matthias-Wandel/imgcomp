@@ -67,7 +67,7 @@ int main(int argc, char ** argv)
 	
 	sprintf(TmpName, "/ramdisk/%d",getpid());
 
-    sprintf(ExecString, "epeg -w 320 -h 240 \"%s\" %s",FileName,TmpName);
+    sprintf(ExecString, "epeg -w 240 -p \"%s\" %s",FileName,TmpName);
     system(ExecString);
 	
 	FileToStdOut(TmpName);

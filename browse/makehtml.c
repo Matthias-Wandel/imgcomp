@@ -1,5 +1,5 @@
 //----------------------------------------------------------------------------------
-// HTML output generator part of my HTML thumbnail tree building program.
+// HTML output for html image viewer for my imgcomp program
 //---------------------------------------------------------------------------------- 
 #include <stdio.h>
 #include <errno.h>
@@ -16,7 +16,7 @@
 #include "view.h"
 
 //----------------------------------------------------------------------------------
-// Create browsable HTML index files for the directories.
+// Create browsable HTML index for a directory
 //----------------------------------------------------------------------------------
 void MakeHtmlOutput(Dir_t * Dir)
 {
@@ -28,6 +28,7 @@ void MakeHtmlOutput(Dir_t * Dir)
 	int LastDaySeconds;
 	int BreakIndices[61];
 	unsigned NumBreakIndices = 0;
+    int ThumbnailHeight;
 
     Images = Dir->Images;
     Directories = Dir->Dirs;    
@@ -41,14 +42,17 @@ void MakeHtmlOutput(Dir_t * Dir)
     printf("<html>\n");
     
     printf("<title>%s</title>\n",Dir->HtmlPath);
-	
+    
+	ThumbnailHeight = (int)(240/AspectRatio);
 	printf(
 		"<style type=text/css>\n"
 		"  body { font-family: sans-serif; font-size: 24;}\n"
 		"  img { vertical-align: middle; margin-bottom: 5px; }\n"
         "  p {margin-bottom: 0px}\n"
-        "  div.pix { float:left; width:321px; height:285px;}\n"
-        "  div.pix img { width: 320; height: 240; margin-bottom:2px; display: block; background-color: #c0c0c0;}\n"
+        "  div.pix { float:left; width:321px; height:%dpx;}\n", ThumbnailHeight+45);
+        
+    printf("  div.pix img { width: 320; height: %d;", ThumbnailHeight);
+    printf(" margin-bottom:2px; display: block; background-color: #c0c0c0;}\n"
 		"</style></head>\n");
 		
 	if (strlen(Dir->HtmlPath) > 2){
@@ -77,6 +81,8 @@ void MakeHtmlOutput(Dir_t * Dir)
                 printf("(%d)\n",SubdImages.NumEntries);
                 if (SubdImages.NumEntries < 100) printf(" &nbsp");
                 if (SubdImages.NumEntries < 10) printf(" &nbsp");
+            }else{
+                printf(" &nbsp &nbsp; &nbsp; &nbsp;");
             }
             free(SubdImages.Entries);
         }
@@ -130,13 +136,13 @@ void MakeHtmlOutput(Dir_t * Dir)
 		start = BreakIndices[b];
 		num = BreakIndices[b+1]-BreakIndices[b];
 	
-		// If there are a LOT of images, don't show all of them!
+		// If there are a LOT of images, don't show all of them
         SkipNum = 0;
 		SkipFactor = 1;
-		if (num > 10) SkipFactor = 2;
-		if (num > 20) SkipFactor = 3;
-		if (num > 30) SkipFactor = 4;
-		if (num > 60) SkipFactor = 5;
+		if (num > 8) SkipFactor = 2;
+		if (num > 15) SkipFactor = 3;
+		if (num > 20) SkipFactor = 4;
+		if (num > 40) SkipFactor = 5;
 		
 		Name = Images.Entries[start].Name;
         if (Name[0] >= '0' && Name[0] <= '9' && Name[1] >= '0' && Name[1] <= '9'){
@@ -209,7 +215,7 @@ void MakeHtmlOutput(Dir_t * Dir)
 //----------------------------------------------------------------------------------
 // Create a HTML image view page.
 //----------------------------------------------------------------------------------
-void MakeImageHtmlOutput(char * ImageName, char * HtmlDir, VarList Images, float AspectRatio)
+void MakeImageHtmlOutput(char * ImageName, char * HtmlDir, VarList Images)
 {
     int DirIndex;
     int FoundMatch;
@@ -226,6 +232,7 @@ void MakeImageHtmlOutput(char * ImageName, char * HtmlDir, VarList Images, float
            "</style></head>\n");
 
     
+    printf("<div style=\"width:950px;\">");
     // Scale it to a resolution that works well on iPad.
     ShowWidth = 950;
     if (ShowWidth/AspectRatio > 535) ShowWidth = (int)535 * AspectRatio;
@@ -253,7 +260,7 @@ void MakeImageHtmlOutput(char * ImageName, char * HtmlDir, VarList Images, float
     }
 
     #define FROMTO 5
-    From = (DirIndex-FROMTO+2) & ~3;
+    From = DirIndex-FROMTO;
     if (From < 0) From = 0;
     To = From+FROMTO*2+1;
     if (To > (int)Images.NumEntries){
@@ -262,6 +269,7 @@ void MakeImageHtmlOutput(char * ImageName, char * HtmlDir, VarList Images, float
         if (From < 0) From = 0;
     }
     
+    printf("<center>");
     if (From > 0) printf("<< ");
     
     for (a=From;a<To;a++){
@@ -290,7 +298,7 @@ void MakeImageHtmlOutput(char * ImageName, char * HtmlDir, VarList Images, float
         }
         
         if (a == DirIndex && FoundMatch){
-            printf("[%s]\n",TimeStr);
+            printf("<b>[%s]</b>\n",TimeStr);
         }else{
             if (a == DirIndex) printf("[??]\n");
             //printf(" %d ",dt);
@@ -300,6 +308,9 @@ void MakeImageHtmlOutput(char * ImageName, char * HtmlDir, VarList Images, float
         
     }
     if (To < Images.NumEntries) printf(">>");
+    printf("</center>");
+    printf("</div>");
+    
     printf("<p>\n\n");
     printf("<a href=\"pix/%s/%s\">[Link]</a>\n",HtmlDir,ImageName);
     printf("<a href=\"view.cgi?%s\">[Dir:%s]</a> %d files</a>\n",HtmlDir, HtmlDir, Images.NumEntries);
