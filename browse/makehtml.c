@@ -226,7 +226,7 @@ void MakeHtmlOutput(Dir_t * Dir)
 }
 
 //----------------------------------------------------------------------------------
-// Create a HTML image view page.
+// Create a HTML to view just one image.
 //----------------------------------------------------------------------------------
 void MakeImageHtmlOutput(char * ImageName, char * HtmlDir, VarList Images)
 {
@@ -235,6 +235,7 @@ void MakeImageHtmlOutput(char * ImageName, char * HtmlDir, VarList Images)
     int a;
     int From,To;
     int ShowWidth;
+    int ShowHeight;
     
     printf("<title>%s</title>\n",ImageName);
     
@@ -249,9 +250,11 @@ void MakeImageHtmlOutput(char * ImageName, char * HtmlDir, VarList Images)
     // Scale it to a resolution that works well on iPad.
     ShowWidth = 950;
     if (ShowWidth/AspectRatio > 535) ShowWidth = (int)535 * AspectRatio;
+    ShowHeight = (int)(ShowWidth/AspectRatio+0.5);
+
     printf("<center>");
-    printf("<img width=%d height=%d",ShowWidth, (int)(ShowWidth/AspectRatio+0.5));
-    printf(" src=\"pix/%s/%s\"></a><br>\n\n",HtmlDir,ImageName);
+    printf("<img width=%d height=%d",ShowWidth, ShowHeight);
+    printf(" src=\"pix/%s/%s\" usemap=\"#prevnext\"></a><br>\n\n",HtmlDir,ImageName);
     
     // Find where the image is in the list of files, or at least what is closest.    
     FoundMatch = DirIndex = 0;
@@ -264,6 +267,18 @@ void MakeImageHtmlOutput(char * ImageName, char * HtmlDir, VarList Images)
             break;
         }
     }
+
+    // Make left and right parts of the image clickable as previous and next.
+    printf("<map name=\"prevnext\">\n");
+    if (DirIndex > 0){
+        printf("  <area shape=\"rect\" coords= \"0,0,%d,%d\" ",ShowWidth/4, ShowHeight);
+        printf("href=\"view.cgi?%s%s\">\n", HtmlDir, Images.Entries[DirIndex-1].Name);
+    }
+    if (DirIndex < Images.NumEntries-1){
+        printf("  <area shape=\"rect\" coords=\"%d,0,%d,%d\" ",(ShowWidth*3)/4, ShowWidth, ShowHeight);
+        printf("href=\"view.cgi?%s%s\">\n", HtmlDir, Images.Entries[DirIndex+1].Name);
+    }
+    printf("</map>\n");
 
     for (a=0;a<(int)Images.NumEntries;a++){
         int Seconds;
