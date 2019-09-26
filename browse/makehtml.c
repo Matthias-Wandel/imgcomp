@@ -50,6 +50,7 @@ void MakeHtmlOutput(Dir_t * Dir)
         "  body { font-family: sans-serif; font-size: 24;}\n"
         "  img { vertical-align: middle; margin-bottom: 5px; }\n"
         "  p {margin-bottom: 0px}\n"
+        "  a {text-decoration: none;}\n"
         "  div.pix { float:left; width:321px; height:%dpx;}\n", ThumbnailHeight+45);
         
     printf("  div.pix img { width: 320; height: %d;", ThumbnailHeight);
@@ -243,6 +244,7 @@ void MakeImageHtmlOutput(char * ImageName, char * HtmlDir, VarList Images)
            "  body { font-family: sans-serif; font-size: 22;}\n"
            "  img { vertical-align: middle; margin-bottom: 5px; }\n"
            "  p {margin-bottom: 0px}\n"
+           "  a {text-decoration: none;}\n"
            "</style></head>\n");
 
     
