@@ -29,6 +29,7 @@ void MakeHtmlOutput(Dir_t * Dir)
     int BreakIndices[61];
     unsigned NumBreakIndices = 0;
     int ThumbnailHeight;
+    int DirMinute = 0;
 
     Images = Dir->Images;
     Directories = Dir->Dirs;    
@@ -161,7 +162,17 @@ void MakeHtmlOutput(Dir_t * Dir)
             Name = Images.Entries[a+start].Name;
             lc = Name[strlen(Name)-1];
             if (lc == 'g'){ // It's a jpeg file.
+                int Minute;
                 if (SkipNum == 0) printf("<div class=\"pix\">\n");
+
+                // Make sure a browser indexable tag exists for every minute.
+                Minute = (Name[7]-'0')*10+Name[8]-'0';
+                if (Minute > 0 && Minute <= 60 && Minute > DirMinute){
+                    while(DirMinute < Minute){
+                        printf("<b id=\"%02d\"></b>\n",++DirMinute);
+                    }
+                }
+
                 printf("<a href=\"view.cgi?%s%s\">",Dir->HtmlPath, Name);
                 if (SkipNum == 0){
                     if (FullresThumbs){
@@ -185,7 +196,7 @@ void MakeHtmlOutput(Dir_t * Dir)
                 SkipNum += 1;
             }else{
                 printf("<p><a href=\"pix/%s%s\">",Dir->HtmlPath, Name);
-                printf("<p>%s<p>", Name);
+                printf("%s</a><p>", Name);
             }
             dt = 0;
             if (a < num-1) dt = Images.Entries[a+1+start].DaySecond - Images.Entries[a+start].DaySecond;
@@ -197,6 +208,9 @@ void MakeHtmlOutput(Dir_t * Dir)
             }
         }
         printf("<br clear=left>\n");
+    }
+    while(DirMinute < 59){
+        printf("<b id=\"%02d\"></b>\n",++DirMinute);
     }
 
     printf("<p>\n");    
@@ -269,8 +283,6 @@ void MakeImageHtmlOutput(char * ImageName, char * HtmlDir, VarList Images)
         From = To-BEFORE-AFTER+1;
         if (From < 0) From = 0;
     }
-    //printf("from %d to %d<br>\n",From,To);
-    
     
     if (From > 0) printf("<< ");
     
@@ -314,6 +326,16 @@ void MakeImageHtmlOutput(char * ImageName, char * HtmlDir, VarList Images)
     printf("</div>");
     
     printf("<p>\n\n");
-    printf("<a href=\"pix/%s/%s\">[Link]</a>\n",HtmlDir,ImageName);
-    printf("<a href=\"view.cgi?%s\">[Dir:%s]</a> %d files</a>\n",HtmlDir, HtmlDir, Images.NumEntries);
+    {
+        char IndexInto[8];
+        IndexInto[0] = 0;
+        if (strlen(ImageName) >= 10){
+            IndexInto[0] = '#';
+            IndexInto[1] = ImageName[7];
+            IndexInto[2] = ImageName[8];
+            IndexInto[3] = '\0';
+        }
+        printf("<a href=\"pix/%s/%s\">[Link]</a>\n",HtmlDir,ImageName);
+        printf("<a href=\"view.cgi?%s%s\">[Dir:%s]</a> %d files</a>\n",HtmlDir, IndexInto, HtmlDir, Images.NumEntries);
+    }
 }
