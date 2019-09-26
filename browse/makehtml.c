@@ -61,6 +61,11 @@ void MakeHtmlOutput(Dir_t * Dir)
         "</style></head>\n");
 
     if (strlen(Dir->HtmlPath) > 2){
+        if (Dir->Parent[0] == '\0'){
+            // Empty query string would mean "today", so make it a '/'
+            Dir->Parent[0] = '/';
+            Dir->Parent[1] = '\0';
+        }
         printf("<a href=\"view.cgi?%s\">[Up:%s]</a>\n",Dir->Parent,Dir->Parent);
     }
     if (Dir->Previous[0]){
