@@ -1,7 +1,7 @@
 //----------------------------------------------------------------------------------
 // Main module for web image browser for parsing images produced
 // by my imgcomp program on raspberery pi.
-//---------------------------------------------------------------------------------- 
+//----------------------------------------------------------------------------------
 #include <stdio.h>
 #include <errno.h>
 #include <memory.h>
@@ -52,7 +52,7 @@ Dir_t * CollectDir(char * HtmlPath)
 
 	sprintf(DirName, "pix/%s",HtmlPath);
 	CollectDirectory(DirName, Images, Subdirs, FileExtensions);
-   
+
 
 	// Look for previous and next.
 	if (strlen(HtmlPath) > 2){
@@ -62,7 +62,7 @@ Dir_t * CollectDir(char * HtmlPath)
 		int LastSlash = 0;
 		Siblings.NumEntries = Siblings.NumAllocated = 0;
 		Siblings.Entries = NULL;
-		
+
 		for (a=0;HtmlPath[a] && a < 99;a++){
 			if (HtmlPath[a-1] == '/' && HtmlPath[a]) LastSlash = a;
 		}
@@ -71,11 +71,11 @@ Dir_t * CollectDir(char * HtmlPath)
 		strcpy(ThisDir, HtmlPath+LastSlash);
 		a = strlen(ThisDir);
 		if (ThisDir[a-1] == '/') ThisDir[a-1] = '\0';
-		
+
 		sprintf(DirName, "pix/%s",Dir->Parent);
-		
+
 		CollectDirectory(DirName, NULL, &Siblings, NULL);
-		
+
 		for (a=0;a<Siblings.NumEntries;a++){
 			char * slash;
 			//printf("%s<br>\n",Siblings.Entries[a].Name);
@@ -90,7 +90,7 @@ Dir_t * CollectDir(char * HtmlPath)
 				}
 			}
 		}
-		
+
 	}
     return Dir;
 }
@@ -107,7 +107,7 @@ static void ReadExifHeader(char * ImagePath)
     if(file) {
         ReadExifPart(file);
     }
-    
+
     if (ImageInfo.Width > 10 && ImageInfo.Height > 10){
         AspectRatio = (float)ImageInfo.Width / ImageInfo.Height;
     }
@@ -124,27 +124,27 @@ void DoJpegView(char * ImagePath)
     int a;
     int lastslash = 0;
     VarList Images;
-        
+
     ReadExifHeader(ImagePath);
 
     memset(&Images, 0, sizeof(Images));
-    
+
     for (a=0;ImagePath[a];a++){
         if (ImagePath[a] == '/') lastslash = a;
     }
     sprintf(HtmlDir, "pix/%s",ImagePath);
     HtmlDir[lastslash+1+4] = '\0';
-    
+
     strcpy(HtmlFile, ImagePath+lastslash+1);
-    
+
     //printf("html dir: %s<br>\nFile:%s<br><hr>\n",HtmlDir+4, HtmlFile);
-    
+
     CollectDirectory(HtmlDir, &Images, NULL, ImageExtensions);
-    
+
     MakeImageHtmlOutput(HtmlFile, HtmlDir+4, Images);
     free(Images.Entries);
-    
-    
+
+
     printf("<pre>");
     // Delete uninteresting fields of exif info to not show them.
     ImageInfo.FlashUsed = -1;
@@ -165,19 +165,57 @@ void RedirectToToday()
     char RedirectDir[20];
     time_t now;
     struct stat ignore;
-        
+
     //printf("Content-Type: text/html\n\n<html>\n"); // html header
     now = time(NULL); // Log names are based on this time, need before images.
     strftime(RedirectDir, 20, "pix/%m%d", localtime(&now));
-    
+
     RedirectDir[7] += 1;
     // Check if directory exists.
     if (stat(RedirectDir, &ignore)){
          // Doesn't exist.  Root instead.
          strcpy(RedirectDir, "pix/");
     }
-    
+
     printf ("Location:  view.cgi?%s/\n\n",RedirectDir+4);
+}
+
+//----------------------------------------------------------------------------------
+// Save image feature.
+//----------------------------------------------------------------------------------
+void DoSaveImage(char * QueryString, char * HtmlPath)
+{
+    int a;
+    int wi;
+    char NewName[100];
+    char FromName[100];
+
+    strcpy(NewName, "pix/keep");
+    for (a=0,wi=8;HtmlPath[a];a++){
+        if (HtmlPath[a] == '/') wi = 8;
+        if (HtmlPath[a] == ' ' || HtmlPath[a] == '.' || HtmlPath[a] == '\0'){
+            NewName[wi++] = '\0';
+            break;
+        }else{
+            NewName[wi++] = HtmlPath[a];
+        }
+    }
+    strcat(NewName, ".jpg");
+    sprintf(FromName, "../%s",HtmlPath+1);
+
+    //printf("New name: %s<br>\n",NewName);
+    //printf("From name: %s<p>\n",FromName);
+
+    if (symlink(FromName, NewName)){
+        printf("Symlink failed<p>\n");
+    }else{
+        printf("Saved image<p>\n");
+    }
+
+    printf ("<p><a href=\"view.cgi?/keep/\">View saved</a>\n");
+
+    printf ("<p><a href=\"view.cgi?%s\">Back</a><br>\n",QueryString+1);
+
 }
 
 //----------------------------------------------------------------------------------
@@ -189,18 +227,19 @@ int main(int argc, char ** argv)
     char * QueryString;
     char HtmlPath[300];
     int lp;
-    QueryString = getenv("QUERY_STRING");	
+    QueryString = getenv("QUERY_STRING");
 
     if (!QueryString || QueryString[0] == '\0'){
         RedirectToToday();
         return 0;
     }
 
+    printf("Content-Type: text/html\n\n<html>\n"); // html header
+
     HtmlPath [0] = '\0';
     if (QueryString){
         int d;
-        printf("Content-Type: text/html\n\n<html>\n"); // html header
-        
+
         // Unescape for "%20"
         for (a=0,d=0;;a++){
             if (QueryString[a] == '%' && QueryString[a+1] == '2' && QueryString[a+2] == '0'){
@@ -213,27 +252,14 @@ int main(int argc, char ** argv)
         }
     }
 
-    // Parse the command line options.
-    for (a=1;a<argc;a++){
-        if (argv[a][0] == '-'){
-            if (strcmp(argv[a],"-S") == 0){
-                // Recurse subdirectories (default)
-                //DoRecursive = TRUE;
-            }else if (strcmp(argv[a],"-ns") == 0){
-                // Do not recurse subdirectories
-                //DoRecursive = FALSE;
-            }else{
-                fprintf(stderr,"Error: Argument '%s' not understood\n",argv[a]);
-            }
-        }else{
-            // Plain argument with no dashes means root path.
-            strcpy(HtmlPath, argv[a]);
-        }
+    if (QueryString[0] == '~'){
+        DoSaveImage(QueryString, HtmlPath);
+        return 0;
     }
+    
     //printf("QUERY_STRING=%s<br>\n",QueryString);
     //printf("HTML path = %s\n",HtmlPath);
-    
-    
+
     lp = 0;
     for (a=0;HtmlPath[a];a++){
         if (HtmlPath[a] == '.') lp = a;
@@ -241,6 +267,7 @@ int main(int argc, char ** argv)
     if (lp && (a-lp == 4 || a-lp == 5) && HtmlPath[lp+1] == 'j' && HtmlPath[a-1] == 'g'){
         // Path ends with .jpg
         DoJpegView(HtmlPath);
+
     }else{
         // Doesn't end with .jpg.  Its a directory.
         int l;
@@ -250,7 +277,7 @@ int main(int argc, char ** argv)
             HtmlPath[l] = '/';
             HtmlPath[l+1] = '\0';
         }
-        
+
         Col = CollectDir(HtmlPath);
 
         // Find first image and read exif header of it to get aspect ratio.
@@ -262,9 +289,9 @@ int main(int argc, char ** argv)
                 break;
             }
         }
-        
+
         MakeHtmlOutput(Col);
-        
+
         free(Col->Dirs.Entries);
         free(Col->Images.Entries);
         free(Col);

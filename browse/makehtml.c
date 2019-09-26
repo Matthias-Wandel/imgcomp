@@ -25,11 +25,14 @@ void MakeHtmlOutput(Dir_t * Dir)
 
     unsigned a, b;
     int FullresThumbs = 0;
-    int LastDaySeconds;
+    int LastSeconds;
     int BreakIndices[61];
     unsigned NumBreakIndices = 0;
     int ThumbnailHeight;
     int DirMinute = 0;
+    int IsKeepDir = 0;
+    
+    if (memcmp(Dir, "/keep/",6) == 0) IsKeepDir = 1;
 
     Images = Dir->Images;
     Directories = Dir->Dirs;    
@@ -103,26 +106,29 @@ void MakeHtmlOutput(Dir_t * Dir)
     }
 
     // Find time breaks in images.
-    LastDaySeconds = -1000;
+    LastSeconds = -1000;
     for (a=0;a<Images.NumEntries;a++){
-        int DaySeconds;
+        int Seconds;
         char * Name;
         Name = Images.Entries[a].Name;
         if (Name[0] >= '0' && Name[0] <= '9' && Name[1] >= '0' && Name[1] <= '9'){
-            // Numeric name.
-            DaySeconds = ((Name[5]-'0') * 10 + (Name[6]-'0'))*3600
-                    + ((Name[7]-'0') * 10 + (Name[8]-'0'))*60
-                    + ((Name[9]-'0') * 10 + (Name[10]-'0'));
+            // Image has numeric name.  Calculate a time value for figuring out gaps and such.
+            Seconds = 
+                      ((Name[0]-'0') * 10 + (Name[1]-'0'))*3600*24*31 // Month (with gaps for short months)
+                    + ((Name[2]-'0') * 10 + (Name[3]-'0'))*3600*24    // Month day
+                    + ((Name[5]-'0') * 10 + (Name[6]-'0'))*3600 // Hour
+                    + ((Name[7]-'0') * 10 + (Name[8]-'0'))*60   // Minute
+                    + ((Name[9]-'0') * 10 + (Name[10]-'0'));    // Seconds
         }else{
-            DaySeconds = 1000000;
+            Seconds = 1000000000;
         }
-        Images.Entries[a].DaySecond = DaySeconds;
+        Images.Entries[a].DaySecond = Seconds;
 
-        if (DaySeconds-LastDaySeconds > 60){
+        if (Seconds-LastSeconds > (IsKeepDir ? 3600 : 60)){
             BreakIndices[NumBreakIndices++] = a;
             if (NumBreakIndices > 30) break;
         }
-        LastDaySeconds = DaySeconds;
+        LastSeconds = Seconds;
 
     }
     BreakIndices[NumBreakIndices] = Images.NumEntries;
@@ -144,6 +150,7 @@ void MakeHtmlOutput(Dir_t * Dir)
         if (num > 15) SkipFactor = 3;
         if (num > 20) SkipFactor = 4;
         if (num > 40) SkipFactor = 5;
+        if (IsKeepDir) SkipFactor = 1;
 
         Name = Images.Entries[start].Name;
         if (Name[0] >= '0' && Name[0] <= '9' && Name[1] >= '0' && Name[1] <= '9'){
@@ -237,6 +244,9 @@ void MakeImageHtmlOutput(char * ImageName, char * HtmlDir, VarList Images)
     int From,To;
     int ShowWidth;
     int ShowHeight;
+    int IsKeepDir = 0;
+    
+    if (memcmp(HtmlDir, "/keep/",6) == 0) IsKeepDir = 1;
     
     printf("<title>%s</title>\n",ImageName);
     
@@ -271,16 +281,18 @@ void MakeImageHtmlOutput(char * ImageName, char * HtmlDir, VarList Images)
     }
 
     // Make left and right parts of the image clickable as previous and next.
-    printf("<map name=\"prevnext\">\n");
-    if (DirIndex > 0){
-        printf("  <area shape=\"rect\" coords= \"0,0,%d,%d\" ",ShowWidth/4, ShowHeight);
-        printf("href=\"view.cgi?%s%s\">\n", HtmlDir, Images.Entries[DirIndex-1].Name);
+    if (Images.Entries){
+        printf("<map name=\"prevnext\">\n");
+        if (DirIndex > 0){
+            printf("  <area shape=\"rect\" coords= \"0,0,%d,%d\" ",ShowWidth/4, ShowHeight);
+            printf("href=\"view.cgi?%s%s\">\n", HtmlDir, Images.Entries[DirIndex-1].Name);
+        }
+        if (DirIndex < Images.NumEntries-1){
+            printf("  <area shape=\"rect\" coords=\"%d,0,%d,%d\" ",(ShowWidth*3)/4, ShowWidth, ShowHeight);
+            printf("href=\"view.cgi?%s%s\">\n", HtmlDir, Images.Entries[DirIndex+1].Name);
+        }
+        printf("</map>\n");
     }
-    if (DirIndex < Images.NumEntries-1){
-        printf("  <area shape=\"rect\" coords=\"%d,0,%d,%d\" ",(ShowWidth*3)/4, ShowWidth, ShowHeight);
-        printf("href=\"view.cgi?%s%s\">\n", HtmlDir, Images.Entries[DirIndex+1].Name);
-    }
-    printf("</map>\n");
 
     for (a=0;a<(int)Images.NumEntries;a++){
         int Seconds;
@@ -353,6 +365,11 @@ void MakeImageHtmlOutput(char * ImageName, char * HtmlDir, VarList Images)
             IndexInto[3] = '\0';
         }
         printf("<a href=\"pix/%s/%s\">[Link]</a>\n",HtmlDir,ImageName);
+        
+        if (!IsKeepDir){
+            printf("<a href=\"view.cgi?~%s%s\">[Save]</a>\n",HtmlDir,ImageName);
+        }
+        
         printf("<a href=\"view.cgi?%s%s\">[Dir:%s]</a> %d files</a>\n",HtmlDir, IndexInto, HtmlDir, Images.NumEntries);
     }
 }
