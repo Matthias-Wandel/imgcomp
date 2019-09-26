@@ -259,15 +259,17 @@ void MakeImageHtmlOutput(char * ImageName, char * HtmlDir, VarList Images)
         Images.Entries[a].DaySecond = Seconds;
     }
 
-    #define FROMTO 5
-    From = DirIndex-FROMTO;
+    #define BEFORE 4
+    #define AFTER  5
+    From = DirIndex-BEFORE;
     if (From < 0) From = 0;
-    To = From+FROMTO*2+1;
+    To = From+BEFORE+AFTER+1;
     if (To > (int)Images.NumEntries){
         To = Images.NumEntries;
-        From = To-FROMTO*2+1;
+        From = To-BEFORE-AFTER+1;
         if (From < 0) From = 0;
     }
+    //printf("from %d to %d<br>\n",From,To);
     
     
     if (From > 0) printf("<< ");
