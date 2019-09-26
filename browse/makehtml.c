@@ -24,18 +24,18 @@ void MakeHtmlOutput(Dir_t * Dir)
     VarList Directories;
 
     unsigned a, b;
-	int FullresThumbs = 0;
-	int LastDaySeconds;
-	int BreakIndices[61];
-	unsigned NumBreakIndices = 0;
+    int FullresThumbs = 0;
+    int LastDaySeconds;
+    int BreakIndices[61];
+    unsigned NumBreakIndices = 0;
     int ThumbnailHeight;
 
     Images = Dir->Images;
     Directories = Dir->Dirs;    
 
-	#ifdef _WIN32
-		FullresThumbs = 1;
-	#endif
+    #ifdef _WIN32
+        FullresThumbs = 1;
+    #endif
 
 
     // Header of file.
@@ -43,32 +43,32 @@ void MakeHtmlOutput(Dir_t * Dir)
     
     printf("<title>%s</title>\n",Dir->HtmlPath);
     
-	ThumbnailHeight = (int)(320/AspectRatio);
-	printf(
-		"<style type=text/css>\n"
-		"  body { font-family: sans-serif; font-size: 24;}\n"
-		"  img { vertical-align: middle; margin-bottom: 5px; }\n"
+    ThumbnailHeight = (int)(320/AspectRatio);
+    printf(
+        "<style type=text/css>\n"
+        "  body { font-family: sans-serif; font-size: 24;}\n"
+        "  img { vertical-align: middle; margin-bottom: 5px; }\n"
         "  p {margin-bottom: 0px}\n"
         "  div.pix { float:left; width:321px; height:%dpx;}\n", ThumbnailHeight+45);
         
     printf("  div.pix img { width: 320; height: %d;", ThumbnailHeight);
     printf(" margin-bottom:2px; display: block; background-color: #c0c0c0;}\n"
-		"</style></head>\n");
-		
-	if (strlen(Dir->HtmlPath) > 2){
-		printf("<a href=\"view.cgi?%s\">[Up:%s]</a>\n",Dir->Parent,Dir->Parent);
-	}
-	if (Dir->Previous[0]){
-		printf("<a href=\"view.cgi?%s\">[Prev:%s]</a>\n",Dir->Previous,Dir->Previous);
-	}
-	if (Dir->Next[0]){
-		printf("<a href=\"view.cgi?%s\">[Next:%s]</a>\n",Dir->Next,Dir->Next);
-	}
+        "</style></head>\n");
+
+    if (strlen(Dir->HtmlPath) > 2){
+        printf("<a href=\"view.cgi?%s\">[Up:%s]</a>\n",Dir->Parent,Dir->Parent);
+    }
+    if (Dir->Previous[0]){
+        printf("<a href=\"view.cgi?%s\">[Prev:%s]</a>\n",Dir->Previous,Dir->Previous);
+    }
+    if (Dir->Next[0]){
+        printf("<a href=\"view.cgi?%s\">[Next:%s]</a>\n",Dir->Next,Dir->Next);
+    }
     printf("<p>\n");
 
     for (a=0;a<Directories.NumEntries;a++){
         
-		printf("<a href=\"view.cgi?%s%s\">%s</a>",Dir->HtmlPath, Directories.Entries[a].Name, Directories.Entries[a].Name);
+        printf("<a href=\"view.cgi?%s%s\">%s</a>",Dir->HtmlPath, Directories.Entries[a].Name, Directories.Entries[a].Name);
         
         // Count how many images in subdirectory.
         {
@@ -88,24 +88,24 @@ void MakeHtmlOutput(Dir_t * Dir)
         }
         
         
-		if ((a % 5 ) == 4){
-			printf("<p>\n"); // Put four links per line.
-		}else{
-			printf(" &nbsp; \n"); // Put four links per line.
-		}
+        if ((a % 5 ) == 4){
+            printf("<p>\n"); // Put four links per line.
+        }else{
+            printf(" &nbsp; \n"); // Put four links per line.
+        }
     }
-	
-	printf("<p>\n");
-	if (Images.NumEntries){
-		printf("%s: %d Images<p>\n",Dir->HtmlPath, Images.NumEntries);
-	}
-	
+
+    printf("<p>\n");
+    if (Images.NumEntries){
+        printf("%s: %d Images<p>\n",Dir->HtmlPath, Images.NumEntries);
+    }
+
     // Find time breaks in images.
-	LastDaySeconds = -1000;
-	for (a=0;a<Images.NumEntries;a++){
-		int DaySeconds;
-		char * Name;
-		Name = Images.Entries[a].Name;
+    LastDaySeconds = -1000;
+    for (a=0;a<Images.NumEntries;a++){
+        int DaySeconds;
+        char * Name;
+        Name = Images.Entries[a].Name;
         if (Name[0] >= '0' && Name[0] <= '9' && Name[1] >= '0' && Name[1] <= '9'){
             // Numeric name.
             DaySeconds = ((Name[5]-'0') * 10 + (Name[6]-'0'))*3600
@@ -115,35 +115,35 @@ void MakeHtmlOutput(Dir_t * Dir)
             DaySeconds = 1000000;
         }
         Images.Entries[a].DaySecond = DaySeconds;
-		
-		if (DaySeconds-LastDaySeconds > 60){
-			BreakIndices[NumBreakIndices++] = a;
-			if (NumBreakIndices > 30) break;
-		}
-		LastDaySeconds = DaySeconds;
-				   
-	}
-	BreakIndices[NumBreakIndices] = Images.NumEntries;
-	
-	
+
+        if (DaySeconds-LastDaySeconds > 60){
+            BreakIndices[NumBreakIndices++] = a;
+            if (NumBreakIndices > 30) break;
+        }
+        LastDaySeconds = DaySeconds;
+
+    }
+    BreakIndices[NumBreakIndices] = Images.NumEntries;
+
+
     // Show continuous runs of images, with breaks between.
-	for (b=0;b<NumBreakIndices;b++){
-		unsigned start, num;
-		char TimeStr[10];
-		char * Name;
+    for (b=0;b<NumBreakIndices;b++){
+        unsigned start, num;
+        char TimeStr[10];
+        char * Name;
         int SkipFactor, SkipNum;
-		start = BreakIndices[b];
-		num = BreakIndices[b+1]-BreakIndices[b];
-	
-		// If there are a LOT of images, don't show all of them
+        start = BreakIndices[b];
+        num = BreakIndices[b+1]-BreakIndices[b];
+
+        // If there are a LOT of images, don't show all of them
         SkipNum = 0;
-		SkipFactor = 1;
-		if (num > 8) SkipFactor = 2;
-		if (num > 15) SkipFactor = 3;
-		if (num > 20) SkipFactor = 4;
-		if (num > 40) SkipFactor = 5;
-		
-		Name = Images.Entries[start].Name;
+        SkipFactor = 1;
+        if (num > 8) SkipFactor = 2;
+        if (num > 15) SkipFactor = 3;
+        if (num > 20) SkipFactor = 4;
+        if (num > 40) SkipFactor = 5;
+
+        Name = Images.Entries[start].Name;
         if (Name[0] >= '0' && Name[0] <= '9' && Name[1] >= '0' && Name[1] <= '9'){
             TimeStr[0] = Name[5]; TimeStr[1] = Name[6];
             TimeStr[2] = ':';
@@ -153,8 +153,8 @@ void MakeHtmlOutput(Dir_t * Dir)
             TimeStr[8] = '\0';
             printf("<p><big>%s</big>\n",TimeStr);
         }
-	 
-		for (a=0;a<num;a++){
+
+        for (a=0;a<num;a++){
             char lc;
             char * Name;
             int dt;
@@ -195,20 +195,20 @@ void MakeHtmlOutput(Dir_t * Dir)
                 printf("</div>\n");
                 SkipNum = 0;
             }
-		}
+        }
         printf("<br clear=left>\n");
-	}
-	
+    }
+
     printf("<p>\n");    
-	if (strlen(Dir->HtmlPath) > 2){
-		printf("<a href=\"view.cgi?%s\">[Up:%s]</a>\n",Dir->Parent,Dir->Parent);
-	}
-	if (Dir->Previous[0]){
-		printf("<a href=\"view.cgi?%s\">[Prev:%s]</a>\n",Dir->Previous,Dir->Previous);
-	}
-	if (Dir->Next[0]){
-		printf("<a href=\"view.cgi?%s\">[Next:%s]</a>\n",Dir->Next,Dir->Next);
-	}
+    if (strlen(Dir->HtmlPath) > 2){
+        printf("<a href=\"view.cgi?%s\">[Up:%s]</a>\n",Dir->Parent,Dir->Parent);
+    }
+    if (Dir->Previous[0]){
+        printf("<a href=\"view.cgi?%s\">[Prev:%s]</a>\n",Dir->Previous,Dir->Previous);
+    }
+    if (Dir->Next[0]){
+        printf("<a href=\"view.cgi?%s\">[Next:%s]</a>\n",Dir->Next,Dir->Next);
+    }
 }
 
 //----------------------------------------------------------------------------------
@@ -314,8 +314,4 @@ void MakeImageHtmlOutput(char * ImageName, char * HtmlDir, VarList Images)
     printf("<p>\n\n");
     printf("<a href=\"pix/%s/%s\">[Link]</a>\n",HtmlDir,ImageName);
     printf("<a href=\"view.cgi?%s\">[Dir:%s]</a> %d files</a>\n",HtmlDir, HtmlDir, Images.NumEntries);
-    
-    
-    // Show date taken
-    // Show settings
 }
