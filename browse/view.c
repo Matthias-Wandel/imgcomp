@@ -170,7 +170,6 @@ void RedirectToToday()
     now = time(NULL); // Log names are based on this time, need before images.
     strftime(RedirectDir, 20, "pix/%m%d", localtime(&now));
 
-    RedirectDir[7] += 1;
     // Check if directory exists.
     if (stat(RedirectDir, &ignore)){
          // Doesn't exist.  Root instead.
