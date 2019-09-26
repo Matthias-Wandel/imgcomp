@@ -158,20 +158,48 @@ void DoJpegView(char * ImagePath)
 }
 
 //----------------------------------------------------------------------------------
+// If no location specified, redirect to today's directory, if it exists.
+//----------------------------------------------------------------------------------
+void RedirectToToday()
+{
+    char RedirectDir[20];
+    time_t now;
+    struct stat ignore;
+        
+    //printf("Content-Type: text/html\n\n<html>\n"); // html header
+    now = time(NULL); // Log names are based on this time, need before images.
+    strftime(RedirectDir, 20, "pix/%m%d", localtime(&now));
+    
+    RedirectDir[7] += 1;
+    // Check if directory exists.
+    if (stat(RedirectDir, &ignore)){
+         // Doesn't exist.  Root instead.
+         strcpy(RedirectDir, "pix/");
+    }
+    
+    printf ("Location:  view.cgi?%s/\n\n",RedirectDir+4);
+}
+
+//----------------------------------------------------------------------------------
 // Main
 //----------------------------------------------------------------------------------
 int main(int argc, char ** argv)
 {
     int a;
-	char * QueryString;
-	char HtmlPath[300];
+    char * QueryString;
+    char HtmlPath[300];
     int lp;
-	QueryString = getenv("QUERY_STRING");	
-	
-	HtmlPath [0] = '\0';
-	if (QueryString){
+    QueryString = getenv("QUERY_STRING");	
+
+    if (!QueryString || QueryString[0] == '\0'){
+        RedirectToToday();
+        return 0;
+    }
+
+    HtmlPath [0] = '\0';
+    if (QueryString){
         int d;
-		printf("Content-Type: text/html\n\n<html>\n"); // html header
+        printf("Content-Type: text/html\n\n<html>\n"); // html header
         
         // Unescape for "%20"
         for (a=0,d=0;;a++){
@@ -183,7 +211,7 @@ int main(int argc, char ** argv)
             }
             if (QueryString[a] == 0) break;
         }
-	}
+    }
 
     // Parse the command line options.
     for (a=1;a<argc;a++){
@@ -199,10 +227,10 @@ int main(int argc, char ** argv)
             }
         }else{
             // Plain argument with no dashes means root path.
-			strcpy(HtmlPath, argv[a]);
+            strcpy(HtmlPath, argv[a]);
         }
     }
-	//printf("QUERY_STRING=%s<br>\n",QueryString);
+    //printf("QUERY_STRING=%s<br>\n",QueryString);
     //printf("HTML path = %s\n",HtmlPath);
     
     
@@ -215,15 +243,15 @@ int main(int argc, char ** argv)
         DoJpegView(HtmlPath);
     }else{
         // Doesn't end with .jpg.  Its a directory.
-		int l;
+        int l;
         Dir_t * Col;
-		l = strlen(HtmlPath);
-		if (l && HtmlPath[l-1] != '/'){
-			HtmlPath[l] = '/';
-			HtmlPath[l+1] = '\0';
-		}
+        l = strlen(HtmlPath);
+        if (l && HtmlPath[l-1] != '/'){
+            HtmlPath[l] = '/';
+            HtmlPath[l+1] = '\0';
+        }
         
-		Col = CollectDir(HtmlPath);
+        Col = CollectDir(HtmlPath);
 
         // Find first image and read exif header of it to get aspect ratio.
         for (a=0;a<Col->Images.NumEntries;a++){
@@ -235,12 +263,12 @@ int main(int argc, char ** argv)
             }
         }
         
-		MakeHtmlOutput(Col);
+        MakeHtmlOutput(Col);
         
         free(Col->Dirs.Entries);
         free(Col->Images.Entries);
         free(Col);
-	}
+    }
     return 0;
 }
 
