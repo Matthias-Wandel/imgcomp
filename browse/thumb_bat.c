@@ -179,7 +179,7 @@ int main(int argc, char ** argv)
 	char * qenv;
 	char FileName[100];
 
-	printf("Content-Type: image/jpg\n\n"); // html header
+	printf("Content-Type: image/jpg\n\n"); // heder for image type.
 	
 	qenv = getenv("QUERY_STRING");	
 	

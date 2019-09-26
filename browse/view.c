@@ -218,6 +218,36 @@ void DoSaveImage(char * QueryString, char * HtmlPath)
 }
 
 //----------------------------------------------------------------------------------
+// Dump latest qauired image in /ramdisk.
+//----------------------------------------------------------------------------------
+void ShowLatestJpg(void)
+{
+    VarList files;
+
+    memset(&files, 0, sizeof(files));
+    CollectDirectory("/ramdisk", &files, NULL, ImageExtensions);
+    
+    if (files.NumEntries){
+        char InName[100];
+        sprintf(InName, "/ramdisk/%s",files.Entries[files.NumEntries-1].Name);
+        
+        printf("Content-Type: image/jpg\n\n");
+        //printf("input file name = %s\n",InName);
+        // Now dump it to stdout.
+        {
+            unsigned char Chunk[4096];
+            FILE * infile = fopen(InName, "rb");
+            for (;;){
+                int nr = fread(Chunk, 1, 4096, infile);
+                if (nr <= 0) break;
+                fwrite(Chunk, 1, nr, stdout);
+            }
+        }
+    }
+    free(files.Entries);
+}
+
+//----------------------------------------------------------------------------------
 // Main
 //----------------------------------------------------------------------------------
 int main(int argc, char ** argv)
@@ -225,30 +255,32 @@ int main(int argc, char ** argv)
     int a;
     char * QueryString;
     char HtmlPath[300];
-    int lp;
+    int lp, d;
     QueryString = getenv("QUERY_STRING");
 
     if (!QueryString || QueryString[0] == '\0'){
         RedirectToToday();
         return 0;
     }
+    
+    if (strcmp(QueryString, "now.jpg") == 0){
+        ShowLatestJpg();
+        return 0;
+    }
 
     printf("Content-Type: text/html\n\n<html>\n"); // html header
 
     HtmlPath [0] = '\0';
-    if (QueryString){
-        int d;
 
-        // Unescape for "%20"
-        for (a=0,d=0;;a++){
-            if (QueryString[a] == '%' && QueryString[a+1] == '2' && QueryString[a+2] == '0'){
-                HtmlPath[d++] = ' ';
-                a+= 2;
-            }else{
-                HtmlPath[d++] = QueryString[a];
-            }
-            if (QueryString[a] == 0) break;
+    // Unescape for "%20"
+    for (a=0,d=0;;a++){
+        if (QueryString[a] == '%' && QueryString[a+1] == '2' && QueryString[a+2] == '0'){
+            HtmlPath[d++] = ' ';
+            a+= 2;
+        }else{
+            HtmlPath[d++] = QueryString[a];
         }
+        if (QueryString[a] == 0) break;
     }
 
     if (QueryString[0] == '~'){
