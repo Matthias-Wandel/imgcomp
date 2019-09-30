@@ -1,11 +1,15 @@
 #!/usr/bin/python3
 import sys,os,glob,time
+dirname = "../saved/"
 
-for o in os.listdir("."):
+dirs = os.listdir(dirname)
+dirs.sort()
+
+for o in dirs:
     if o == "keep": continue
     buckets = [0]*int(24*60/5)
 
-    for x in os.walk(o):
+    for x in os.walk(dirname+o):
         #print (x)
         for n in x[2]:
             #print (n)
