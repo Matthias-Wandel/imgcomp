@@ -188,30 +188,59 @@ void DoSaveImage(char * QueryString, char * HtmlPath)
     int wi;
     char NewName[100];
     char FromName[100];
+    char TempString[20];
+    char NewDir[20];
+        
+    //printf("HtmlPath: %s<br>\n",HtmlPath);
 
-    strcpy(NewName, "pix/keep");
-    for (a=0,wi=8;HtmlPath[a];a++){
-        if (HtmlPath[a] == '/') wi = 8;
-        if (HtmlPath[a] == ' ' || HtmlPath[a] == '.' || HtmlPath[a] == '\0'){
-            NewName[wi++] = '\0';
+    for (a=0,wi=0;HtmlPath[a];a++){
+        if (HtmlPath[a] == '/'){
+            wi = 0;
+        }else if (HtmlPath[a] == ' ' || HtmlPath[a] == '.' || HtmlPath[a] == '\0' || wi >= 19){
+            TempString[wi++] = '\0';
             break;
         }else{
-            NewName[wi++] = HtmlPath[a];
+            TempString[wi++] = HtmlPath[a];
         }
     }
-    strcat(NewName, ".jpg");
-    sprintf(FromName, "../%s",HtmlPath+1);
+    //printf("TempString: %s<br>\n",TempString);
+    
+    strcpy(NewDir, "pix/keep/");
+    strncat(NewDir, HtmlPath+1, 4);
+    //printf("NewDir: %s<br>\n",NewDir);
+    
+    {
+        struct stat sb;
+        if (stat(NewDir, &sb) == 0){
+            if (S_ISDIR(sb.st_mode)) {
+                // Its a directory.  Ok.
+            }else{
+                // Uh oh, it's not a dir.
+                printf("Can't make directory!<br>");
+                return;
+            }
+        }else{
+            // Doesn't exist.  Make directory.
+            if (mkdir(NewDir, 0777)){
+                printf("Make dir failed!<br>");
+            }
+        }
+    }
+    
+    sprintf(NewName, "%s/%s.jpg",NewDir,TempString);
+    sprintf(FromName, "pix/%s",HtmlPath+1);
 
-    //printf("New name: %s<br>\n",NewName);
-    //printf("From name: %s<p>\n",FromName);
+    printf("New name: %s<br>\n",NewName);
+    printf("From name: %s<p>\n",FromName);
+    
 
-    if (symlink(FromName, NewName)){
-        printf("Symlink failed<p>\n");
+    if (link(FromName, NewName)){
+        printf("Save failed<p>\n");
     }else{
         printf("Saved image<p>\n");
     }
 
-    printf ("<p><a href=\"view.cgi?/keep/\">View saved</a>\n");
+    printf ("<p><a href=\"view.cgi?keep/\">View saved</a>\n");
 
     printf ("<p><a href=\"view.cgi?%s\">Back</a><br>\n",QueryString+1);
 

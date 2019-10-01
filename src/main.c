@@ -519,7 +519,7 @@ int main(int argc, char **argv)
     Regions.NumExcludeReg = 0;
     TimelapseInterval = 0;
     SaveDir[0] = 0;
-    strcpy(SaveNames, "%m%d/%H/%m%d-%H%M%S");
+    strcpy(SaveNames, "%y%m%d/%H/%m%d-%H%M%S");
 	LastPic_mtime = time(NULL); // Log names are based on this time, need before images.
 
     for (argn = 1; argn < argc; argn++) {
