@@ -311,7 +311,9 @@ int main(int argc, char ** argv)
     HtmlPath [0] = '\0';
 
     // Unescape for "%20"
-    for (a=0,d=0;;a++){
+    a = 0;
+    if (QueryString[a] == '/') a++;
+    for (d=0;;a++){
         if (QueryString[a] == '%' && QueryString[a+1] == '2' && QueryString[a+2] == '0'){
             HtmlPath[d++] = ' ';
             a+= 2;
