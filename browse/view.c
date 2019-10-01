@@ -133,7 +133,7 @@ void DoJpegView(char * ImagePath)
         if (ImagePath[a] == '/') lastslash = a;
     }
     sprintf(HtmlDir, "pix/%s",ImagePath);
-    HtmlDir[lastslash+1+4] = '\0';
+    HtmlDir[lastslash+4] = '\0';
 
     strcpy(HtmlFile, ImagePath+lastslash+1);
 
@@ -182,7 +182,7 @@ void RedirectToToday()
 
     //printf("Content-Type: text/html\n\n<html>\n"); // html header
     now = time(NULL); // Log names are based on this time, need before images.
-    strftime(RedirectDir, 20, "pix/%m%d", localtime(&now));
+    strftime(RedirectDir, 20, "pix/%y%m%d", localtime(&now));
 
     // Check if directory exists.
     if (stat(RedirectDir, &ignore)){
@@ -190,7 +190,7 @@ void RedirectToToday()
          strcpy(RedirectDir, "pix/");
     }
 
-    printf ("Location:  view.cgi?%s/\n\n",RedirectDir+4);
+    printf ("Location:  view.cgi?%s\n\n",RedirectDir+4);
 }
 
 //----------------------------------------------------------------------------------
@@ -342,9 +342,8 @@ int main(int argc, char ** argv)
         int l;
         Dir_t * Col;
         l = strlen(HtmlPath);
-        if (l && HtmlPath[l-1] != '/'){
-            HtmlPath[l] = '/';
-            HtmlPath[l+1] = '\0';
+        if (l && HtmlPath[l-1] == '/'){
+            HtmlPath[l-1] = '\0';
         }
 
         Col = CollectDir(HtmlPath);

@@ -75,14 +75,14 @@ void MakeHtmlOutput(Dir_t * Dir)
     printf("<p>\n");
 
     for (a=0;a<Directories.NumEntries;a++){
-        printf("<a href=\"view.cgi?%s%s\">%s</a>",Dir->HtmlPath, Directories.Entries[a].Name, Directories.Entries[a].Name);
+        printf("<a href=\"view.cgi?%s/%s\">%s</a>",Dir->HtmlPath, Directories.Entries[a].Name, Directories.Entries[a].Name);
         
         // Count how many images in subdirectory.
         {
             char SubdirName[220];
             VarList SubdImages;
             memset(&SubdImages, 0, sizeof(VarList));
-            snprintf(SubdirName,210,"pix/%s%s",Dir->HtmlPath, Directories.Entries[a].Name);
+            snprintf(SubdirName,210,"pix/%s/%s",Dir->HtmlPath, Directories.Entries[a].Name);
             CollectDirectory(SubdirName, &SubdImages, NULL, ImageExtensions);
             if (SubdImages.NumEntries){
                 printf("(%d)\n",SubdImages.NumEntries);
@@ -217,12 +217,12 @@ void MakeHtmlOutput(Dir_t * Dir)
                     }
                 }
 
-                printf("<a href=\"view.cgi?%s%s\">",Dir->HtmlPath, Name);
+                printf("<a href=\"view.cgi?%s/%s\">",Dir->HtmlPath, Name);
                 if (SkipNum == 0){
                     if (FullresThumbs){
-                        printf("<img src=\"pix/%s%s\">",Dir->HtmlPath, Name);
+                        printf("<img src=\"pix/%s/%s\">",Dir->HtmlPath, Name);
                     }else{
-                        printf("<img src=\"tb.cgi?pix/%s%s\">",Dir->HtmlPath, Name);
+                        printf("<img src=\"tb.cgi?pix/%s/%s\">",Dir->HtmlPath, Name);
                     }
                     if (num > 1){
                         TimeStr[0] = Name[5]; TimeStr[1] = Name[6];
@@ -239,7 +239,7 @@ void MakeHtmlOutput(Dir_t * Dir)
                 printf("</a> &nbsp;\n");
                 SkipNum += 1;
             }else{
-                printf("<p><a href=\"pix/%s%s\">",Dir->HtmlPath, Name);
+                printf("<p><a href=\"pix/%s/%s\">",Dir->HtmlPath, Name);
                 printf("%s</a><p>", Name);
             }
             dt = 0;
@@ -321,11 +321,11 @@ void MakeImageHtmlOutput(char * ImageName, char * HtmlDir, VarList Images)
         printf("<map name=\"prevnext\">\n");
         if (DirIndex > 0){
             printf("  <area shape=\"rect\" coords= \"0,0,%d,%d\" ",ShowWidth/4, ShowHeight);
-            printf("href=\"view.cgi?%s%s\">\n", HtmlDir, Images.Entries[DirIndex-1].Name);
+            printf("href=\"view.cgi?%s/%s\">\n", HtmlDir, Images.Entries[DirIndex-1].Name);
         }
         if (DirIndex < Images.NumEntries-1){
             printf("  <area shape=\"rect\" coords=\"%d,0,%d,%d\" ",(ShowWidth*3)/4, ShowWidth, ShowHeight);
-            printf("href=\"view.cgi?%s%s\">\n", HtmlDir, Images.Entries[DirIndex+1].Name);
+            printf("href=\"view.cgi?%s/%s\">\n", HtmlDir, Images.Entries[DirIndex+1].Name);
         }
         printf("</map>\n");
     }
@@ -382,7 +382,7 @@ void MakeImageHtmlOutput(char * ImageName, char * HtmlDir, VarList Images)
             if (a == DirIndex) printf("[??]\n");
             //printf(" %d ",dt);
             
-            printf("<a href=\"view.cgi?%s%s\">[%s]</a>\n",HtmlDir, NamePtr, TimeStr);
+            printf("<a href=\"view.cgi?%s/%s\">[%s]</a>\n",HtmlDir, NamePtr, TimeStr);
         }
         
     }
@@ -404,9 +404,9 @@ void MakeImageHtmlOutput(char * ImageName, char * HtmlDir, VarList Images)
         printf("<a href=\"tb.cgi?pix/%s/%s$2\">[Adj]</a>\n",HtmlDir,ImageName);
         
         if (!IsKeepDir){
-            printf("<a href=\"view.cgi?~%s%s\">[Save]</a>\n",HtmlDir,ImageName);
+            printf("<a href=\"view.cgi?~%s/%s\">[Save]</a>\n",HtmlDir,ImageName);
         }
         
-        printf("<a href=\"view.cgi?%s%s\">[Dir:%s]</a>\n",HtmlDir, IndexInto, HtmlDir);
+        printf("<a href=\"view.cgi?%s/%s\">[Dir:%s]</a>\n",HtmlDir, IndexInto, HtmlDir);
     }
 }

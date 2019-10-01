@@ -51,7 +51,7 @@ void CollectDirectory(char * PathName, VarList * Files, VarList * Dirs, char * P
     unsigned l;
     int a;
 
-    //printf("DIR: '%s'\n",DirName);
+    //printf("DIR: '%s'<br>\n",PathName);
 
     if (PathName[0]){
         dirpt = opendir(PathName);
@@ -61,7 +61,7 @@ void CollectDirectory(char * PathName, VarList * Files, VarList * Dirs, char * P
     }
 
     if (dirpt == NULL){
-         printf("Error: could not read dir: %s\n",strerror(errno));
+         printf("Error: could not read dir %s: %s\n",PathName, strerror(errno));
          return;
     }
 
@@ -78,7 +78,7 @@ void CollectDirectory(char * PathName, VarList * Files, VarList * Dirs, char * P
         CombinePaths(FullPath, PathName, entry->d_name);
 
         if (stat(FullPath, &filestat)){
-            printf("Error on '%s'\n",FullPath);
+            printf("Error on '%s'<br>\n",FullPath);
             continue;
         }
 
