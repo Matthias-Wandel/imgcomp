@@ -144,17 +144,31 @@ void DoJpegView(char * ImagePath)
     MakeImageHtmlOutput(HtmlFile, HtmlDir+4, Images);
     free(Images.Entries);
 
+    printf("<p>");
+    
+    printf("%s ",ImageInfo.DateTime);
 
-    printf("<pre>");
-    // Delete uninteresting fields of exif info to not show them.
-    ImageInfo.FlashUsed = -1;
-    ImageInfo.MeteringMode = 0;
-    ImageInfo.ExposureProgram = 0;
-    ImageInfo.CameraMake[0] = 0;
-    ImageInfo.FocalLength = 0;
-    ImageInfo.ApertureFNumber = 0;
-    ImageInfo.Whitebalance = -1;
-    ShowImageInfo(0);
+    printf("&nbsp; %dx%d &nbsp;",ImageInfo.Width, ImageInfo.Height);
+
+    if (ImageInfo.ExposureTime){
+        if (ImageInfo.ExposureTime <= 0.5){
+            printf("1/%ds",(int)(0.5 + 1/ImageInfo.ExposureTime));
+        }else{
+            printf("%1.1fs",ImageInfo.ExposureTime);
+        }
+    }
+
+    printf("&nbsp; ISO:%2d\n",(int)ImageInfo.ISOequivalent);
+    
+    if (ImageInfo.ApertureFNumber){
+        printf("&nbsp; f/%3.1f",(double)ImageInfo.ApertureFNumber);
+    }
+
+    if (ImageInfo.FocalLength35mmEquiv){
+        printf("&nbsp; f(35)=%dmm",ImageInfo.FocalLength35mmEquiv);
+    }
+    
+    printf("\n");
 }
 
 //----------------------------------------------------------------------------------
@@ -184,15 +198,12 @@ void RedirectToToday()
 //----------------------------------------------------------------------------------
 void DoSaveImage(char * QueryString, char * HtmlPath)
 {
-    int a;
-    int wi;
+    int a, wi;
     char NewName[100];
     char FromName[100];
     char TempString[20];
     char NewDir[20];
         
-    //printf("HtmlPath: %s<br>\n",HtmlPath);
-
     for (a=0,wi=0;HtmlPath[a];a++){
         if (HtmlPath[a] == '/'){
             wi = 0;
@@ -215,7 +226,7 @@ void DoSaveImage(char * QueryString, char * HtmlPath)
             if (S_ISDIR(sb.st_mode)) {
                 // Its a directory.  Ok.
             }else{
-                // Uh oh, it's not a dir.
+                // Uh oh, it exists but is not a directory.
                 printf("Can't make directory!<br>");
                 return;
             }
@@ -223,6 +234,7 @@ void DoSaveImage(char * QueryString, char * HtmlPath)
             // Doesn't exist.  Make directory.
             if (mkdir(NewDir, 0777)){
                 printf("Make dir failed!<br>");
+                return;
             }
         }
     }
@@ -232,7 +244,6 @@ void DoSaveImage(char * QueryString, char * HtmlPath)
 
     printf("New name: %s<br>\n",NewName);
     printf("From name: %s<p>\n",FromName);
-    
 
     if (link(FromName, NewName)){
         printf("Save failed<p>\n");
@@ -241,9 +252,7 @@ void DoSaveImage(char * QueryString, char * HtmlPath)
     }
 
     printf ("<p><a href=\"view.cgi?keep/\">View saved</a>\n");
-
     printf ("<p><a href=\"view.cgi?%s\">Back</a><br>\n",QueryString+1);
-
 }
 
 //----------------------------------------------------------------------------------

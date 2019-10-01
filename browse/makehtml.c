@@ -30,10 +30,8 @@ void MakeHtmlOutput(Dir_t * Dir)
     unsigned NumBreakIndices = 0;
     int ThumbnailHeight;
     int DirMinute = 0;
-    int IsKeepDir = 0;
+    int AllSameDate;
     
-    if (memcmp(Dir, "/keep/",6) == 0) IsKeepDir = 1;
-
     Images = Dir->Images;
     Directories = Dir->Dirs;    
 
@@ -77,7 +75,6 @@ void MakeHtmlOutput(Dir_t * Dir)
     printf("<p>\n");
 
     for (a=0;a<Directories.NumEntries;a++){
-        
         printf("<a href=\"view.cgi?%s%s\">%s</a>",Dir->HtmlPath, Directories.Entries[a].Name, Directories.Entries[a].Name);
         
         // Count how many images in subdirectory.
@@ -97,7 +94,6 @@ void MakeHtmlOutput(Dir_t * Dir)
             free(SubdImages.Entries);
         }
         
-        
         if ((a % 5 ) == 4){
             printf("<p>\n"); // Put four links per line.
         }else{
@@ -109,6 +105,31 @@ void MakeHtmlOutput(Dir_t * Dir)
     if (Images.NumEntries){
         printf("%s: %d Images<p>\n",Dir->HtmlPath, Images.NumEntries);
     }
+
+    
+    {
+        // Check if all the images are from the same date.
+        char DateStr[10];
+        AllSameDate = 1;
+        DateStr[0] = 0;
+        for (a=0;a<Images.NumEntries;a++){
+            char * Name;
+            Name = Images.Entries[a].Name;
+            if (Name[0] >= '0' && Name[0] <= '9' && Name[1] >= '0' && Name[1] <= '9'){                
+                if (AllSameDate){
+                    if (DateStr[0] == 0){
+                        memcpy(DateStr, Name, 4);
+                    }else{
+                        if(memcmp(DateStr, Name, 4)){
+                            AllSameDate = 0;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
 
     // Find time breaks in images.
     LastSeconds = -1000;
@@ -129,7 +150,7 @@ void MakeHtmlOutput(Dir_t * Dir)
         }
         Images.Entries[a].DaySecond = Seconds;
 
-        if (Seconds-LastSeconds > (IsKeepDir ? 3600 : 60)){
+        if (Seconds-LastSeconds > (AllSameDate ? 60 : 3600)){
             BreakIndices[NumBreakIndices++] = a;
             if (NumBreakIndices > 30) break;
         }
@@ -137,7 +158,6 @@ void MakeHtmlOutput(Dir_t * Dir)
 
     }
     BreakIndices[NumBreakIndices] = Images.NumEntries;
-
 
     // Show continuous runs of images, with breaks between.
     for (b=0;b<NumBreakIndices;b++){
@@ -155,17 +175,28 @@ void MakeHtmlOutput(Dir_t * Dir)
         if (num > 15) SkipFactor = 3;
         if (num > 20) SkipFactor = 4;
         if (num > 40) SkipFactor = 5;
-        if (IsKeepDir) SkipFactor = 1;
 
         Name = Images.Entries[start].Name;
         if (Name[0] >= '0' && Name[0] <= '9' && Name[1] >= '0' && Name[1] <= '9'){
+            char DateStr[10];
+            if (!AllSameDate){
+                DateStr[0] = Name[0]; DateStr[1] = Name[1];
+                DateStr[2] = '-';
+                DateStr[3] = Name[2]; DateStr[4] = Name[3];
+                DateStr[5] = ' ';
+                DateStr[6] = '\0';
+            }else{
+                DateStr[0] = 0;
+            }
+            
+            
             TimeStr[0] = Name[5]; TimeStr[1] = Name[6];
             TimeStr[2] = ':';
             TimeStr[3] = Name[7]; TimeStr[4] = Name[8];
             TimeStr[5] = ':';
             TimeStr[6] = Name[9]; TimeStr[7] = Name[10];
             TimeStr[8] = '\0';
-            printf("<p><big>%s</big>\n",TimeStr);
+            printf("<p><big>%s%s</big>\n",DateStr,TimeStr);
         }
 
         for (a=0;a<num;a++){
@@ -251,7 +282,7 @@ void MakeImageHtmlOutput(char * ImageName, char * HtmlDir, VarList Images)
     int ShowHeight;
     int IsKeepDir = 0;
     
-    if (memcmp(HtmlDir, "/keep/",6) == 0) IsKeepDir = 1;
+    if (strstr(HtmlDir, "keep/") >= 0) IsKeepDir = 1;
     
     printf("<title>%s</title>\n",ImageName);
     
