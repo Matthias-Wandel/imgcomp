@@ -282,7 +282,7 @@ void MakeImageHtmlOutput(char * ImageName, char * HtmlDir, VarList Images)
     int ShowHeight;
     int IsKeepDir = 0;
     
-    if (strstr(HtmlDir, "keep/") >= 0) IsKeepDir = 1;
+    if (strstr(HtmlDir, "keep/") != NULL) IsKeepDir = 1;
     
     printf("<title>%s</title>\n",ImageName);
     
@@ -400,12 +400,13 @@ void MakeImageHtmlOutput(char * ImageName, char * HtmlDir, VarList Images)
             IndexInto[2] = ImageName[8];
             IndexInto[3] = '\0';
         }
-        printf("<a href=\"pix/%s/%s\">[Link]</a>\n",HtmlDir,ImageName);
+        printf("<a href=\"pix/%s/%s\">[Big]</a>\n",HtmlDir,ImageName);
+        printf("<a href=\"tb.cgi?pix/%s/%s$2\">[Adj]</a>\n",HtmlDir,ImageName);
         
         if (!IsKeepDir){
             printf("<a href=\"view.cgi?~%s%s\">[Save]</a>\n",HtmlDir,ImageName);
         }
         
-        printf("<a href=\"view.cgi?%s%s\">[Dir:%s]</a> %d files</a>\n",HtmlDir, IndexInto, HtmlDir, Images.NumEntries);
+        printf("<a href=\"view.cgi?%s%s\">[Dir:%s]</a>\n",HtmlDir, IndexInto, HtmlDir);
     }
 }

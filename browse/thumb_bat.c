@@ -128,11 +128,10 @@ void SaveJPEG(FILE * outfile, MemImage_t * MemImage)
 {
     struct jpeg_compress_struct cinfo;
     struct jpeg_error_mgr       jerr;
-
+    int width;
 
     //Now, lets setup the libjpeg objects.
-    //Note this is setup for my screen shot so we are using RGB color space.
- 
+
     cinfo.err = jpeg_std_error(&jerr);
     jpeg_create_compress(&cinfo);
     jpeg_stdio_dest(&cinfo, outfile);
@@ -155,12 +154,9 @@ void SaveJPEG(FILE * outfile, MemImage_t * MemImage)
     //Notice that the row_pointer is set to the first byte of the row via
     //some pointer math/magic. Once the pointer is calculated, do a write_scanline.
 
-    JSAMPROW row_pointer;          // pointer to a single row
- 
+    width = MemImage->width;
     while (cinfo.next_scanline < cinfo.image_height) {
-        int width = MemImage->width;
-        
-        row_pointer = (JSAMPROW) MemImage->pixels+width*cinfo.next_scanline*3;
+        JSAMPROW row_pointer = (JSAMPROW) MemImage->pixels+width*cinfo.next_scanline*3;
         jpeg_write_scanlines(&cinfo, &row_pointer, 1);
     }
 
@@ -171,6 +167,73 @@ void SaveJPEG(FILE * outfile, MemImage_t * MemImage)
 
 
 //----------------------------------------------------------------------------------
+//  Cale brightness for really dark images
+//----------------------------------------------------------------------------------
+void ScaleBrightness(MemImage_t * MemImage)
+{
+    int row, a, c, width;
+    int satpix;
+    int Histogram[256];
+
+    memset(Histogram, 0, sizeof(Histogram));
+    
+    width = MemImage->width;
+    for (row=0;row<MemImage->height;row+=2){
+        unsigned char * RowPointer;
+        RowPointer = MemImage->pixels+row*width*3;
+        for (c=0;c<MemImage->width*3;c+=6){
+            Histogram[RowPointer[c]] += 1;
+            Histogram[RowPointer[c+1]] += 1;
+            Histogram[RowPointer[c+2]] += 1;
+        }
+    }
+    
+    //for (a=0;a<256;a++) printf("%3d %d\n",a,Histogram[a]);
+    
+    // figure out what threshold value has no more than 0.1% of pixels above.
+    satpix = (width * MemImage->height / 4) >> 10; // Becausae we skipped alternate rows and columns.
+    for (a=255;a>=0;a--){
+        satpix -= Histogram[a];
+        if (satpix <= 0) break;
+    }
+    
+    //printf("scale %d to 255\n",a);
+    
+    
+    // If image is kind of dark, cale the brightness so that no more than 0.1% of the
+    // pixels will saturate.
+    if (a < 150){
+        int Mult;
+        Mult = 256*240/a;
+        if (Mult > 265*10) Mult = 256*10;
+        
+        for (row=0;row<MemImage->height;row++){
+            unsigned char * RowPointer;
+            RowPointer = MemImage->pixels+row*width*3;
+            for (c=0;c<MemImage->width*3;c+=3){
+                int nv;
+                nv = (RowPointer[c  ]*Mult)>>8;
+                if (nv > 255) nv = 255;
+                RowPointer[c  ] = nv;
+
+                nv = (RowPointer[c+1]*Mult)>>8;
+                if (nv > 255) nv = 255;
+                RowPointer[c+1] = nv;
+
+                nv = (RowPointer[c+2]*Mult)>>8;
+                if (nv > 255) nv = 255;
+                RowPointer[c+2] = nv;
+            }
+        }
+    }
+    
+    
+    
+}
+
+
+
+//----------------------------------------------------------------------------------
 // Main
 //----------------------------------------------------------------------------------
 int main(int argc, char ** argv)
@@ -178,6 +241,8 @@ int main(int argc, char ** argv)
     int a,b;
 	char * qenv;
 	char FileName[100];
+    int ScaleFactor = 8;
+    int ScaleBrightnessOn = 1;
 
 	printf("Content-Type: image/jpg\n\n"); // heder for image type.
 	
@@ -188,20 +253,32 @@ int main(int argc, char ** argv)
 		exit(0);
 	}
 	for (a=b=0;a<100;a++){
+        if (qenv[a] == '\0' || qenv[a] == '$') break;
 		if (qenv[a] == '%' && qenv[a+1] == '2' && qenv[a+2] == '0'){
 			FileName[b++] = ' ';
 			a += 2;
 		}else{
 			FileName[b++] = qenv[a];
 		}
-		if (qenv[a] == '\0') break;
 	}
-	
+    FileName[b] = '\0';
+
+    // Any characters past a '$' in the query string indicate image parameters
+    for (;qenv[a];a++){
+        switch(qenv[a]){
+            case '1': ScaleFactor = 1; break;
+            case '2': ScaleFactor = 2; break;
+            case '4': ScaleFactor = 4; break;
+            case '8': ScaleFactor = 8; break;
+            case 'b': ScaleBrightnessOn = 0; break;
+            case 'B': ScaleBrightnessOn = 1; break;
+        }
+    }
 
     {
         MemImage_t * Image;
-        Image = LoadJPEG(FileName, 8);
-    
+        Image = LoadJPEG(FileName, ScaleFactor);
+        if (ScaleBrightnessOn) ScaleBrightness(Image);
         SaveJPEG(stdout, Image);
     }
 }
