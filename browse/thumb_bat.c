@@ -199,10 +199,9 @@ void ScaleBrightness(MemImage_t * MemImage)
     
     //printf("scale %d to 255\n",a);
     
-    
     // If image is kind of dark, cale the brightness so that no more than 0.1% of the
     // pixels will saturate.
-    if (a < 150){
+    if (a < 180){
         int Mult;
         Mult = 256*240/a;
         if (Mult > 265*10) Mult = 256*10;
