@@ -8,6 +8,7 @@
 #include <string.h>
 #include <time.h>
 #include <stdlib.h>
+#include <errno.h>
 #include "view.h"
 #include "../src/jhead.h"
 #ifdef _WIN32
@@ -100,7 +101,7 @@ Dir_t * CollectDir(char * HtmlPath)
 //----------------------------------------------------------------------------------
 static void ReadExifHeader(char * ImagePath)
 {
-    char FileName[300];
+    char FileName[320];
     FILE * file;
     sprintf(FileName, "pix/%s",ImagePath);
     if((file = fopen(FileName, "rb")) != NULL) {
@@ -247,7 +248,8 @@ void DoSaveImage(char * QueryString, char * HtmlPath)
     printf("From name: %s<p>\n",FromName);
 
     if (link(FromName, NewName)){
-        printf("Save failed<p>\n");
+        //perror("Save failed");
+        printf("Save failed (%s)<p>\n",strerror( errno ));
     }else{
         printf("Saved image<p>\n");
     }

@@ -139,6 +139,12 @@ time_t CollectDirectory(char * PathName, VarList * Files, VarList * Dirs, char *
 
         if (find_handle == -1) break;
 
+        l=strlen(finddata.name);
+        if (l > sizeof(DirEntry.Name)-1){
+            printf("Name too long: %s\n",finddata.name);
+            goto skip;
+        }
+
         memset(&ThisOne, 0, sizeof(ThisOne));
         strcpy(ThisOne.Name, finddata.name);
 
@@ -151,7 +157,6 @@ time_t CollectDirectory(char * PathName, VarList * Files, VarList * Dirs, char *
         }else{
             if (Patterns != NULL && Files != NULL){
                 // Reject anything that does not end in one of the specified patterns.
-                l=strlen(finddata.name);
                 //if (l < 5) goto next; // Too short a name to contain '.jpg'
                 for (a=0;;a++){
                     int lp;
@@ -167,6 +172,7 @@ time_t CollectDirectory(char * PathName, VarList * Files, VarList * Dirs, char *
                 }
             }
         }
+        skip:
 
         if (_findnext(find_handle, &finddata) != 0) break;
     }

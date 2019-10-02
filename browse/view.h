@@ -5,7 +5,7 @@ typedef struct tm timestruc;
 //-------------------------------------------------------------------
 // Structure for a named directory entry.
 typedef struct {
-    char   Name[160];
+    char   Name[80];
     int    DaySecond;
 }DirEntry;
 
