@@ -51,6 +51,7 @@ void usage (void)// complain about bad command line
      "                      For continous AE rapsistill, default off\n"
      " -brmonitor           Restart raspistill on brightness\n"
      "                      changes (default on)\n"
+     " -fatigue             Motion fatigue time constant, 0=0ff\n"
      " -verbose or -debug   Emit more verbose output\n"
      " -logtofile           Log to file instead of stdout\n"
      " -movelognames <schme> Rotate log files, scheme works just like\n"
@@ -138,6 +139,8 @@ static int parse_parameter (const char * tag, const char * value)
         if (sscanf(value, "%d", &SendTriggerSignals) != 1) return -1;        
     }else if (keymatch(tag, "brmonitor", 5)) {
         if (sscanf(value, "%d", &BrightnessChangeRestart) != 1) return -1;        
+    }else if (keymatch(tag, "fatigue", 7)) {
+        if (sscanf(value, "%d", &MotionFatigueTc) != 1) return -1;        
     } else if (keymatch(tag, "scale", 5)) {
         // Scale the output image by a fraction 1/N.
         if (sscanf(value, "%d", &ScaleDenom) != 1) return -1;

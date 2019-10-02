@@ -42,6 +42,7 @@ int SpuriousReject = 0;
 int PostMotionKeep = 0;
 
 int BrightnessChangeRestart = 1;
+int MotionFatigueTc = 30;
 int SendTriggerSignals = 0;
 int MsPerCycle;
 

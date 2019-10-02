@@ -434,8 +434,7 @@ static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold)
     int row,col;
     TriggerInfo_t retval;
     int fs;
-    static int SinceFatiguePrint;
-    
+        
     // Scale down by this factor before applying windowing algorithm to look for max localized change
 	const int scalef = 6;
     #define ROOF(x) ((x+scalef-1)/scalef)
@@ -500,57 +499,61 @@ static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold)
         }
     }
 
-    // Compute motion fatigue
-    fs = 0;
-    for (row=0;row<heightSc;row++){
-        for (col=0;col<widthSc;col++){
-            int ds, nFat;
-            ds = DiffScaled[row*widthSc+col];
-            nFat = (Fatigue[row*widthSc+col]*29 + ds)/30; // Expontential decay on it.
-            Fatigue[row*widthSc+col] = nFat;
-            fs += nFat;
-        }
-    }
-    fs = fs/(heightSc*widthSc);
-    
-    // Show fatigue map from time to time.
-    if (Verbosity > 1 || (fs > 60 && SinceFatiguePrint > 60)){
-        // Print the fatigure array every two minuts if there is stuff in it.
-		fprintf(Log, "Fatigue map (%d x %d) sum=%d<small>\n", widthSc, heightSc, fs);
+    if (MotionFatigueTc > 0){
+        static int SinceFatiguePrint = 0;
+        // Compute motion fatigue
+        fs = 0;
         for (row=0;row<heightSc;row++){
             for (col=0;col<widthSc;col++){
-                int v = Fatigue[row*widthSc+col]/50;
-                //                             00112233445566778899
-                static const char LowDigits[20] = " . - = 3 4~5~6~7=8=9";
-                if (v < 10){
-                    fprintf(Log,"%c%c",LowDigits[v*2],LowDigits[v*2+1]);
-                }else{
-                    fprintf(Log,"%2d",v <= 99 ? v : 99);
-                }
+                int ds, nFat;
+                ds = DiffScaled[row*widthSc+col];
+                nFat = (Fatigue[row*widthSc+col]*(MotionFatigueTc-1) + ds)/MotionFatigueTc; // Expontential decay on it.
+                Fatigue[row*widthSc+col] = nFat;
+                fs += nFat;
             }
-            fprintf(Log,"\n");
         }
-        fprintf(Log, "</small>\n");
-        SinceFatiguePrint = 0;
-    }
-    SinceFatiguePrint++;
+        fs = fs/(heightSc*widthSc);
+        
+        // Show fatigue map from time to time.
+        if (Verbosity > 1 || (fs > 50 && SinceFatiguePrint > 60)){
+            // Print the fatigure array every minuts if there is stuff in it.
+            fprintf(Log, "Fatigue map (%d x %d) sum=%d<small>\n", widthSc, heightSc, fs);
+            for (row=0;row<heightSc;row++){
+                for (col=0;col<widthSc;col++){
+                    int v = Fatigue[row*widthSc+col]/50;
+                    //                             00112233445566778899
+                    static const char LowDigits[20] = " . - = 3 4~5~6~7=8=9";
+                    if (v < 10){
+                        fprintf(Log,"%c%c",LowDigits[v*2],LowDigits[v*2+1]);
+                    }else{
+                        fprintf(Log,"%2d",v <= 99 ? v : 99);
+                    }
+                }
+                fprintf(Log,"\n");
+            }
+            fprintf(Log, "</small>\n");
+            SinceFatiguePrint = 0;
+        }
+        SinceFatiguePrint++;
+    
 
-    // Subtract out motion fatigue
-    for (row=0;row<heightSc;row++){
-        for (col=0;col<widthSc;col++){
-            int ds, nFatM;
-            nFatM = Fatigue[row*widthSc+col];
-            // Look for largest fatigue also among largest 4 neighbours to use.
-            // Helps address laundry flapping in the wind, sometimes flapping further.
-            if (col > 0         && nFatM < Fatigue[row*widthSc+col-1]) nFatM = Fatigue[row*widthSc+col-1];
-            if (col < widthSc   && nFatM < Fatigue[row*widthSc+col+1]) nFatM = Fatigue[row*widthSc+col+1];
-            if (row > 0         && nFatM < Fatigue[(row-1)*widthSc+col]) nFatM = Fatigue[(row-1)*widthSc+col];
-            if (row <heightSc-1 && nFatM < Fatigue[(row+1)*widthSc+col]) nFatM = Fatigue[(row+1)*widthSc+col];
-            
-            ds = DiffScaled[row*widthSc+col];
-            ds -= nFatM*3;
-            if (ds < 0) ds = 0;
-            DiffScaled[row*widthSc+col] = ds;
+        // Subtract out motion fatigue
+        for (row=0;row<heightSc;row++){
+            for (col=0;col<widthSc;col++){
+                int ds, nFatM;
+                nFatM = Fatigue[row*widthSc+col];
+                // Look for largest fatigue also among largest 4 neighbours to use.
+                // Helps address laundry flapping in the wind, sometimes flapping further.
+                if (col > 0         && nFatM < Fatigue[row*widthSc+col-1]) nFatM = Fatigue[row*widthSc+col-1];
+                if (col < widthSc   && nFatM < Fatigue[row*widthSc+col+1]) nFatM = Fatigue[row*widthSc+col+1];
+                if (row > 0         && nFatM < Fatigue[(row-1)*widthSc+col]) nFatM = Fatigue[(row-1)*widthSc+col];
+                if (row <heightSc-1 && nFatM < Fatigue[(row+1)*widthSc+col]) nFatM = Fatigue[(row+1)*widthSc+col];
+                
+                ds = DiffScaled[row*widthSc+col];
+                ds -= nFatM*3;
+                if (ds < 0) ds = 0;
+                DiffScaled[row*widthSc+col] = ds;
+            }
         }
     }
 

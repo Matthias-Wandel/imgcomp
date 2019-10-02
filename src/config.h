@@ -8,6 +8,7 @@ extern int SpuriousReject;
 extern int PostMotionKeep;
 
 extern int BrightnessChangeRestart;
+extern int MotionFatigueTc;
 extern int SendTriggerSignals;
 
 extern char DiffMapFileName[200];
