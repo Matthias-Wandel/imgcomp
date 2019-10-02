@@ -103,9 +103,10 @@ static void ReadExifHeader(char * ImagePath)
     char FileName[300];
     FILE * file;
     sprintf(FileName, "pix/%s",ImagePath);
-    file = fopen(FileName, "rb");
-    if(file) {
+    if((file = fopen(FileName, "rb")) != NULL) {
         ReadExifPart(file);
+    }else{
+        printf("Failed to read %s<br>\n", FileName);
     }
 
     if (ImageInfo.Width > 10 && ImageInfo.Height > 10){
@@ -354,7 +355,7 @@ int main(int argc, char ** argv)
         for (a=0;a<Col->Images.NumEntries;a++){
             int l = strlen(Col->Images.Entries[a].Name);
             if (Col->Images.Entries[a].Name[l-1] == 'g'){
-                sprintf(HtmlPath, "%s%s", Col->HtmlPath, Col->Images.Entries[0].Name);
+                sprintf(HtmlPath, "%s/%s", Col->HtmlPath, Col->Images.Entries[0].Name);
                 ReadExifHeader(HtmlPath);
                 break;
             }
