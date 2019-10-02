@@ -31,3 +31,18 @@ Configure auto start and auto cleanup
 	10,40 * * * * wget -O /home/pi/mw.html -o /home/pi/wget_out.txt mw/martin.cgi
 	47 10,22 * * * /home/pi/imgcomp/free_up_space
 	@reboot imgcomp/imgcomp &
+
+Configure static ip
+    sudo vim /etc/dhcpcd.conf
+
+
+Other useful things to install
+    vim
+    jhead
+    fbi          View images on console.
+    jp2a         Display jpeg as ascii
+    imagemagick  Needed for video mode. 
+    gpac         This installs the untility "mp4box".  Needed for video.
+    cifs utils.  Example: mount -t cifs -o username=pi,password=mine,dir_mode=0777,file_mode=0777 //192.168.0.10/pi p
+ 
+
