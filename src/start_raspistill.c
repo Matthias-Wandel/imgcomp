@@ -149,7 +149,7 @@ int manage_raspistill(int NewImages)
         goto force_restart;
     }
 
-    timeout = (VidMode ? 20 : 5) * MsPerCycle;
+    timeout = (VidMode ? 20 : 5) * 1000;
     if (MsSinceImage > timeout){
         // Not getting any images for 5 seconds or vide ofiles for 10.
         // Probably something went wrong with raspistill or raspivid.

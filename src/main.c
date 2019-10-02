@@ -438,7 +438,7 @@ int DoDirectoryVideos(char * DirName)
             if (ret || errno){
                 // A command can however fail without errno getting set or system returning an error.
                 if (errno) perror("system");
-                printf("Error on command %s\n",FFCmd);
+                fprintf(Log, "Error on command %s\n",FFCmd);
                 continue;
             }
             
@@ -460,14 +460,14 @@ int DoDirectoryVideos(char * DirName)
 					ret = system(FFCmd);
 					if (ret || errno){
 						if (errno) perror("system");
-						printf("Error on command %s\n",FFCmd);
+						fprintf(Log, "Error on command %s\n",FFCmd);
 						continue;
 					}
 				}
             }
             
             if (FollowDir){
-                printf("Delete video %s\n",VidFileName);
+                fprintf(Log, "Delete video %s\n",VidFileName);
                 unlink(VidFileName);
             }
         }
@@ -477,7 +477,7 @@ int DoDirectoryVideos(char * DirName)
             int b = manage_raspistill(NumProcessed);
             if (b) Raspistill_restarted = 1;
             if (LogToFile[0] != '\0') LogFileMaintain(0);
-            sleep(1);
+            usleep(MsPerCycle*1000);
         }else{
             break;
         }
