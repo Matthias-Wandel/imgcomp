@@ -138,7 +138,7 @@ int manage_raspistill(int NewImages)
                 NewestAverageBright, RunningAverageBright);
         }
     }else{
-        if (MsSinceImage >= (VidMode ? 15000 : 2000)){
+        if (MsSinceImage >= (VidMode ? 20000 : 3000)){
 			fprintf(Log,"No new images, %d\n",MsSinceImage);
 		}
     }

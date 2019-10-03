@@ -389,7 +389,8 @@ int DoDirectoryVideos(char * DirName)
 {
     int a,ret;
     int infileindex;
-    static int seq;
+    int alt = 0;
+    
     Raspistill_restarted = 0;
     infileindex = strstr(VidDecomposeCmd, "<infile>")-VidDecomposeCmd;
     
@@ -397,7 +398,7 @@ int DoDirectoryVideos(char * DirName)
         fprintf(stderr, "Must specify '<infile>' as part of videodecomposecmd\n");
         exit(-1);
     }
-
+ 
     for (;;){
         DirEntry_t * FileNames;
         int NumEntries;
@@ -405,6 +406,7 @@ int DoDirectoryVideos(char * DirName)
         char FFCmd[300];
         int Saw_motion;
         NumProcessed = 0;
+        alt += 1;
         
         FileNames = GetSortedDir(DirName, &NumEntries);
         if (FileNames == NULL){
@@ -415,14 +417,17 @@ int DoDirectoryVideos(char * DirName)
         if (NumEntries > 1) fprintf(Log,"%d files to process\n",NumEntries);
         for (a=0;a<NumEntries;a++){
             time_t now, age;
+            static int seq;
             time(&now);
             age = now-FileNames[a].MTime;
-            fprintf(Log, "Video '%s' aged %ld ",FileNames[a].FileName, age);
-            if (age < 2){
-                fprintf(Log,"(Wait)\n");
+            if (age < 1){
+                if (alt & 1 || NumEntries > 1){
+                    // Print waiting only every other time to cut down on log clutter.
+                    fprintf(Log, "Vid '%s' aged %ld (Wait)\n",FileNames[a].FileName, age);
+                }
                 continue;
             }else{
-                fprintf(Log,"Process...\n");
+                fprintf(Log,"Vid '%s': Analyze...\n", FileNames[a].FileName);
             }
             
             strcpy(VidFileName, CatPath(DirName, FileNames[a].FileName));
@@ -467,7 +472,7 @@ int DoDirectoryVideos(char * DirName)
             }
             
             if (FollowDir){
-                fprintf(Log, "Delete video %s\n",VidFileName);
+                //fprintf(Log, "Delete video %s\n",VidFileName);
                 unlink(VidFileName);
             }
         }
