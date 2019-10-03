@@ -19,7 +19,7 @@
     #include <unistd.h>
 #endif
 
-static char * FileExtensions[] = {"jpg","jpeg","txt","html",NULL};
+static char * FileExtensions[] = {"jpg","jpeg","txt","html","mp4",NULL};
 char * ImageExtensions[] = {"jpg","jpeg",NULL};
 float AspectRatio = 4.0/3;
 
@@ -160,7 +160,9 @@ void DoJpegView(char * ImagePath)
         }
     }
 
-    printf("&nbsp; ISO:%2d\n",(int)ImageInfo.ISOequivalent);
+    if (ImageInfo.ISOequivalent != 0){
+        printf("&nbsp; ISO:%2d\n",(int)ImageInfo.ISOequivalent);
+    }
     
     if (ImageInfo.ApertureFNumber){
         printf("&nbsp; f/%3.1f",(double)ImageInfo.ApertureFNumber);
