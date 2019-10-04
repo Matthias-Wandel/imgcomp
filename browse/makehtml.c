@@ -236,11 +236,12 @@ void MakeHtmlOutput(Dir_t * Dir)
                 }else{
                     printf(":%c%c", Name[9], Name[10]);
                 }
-                printf("</a> &nbsp;\n");
+                printf("</a>&nbsp;\n");
                 SkipNum += 1;
             }else{
-                printf("<p><a href=\"pix/%s/%s\">",Dir->HtmlPath, Name);
+                printf("</div><br clear=left><a href=\"pix/%s/%s\">",Dir->HtmlPath, Name);
                 printf("%s</a><p>", Name);
+                SkipNum = 0;
             }
             dt = 0;
             if (a < num-1) dt = Images.Entries[a+1+start].DaySecond - Images.Entries[a+start].DaySecond;
