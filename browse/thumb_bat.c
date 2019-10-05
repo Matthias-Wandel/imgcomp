@@ -171,8 +171,9 @@ void SaveJPEG(FILE * outfile, MemImage_t * MemImage)
 //----------------------------------------------------------------------------------
 void ScaleBrightness(MemImage_t * MemImage)
 {
-    int row, a, c, width;
+    int row, a, b, c, width;
     int satpix;
+    int medpix;
     int Histogram[256];
 
     memset(Histogram, 0, sizeof(Histogram));
@@ -190,21 +191,29 @@ void ScaleBrightness(MemImage_t * MemImage)
     
     //for (a=0;a<256;a++) printf("%3d %d\n",a,Histogram[a]);
     
-    // figure out what threshold value has no more than 0.1% of pixels above.
-    satpix = (width * MemImage->height / 4) >> 10; // Becausae we skipped alternate rows and columns.
+    // figure out what threshold value has no more than 0.4% of pixels above.
+    satpix = (width * MemImage->height / 4) >> 8; // Pixesl near saturation
+    medpix = (width * MemImage->height / 4) >> 2; // Don't make the image overall too bright.
     for (a=255;a>=0;a--){
         satpix -= Histogram[a];
         if (satpix <= 0) break;
     }
+    for (b=255;b>=0;b--){
+        medpix -= Histogram[a];
+        if (medpix <= 0) break;
+    }
+
     
     //printf("scale %d to 255\n",a);
     
     // If image is kind of dark, cale the brightness so that no more than 0.1% of the
     // pixels will saturate.
-    if (a < 180){
-        int Mult;
+    if (a < 200){
+        int Mult, Mult2;
         Mult = 256*240/a;
-        if (Mult > 265*10) Mult = 256*10;
+        Mult2 = 256*160/a;
+        if (Mult2 < Mult) Mult = Mult2;
+        if (Mult > 265*10) Mult = 256*10; // Don't boost by more than 10x.
         
         for (row=0;row<MemImage->height;row++){
             unsigned char * RowPointer;
