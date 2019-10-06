@@ -403,7 +403,7 @@ void MakeImageHtmlOutput(char * ImageName, char * HtmlDir, VarList Images)
         }
         printf("<a href=\"pix/%s/%s\">[Big]</a>\n",HtmlDir,ImageName);
         printf("<a href=\"tb.cgi?pix/%s/%s$2\">[Adj]</a>\n",HtmlDir,ImageName);
-        printf("<a href=\"pix/%s/Log.html#%.2s\">[Log]</a>\n",HtmlDir, ImageName+9);
+        printf("<a href=\"pix/%s/Log.html#%.2s\">[Log]</a>\n",HtmlDir, ImageName+7);
         
         for (a=0;;a++){
             if (HtmlDir[a] == '/') break;
