@@ -354,6 +354,7 @@ void LogFileMaintain(int ForceLogSaveReboot)
 {
     static char ThisLogTo[PATH_MAX];
     char NewLogTo[PATH_MAX];
+    
     int HaveLogAlready;
 
     if (LogToFile[0] == 0){
@@ -361,6 +362,20 @@ void LogFileMaintain(int ForceLogSaveReboot)
         return;
     }
     HaveLogAlready = (Log != NULL);
+    
+
+    {
+        time_t now;
+        struct tm * nowTm;
+        static int lastmin = 0;
+        time(&now);
+        nowTm = localtime(&now);
+        if (nowTm->tm_min != lastmin && Log != NULL){
+            // Put an indexable tag into the log file every minute.
+            fprintf(Log, "<z id=\"%02d\"/>\n", nowTm->tm_min);
+        }
+        lastmin = nowTm->tm_min;
+    }
     
     if (MoveLogNames[0]){
         strftime(NewLogTo, PATH_MAX, MoveLogNames, localtime(&LastPic_mtime));
