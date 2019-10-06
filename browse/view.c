@@ -190,8 +190,8 @@ void RedirectToToday()
 
     // Check if directory exists.
     if (stat(RedirectDir, &ignore)){
-         // Doesn't exist.  Root instead.
-         strcpy(RedirectDir, "pix/");
+         // Doesn't exist.  Go to root directory instead.
+         strcpy(RedirectDir, "    /");
     }
 
     printf ("Location:  view.cgi?%s\n\n",RedirectDir+4);
