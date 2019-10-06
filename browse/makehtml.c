@@ -282,7 +282,7 @@ void MakeImageHtmlOutput(char * ImageName, char * HtmlDir, VarList Images)
     int ShowWidth;
     int ShowHeight;
     int IsKeepDir = 0;
-    
+        
     if (strstr(HtmlDir, "keep/") != NULL) IsKeepDir = 1;
     
     printf("<title>%s</title>\n",ImageName);
@@ -353,11 +353,11 @@ void MakeImageHtmlOutput(char * ImageName, char * HtmlDir, VarList Images)
     if (From > 0) printf("<< ");
     
     for (a=From;a<To;a++){
-        char * NamePtr;
         char TimeStr[10];
+        char * NamePtr;
         int dt;
         
-        // Extract thetime part of the file name to show.
+        // Extract the time part of the file name to show.
         NamePtr = Images.Entries[a].Name;
         TimeStr[0] = NamePtr[7];
         TimeStr[1] = NamePtr[8];
@@ -403,11 +403,21 @@ void MakeImageHtmlOutput(char * ImageName, char * HtmlDir, VarList Images)
         }
         printf("<a href=\"pix/%s/%s\">[Big]</a>\n",HtmlDir,ImageName);
         printf("<a href=\"tb.cgi?pix/%s/%s$2\">[Adj]</a>\n",HtmlDir,ImageName);
+        printf("<a href=\"pix/%s/Log.html#%.2s\">[Log]</a>\n",HtmlDir, ImageName+9);
         
+        for (a=0;;a++){
+            if (HtmlDir[a] == '/') break;
+            if (HtmlDir[a] == '\0'){
+                a = 0; break;
+            }
+        }
+        printf("<a href=\"view.cgi?/\">[Dir</a>:");
+        printf("<a href=\"view.cgi?%.*s\">", a, HtmlDir);
+        printf("%.*s</a>/", a, HtmlDir);
+        printf("<a href=\"view.cgi?%s/%s\">%s]</a>\n", HtmlDir, IndexInto, HtmlDir+a+1);
+
         if (!IsKeepDir){
             printf("<a href=\"view.cgi?~%s/%s\">[Save]</a>\n",HtmlDir,ImageName);
         }
-        
-        printf("<a href=\"view.cgi?%s/%s\">[Dir:%s]</a>\n",HtmlDir, IndexInto, HtmlDir);
     }
 }
