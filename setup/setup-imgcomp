@@ -44,19 +44,4 @@ else
 	sudo mount /ramdisk
 fi
 
-if grep -q "logo.nologo" /boot/cmdline.txt; then
-	echo "    on screen pi logo already disabled in /boot/cmdline.txt"
-else
-	echo "disabling on screen pi logo in cmdline.txt"
-	sudo sed -i '${s/$/ logo.nologo/}' /boot/cmdline.txt
-fi
-
-if ls -l blink_camera_led | grep -q "sr.x...root" ; then
-	echo "    blink_led already set to setuid root"
-else
-	echo "Setting blink_led to be root and setuid"
-	sudo chown root blink_camera_led
-	sudo chmod +s blink_camera_led
-fi
-
 
