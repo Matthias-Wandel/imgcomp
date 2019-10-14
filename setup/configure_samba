@@ -1,9 +1,9 @@
 #Must run as sudo.
 
-#echo "[pi]" >> /etc/samba/smb.conf
-#echo "path = /home/pi" >> /etc/samba/smb.conf
-#echo "valid users = pi" >> /etc/samba/smb.conf
-#echo "browsable = yes" >> /etc/samba/smb.conf
-#echo "read only = no" >> /etc/samba/smb.conf
+echo "[pi]" >> /etc/samba/smb.conf
+echo "path = /home/pi" >> /etc/samba/smb.conf
+echo "valid users = pi" >> /etc/samba/smb.conf
+echo "browsable = yes" >> /etc/samba/smb.conf
+echo "read only = no" >> /etc/samba/smb.conf
 printf "mine\nmine" | sudo smbpasswd -s -a pi
 service smbd restart

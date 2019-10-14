@@ -1,0 +1,9 @@
+# configuration file.
+cp 000-default.conf /etc/apache2/sites-available
+ln -s ../mods-available/cgi.load /etc/apache2/mods-enabled/cgi.load
+
+# Set up directories where stuff goes.
+mkdir /home/pi/www
+ln -s ../saved /home/pi/www/img
+
+#Next needto build imgcomp/browse to populate
