@@ -88,8 +88,12 @@ static int launch_raspistill(void)
         // accumulate an army of child zombie processes
         int exit_code = 123;
         int a;
+        time_t then, now = time(NULL);
         a = wait(&exit_code);
-        fprintf(Log,"Child exit code %d (wait returned %d)\n",exit_code,a);
+        fprintf(Log,"Child exit code %d, wait returned %d",exit_code, a);
+        then = time(NULL);
+        fprintf(Log," At %02d:%02d (%d s)\n",(int)(then%3600)/60, (int)(then%60), (int)(then-now));
+        
     }
 
     fprintf(Log,"Launching raspistill program\n");
@@ -139,7 +143,8 @@ int manage_raspistill(int NewImages)
         }
     }else{
         if (MsSinceImage >= (VidMode ? 20000 : 3000)){
-			fprintf(Log,"No new images, %d\n",MsSinceImage);
+            time_t now = time(NULL);
+			fprintf(Log,"No new images, %d (at %d:%d)\n",MsSinceImage, (int)(now%3600/60), (int)(now%60));
 		}
     }
 

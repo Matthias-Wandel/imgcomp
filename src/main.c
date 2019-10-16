@@ -390,6 +390,7 @@ int DoDirectoryVideos(char * DirName)
     int a,ret;
     int infileindex;
     int alt = 0;
+    time_t now;
     
     Raspistill_restarted = 0;
     infileindex = strstr(VidDecomposeCmd, "<infile>")-VidDecomposeCmd;
@@ -398,6 +399,13 @@ int DoDirectoryVideos(char * DirName)
         fprintf(stderr, "Must specify '<infile>' as part of videodecomposecmd\n");
         exit(-1);
     }
+    
+ {    
+    time_t now = time(NULL);
+    fprintf(Log, " %02d:%02d \n",(int)(now%3600/60), (int)(now%60));
+ }
+    
+    
  
     for (;;){
         DirEntry_t * FileNames;
@@ -414,7 +422,11 @@ int DoDirectoryVideos(char * DirName)
             return 0;
         } 
         
-        if (NumEntries > 1) fprintf(Log,"%d files to process\n",NumEntries);
+        if (NumEntries > 1){
+            fprintf(Log,"%d files to process",NumEntries);
+            now = time(NULL);
+            fprintf(Log, "(%02d:%02d)...\n",(int)(now%3600/60), (int)(now%60));
+        }
         for (a=0;a<NumEntries;a++){
             time_t now, age;
             static int seq;
@@ -427,7 +439,8 @@ int DoDirectoryVideos(char * DirName)
                 }
                 continue;
             }else{
-                fprintf(Log,"Vid '%s': Analyze...\n", FileNames[a].FileName);
+                fprintf(Log,"Vid '%s': Analyze (%02d:%02d)...\n", FileNames[a].FileName, 
+                    (int)(now%3600)/60, (int)(now%60));
             }
             
             strcpy(VidFileName, CatPath(DirName, FileNames[a].FileName));
