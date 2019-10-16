@@ -81,7 +81,7 @@ static int launch_raspistill(void)
     int ignore;
 
     // Kill raspistill if it's already running.
-    ignore = system("killall raspistill");
+    ignore = system("killall -9 raspistill");
     ignore += 1;  // Do something with it to supress warning
     if (raspistill_pid){
         // If we launched raspistill, need to call wait() so that we dont't
@@ -93,7 +93,6 @@ static int launch_raspistill(void)
         fprintf(Log,"Child exit code %d, wait returned %d",exit_code, a);
         then = time(NULL);
         fprintf(Log," At %02d:%02d (%d s)\n",(int)(then%3600)/60, (int)(then%60), (int)(then-now));
-        
     }
 
     fprintf(Log,"Launching raspistill program\n");
@@ -142,7 +141,7 @@ int manage_raspistill(int NewImages)
                 NewestAverageBright, RunningAverageBright);
         }
     }else{
-        if (MsSinceImage >= (VidMode ? 20000 : 3000)){
+        if (MsSinceImage >= 3000){
             time_t now = time(NULL);
 			fprintf(Log,"No new images, %d (at %d:%d)\n",MsSinceImage, (int)(now%3600/60), (int)(now%60));
 		}
@@ -154,7 +153,7 @@ int manage_raspistill(int NewImages)
         goto force_restart;
     }
 
-    timeout = (VidMode ? 30 : 5) * 1000;
+    timeout = 5 * 1000;
     if (MsSinceImage > timeout){
         // Not getting any images for 5 seconds or vide ofiles for 10.
         // Probably something went wrong with raspistill or raspivid.

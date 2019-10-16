@@ -390,8 +390,7 @@ int DoDirectoryVideos(char * DirName)
     int a,ret;
     int infileindex;
     int alt = 0;
-    time_t now;
-    
+        
     Raspistill_restarted = 0;
     infileindex = strstr(VidDecomposeCmd, "<infile>")-VidDecomposeCmd;
     
@@ -399,13 +398,8 @@ int DoDirectoryVideos(char * DirName)
         fprintf(stderr, "Must specify '<infile>' as part of videodecomposecmd\n");
         exit(-1);
     }
-    
- {    
-    time_t now = time(NULL);
-    fprintf(Log, " %02d:%02d \n",(int)(now%3600/60), (int)(now%60));
- }
-    
-    
+ 
+ printf("do directory");
  
     for (;;){
         DirEntry_t * FileNames;
@@ -413,6 +407,9 @@ int DoDirectoryVideos(char * DirName)
         char VidFileName[200];
         char FFCmd[300];
         int Saw_motion;
+        time_t now;
+        int VideoActive = 0;
+        
         NumProcessed = 0;
         alt += 1;
         
@@ -422,24 +419,25 @@ int DoDirectoryVideos(char * DirName)
             return 0;
         } 
         
-        if (NumEntries > 1){
+        now = time(NULL);
+        if (NumEntries != 1){
             fprintf(Log,"%d files to process",NumEntries);
-            now = time(NULL);
             fprintf(Log, "(%02d:%02d)...\n",(int)(now%3600/60), (int)(now%60));
         }
         for (a=0;a<NumEntries;a++){
-            time_t now, age;
+            int age;
             static int seq;
-            time(&now);
-            age = now-FileNames[a].MTime;
+
+            age = (int)(now-FileNames[a].MTime);
             if (age < 1){
+                VideoActive = 1; // Video files getting updated.
                 if (alt & 1 || NumEntries > 1){
                     // Print waiting only every other time to cut down on log clutter.
-                    fprintf(Log, "Vid '%s' aged %ld (Wait)\n",FileNames[a].FileName, age);
+                    fprintf(Log, "Vid '%s' aged %d %dk (Wait)\n",FileNames[a].FileName, age, FileNames[a].FileSize>>10);
                 }
                 continue;
             }else{
-                fprintf(Log,"Vid '%s': Analyze (%02d:%02d)...\n", FileNames[a].FileName, 
+                fprintf(Log,"Vid '%s': %dk Analyze (%02d:%02d)...\n", FileNames[a].FileName, FileNames[a].FileSize>>10, 
                     (int)(now%3600)/60, (int)(now%60));
             }
             
@@ -492,7 +490,7 @@ int DoDirectoryVideos(char * DirName)
         FreeDir(FileNames, NumEntries); // Free up the whole directory structure.
         
         if (FollowDir){
-            int b = manage_raspistill(NumProcessed);
+            int b = manage_raspistill(VideoActive);
             if (b) Raspistill_restarted = 1;
             if (LogToFile[0] != '\0') LogFileMaintain(0);
             usleep(MsPerCycle*1000);
