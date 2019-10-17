@@ -207,6 +207,7 @@ void DoSaveImage(char * QueryString, char * HtmlPath)
     char FromName[100];
     char TempString[20];
     char NewDir[20];
+    struct stat sb;
         
     for (a=0,wi=0;HtmlPath[a];a++){
         if (HtmlPath[a] == '/'){
@@ -221,25 +222,26 @@ void DoSaveImage(char * QueryString, char * HtmlPath)
     //printf("TempString: %s<br>\n",TempString);
     
     strcpy(NewDir, "pix/keep/");
+    if (stat(NewDir, &sb) != 0){
+        mkdir(NewDir, 0777);
+    }
+    
     strncat(NewDir, HtmlPath+1, 4);
     //printf("NewDir: %s<br>\n",NewDir);
     
-    {
-        struct stat sb;
-        if (stat(NewDir, &sb) == 0){
-            if (S_ISDIR(sb.st_mode)) {
-                // Its a directory.  Ok.
-            }else{
-                // Uh oh, it exists but is not a directory.
-                printf("Can't make directory!<br>");
-                return;
-            }
+    if (stat(NewDir, &sb) == 0){
+        if (S_ISDIR(sb.st_mode)) {
+            // Its a directory.  Ok.
         }else{
-            // Doesn't exist.  Make directory.
-            if (mkdir(NewDir, 0777)){
-                printf("Make dir failed!<br>");
-                return;
-            }
+            // Uh oh, it exists but is not a directory.
+            printf("Can't make directory!<br>");
+            return;
+        }
+    }else{
+        // Doesn't exist.  Make directory.
+        if (mkdir(NewDir, 0777)){
+            printf("Make dir failed!<br>\n");
+            return;
         }
     }
     
