@@ -11,6 +11,8 @@
 #ifdef _WIN32
     #include <io.h>
     #include <direct.h>
+#else
+    #include <sys/stat.h>
 #endif
 
 #include "view.h"
@@ -31,6 +33,10 @@ void MakeHtmlOutput(Dir_t * Dir)
     int ThumbnailHeight;
     int DirMinute = 0;
     int AllSameDate;
+    int IsKeepDir = 0;
+        
+    if (strstr(Dir->HtmlPath, "keep/") != NULL) IsKeepDir = 1;
+
     
     Images = Dir->Images;
     Directories = Dir->Dirs;    
@@ -72,6 +78,7 @@ void MakeHtmlOutput(Dir_t * Dir)
     if (Dir->Next[0]){
         printf("<a href=\"view.cgi?%s\">[Next:%s]</a>\n",Dir->Next,Dir->Next);
     }
+    
     printf("<p>\n");
 
     for (a=0;a<Directories.NumEntries;a++){
@@ -268,6 +275,14 @@ void MakeHtmlOutput(Dir_t * Dir)
     if (Dir->Next[0]){
         printf("<a href=\"view.cgi?%s\">[Next:%s]</a>\n",Dir->Next,Dir->Next);
     }
+    if (!IsKeepDir){
+        char KeepDir[20];
+        struct stat sb;        
+        sprintf(KeepDir, "pix/keep/%.4s",Dir->HtmlPath);
+        if (stat(KeepDir, &sb) == 0 && S_ISDIR(sb.st_mode)){
+            printf("<a href=\"view.cgi?%s\">[Keep]</a>\n",KeepDir+4);
+        }
+    }
 }
 
 //----------------------------------------------------------------------------------
@@ -417,7 +432,14 @@ void MakeImageHtmlOutput(char * ImageName, char * HtmlDir, VarList Images)
         printf("<a href=\"view.cgi?%s/%s\">%s]</a>\n", HtmlDir, IndexInto, HtmlDir+a+1);
 
         if (!IsKeepDir){
+            char KeepDir[20];
+            struct stat sb;        
             printf("<a href=\"view.cgi?~%s/%s\">[Save]</a>\n",HtmlDir,ImageName);
+            
+            sprintf(KeepDir, "pix/keep/%.4s",HtmlDir);
+            if (stat(KeepDir, &sb) == 0 && S_ISDIR(sb.st_mode)){
+                printf("<a href=\"view.cgi?%s\">[Saved]</a>\n",KeepDir+4);
+            }
         }
     }
 }

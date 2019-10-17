@@ -248,8 +248,8 @@ void DoSaveImage(char * QueryString, char * HtmlPath)
     sprintf(NewName, "%s/%s.jpg",NewDir,TempString);
     sprintf(FromName, "pix/%s",HtmlPath+1);
 
-    printf("New name: %s<br>\n",NewName);
-    printf("From name: %s<p>\n",FromName);
+    //printf("New name: %s<br>\n",NewName);
+    //printf("From name: %s<p>\n",FromName);
 
     if (link(FromName, NewName)){
         //perror("Save failed");
@@ -258,7 +258,10 @@ void DoSaveImage(char * QueryString, char * HtmlPath)
         printf("Saved image<p>\n");
     }
 
-    printf ("<p><a href=\"view.cgi?keep/\">View saved</a>\n");
+    printf ("<p><a href=\"view.cgi?keep/%.4s\">View saved</a>\n", HtmlPath+1);
+    
+    
+    
     printf ("<p><a href=\"view.cgi?%s\">Back</a><br>\n",QueryString+1);
 }
 
