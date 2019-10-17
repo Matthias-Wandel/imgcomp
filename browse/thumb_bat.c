@@ -252,9 +252,10 @@ int main(int argc, char ** argv)
     int ScaleFactor = 8;
     int ScaleBrightnessOn = 1;
 
-	printf("Content-Type: image/jpg\n\n"); // heder for image type.
+    printf("Content-Type: image/jpg\n"); // heder for image type.
+    printf("Cache-Control: max-age=7200\n\n");
 	
-	qenv = getenv("QUERY_STRING");	
+    qenv = getenv("QUERY_STRING");	
 	
 	if (qenv == NULL){
 		printf("No query string\n");
