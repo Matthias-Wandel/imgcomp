@@ -28,7 +28,6 @@ Setting up samba
 
 Configure auto start and auto cleanup
   Run crontab -e, put the following at the end of the file
-	10,40 * * * * wget -O /home/pi/mw.html -o /home/pi/wget_out.txt mw/martin.cgi
 	47 10,22 * * * /home/pi/imgcomp/free_up_space
 	@reboot imgcomp/imgcomp &
 

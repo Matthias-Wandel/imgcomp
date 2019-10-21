@@ -1,6 +1,0 @@
-apache2.conf ignores sites-available, just has it inlined.
-Be sure to enable cgi with this command run in mods-enabled:
-    ln -s ../mods_available/cgi.load cgi.load
-Make directory /home/pi/www
-Images assumed in /home/pi/saved
-Also depends on hving 'epeg' set up on the path
