@@ -1,0 +1,48 @@
+<title>Realtime display</title>
+<meta charset="utf-8"/>
+<img id='rti' src="http://192.168.0.12/view.cgi?now.jpg" width=800 height=600>
+<br>
+<small>
+<!--<span id="imgseq">Sequence</span><br>-->
+<span id="logdata">Result goes here</span>
+</small>
+
+
+<script type="text/javascript">
+
+//----------------------------------------------------------------------------------
+// To an XMLHttpRequest to back end to wait until something has changed
+//----------------------------------------------------------------------------------
+function WaitForChangeNotify()
+{
+    var xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function() {
+        if (this.readyState == 4 && this.status == 200) {
+            document.getElementById("logdata").innerHTML = xhttp.responseText;
+            n = xhttp.responseText.indexOf("Error!");
+            if (n >= 0){
+                alert(xhttp.responseText.substring(n))
+            }else{
+                RefreshImage()
+            }
+        }
+    };
+    xhttp.open("GET", "wait_change.cgi", true);
+    xhttp.send();
+}
+
+imgseq = 0;
+function RefreshImage()
+{
+    newsrc = "view.cgi?now.jpg#"+imgseq
+    imgseq += 1;
+    //document.getElementById("imgseq").innerHTML = newsrc
+    image=document.getElementById('rti')
+    image.src = newsrc
+    
+    WaitForChangeNotify();
+}
+
+WaitForChangeNotify()
+
+</script>
