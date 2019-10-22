@@ -88,6 +88,7 @@ static time_t NextTimelapsePix;
 static LastPic_t BaselinePic;
 
 time_t LastPic_mtime;
+struct timespec LastPic_mtime_ns;
 
 
 //-----------------------------------------------------------------------------------
@@ -341,6 +342,7 @@ static int DoDirectoryFunc(char * Directory, int DeleteProcessed)
         }
         NewPic.mtime = (unsigned)statbuf.st_mtime;
         LastPic_mtime = NewPic.mtime;
+        LastPic_mtime_ns = statbuf.st_mtim;
 
         SawMotion += ProcessImage(&NewPic, DeleteProcessed);
 
@@ -371,10 +373,25 @@ int DoDirectory(char * Directory)
     for (;;){
         a = DoDirectoryFunc(Directory, FollowDir);
         if (FollowDir){
+            struct timespec now;
+            int AgeMs, SleepMs;
+
             b = manage_raspistill(NumProcessed);
             if (b) Raspistill_restarted = 1;
             if (LogToFile[0] != '\0') LogFileMaintain(0);
-            usleep(MsPerCycle*1000);
+
+            clock_gettime(CLOCK_REALTIME_COARSE, &now);
+            AgeMs = (now.tv_sec-LastPic_mtime_ns.tv_sec)*1000
+                    +(now.tv_nsec - LastPic_mtime_ns.tv_nsec)/1000000;
+
+            // Sleep until next picture should be ready (allow for 30 ms of jitter)
+            // this cuts down on latency (for realtime display, or heater aimer)
+            SleepMs = MsPerCycle-AgeMs+30;
+            if (SleepMs < MsPerCycle*3/4) SleepMs = MsPerCycle*3/4; // If it misbehaves....
+            if (SleepMs > MsPerCycle) SleepMs = MsPerCycle;
+
+            //printf("File age: %d ms, sleep %d ms\n",AgeMs,SleepMs);
+            usleep(SleepMs*1000);
         }else{
             break;
         }
@@ -528,7 +545,7 @@ int main(int argc, char **argv)
     ScaleDenom = 4;
     DoDirName[0] = '\0';
     Sensitivity = 10;
-	MsPerCycle = 500; // Check interval
+	MsPerCycle = 1000; // Default check interval
     Regions.DetectReg.x1 = 0;
     Regions.DetectReg.x2 = 1000000;
     Regions.DetectReg.y1 = 0;
