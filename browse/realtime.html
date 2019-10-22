@@ -1,6 +1,6 @@
 <title>Realtime display</title>
 <meta charset="utf-8"/>
-<img id='rti' src="http://192.168.0.12/view.cgi?now.jpg" width=800 height=600>
+<img id='rti' src="/view.cgi?now.jpg" width=800 height=600>
 <br>
 <small>
 <!--<span id="imgseq">Sequence</span><br>-->
@@ -9,6 +9,18 @@
 
 
 <script type="text/javascript">
+
+function DoBeep()
+{
+    var context = new AudioContext()
+    var o = context.createOscillator()
+    var  g = context.createGain()
+    o.type = "square"
+    o.connect(context.destination)
+    o.start(0)
+    setTimeout(function () { o.stop(0)}, 50);
+}
+
 
 //----------------------------------------------------------------------------------
 // To an XMLHttpRequest to back end to wait until something has changed
@@ -23,6 +35,8 @@ function WaitForChangeNotify()
             if (n >= 0){
                 alert(xhttp.responseText.substring(n))
             }else{
+                n = xhttp.responseText.indexOf("motion");
+                if (n >= 0) DoBeep();
                 RefreshImage()
             }
         }
