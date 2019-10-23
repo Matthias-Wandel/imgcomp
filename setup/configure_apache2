@@ -4,6 +4,8 @@ ln -s ../mods-available/cgi.load /etc/apache2/mods-enabled/cgi.load
 
 # Set up directories where stuff goes.
 mkdir /home/pi/www
-ln -s ../saved /home/pi/www/img
+service apache2 restart
+
+ln -s ../saved /home/pi/www/pix
 
 #Next needto build imgcomp/browse to populate

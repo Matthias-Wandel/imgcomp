@@ -23,7 +23,7 @@ int main()
     for (n=0;n<30;n++){
         char NewBytes[100];
         int nread;
-        usleep(200000);
+        usleep(100000);
         nread = fread(NewBytes, 1, 100, LogFile);
         if (nread > 0){
             GotBytes = 1;
