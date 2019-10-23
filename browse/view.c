@@ -234,13 +234,13 @@ void DoSaveImage(char * QueryString, char * HtmlPath)
             // Its a directory.  Ok.
         }else{
             // Uh oh, it exists but is not a directory.
-            printf("Can't make directory!<br>");
+            printf("Fail: Can't make directory");
             return;
         }
     }else{
         // Doesn't exist.  Make directory.
         if (mkdir(NewDir, 0777)){
-            printf("Make dir failed!<br>\n");
+            printf("Fail: mkdir");
             return;
         }
     }
@@ -252,17 +252,13 @@ void DoSaveImage(char * QueryString, char * HtmlPath)
     //printf("From name: %s<p>\n",FromName);
 
     if (link(FromName, NewName)){
-        //perror("Save failed");
-        printf("Save failed (%s)<p>\n",strerror( errno ));
+        printf("Fail:%s",strerror( errno ));
     }else{
-        printf("Saved image<p>\n");
+        printf("Saved");
     }
 
-    printf ("<p><a href=\"view.cgi?keep/%.4s\">View saved</a>\n", HtmlPath+1);
-    
-    
-    
-    printf ("<p><a href=\"view.cgi?%s\">Back</a><br>\n",QueryString+1);
+    //printf ("<p><a href=\"view.cgi?keep/%.4s\">View saved</a>\n", HtmlPath+1);
+    //printf ("<p><a href=\"view.cgi?%s\">Back</a><br>\n",QueryString+1);
 }
 
 //----------------------------------------------------------------------------------
@@ -316,7 +312,7 @@ int main(int argc, char ** argv)
         return 0;
     }
 
-    printf("Content-Type: text/html\n\n<html>\n"); // html header
+    printf("Content-Type: text/html\n\n"); // html header
 
     HtmlPath [0] = '\0';
 

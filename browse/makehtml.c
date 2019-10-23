@@ -301,15 +301,34 @@ void MakeImageHtmlOutput(char * ImageName, char * HtmlDir, VarList Images)
     if (strstr(HtmlDir, "keep/") != NULL) IsKeepDir = 1;
     
     printf("<title>%s</title>\n",ImageName);
+    printf("<head><meta charset=\"utf-8\"/>\n");
     
     printf("<style type=text/css>\n"
            "  body { font-family: sans-serif; font-size: 22;}\n"
            "  img { vertical-align: middle; margin-bottom: 5px; }\n"
            "  p {margin-bottom: 0px}\n"
            "  a {text-decoration: none;}\n"
-           "</style></head>\n");
+           "</style></head>\n\n");
 
-    
+    // Include a bit of javascript to trigger back-end save without popping up
+    // a whole new page that needs to be clicked back from
+    printf("<script type=\"text/javascript\">\n"
+           "function GetSaveUrl(url){\n"
+           "  var xhttp = new XMLHttpRequest()\n"
+           "  xhttp.onreadystatechange=function(){\n"
+           "    if (this.readyState==4 && this.status==200){\n"
+           "      wt=xhttp.responseText.trim()\n"
+           "      if(wt.indexOf('Fail:')>=0)\n"
+           "        wt=\"<span style='color: rgb(255,0,0);'>[\"+wt+\"]</span>\"\n"
+           "      else\n"
+           "        wt=\"[\"+wt+\"]\"\n"
+           "      document.getElementById(\"save\").innerHTML=wt\n"
+           "    }\n"
+           "  };\n"
+           "  xhttp.open(\"GET\", url, true)\n"
+           "  xhttp.send()\n"
+           "}\n </script>\n");
+
     printf("<div style=\"width:950px;\">");
     // Scale it to a resolution that works well on iPad.
     ShowWidth = 950;
@@ -433,12 +452,14 @@ void MakeImageHtmlOutput(char * ImageName, char * HtmlDir, VarList Images)
 
         if (!IsKeepDir){
             char KeepDir[20];
-            struct stat sb;        
-            printf("<a href=\"view.cgi?~%s/%s\">[Save]</a>\n",HtmlDir,ImageName);
+            struct stat sb;
+//printf("<span style=\"color: rgb(255,0,0);\"\n");
+            printf("<a id=\"save\" href=\"#\" onclick=\"GetSaveUrl('view.cgi?~%s/%s\')\">[Save]</a>\n",HtmlDir,ImageName);
+//printf("</span>\n");
             
             sprintf(KeepDir, "pix/keep/%.4s",HtmlDir);
             if (stat(KeepDir, &sb) == 0 && S_ISDIR(sb.st_mode)){
-                printf("<a href=\"view.cgi?%s\">[Saved]</a>\n",KeepDir+4);
+                printf("<a href=\"view.cgi?%s\">[View saved]</a>\n",KeepDir+4);
             }
         }
     }
