@@ -371,26 +371,34 @@ int DoDirectory(char * Directory)
     Raspistill_restarted = 0;
 
     for (;;){
+        struct timespec before, after;
+        clock_gettime(CLOCK_REALTIME_COARSE, &before);
         a = DoDirectoryFunc(Directory, FollowDir);
         if (FollowDir){
-            struct timespec now;
-            int AgeMs, SleepMs;
+            int LastPicAgeMs, ProcessedMs, SleepMs;
 
             b = manage_raspistill(NumProcessed);
             if (b) Raspistill_restarted = 1;
             if (LogToFile[0] != '\0') LogFileMaintain(0);
 
-            clock_gettime(CLOCK_REALTIME_COARSE, &now);
-            AgeMs = (now.tv_sec-LastPic_mtime_ns.tv_sec)*1000
-                    +(now.tv_nsec - LastPic_mtime_ns.tv_nsec)/1000000;
+            clock_gettime(CLOCK_REALTIME_COARSE, &after);
+            
+            LastPicAgeMs = (before.tv_sec-LastPic_mtime_ns.tv_sec)*1000
+                         +(before.tv_nsec-LastPic_mtime_ns.tv_nsec)/1000000;
 
-            // Sleep until next picture should be ready (allow for 30 ms of jitter)
+            ProcessedMs = (after.tv_sec -before.tv_sec)*1000
+                         +(after.tv_nsec-before.tv_nsec)/1000000;
+
+            // Sleep until next picture should be ready (allow for 120 ms of inter-image jitter)
             // this cuts down on latency (for realtime display, or heater aimer)
-            SleepMs = MsPerCycle-AgeMs+30;
-            if (SleepMs < MsPerCycle*3/4) SleepMs = MsPerCycle*3/4; // If it misbehaves....
+            SleepMs = MsPerCycle-LastPicAgeMs+120;
+            if (SleepMs < MsPerCycle*3/4) SleepMs = MsPerCycle*3/4; 
+            SleepMs -= ProcessedMs;
+            if (SleepMs < 0) SleepMs = 0;
             if (SleepMs > MsPerCycle) SleepMs = MsPerCycle;
 
-            //printf("File age: %d ms, sleep %d ms\n",AgeMs,SleepMs);
+            //printf("File t=%03d", (int)(LastPic_mtime_ns.tv_nsec)/1000000);
+            //printf(" age:%3dms  Took:%3dms  Sleep:%3dms\n",LastPicAgeMs,ProcessedMs, SleepMs);
             usleep(SleepMs*1000);
         }else{
             break;
