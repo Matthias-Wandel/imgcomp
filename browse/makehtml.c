@@ -36,7 +36,6 @@ void MakeHtmlOutput(Dir_t * Dir)
     int IsKeepDir = 0;
         
     if (strstr(Dir->HtmlPath, "keep/") != NULL) IsKeepDir = 1;
-
     
     Images = Dir->Images;
     Directories = Dir->Dirs;    
@@ -45,11 +44,11 @@ void MakeHtmlOutput(Dir_t * Dir)
         FullresThumbs = 1;
     #endif
 
-
     // Header of file.
     printf("<html>\n");
     
     printf("<title>%s</title>\n",Dir->HtmlPath);
+    printf("<head><meta charset=\"utf-8\"/>\n");
     
     ThumbnailHeight = (int)(320/AspectRatio);
     printf(
@@ -288,7 +287,7 @@ void MakeHtmlOutput(Dir_t * Dir)
 //----------------------------------------------------------------------------------
 // Create a HTML to view just one image.
 //----------------------------------------------------------------------------------
-void MakeImageHtmlOutput(char * ImageName, char * HtmlDir, VarList Images)
+void MakeImageHtmlOutput(char * ImageName, Dir_t * dir)
 {
     int DirIndex;
     int FoundMatch;
@@ -297,6 +296,10 @@ void MakeImageHtmlOutput(char * ImageName, char * HtmlDir, VarList Images)
     int ShowWidth;
     int ShowHeight;
     int IsKeepDir = 0;
+    char * HtmlDir;
+    VarList Images;
+    Images = dir->Images;
+    HtmlDir = dir->HtmlPath;
         
     if (strstr(HtmlDir, "keep/") != NULL) IsKeepDir = 1;
     
@@ -354,13 +357,17 @@ void MakeImageHtmlOutput(char * ImageName, char * HtmlDir, VarList Images)
     // Make left and right parts of the image clickable as previous and next.
     if (Images.Entries){
         printf("<map name=\"prevnext\">\n");
-        if (DirIndex > 0){
+        if (DirIndex > 0 || dir->Previous[0]){
             printf("  <area shape=\"rect\" coords= \"0,0,%d,%d\" ",ShowWidth/4, ShowHeight);
-            printf("href=\"view.cgi?%s/%s\">\n", HtmlDir, Images.Entries[DirIndex-1].Name);
+            printf("href=\"view.cgi?%s/%s\">\n", 
+                DirIndex > 0 ? HtmlDir : dir->Previous, 
+                DirIndex > 0 ? Images.Entries[DirIndex-1].Name : "last.jpg");
         }
-        if (DirIndex < Images.NumEntries-1){
+        if (DirIndex < Images.NumEntries-1 || dir->Next[0]){
             printf("  <area shape=\"rect\" coords=\"%d,0,%d,%d\" ",(ShowWidth*3)/4, ShowWidth, ShowHeight);
-            printf("href=\"view.cgi?%s/%s\">\n", HtmlDir, Images.Entries[DirIndex+1].Name);
+            printf("href=\"view.cgi?%s/%s\">\n",
+                DirIndex < Images.NumEntries-1 ? HtmlDir : dir->Next, 
+                DirIndex < Images.NumEntries-1 ? Images.Entries[DirIndex+1].Name : "first.jpg");
         }
         printf("</map>\n");
     }
@@ -415,8 +422,6 @@ void MakeImageHtmlOutput(char * ImageName, char * HtmlDir, VarList Images)
             printf("<b>[%s]</b>\n",TimeStr);
         }else{
             if (a == DirIndex) printf("[??]\n");
-            //printf(" %d ",dt);
-            
             printf("<a href=\"view.cgi?%s/%s\">[%s]</a>\n",HtmlDir, NamePtr, TimeStr);
         }
         
@@ -453,10 +458,7 @@ void MakeImageHtmlOutput(char * ImageName, char * HtmlDir, VarList Images)
         if (!IsKeepDir){
             char KeepDir[20];
             struct stat sb;
-//printf("<span style=\"color: rgb(255,0,0);\"\n");
             printf("<a id=\"save\" href=\"#\" onclick=\"GetSaveUrl('view.cgi?~%s/%s\')\">[Save]</a>\n",HtmlDir,ImageName);
-//printf("</span>\n");
-            
             sprintf(KeepDir, "pix/keep/%.4s",HtmlDir);
             if (stat(KeepDir, &sb) == 0 && S_ISDIR(sb.st_mode)){
                 printf("<a href=\"view.cgi?%s\">[View saved]</a>\n",KeepDir+4);

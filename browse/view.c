@@ -20,13 +20,14 @@
 #endif
 
 static char * FileExtensions[] = {"jpg","jpeg","txt","html","mp4",NULL};
-char * ImageExtensions[] = {"jpg","jpeg",NULL};
+       char * ImageExtensions[] = {"jpg","jpeg",NULL};
+       
 float AspectRatio = 4.0/3;
 
 //----------------------------------------------------------------------------------
 // Process one directory.  Returns pointer to summary.
 //----------------------------------------------------------------------------------
-Dir_t * CollectDir(char * HtmlPath)
+static Dir_t * CollectDir(char * HtmlPath, int ImagesOnly)
 {
     Dir_t * Dir;
     VarList * Subdirs;
@@ -52,7 +53,7 @@ Dir_t * CollectDir(char * HtmlPath)
 	strcpy(Dir->HtmlPath, HtmlPath);
 
 	sprintf(DirName, "pix/%s",HtmlPath);
-	CollectDirectory(DirName, Images, Subdirs, FileExtensions);
+	CollectDirectory(DirName, Images, Subdirs, ImagesOnly? ImageExtensions:FileExtensions);
 
 
 	// Look for previous and next.
@@ -121,30 +122,42 @@ static void ReadExifHeader(char * ImagePath)
 //----------------------------------------------------------------------------------
 void DoJpegView(char * ImagePath)
 {
-    char HtmlDir[300];
     char HtmlFile[300];
+    char HtmlPath[300];
+    char PathToFile[300];
     int a;
     int lastslash = 0;
-    VarList Images;
-
-    ReadExifHeader(ImagePath);
-
-    memset(&Images, 0, sizeof(Images));
+    Dir_t * dir;
 
     for (a=0;ImagePath[a];a++){
         if (ImagePath[a] == '/') lastslash = a;
     }
-    sprintf(HtmlDir, "pix/%s",ImagePath);
-    HtmlDir[lastslash+4] = '\0';
 
     strcpy(HtmlFile, ImagePath+lastslash+1);
 
-    //printf("html dir: %s<br>\nFile:%s<br><hr>\n",HtmlDir+4, HtmlFile);
+    strcpy(HtmlPath, ImagePath);
+    HtmlPath[lastslash] = '\0';
+    dir = CollectDir(HtmlPath, 1);
 
-    CollectDirectory(HtmlDir, &Images, NULL, ImageExtensions);
+    //printf("File:%s &nbsp; %s<br>\n", HtmlFile, HtmlPath+lastslash+1);
+    
+    if (strcmp(HtmlFile, "first.jpg") == 0){
+        strcpy(HtmlFile, dir->Images.Entries[0].Name);
+    }
+    if (strcmp(HtmlFile, "last.jpg") == 0){
+        strcpy(HtmlFile, dir->Images.Entries[dir->Images.NumEntries-1].Name);
+    }
 
-    MakeImageHtmlOutput(HtmlFile, HtmlDir+4, Images);
-    free(Images.Entries);
+    //printf("Usefile: %s\n<hr>\n", HtmlFile);
+    sprintf(PathToFile, "%s/%s", HtmlPath, HtmlFile);
+
+    ReadExifHeader(PathToFile);
+
+    MakeImageHtmlOutput(HtmlFile, dir);
+    
+    free(dir->Dirs.Entries);
+    free(dir->Images.Entries);
+    free(dir);
 
     printf("<p>");
     
@@ -219,7 +232,6 @@ void DoSaveImage(char * QueryString, char * HtmlPath)
             TempString[wi++] = HtmlPath[a];
         }
     }
-    //printf("TempString: %s<br>\n",TempString);
     
     strcpy(NewDir, "pix/keep/");
     if (stat(NewDir, &sb) != 0){
@@ -227,7 +239,6 @@ void DoSaveImage(char * QueryString, char * HtmlPath)
     }
     
     strncat(NewDir, HtmlPath+1, 4);
-    //printf("NewDir: %s<br>\n",NewDir);
     
     if (stat(NewDir, &sb) == 0){
         if (S_ISDIR(sb.st_mode)) {
@@ -247,7 +258,6 @@ void DoSaveImage(char * QueryString, char * HtmlPath)
     
     sprintf(NewName, "%s/%s.jpg",NewDir,TempString);
     sprintf(FromName, "pix/%s",HtmlPath+1);
-
     //printf("New name: %s<br>\n",NewName);
     //printf("From name: %s<p>\n",FromName);
 
@@ -256,9 +266,6 @@ void DoSaveImage(char * QueryString, char * HtmlPath)
     }else{
         printf("Saved");
     }
-
-    //printf ("<p><a href=\"view.cgi?keep/%.4s\">View saved</a>\n", HtmlPath+1);
-    //printf ("<p><a href=\"view.cgi?%s\">Back</a><br>\n",QueryString+1);
 }
 
 //----------------------------------------------------------------------------------
@@ -354,7 +361,7 @@ int main(int argc, char ** argv)
             HtmlPath[l-1] = '\0';
         }
 
-        Col = CollectDir(HtmlPath);
+        Col = CollectDir(HtmlPath, 0);
 
         // Find first image and read exif header of it to get aspect ratio.
         for (a=0;a<Col->Images.NumEntries;a++){
