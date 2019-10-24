@@ -10,6 +10,7 @@ OBJ = obj
 
 OBJECTS_BROWSE = $(OBJ)/view.o \
 	$(OBJ)/makehtml.o    \
+	$(OBJ)/makehtml_img.o \
 	$(OBJ)/collectdir.o  \
 	$(OBJ)/utility.o
     
