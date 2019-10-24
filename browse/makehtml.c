@@ -35,7 +35,7 @@ void MakeHtmlOutput(Dir_t * Dir)
     int AllSameDate;
     int IsKeepDir = 0;
         
-    if (strstr(Dir->HtmlPath, "keep/") != NULL) IsKeepDir = 1;
+    if (strstr(Dir->HtmlPath, "keep") != NULL) IsKeepDir = 1;
     
     Images = Dir->Images;
     Directories = Dir->Dirs;    
@@ -83,10 +83,8 @@ void MakeHtmlOutput(Dir_t * Dir)
 
     for (b=0;b<Directories.NumEntries;b++){
         char SubdirName[220];
-        int Bins[20];
         VarList SubdImages;
         memset(&SubdImages, 0, sizeof(VarList));
-        memset(&Bins, 0, sizeof(Bins));
         
         printf("<div class='ag'>\n");
         printf("<a href=\"view.cgi?%s/%s\">%s:</a>",Dir->HtmlPath, Directories.Entries[b].Name, Directories.Entries[b].Name);
@@ -100,28 +98,32 @@ void MakeHtmlOutput(Dir_t * Dir)
         }
         printf("<br>\n");
         
-        for (a=0;a<SubdImages.NumEntries;a++){
-            int minute, binno;
-            minute = (SubdImages.Entries[a].Name[7]-'0')*10
-                   + SubdImages.Entries[a].Name[8]-'0';
-            binno = minute/5;
-            if (binno >= 0 && binno < 20) Bins[binno] += 1;
-        }
-        
-        printf("<span>");
-        for (a=0;a<12;a++){
-            if (Bins[a] > 5){
-                char nc = '-';
-                int minute = a*5+2;
-                if (Bins[a] > 12) nc = '1';
-                if (Bins[a] > 40) nc = '2';
-                if (Bins[a] > 100) nc = '#';
-                printf("<a href=\"view.cgi?%s/%s#%02d\">%c</a>",Dir->HtmlPath, Directories.Entries[b].Name, minute, nc);
-            }else{
-                printf("&nbsp;");
+        if (!IsKeepDir){
+            int Bins[20];
+            memset(&Bins, 0, sizeof(Bins));
+            for (a=0;a<SubdImages.NumEntries;a++){
+                int minute, binno;
+                minute = (SubdImages.Entries[a].Name[7]-'0')*10
+                    + SubdImages.Entries[a].Name[8]-'0';
+                binno = minute/5;
+                if (binno >= 0 && binno < 20) Bins[binno] += 1;
             }
+        
+            printf("<span>");
+            for (a=0;a<12;a++){
+                if (Bins[a] > 5){
+                    char nc = '-';
+                    int minute = a*5+2;
+                    if (Bins[a] > 12) nc = '1';
+                    if (Bins[a] > 40) nc = '2';
+                    if (Bins[a] > 100) nc = '#';
+                    printf("<a href=\"view.cgi?%s/%s#%02d\">%c</a>",Dir->HtmlPath, Directories.Entries[b].Name, minute, nc);
+                }else{
+                    printf("&nbsp;");
+                }
+            }
+            printf("</span>\n");
         }
-        printf("</span>\n");
         
         free(SubdImages.Entries);
         

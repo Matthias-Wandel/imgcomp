@@ -36,8 +36,8 @@ function WaitForChangeNotify()
                 alert(xhttp.responseText.substring(n))
             }else{
                 n = xhttp.responseText.indexOf("motion");
-                if (n >= 0) DoBeep();
                 RefreshImage()
+                if (n >= 0) DoBeep(); // Do beep last, won't work on iPad
             }
         }
     };
