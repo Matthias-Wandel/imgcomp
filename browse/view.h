@@ -29,12 +29,15 @@ typedef struct {
 }Dir_t;
 
 
-void MakeHtmlOutput(Dir_t * Dir);
-void MakeImageHtmlOutput(char * ImagePath, Dir_t * Dir);
 
 extern char * ImageExtensions[];
 extern float AspectRatio;
 
+//-------------------------------------------------------------------
+void MakeHtmlOutput(Dir_t * Dir);
+void ShowActagram(void);
+//-------------------------------------------------------------------
+void MakeImageHtmlOutput(char * ImagePath, Dir_t * Dir);
 //-------------------------------------------------------------------
 void CollectDirectory(char * PathName, VarList * Files, VarList * Dirs, char * Patterns[]);
 //-------------------------------------------------------------------
@@ -49,11 +52,9 @@ void SortList(VarList * List);
 
 int  FindName(VarList * List, char * Name);
 
-void CopyFile(char * DestPath, char * SrcPath);
 void CombinePaths(char * Dest, char * p1, char * p2);
 void RelPath(char * Rel, char * From, char * To);
 int ExtCheck(char * Ext, char * Pattern);
-
 
 //-------------------------------------------------------------------
 

@@ -321,6 +321,11 @@ int main(int argc, char ** argv)
 
     printf("Content-Type: text/html\n\n"); // html header
 
+    if (strcmp(QueryString, "actagram") == 0){
+        ShowActagram();
+        return 0;
+    }
+
     HtmlPath [0] = '\0';
 
     // Unescape for "%20"

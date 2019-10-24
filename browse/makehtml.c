@@ -18,6 +18,92 @@
 #include "view.h"
 
 //----------------------------------------------------------------------------------
+// Do actagram output
+//----------------------------------------------------------------------------------
+void ShowActagram(void)
+{
+    int daynum;
+    VarList DayDirs;
+    memset(&DayDirs, 0, sizeof(DayDirs));
+
+    printf(
+        "<style type=text/css>\n"
+        "  body { font-family: sans-serif; font-size: 20;}\n"
+        "  pre { font-size: 10;}\n"
+        "  a {text-decoration: none;}\n"
+        "</style>\n");
+    
+    printf("Actagram: <a href='view.cgi?/'>[Back]</a></big>\n");
+    printf("<pre><b>");
+    
+	CollectDirectory("pix/", NULL, &DayDirs, NULL);
+
+    daynum = DayDirs.NumEntries-30;
+    if (daynum < 0) daynum = 0;
+    
+    for (;daynum<DayDirs.NumEntries;daynum++){
+        int bins[300];
+        char DirName[300];
+        int a, h;
+        VarList HourDirs;
+        if (strcmp(DayDirs.Entries[daynum].Name, "keep") == 0) continue;
+        
+        memset(bins, 0, sizeof(bins));
+        
+        printf("<a href='view.cgi?%s'>%s</a>",DayDirs.Entries[daynum].Name, DayDirs.Entries[daynum].Name);
+        sprintf(DirName, "pix/%s",DayDirs.Entries[daynum].Name);
+        memset(&HourDirs, 0, sizeof(HourDirs));
+        
+        CollectDirectory(DirName, NULL, &HourDirs, NULL);
+        
+        for (h=0;h<HourDirs.NumEntries;h++){
+            int a;
+            VarList HourPix;
+            memset(&HourPix, 0, sizeof(HourPix));
+            sprintf(DirName, "pix/%s/%s",DayDirs.Entries[daynum].Name, HourDirs.Entries[h].Name);
+            CollectDirectory(DirName, &HourPix, NULL, ImageExtensions);
+            
+            for (a=0;a<HourPix.NumEntries;a++){
+                int minute, binno;
+                char * Name;
+                Name = HourPix.Entries[a].Name;
+                
+                minute = (Name[5]-'0')*60*10 + (Name[6]-'0')*60
+                       + (Name[7]-'0')*10    + (Name[8]-'0');
+                       
+                binno = minute/5;
+                if (binno >= 0 && binno < 300) bins[binno] += 1;
+            }
+            free(HourPix.Entries);
+        }
+        free (HourDirs.Entries);
+        
+        // Only show from 6 am to 8:30 pm
+        for (a=6*12;a<12*20+6+1;a++){
+            char nc = ' ';
+            if (a % 12 == 0) nc = '.';
+            if (a % 72 == 0) nc = '|';
+            
+            if (bins[a] > 5) nc = '-';
+            if (bins[a] > 12) nc = '1';
+            if (bins[a] > 40) nc = '2';
+            if (bins[a] > 100) nc = '#';
+            
+            if (bins[a] > 5){
+                char UrlString[100];
+                sprintf(UrlString, "view.cgi?%s/%02d/#%02d",DayDirs.Entries[daynum].Name,a/12, a%12*5);
+                printf("<a href='%s'>%c</a>",UrlString,nc);
+            }else{
+                putchar(nc);
+            }
+        }
+        printf("\n");
+    }
+    free(DayDirs.Entries);
+}
+
+
+//----------------------------------------------------------------------------------
 // Create browsable HTML index for a directory
 //----------------------------------------------------------------------------------
 void MakeHtmlOutput(Dir_t * Dir)
@@ -64,6 +150,8 @@ void MakeHtmlOutput(Dir_t * Dir)
     printf(" margin-bottom:2px; display: block; background-color: #c0c0c0;}\n"
         "</style></head>\n");
 
+
+    printf("%s\n",Dir->HtmlPath);
     if (strlen(Dir->HtmlPath) > 2){
         if (Dir->Parent[0] == '\0'){
             // Empty query string would mean "today", so make it a '/'
@@ -133,7 +221,7 @@ void MakeHtmlOutput(Dir_t * Dir)
         
     }
     
-    printf("<br clear=left><p>\n");
+    if (Directories.NumEntries) printf("<br clear=left><p>\n");
     if (Images.NumEntries){
         printf("%s: %d Images<p>\n",Dir->HtmlPath, Images.NumEntries);
     }
@@ -305,7 +393,11 @@ void MakeHtmlOutput(Dir_t * Dir)
         struct stat sb;        
         sprintf(KeepDir, "pix/keep/%.4s",Dir->HtmlPath);
         if (stat(KeepDir, &sb) == 0 && S_ISDIR(sb.st_mode)){
-            printf("<a href=\"view.cgi?%s\">[Keep]</a>\n",KeepDir+4);
+            printf("<a href=\"view.cgi?%s\">[Keep]\n",KeepDir+4);
+        }
+        printf("<a href='/realtime.html'>[Realtime]</a>\n");
+        if (strlen(Dir->HtmlPath) < 3){
+            printf("<a href='view.cgi?actagram'>[Actagram]</a>\n");
         }
     }
 }
