@@ -56,9 +56,10 @@ void MakeHtmlOutput(Dir_t * Dir)
         "  body { font-family: sans-serif; font-size: 24;}\n"
         "  img { vertical-align: middle; margin-bottom: 5px; }\n"
         "  p {margin-bottom: 0px}\n"
+        "  span {font-family: courier; font-weight: bold; font-size: 18px;}\n"
         "  a {text-decoration: none;}\n"
+        "  div.ag { float:left; border-left: 1px solid grey; margin-bottom:10px;}\n"
         "  div.pix { float:left; width:321px; height:%dpx;}\n", ThumbnailHeight+45);
-        
     printf("  div.pix img { width: 320; height: %d;", ThumbnailHeight);
     printf(" margin-bottom:2px; display: block; background-color: #c0c0c0;}\n"
         "</style></head>\n");
@@ -80,34 +81,55 @@ void MakeHtmlOutput(Dir_t * Dir)
     
     printf("<p>\n");
 
-    for (a=0;a<Directories.NumEntries;a++){
-        printf("<a href=\"view.cgi?%s/%s\">%s</a>",Dir->HtmlPath, Directories.Entries[a].Name, Directories.Entries[a].Name);
+    for (b=0;b<Directories.NumEntries;b++){
+        char SubdirName[220];
+        int Bins[20];
+        VarList SubdImages;
+        memset(&SubdImages, 0, sizeof(VarList));
+        memset(&Bins, 0, sizeof(Bins));
+        
+        printf("<div class='ag'>\n");
+        printf("<a href=\"view.cgi?%s/%s\">%s:</a>",Dir->HtmlPath, Directories.Entries[b].Name, Directories.Entries[b].Name);
         
         // Count how many images in subdirectory.
-        {
-            char SubdirName[220];
-            VarList SubdImages;
-            memset(&SubdImages, 0, sizeof(VarList));
-            snprintf(SubdirName,210,"pix/%s/%s",Dir->HtmlPath, Directories.Entries[a].Name);
-            CollectDirectory(SubdirName, &SubdImages, NULL, ImageExtensions);
-            if (SubdImages.NumEntries){
-                printf("(%d)\n",SubdImages.NumEntries);
-                if (SubdImages.NumEntries < 100) printf(" &nbsp");
-                if (SubdImages.NumEntries < 10) printf(" &nbsp");
-            }else{
-                printf(" &nbsp &nbsp; &nbsp; &nbsp;");
-            }
-            free(SubdImages.Entries);
+        snprintf(SubdirName,210,"pix/%s/%s",Dir->HtmlPath, Directories.Entries[b].Name);
+        CollectDirectory(SubdirName, &SubdImages, NULL, ImageExtensions);
+        
+        if (SubdImages.NumEntries){
+            printf(" <small>(%d)</small>\n",SubdImages.NumEntries);
+        }
+        printf("<br>\n");
+        
+        for (a=0;a<SubdImages.NumEntries;a++){
+            int minute, binno;
+            minute = (SubdImages.Entries[a].Name[7]-'0')*10
+                   + SubdImages.Entries[a].Name[8]-'0';
+            binno = minute/5;
+            if (binno >= 0 && binno < 20) Bins[binno] += 1;
         }
         
-        if ((a % 5 ) == 4){
-            printf("<p>\n"); // Put four links per line.
-        }else{
-            printf(" &nbsp; \n"); // Put four links per line.
+        printf("<span>");
+        for (a=0;a<12;a++){
+            if (Bins[a] > 5){
+                char nc = '-';
+                int minute = a*5+2;
+                if (Bins[a] > 12) nc = '1';
+                if (Bins[a] > 40) nc = '2';
+                if (Bins[a] > 100) nc = '#';
+                printf("<a href=\"view.cgi?%s/%s#%02d\">%c</a>",Dir->HtmlPath, Directories.Entries[b].Name, minute, nc);
+            }else{
+                printf("&nbsp;");
+            }
         }
+        printf("</span>\n");
+        
+        free(SubdImages.Entries);
+        
+        printf("</div>\n");
+        
     }
-
-    printf("<p>\n");
+    
+    printf("<br clear=left><p>\n");
     if (Images.NumEntries){
         printf("%s: %d Images<p>\n",Dir->HtmlPath, Images.NumEntries);
     }
