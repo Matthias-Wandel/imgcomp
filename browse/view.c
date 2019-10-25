@@ -122,8 +122,8 @@ static void ReadExifHeader(char * ImagePath)
 //----------------------------------------------------------------------------------
 void DoJpegView(char * ImagePath)
 {
-    char HtmlFile[300];
-    char HtmlPath[300];
+    char HtmlFile[150];
+    char HtmlPath[150];
     char PathToFile[300];
     int a;
     int lastslash = 0;
@@ -133,9 +133,11 @@ void DoJpegView(char * ImagePath)
         if (ImagePath[a] == '/') lastslash = a;
     }
 
-    strcpy(HtmlFile, ImagePath+lastslash+1);
+    strncpy(HtmlFile, ImagePath+lastslash+1,149);
+    HtmlFile[149] = 0;
 
-    strcpy(HtmlPath, ImagePath);
+    strncpy(HtmlPath, ImagePath,149);
+    HtmlPath[149] = 0;
     HtmlPath[lastslash] = '\0';
     dir = CollectDir(HtmlPath, 1);
 
