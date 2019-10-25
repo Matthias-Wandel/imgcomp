@@ -142,9 +142,9 @@ void MakeHtmlOutput(Dir_t * Dir)
         "  body { font-family: sans-serif; font-size: 24;}\n"
         "  img { vertical-align: middle; margin-bottom: 5px; }\n"
         "  p {margin-bottom: 0px}\n"
-        "  span {font-family: courier; font-weight: bold; font-size: 18px;}\n"
+        "  span {font-family: courier; font-weight: bold; font-size: 14px;}\n"
         "  a {text-decoration: none;}\n"
-        "  div.ag { float:left; border-left: 1px solid grey; margin-bottom:10px;}\n"
+        "  div.ag { float:left; border-left: 1px solid black; margin-bottom:10px;}\n"
         "  div.pix { float:left; width:321px; height:%dpx;}\n", ThumbnailHeight+45);
     printf("  div.pix img { width: 320; height: %d;", ThumbnailHeight);
     printf(" margin-bottom:2px; display: block; background-color: #c0c0c0;}\n"
@@ -189,24 +189,24 @@ void MakeHtmlOutput(Dir_t * Dir)
         printf("<br>\n");
         
         if (!IsKeepDir){
-            int Bins[20];
+            int Bins[30];
             memset(&Bins, 0, sizeof(Bins));
             for (a=0;a<SubdImages.NumEntries;a++){
                 int minute, binno;
                 minute = (SubdImages.Entries[a].Name[7]-'0')*10
                     + SubdImages.Entries[a].Name[8]-'0';
-                binno = minute/5;
+                binno = minute/3;
                 if (binno >= 0 && binno < 20) Bins[binno] += 1;
             }
         
             printf("<span>");
-            for (a=0;a<12;a++){
-                if (Bins[a] > 5){
+            for (a=0;a<20;a++){
+                if (Bins[a] > 4){
                     char nc = '-';
                     int minute = a*5+2;
-                    if (Bins[a] > 12) nc = '1';
-                    if (Bins[a] > 40) nc = '2';
-                    if (Bins[a] > 100) nc = '#';
+                    if (Bins[a] > 8) nc = '1';
+                    if (Bins[a] > 25) nc = '2';
+                    if (Bins[a] > 60) nc = '#';
                     printf("<a href=\"view.cgi?%s/%s#%02d\">%c</a>",Dir->HtmlPath, Directories.Entries[b].Name, minute, nc);
                 }else{
                     printf("&nbsp;");
