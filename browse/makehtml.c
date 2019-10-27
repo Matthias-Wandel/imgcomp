@@ -7,6 +7,7 @@
 #include <string.h>
 #include <time.h>
 #include <stdlib.h>
+#include <sys/statvfs.h>
 
 #ifdef _WIN32
     #include <io.h>
@@ -36,7 +37,7 @@ void ShowActagram(void)
     printf("Actagram: <a href='view.cgi?/'>[Back]</a></big>\n");
     printf("<pre><b>");
     
-	CollectDirectory("pix/", NULL, &DayDirs, NULL);
+    CollectDirectory("pix/", NULL, &DayDirs, NULL);
 
     daynum = DayDirs.NumEntries-30;
     if (daynum < 0) daynum = 0;
@@ -120,6 +121,7 @@ void MakeHtmlOutput(Dir_t * Dir)
     int DirMinute = 0;
     int AllSameDate;
     int IsKeepDir = 0;
+    int IsRoot;
         
     if (strstr(Dir->HtmlPath, "keep") != NULL) IsKeepDir = 1;
     
@@ -159,6 +161,9 @@ void MakeHtmlOutput(Dir_t * Dir)
             Dir->Parent[1] = '\0';
         }
         printf("<a href=\"view.cgi?%s\">[Up:%s]</a>\n",Dir->Parent,Dir->Parent);
+        IsRoot = 0;
+    }else{
+        IsRoot = 1;
     }
     if (Dir->Previous[0]){
         printf("<a href=\"view.cgi?%s\">[Prev:%s]</a>\n",Dir->Previous,Dir->Previous);
@@ -168,6 +173,20 @@ void MakeHtmlOutput(Dir_t * Dir)
     }
     
     printf("<p>\n");
+    
+    if (IsRoot){
+        struct statvfs sv;
+        char HostName[30];
+        FILE * fp;
+        fp = fopen("/proc/sys/kernel/hostname","r");
+        memset(HostName, 0, 30);
+        fread(HostName, 1, 30, fp);
+        fclose(fp);
+        
+        statvfs("pix/", &sv);
+        printf("%s: %5.1f gig ", HostName, (double)sv.f_bavail * sv.f_bsize / 1000000000);
+        printf("(%4.1f%%) free<p>\n", (double)(sv.f_bavail*100.0/sv.f_blocks));
+    }
 
     for (b=0;b<Directories.NumEntries;b++){
         char SubdirName[220];
