@@ -222,7 +222,7 @@ void MakeHtmlOutput(Dir_t * Dir)
             for (a=0;a<20;a++){
                 if (Bins[a] > 4){
                     char nc = '-';
-                    int minute = a*5+2;
+                    int minute = a*3+1;
                     if (Bins[a] > 8) nc = '1';
                     if (Bins[a] > 25) nc = '2';
                     if (Bins[a] > 60) nc = '#';
@@ -289,7 +289,7 @@ void MakeHtmlOutput(Dir_t * Dir)
         }
         Images.Entries[a].DaySecond = Seconds;
 
-        if (Seconds-LastSeconds > (AllSameDate ? 60 : 3600)){
+        if (Seconds-LastSeconds > (AllSameDate ? 60 : 600)){
             BreakIndices[NumBreakIndices++] = a;
             if (NumBreakIndices > 30) break;
         }
