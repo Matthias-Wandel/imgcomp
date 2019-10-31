@@ -9,6 +9,7 @@ int main()
 {
     int n, GotBytes = 0;
     FILE * LogFile;
+    long FileSize;
     
     printf("Content-Type: text/html\n\n<html>\n"); // html header
     
@@ -19,12 +20,28 @@ int main()
         return 0;
     }
     fseek(LogFile, 0, SEEK_END);
+    FileSize = ftell(LogFile);
     
     for (n=0;n<30;n++){
         char NewBytes[100];
         int nread;
+        long NewSize;
         usleep(100000);
-        nread = fread(NewBytes, 1, 100, LogFile);
+
+        // the following hack is necessary to work around a file system bug on the
+        // raspian for raspberry pi 4.
+        fseek(LogFile, 0, SEEK_END);
+        NewSize = ftell(LogFile);
+        if (NewSize != FileSize){
+            // Go back to read what was appended
+            fseek(LogFile, FileSize, SEEK_SET);
+            FileSize = NewSize;
+        }else{
+            // File wasn't appended to.
+            continue;
+        }
+        
+        nread = fread(NewBytes, 1, 99, LogFile);
         if (nread > 0){
             GotBytes = 1;
             NewBytes[nread] = 0;
