@@ -115,7 +115,7 @@ void MakeHtmlOutput(Dir_t * Dir)
     unsigned a, b;
     int FullresThumbs = 0;
     int LastSeconds;
-    int BreakIndices[61];
+    int BreakIndices[101];
     unsigned NumBreakIndices = 0;
     int ThumbnailHeight;
     int DirMinute = 0;
@@ -291,7 +291,7 @@ void MakeHtmlOutput(Dir_t * Dir)
 
         if (Seconds-LastSeconds > (AllSameDate ? 60 : 600)){
             BreakIndices[NumBreakIndices++] = a;
-            if (NumBreakIndices > 30) break;
+            if (NumBreakIndices > 100) break;
         }
         LastSeconds = Seconds;
 
