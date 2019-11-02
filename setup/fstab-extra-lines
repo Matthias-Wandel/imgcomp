@@ -1,0 +1,3 @@
+# Add the following to /etc/fstab:
+tmpfs	/ramdisk	tmpfs	nodev,nosuid,size=40M	0	0
+//192.168.0.2/mwandel	/r	cifs user=mwandel,pass=mine,dir_mode=0777,file_mode=0777,noauto	0	0
