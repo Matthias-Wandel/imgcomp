@@ -62,7 +62,7 @@ char * CatPath(char *Dir, char * FileName)
         catpath[pathlen] = '/';
         pathlen += 1;
     }
-    strncpy(catpath+pathlen, FileName,200);
+    strncpy(catpath+pathlen, FileName,256);
     return catpath;
 }
 
