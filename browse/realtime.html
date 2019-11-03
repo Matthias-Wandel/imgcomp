@@ -45,7 +45,8 @@ function WaitForChangeNotify()
     xhttp.send();
 }
 
-imgseq = 0;
+const now = new Date()
+imgseq = Math.round(now.getTime() / 1000) % 100000
 function RefreshImage()
 {
     newsrc = "view.cgi?now.jpg#"+imgseq
