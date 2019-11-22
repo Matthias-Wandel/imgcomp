@@ -15,10 +15,10 @@
 #include <time.h>
  
 #define MAX_TIMINGS	85
-//#define DHT_PIN	15 //  GPIO 14, pin 8.  Basement DHT22.  Works.
-//#define DHT_PIN	16 // GPIO 15, pin 10.  Returns faulty readings.
-//#define DHT_PIN	1 // GPIO 18, pin 12.  Probably second basement
-//#define DHT_PIN	4 // GPIO 23, pin 16.  Bedroom sensor.  Works.
+//#define DHT_PIN	15 // GPIO 14, header pin 8.  Basement DHT22.  Works.
+//#define DHT_PIN	16 // GPIO 15, header pin 10.  Master bedroom
+//#define DHT_PIN	 1 // GPIO 18, header pin 12.  Furnace room
+//#define DHT_PIN	 4 // GPIO 23, header pin 16.  Living room
 
 //-----------------------------------------------------------------------------
 // read DHT sensor
@@ -42,7 +42,7 @@ void read_dht_data(int dht_pin, float * temp, float * humid)
  
 	/* prepare to read the pin */
 	pinMode( dht_pin, INPUT );
-    delayMicroseconds( 4 );
+    delayMicroseconds( 8 );
  
 	/* detect change and read data */
 	for ( i = 0; i < MAX_TIMINGS; i++ )
