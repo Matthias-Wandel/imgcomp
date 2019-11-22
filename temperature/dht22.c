@@ -3,7 +3,7 @@
 //
 // Adjustments made because wirtingpi delay is inaccurate on Pi4.
 //
-// Compile with : gcc dht22.c -o dht -lwiringPi
+// Compile with : gcc dht22.c -o dht22 -lwiringPi
 //
 // Matthias Wandel Nov 22 2019
 //
@@ -42,7 +42,8 @@ void read_dht_data(int dht_pin, float * temp, float * humid)
  
 	/* prepare to read the pin */
 	pinMode( dht_pin, INPUT );
-    delayMicroseconds( 8 );
+    //delayMicroseconds( 8 );
+    usleep(10);
  
 	/* detect change and read data */
 	for ( i = 0; i < MAX_TIMINGS; i++ )
@@ -97,6 +98,13 @@ void read_dht_data(int dht_pin, float * temp, float * humid)
 		printf( "Data not good, skip\n" );
         if (temp) *temp = 0;
         if (humid) *humid = 0;
+        
+        printf("i=%d \n",i);
+        for (j=0;j<i;j+=2){
+            printf(" %d %d\n",counts[j]-20, counts[j+1]);
+        }
+        printf("\n");
+        
 	}
 }
 
@@ -127,7 +135,11 @@ int main( void )
 
     printf(TimeString);
     for (a=0;a<4;a++){
-        printf(", %4.1f,%4.1f",temps[a],humid[a]);
+        if (temps[a] || humid[a]){
+            printf(", %4.1f,%4.1f",temps[a],humid[a]);
+        }else{
+            printf(",     ,    ");
+        }
     }
     printf("\n");
 
@@ -136,7 +148,11 @@ int main( void )
     if (logf != NULL){
         fprintf(logf,TimeString);
         for (a=0;a<4;a++){
-            fprintf(logf,", %4.1f,%4.1f",temps[a],humid[a]);
+            if (temps[a] || humid[a]){
+                fprintf(logf,", %4.1f,%4.1f",temps[a],humid[a]);
+            }else{
+                fprintf(logf,",     ,    ");
+            }
         }
         fprintf(logf,"\n");
         fclose(logf);
