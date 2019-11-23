@@ -135,10 +135,12 @@ int main( void )
         read_dht_data(WiringPiPins[a], &temps[a], &humid[a]);
     }
     
-    for (int tries=0;tries<2;tries++){
+    for (int tries=0;tries<3;tries++){
         int HaveSlept = 0;
         for (a=0;a<4;a++){
-            if (temps[a] == 0 && humid[a] == 0){
+            if ((temps[a] == 0 && humid[a] == 0) 
+                || humid[a] > 100 || humid[a] < 0
+                || temps[a] < -5 || temps[a] > 40){
                 // At least one channel needs a retry.
                 if (!HaveSlept){
                     printf("Do retries:----------------\n");
