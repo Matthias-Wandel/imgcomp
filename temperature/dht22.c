@@ -142,7 +142,7 @@ int main( void )
     // that are the same, so hopefully, those will be good readings!
     int tries;
     int NeedDelay = 0;
-    for (tries=0;tries<6;tries++){
+    for (tries=0;tries<8;tries++){
         for (int ch=0;ch<4;ch++){
             float t, h;
             if (NumHave[ch] < 4){
@@ -162,7 +162,7 @@ int main( void )
                     for (a=0;a<NumHave[ch]-1;a++){
                         float hd = humid[ch][a] - h;
                         if (hd < 0) hd = -hd;
-                        if (temps[ch][a] == t && hd < 0.1){
+                        if (temps[ch][a] == t && hd <= 0.2){
                             // We have two identical readings.
                             // so we can stop taking readings on this channel.
                             Gtemp[ch] = t;
@@ -190,7 +190,7 @@ int main( void )
 
     printf(TimeString);
     for (a=0;a<4;a++){
-        if (temps[a] || humid[a]){
+        if (Ghumid[a]){
             printf(", %4.1f,%4.1f",Gtemp[a],Ghumid[a]);
         }else{
             printf(",     ,    ");
@@ -203,7 +203,7 @@ int main( void )
     if (logf != NULL){
         fprintf(logf,TimeString);
         for (a=0;a<4;a++){
-            if (temps[a] || humid[a]){
+            if (Ghumid[a]){
                 fprintf(logf,", %4.1f,%4.1f",Gtemp[a],Ghumid[a]);
             }else{
                 fprintf(logf,",     ,    ");
