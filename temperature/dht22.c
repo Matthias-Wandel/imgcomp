@@ -104,12 +104,12 @@ void read_dht_data(int dht_pin, float * temp, float * humid)
         if (humid) *humid = 0;
     }
     
-show_debug:
-    printf("i=%d ",i);
-    for (j=0;j<i;j+=2){
-        printf(" %d",counts[j]-5, counts[j+1]);
-    }
-    printf("\n");
+show_debug:;
+    //printf("i=%d ",i);
+    //for (j=0;j<i;j+=2){
+    //    printf(" %d",counts[j]-5, counts[j+1]);
+   // }
+   // printf("\n");
 }
 
 //-----------------------------------------------------------------------------
@@ -120,39 +120,67 @@ char * ChannelNames[4] = {
 int WiringPiPins[4] = {15,16,1,4};
 int main( void )
 {
-    float temps[4];
-    float humid[4];
+    float temps[4][3]; // Aiming to get 3 good readings per snsor
+    float humid[4][3];
+    
+    float Gtemp[4], Ghumid[4];
+    
+    int NumHave[4];    // How many *good* readings we have
+    
     time_t now;
     int a;
     char Retries[20];
     int numret = 0;
-    
+    for (a=0;a<4;a++){
+        Gtemp[a] = Ghumid[a] = 0;
+        NumHave[a] = 0;
+    }
  
     if ( wiringPiSetup() == -1 ) exit( 1 );
-    
-    for (a=0;a<4;a++){
-        printf(ChannelNames[a]);
-        read_dht_data(WiringPiPins[a], &temps[a], &humid[a]);
-    }
-    
-    for (int tries=0;tries<3;tries++){
-        int HaveSlept = 0;
-        for (a=0;a<4;a++){
-            if ((temps[a] == 0 && humid[a] == 0) 
-                || humid[a] > 100 || humid[a] < 0
-                || temps[a] < -5 || temps[a] > 40){
-                // At least one channel needs a retry.
-                if (!HaveSlept){
-                    printf("Do retries:----------------\n");
-                    sleep(3); // Need time between sensor reads.
-                    HaveSlept = 1;
+
+    // Keep reading the DHT22 sensors until we have at least two readings per channel
+    // that are the same, so hopefully, those will be good readings!
+    int tries;
+    int NeedDelay = 0;
+    for (tries=0;tries<6;tries++){
+        for (int ch=0;ch<4;ch++){
+            float t, h;
+            if (NumHave[ch] < 4){
+                if (NeedDelay){
+                    sleep(2);
+                    NeedDelay = 0;
                 }
-                Retries[numret++] = '0'+a;
-                printf(ChannelNames[a]);
-                read_dht_data(WiringPiPins[a], &temps[a], &humid[a]);
+                printf("ch %d: ",ch);
+                read_dht_data(WiringPiPins[ch], &t, &h);
+                //printf("ch %d %4.1fdg %4.1f%%\n",ch,t,h);
+                if (h >= 10 && h <= 100 && t <= 40 && t >= -5){
+                    // Its a reasonable valued reading
+                    temps[ch][NumHave[ch]] = t;
+                    humid[ch][NumHave[ch]] = h;
+                    NumHave[ch] += 1;
+                    // Now check if it's close to a previous reading.
+                    for (a=0;a<NumHave[ch]-1;a++){
+                        float hd = humid[ch][a] - h;
+                        if (hd < 0) hd = -hd;
+                        if (temps[ch][a] == t && hd < 0.1){
+                            // We have two identical readings.
+                            // so we can stop taking readings on this channel.
+                            Gtemp[ch] = t;
+                            Ghumid[ch] = (h + humid[ch][a])/2;
+                            printf("ch %d have 2 same of %d\n",ch, NumHave[ch]);
+                            NumHave[ch] = 10; // Stop reading this one.
+                            break;
+                        }
+                    }
+                }else{
+                    Retries[numret++] = '0'+ch;
+                }
             }
+            
         }
+        NeedDelay = 1;
     }
+    
     Retries[numret] = 0;
     
     
@@ -163,7 +191,7 @@ int main( void )
     printf(TimeString);
     for (a=0;a<4;a++){
         if (temps[a] || humid[a]){
-            printf(", %4.1f,%4.1f",temps[a],humid[a]);
+            printf(", %4.1f,%4.1f",Gtemp[a],Ghumid[a]);
         }else{
             printf(",     ,    ");
         }
@@ -176,7 +204,7 @@ int main( void )
         fprintf(logf,TimeString);
         for (a=0;a<4;a++){
             if (temps[a] || humid[a]){
-                fprintf(logf,", %4.1f,%4.1f",temps[a],humid[a]);
+                fprintf(logf,", %4.1f,%4.1f",Gtemp[a],Ghumid[a]);
             }else{
                 fprintf(logf,",     ,    ");
             }
