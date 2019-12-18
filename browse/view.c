@@ -323,8 +323,12 @@ int main(int argc, char ** argv)
 
     printf("Content-Type: text/html\n\n"); // html header
 
-    if (strcmp(QueryString, "actagram") == 0){
-        ShowActagram();
+    if (memcmp(QueryString, "actagram", 8) == 0){
+        int all = 0;
+        int h24 = 0;
+        if (strcmp(QueryString, "actagram,all") == 0) all = 1;
+        if (strstr(QueryString, "24") != NULL) h24 = 1;
+        ShowActagram(all,h24);
         return 0;
     }
 

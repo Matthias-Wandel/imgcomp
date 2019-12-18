@@ -21,7 +21,7 @@
 //----------------------------------------------------------------------------------
 // Do actagram output
 //----------------------------------------------------------------------------------
-void ShowActagram(void)
+void ShowActagram(int all, int h24)
 {
     int daynum;
     VarList DayDirs;
@@ -34,12 +34,18 @@ void ShowActagram(void)
         "  a {text-decoration: none;}\n"
         "</style>\n");
     
-    printf("Actagram: <a href='view.cgi?/'>[Back]</a></big>\n");
+    printf("Actagram: <a href='view.cgi?/'>[Back]</a>"
+           "<a href='view.cgi?actagram,all'>[All]</a></big>\n");
     printf("<pre><b>");
     
     CollectDirectory("pix/", NULL, &DayDirs, NULL);
 
-    daynum = DayDirs.NumEntries-30;
+    if (all){
+        daynum = 0;
+    }else{
+        daynum = DayDirs.NumEntries-30;
+    }
+    
     if (daynum < 0) daynum = 0;
     
     for (;daynum<DayDirs.NumEntries;daynum++){
@@ -80,7 +86,13 @@ void ShowActagram(void)
         free (HourDirs.Entries);
         
         // Only show from 6 am to 8:30 pm
-        for (a=6*12;a<12*20+6+1;a++){
+        int from = 6*12;
+        int to = 12*20+6;
+        if (h24){
+            from=0;
+            to=12*24;
+        }
+        for (a=from;a<=to;a++){
             char nc = ' ';
             if (a % 12 == 0) nc = '.';
             if (a % 72 == 0) nc = '|';

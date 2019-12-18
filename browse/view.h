@@ -29,13 +29,12 @@ typedef struct {
 }Dir_t;
 
 
-
 extern char * ImageExtensions[];
 extern float AspectRatio;
 
 //-------------------------------------------------------------------
 void MakeHtmlOutput(Dir_t * Dir);
-void ShowActagram(void);
+void ShowActagram(int all, int twentyfour);
 //-------------------------------------------------------------------
 void MakeImageHtmlOutput(char * ImagePath, Dir_t * Dir);
 //-------------------------------------------------------------------
