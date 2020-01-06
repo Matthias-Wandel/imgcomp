@@ -1,4 +1,11 @@
 
+Setting up:
+imgcomp and the browsing program (view.cgi) must be compiled with their respective makefiles.
+
+Some incomplete notes in setup/setting_up.txt
+Some scripts to do some of the setting it up.
+--------------------------------------------------------------------------------------------------
+
 IMGCOMP PROGRAM
 To use imgcomp, you must compile it.  
 After unpacking it on a Raspberry Pi, type "make" in the imgcomp directory.

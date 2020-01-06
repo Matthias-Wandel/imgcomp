@@ -1,7 +1,6 @@
 Things to set up:
 
 Things the script does:
-  Disable main screen logo
   Disable screen blanking
   Make ram disk
   Enable camera module
