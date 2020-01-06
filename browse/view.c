@@ -378,7 +378,7 @@ int main(int argc, char ** argv)
         for (a=0;a<Col->Images.NumEntries;a++){
             int l = strlen(Col->Images.Entries[a].Name);
             if (Col->Images.Entries[a].Name[l-1] == 'g'){
-                sprintf(HtmlPath, "%s/%s", Col->HtmlPath, Col->Images.Entries[0].Name);
+                sprintf(HtmlPath, "%s/%s", Col->HtmlPath, Col->Images.Entries[a].Name);
                 ReadExifHeader(HtmlPath);
                 break;
             }
