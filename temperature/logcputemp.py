@@ -8,7 +8,7 @@ temp_t = 0
 for x in range(10):
     result = subprocess.run(["vcgencmd", "measure_temp"], stdout=subprocess.PIPE)
     out = str(result.stdout)
-    temp = float(out.split("temp=")[1][:4])
+    temp = float(out.split("temp=")[1][:-5])
     print(temp)
     if x == 4: # Two minutes in.
         timestr = time.strftime("%d-%b-%y %H:%M:%S,", time.localtime())
