@@ -211,7 +211,7 @@ void ScaleBrightness(MemImage_t * MemImage)
     if (a < 200){
         int Mult, Mult2;
         Mult = 256*240/a;
-        Mult2 = 256*160/a;
+        Mult2 = 256*200/a;
         if (Mult2 < Mult) Mult = Mult2;
         if (Mult > 265*10) Mult = 256*10; // Don't boost by more than 10x.
         
