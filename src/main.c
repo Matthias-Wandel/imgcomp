@@ -304,7 +304,6 @@ static int DoDirectoryFunc(char * Directory, int DeleteProcessed)
     
     for (a=0;a<NumEntries;a++){
         LastPic_t NewPic;
-        struct stat statbuf;
         char * ThisName;
         int l;
        
@@ -336,14 +335,21 @@ static int DoDirectoryFunc(char * Directory, int DeleteProcessed)
         }
 		ReadExif = 0; // Only read exif for first image.
 
-        if (stat(NewPic.Name, &statbuf) == -1) {
-            perror(NewPic.Name);
-            exit(1);
+        if (ThisName[0] == 's' && ThisName[1] == 'f' && ThisName[2] >= '0' && ThisName[2] <= '9'){
+            // Video decomposed files have no meaningful timestamp, 
+            // but filename starts with 'sf' and contains unix time minus 1 billion.
+            NewPic.mtime = atoi(ThisName+2) + (time_t)1000000000;
+        }else{
+            struct stat statbuf;
+            if (stat(NewPic.Name, &statbuf) == -1) {
+                perror(NewPic.Name);
+                exit(1);
+            }
+            NewPic.mtime = (unsigned)statbuf.st_mtime;
+            LastPic_mtime_ns = statbuf.st_mtim;
         }
-        NewPic.mtime = (unsigned)statbuf.st_mtime;
         LastPic_mtime = NewPic.mtime;
-        LastPic_mtime_ns = statbuf.st_mtim;
-
+        
         SawMotion += ProcessImage(&NewPic, DeleteProcessed);
 
         NumProcessed += 1;
@@ -424,8 +430,6 @@ int DoDirectoryVideos(char * DirName)
         exit(-1);
     }
  
- printf("do directory");
- 
     for (;;){
         DirEntry_t * FileNames;
         int NumEntries;
@@ -451,8 +455,7 @@ int DoDirectoryVideos(char * DirName)
         }
         for (a=0;a<NumEntries;a++){
             int age;
-            static int seq;
-
+            
             age = (int)(now-FileNames[a].MTime);
             if (age < 1){
                 VideoActive = 1; // Video files getting updated.
@@ -471,8 +474,10 @@ int DoDirectoryVideos(char * DirName)
             FFCmd[infileindex] = 0;
             strcpy(FFCmd+infileindex, VidFileName);
             strcat(FFCmd, VidDecomposeCmd+infileindex+8);
-            sprintf(FFCmd+strlen(FFCmd), " %s/sf%02d_%%02d.jpg",TempDirName, seq);
-            if (++seq >= 100) seq = 0;
+            
+            // Use timestamp of video file to sequence output file names (so we'll have the respective times for those)
+            unsigned seq = (unsigned)FileNames[a].MTime - 1000000000;
+            sprintf(FFCmd+strlen(FFCmd), " -start_number %u %s/sf%%d.jpg",seq, TempDirName);
             
             errno = 0;
             ret = system(FFCmd);
