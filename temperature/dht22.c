@@ -129,7 +129,7 @@ int main( void )
     
     time_t now;
     int a;
-    char Retries[20];
+    char Retries[50];
     int numret = 0;
     for (a=0;a<4;a++){
         Gtemp[a] = Ghumid[a] = 0;
