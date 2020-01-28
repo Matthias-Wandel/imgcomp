@@ -20,6 +20,7 @@
 
 //----------------------------------------------------------------------------------
 // Determine if it's a weekend day or a holiday
+// Returns < 0 for weekday, >= 0 for weekend/holiday.  3 lsbs indicate day of week.
 //----------------------------------------------------------------------------------
 static int IsWeekendString(char * DirString)
 {
@@ -33,7 +34,7 @@ static int IsWeekendString(char * DirString)
     if (a != 6 || DirString[6] != '\0'){
         // dir name must be six digits only.
 
-        return -2;
+        return -10;
     }
 
     d = daynum%100;
@@ -60,7 +61,8 @@ static int IsWeekendString(char * DirString)
     }
 
     if (weekday == 0 || weekday == 6) return weekday;
-    return -1;
+
+    return weekday-8;
 }
 
 //----------------------------------------------------------------------------------
@@ -93,6 +95,8 @@ void ShowActagram(int all, int h24)
     }
     
     if (daynum < 0) daynum = 0;
+
+    int prevwkd = 6, thiswkd=6;
     
     for (;daynum<DayDirs.NumEntries;daynum++){
         int bins[300];
@@ -104,6 +108,14 @@ void ShowActagram(int all, int h24)
         memset(bins, 0, sizeof(bins));
 
         int isw = IsWeekendString(DayDirs.Entries[daynum].Name);
+
+        thiswkd = isw & 7;
+        if (thiswkd != (prevwkd+1) %7){
+            printf("<br>");
+        }
+        prevwkd = thiswkd;
+
+
         if (isw >= 0) printf("<span class=\"wkend\">");
         
         printf("<a href='view.cgi?%s'>%s</a>",DayDirs.Entries[daynum].Name, DayDirs.Entries[daynum].Name);
@@ -250,6 +262,8 @@ void MakeHtmlOutput(Dir_t * Dir)
         printf("(%4.1f%%) free<p>\n", (double)(sv.f_bavail*100.0/sv.f_blocks));
     }
 
+    int prevwkd = 6, thiswkd=6;
+
     for (b=0;b<Directories.NumEntries;b++){
         char SubdirName[220];
         VarList SubdImages;
@@ -257,7 +271,14 @@ void MakeHtmlOutput(Dir_t * Dir)
         if (strcmp(Directories.Entries[b].Name, "keep") == 0) continue;
         
         int isw = -1;
-        if (IsRoot) isw = IsWeekendString(Directories.Entries[b].Name);
+        if (IsRoot){
+            isw = IsWeekendString(Directories.Entries[b].Name);
+            thiswkd = isw & 7;
+            if (thiswkd <= prevwkd){
+                printf("<br clear=left>");
+            }
+            prevwkd = thiswkd;
+        }
         
         printf("<div class='ag'>\n");
         if (isw >= 0) printf("<span class=\"wkend\">");
@@ -285,7 +306,7 @@ void MakeHtmlOutput(Dir_t * Dir)
                 if (binno >= 0 && binno < 20) Bins[binno] += 1;
             }
         
-            printf("<span.a>");
+            printf("<span class='a'>");
             for (a=0;a<20;a++){
                 if (Bins[a] > 4){
                     char nc = '-';
@@ -304,8 +325,6 @@ void MakeHtmlOutput(Dir_t * Dir)
         free(SubdImages.Entries);
         
         printf("</div>\n");
-        if (IsRoot && isw == 6) printf("<br clear=left>");
-        
     }
     
     if (Directories.NumEntries) printf("<br clear=left><p>\n");
