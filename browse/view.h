@@ -30,8 +30,10 @@ typedef struct {
 
 
 extern char * ImageExtensions[];
-extern float AspectRatio;
+//extern float AspectRatio;
 
+//-------------------------------------------------------------------
+float ReadExifHeader(char * ImagePath);
 //-------------------------------------------------------------------
 void MakeHtmlOutput(Dir_t * Dir);
 void ShowActagram(int all, int twentyfour);

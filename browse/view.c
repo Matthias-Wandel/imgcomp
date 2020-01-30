@@ -22,7 +22,7 @@
 static char * FileExtensions[] = {"jpg","jpeg","txt","html","mp4",NULL};
        char * ImageExtensions[] = {"jpg","jpeg",NULL};
        
-float AspectRatio = 4.0/3;
+float AspectRatio = 1; // width/height.  Set to nonzero but bogus initial value.
 
 //----------------------------------------------------------------------------------
 // Process one directory.  Returns pointer to summary.
@@ -100,7 +100,7 @@ static Dir_t * CollectDir(char * HtmlPath, int ImagesOnly)
 //----------------------------------------------------------------------------------
 // Read exif header of an image to get aspect ratio and other info.
 //----------------------------------------------------------------------------------
-static void ReadExifHeader(char * ImagePath)
+float ReadExifHeader(char * ImagePath)
 {
     char FileName[320];
     FILE * file;
@@ -112,7 +112,9 @@ static void ReadExifHeader(char * ImagePath)
     }
 
     if (ImageInfo.Width > 10 && ImageInfo.Height > 10){
-        AspectRatio = (float)ImageInfo.Width / ImageInfo.Height;
+        return (float)ImageInfo.Width / ImageInfo.Height;
+    }else{
+        return 1; // Bogus but nonzero value.
     }
 }
 
@@ -124,7 +126,6 @@ void DoJpegView(char * ImagePath)
 {
     char HtmlFile[150];
     char HtmlPath[150];
-    char PathToFile[300];
     int a;
     int lastslash = 0;
     Dir_t * dir;
@@ -149,11 +150,6 @@ void DoJpegView(char * ImagePath)
     if (strcmp(HtmlFile, "last.jpg") == 0){
         strcpy(HtmlFile, dir->Images.Entries[dir->Images.NumEntries-1].Name);
     }
-
-    //printf("Usefile: %s\n<hr>\n", HtmlFile);
-    sprintf(PathToFile, "%s/%s", HtmlPath, HtmlFile);
-
-    ReadExifHeader(PathToFile);
 
     MakeImageHtmlOutput(HtmlFile, dir);
     
@@ -373,17 +369,6 @@ int main(int argc, char ** argv)
         }
 
         Col = CollectDir(HtmlPath, 0);
-
-        // Find first image and read exif header of it to get aspect ratio.
-        for (a=0;a<Col->Images.NumEntries;a++){
-            int l = strlen(Col->Images.Entries[a].Name);
-            if (Col->Images.Entries[a].Name[l-1] == 'g'){
-                sprintf(HtmlPath, "%s/%s", Col->HtmlPath, Col->Images.Entries[a].Name);
-                ReadExifHeader(HtmlPath);
-                break;
-            }
-        }
-
         MakeHtmlOutput(Col);
 
         free(Col->Dirs.Entries);

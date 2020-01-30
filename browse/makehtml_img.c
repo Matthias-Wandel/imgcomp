@@ -30,12 +30,14 @@ void MakeImageHtmlOutput(char * ImageName, Dir_t * dir)
     int ShowHeight;
     int IsKeepDir = 0;
     char * HtmlDir;
+    float AspectRatio = 1;
     VarList Images;
     Images = dir->Images;
     HtmlDir = dir->HtmlPath;
         
     if (strstr(HtmlDir, "keep/") != NULL) IsKeepDir = 1;
     
+
     printf("<title>%s</title>\n",ImageName);
     printf("<head><meta charset=\"utf-8\"/>\n");
     
@@ -64,6 +66,12 @@ void MakeImageHtmlOutput(char * ImageName, Dir_t * dir)
            "  xhttp.open(\"GET\", url, true)\n"
            "  xhttp.send()\n"
            "}\n </script>\n");
+
+    {
+        char PathToFile[300];
+        sprintf(PathToFile, "%s/%s", HtmlDir, ImageName);
+        AspectRatio = ReadExifHeader(PathToFile);
+    }
 
     printf("<div style=\"width:950px;\">");
     // Scale it to a resolution that works well on iPad.

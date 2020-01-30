@@ -190,11 +190,13 @@ void MakeHtmlOutput(Dir_t * Dir)
     int LastSeconds;
     int BreakIndices[101];
     unsigned NumBreakIndices = 0;
-    int ThumbnailHeight;
     int DirMinute = 0;
     int AllSameDate;
     int IsKeepDir = 0;
     int IsRoot;
+    int HasSubdirImages = 0;
+    int ThumbnailHeight = 100;
+    float AspectRatio = 0;
         
     if (strstr(Dir->HtmlPath, "keep") != NULL) IsKeepDir = 1;
     
@@ -206,12 +208,21 @@ void MakeHtmlOutput(Dir_t * Dir)
     #endif
 
     // Header of file.
-    printf("<html>\n");
-    
-    printf("<title>%s</title>\n",Dir->HtmlPath);
+    printf("<html>\n<title>%s</title>\n",Dir->HtmlPath);
     printf("<head><meta charset=\"utf-8\"/>\n");
-    
-    ThumbnailHeight = (int)(320/AspectRatio);
+
+    // Find first image to determine aspect ratio
+    for (a=0;a<Images.NumEntries;a++){
+        char * Name = Images.Entries[a].Name;
+        int e = strlen(Name);
+        if (e < 5 || memcmp(Name+e-4,".jpg",4)) continue; // Not an image.
+        char HtmlPath[500];
+        sprintf(HtmlPath, "%s/%s", Dir->HtmlPath, Images.Entries[a].Name);
+        AspectRatio = ReadExifHeader(HtmlPath);
+        ThumbnailHeight = (int)(320/AspectRatio);
+        break;
+    }
+
     printf(
         "<style type=text/css>\n"
         "  body { font-family: sans-serif; font-size: 24;}\n"
@@ -225,7 +236,6 @@ void MakeHtmlOutput(Dir_t * Dir)
     printf("  div.pix img { width: 320; height: %d;", ThumbnailHeight);
     printf(" margin-bottom:2px; display: block; background-color: #c0c0c0;}\n"
         "</style></head>\n");
-
 
     printf("%s\n",Dir->HtmlPath);
     if (strlen(Dir->HtmlPath) > 2){
@@ -265,14 +275,14 @@ void MakeHtmlOutput(Dir_t * Dir)
     int prevwkd = 6, thiswkd=6;
 
     for (b=0;b<Directories.NumEntries;b++){
-        char SubdirName[220];
         VarList SubdImages;
+        char * SubdirName = Directories.Entries[b].Name;
         
-        if (strcmp(Directories.Entries[b].Name, "keep") == 0) continue;
+        if (strcmp(SubdirName, "keep") == 0) continue;
         
         int isw = -1;
         if (IsRoot){
-            isw = IsWeekendString(Directories.Entries[b].Name);
+            isw = IsWeekendString(SubdirName);
             thiswkd = isw & 7;
             if (thiswkd <= prevwkd){
                 printf("<br clear=left>");
@@ -282,39 +292,59 @@ void MakeHtmlOutput(Dir_t * Dir)
         
         printf("<div class='ag'>\n");
         if (isw >= 0) printf("<span class=\"wkend\">");
-        printf("<a href=\"view.cgi?%s/%s\">%s:</a>",Dir->HtmlPath, Directories.Entries[b].Name, Directories.Entries[b].Name);
+        printf("<a href=\"view.cgi?%s/%s\">%s:</a>",Dir->HtmlPath, SubdirName, Directories.Entries[b].Name);
         if (isw >= 0) printf("</span>");
         
         // Count how many images in subdirectory.
-        snprintf(SubdirName,210,"pix/%s/%s",Dir->HtmlPath, Directories.Entries[b].Name);
-        memset(&SubdImages, 0, sizeof(VarList));
-        CollectDirectory(SubdirName, &SubdImages, NULL, ImageExtensions);
+        {
+            char SubdirPath[220];
+            snprintf(SubdirPath,210,"pix/%s/%s",Dir->HtmlPath, SubdirName);
+            memset(&SubdImages, 0, sizeof(VarList));
+            CollectDirectory(SubdirPath, &SubdImages, NULL, ImageExtensions);
+        }
         
         if (SubdImages.NumEntries){
             printf(" <small>(%d)</small>\n",SubdImages.NumEntries);
+            HasSubdirImages = 1;
         }
         printf("<br>\n");
         
         if (!IsKeepDir){
             int Bins[30];
+            int BinImage[30];
             memset(&Bins, 0, sizeof(Bins));
             for (a=0;a<SubdImages.NumEntries;a++){
                 int minute, binno;
-                minute = (SubdImages.Entries[a].Name[7]-'0')*10
-                    + SubdImages.Entries[a].Name[8]-'0';
+                char * Name = SubdImages.Entries[a].Name;
+                int e = strlen(Name);
+                if (e < 5 || memcmp(Name+e-4,".jpg",4)) continue; // Not an image.
+
+                minute = (Name[7]-'0')*10 + Name[8]-'0';
                 binno = minute/3;
-                if (binno >= 0 && binno < 20) Bins[binno] += 1;
+                if (binno >= 0 && binno < 20){
+                    Bins[binno] += 1;
+                    BinImage[binno] = a-Bins[binno]/2;
+                }
+
+                if (AspectRatio == 0){
+                    char ImgPath[500];
+                    sprintf(ImgPath, "%s/%s/%s", Dir->HtmlPath, SubdirName, Name);
+                    AspectRatio = ReadExifHeader(ImgPath);
+                }
             }
         
             printf("<span class='a'>");
             for (a=0;a<20;a++){
-                if (Bins[a] > 4){
+                if (Bins[a]){
                     char nc = '-';
                     int minute = a*3+1;
-                    if (Bins[a] > 8) nc = '1';
-                    if (Bins[a] > 25) nc = '2';
-                    if (Bins[a] > 60) nc = '#';
-                    printf("<a href=\"view.cgi?%s/%s#%02d\">%c</a>",Dir->HtmlPath, Directories.Entries[b].Name, minute, nc);
+                    if (Bins[a] >= 1) nc = '.';
+                    if (Bins[a] >= 8) nc = '1';
+                    if (Bins[a] >= 25) nc = '2';
+                    if (Bins[a] >= 60) nc = '#';
+                    printf("<a href=\"view.cgi?%s/%s#%02d\"",Dir->HtmlPath, SubdirName, minute);
+                    printf(" onmouseover=\"mmo('%s/%s')\"",SubdirName, SubdImages.Entries[BinImage[a]].Name);
+                    printf(">%c</a>", nc);
                 }else{
                     printf("&nbsp;");
                 }
@@ -328,10 +358,8 @@ void MakeHtmlOutput(Dir_t * Dir)
     }
     
     if (Directories.NumEntries) printf("<br clear=left><p>\n");
-    if (Images.NumEntries){
-        printf("%s: %d Images<p>\n",Dir->HtmlPath, Images.NumEntries);
-    }
 
+    int NumImages = 0;
     
     {
         // Check if all the images are from the same date.
@@ -341,6 +369,10 @@ void MakeHtmlOutput(Dir_t * Dir)
         for (a=0;a<Images.NumEntries;a++){
             char * Name;
             Name = Images.Entries[a].Name;
+            int e = strlen(Name);
+            if (e < 5 || memcmp(Name+e-4,".jpg",4)) continue; // Not an image.
+            NumImages += 1;
+
             if (Name[0] >= '0' && Name[0] <= '9' && Name[1] >= '0' && Name[1] <= '9'){                
                 if (AllSameDate){
                     if (DateStr[0] == 0){
@@ -355,7 +387,10 @@ void MakeHtmlOutput(Dir_t * Dir)
             }
         }
     }
-    
+
+    if (Images.NumEntries){
+        printf("%s: %d Images<p>\n",Dir->HtmlPath, NumImages);
+    }
 
     // Find time breaks in images.
     LastSeconds = -1000;
@@ -471,7 +506,6 @@ void MakeHtmlOutput(Dir_t * Dir)
             }
             dt = 0;
             if (a < num-1) dt = Images.Entries[a+1+start].DaySecond - Images.Entries[a+start].DaySecond;
-            //printf("(%d)",dt);
             if (SkipNum >= SkipFactor || a >= num-1 || dt > 3){
                 if (dt <= 3 && a < num-1) printf("...");
                 printf("</div>\n");
@@ -501,9 +535,30 @@ void MakeHtmlOutput(Dir_t * Dir)
         if (stat(KeepDir, &sb) == 0 && S_ISDIR(sb.st_mode)){
             printf("<a href=\"view.cgi?%s\">[Keep]\n",KeepDir+4);
         }
-        printf("<a href='/realtime.html'>[Realtime]</a>\n");
-        if (strlen(Dir->HtmlPath) < 3){
-            printf("<a href='view.cgi?actagram'>[Actagram]</a>\n");
-        }
+    }
+    printf("<a href='/realtime.html'>[Realtime]</a>\n");
+    printf("<a href='view.cgi?actagram'>[Actagram]</a><p>\n");
+
+    // Add javascript for hover-over preview when showing a whole day's worth of images
+    if (HasSubdirImages){
+        printf("<script>\n"
+           "function mmo(str) {\n"
+           "   document.getElementById(\"demo\").innerHTML = str;\n"
+           "}\n"
+           "</script>\n");
+
+        //printf("Demo:<b id='demo'>foo</b><p>");
+        printf("<img id='preview' src='' width=0 height=0>\n");
+
+        // Javascript
+        printf("<script>\n"
+           "function mmo(str){\n"
+           "el = document.getElementById('preview')\n");
+        //printf("   document.getElementById('demo').innerHTML = '/pix/%s/'+str\n",Dir->HtmlPath);
+        printf("   el.src = '/pix/%s/'+str\n",Dir->HtmlPath);
+        printf("   el.width = 800\n"
+           "   el.height = %d\n",(int)(800/AspectRatio));
+        printf("}\n"
+               "</script>\n");
     }
 }
