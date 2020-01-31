@@ -548,16 +548,17 @@ void MakeHtmlOutput(Dir_t * Dir)
            "</script>\n");
 
         //printf("Demo:<b id='demo'>foo</b><p>");
-        printf("<img id='preview' src='' width=0 height=0>\n");
+        printf("<a id='prevh' href=""><img id='preview' src='' width=0 height=0></a>\n");
 
         // Javascript
         printf("<script>\n"
-           "function mmo(str){\n"
-           "el = document.getElementById('preview')\n");
-        //printf("   document.getElementById('demo').innerHTML = '/pix/%s/'+str\n",Dir->HtmlPath);
+               "function mmo(str){\n"
+               "el = document.getElementById('preview')\n");
         printf("   el.src = '/pix/%s/'+str\n",Dir->HtmlPath);
         printf("   el.width = 800\n"
-           "   el.height = %d\n",(int)(800/AspectRatio));
+               "   el.height = %d\n",(int)(800/AspectRatio));
+        printf("el = document.getElementById('prevh')\n"
+               "   el.href = '/view.cgi?/%s/'+str\n",Dir->HtmlPath);
         printf("}\n"
                "</script>\n");
     }
