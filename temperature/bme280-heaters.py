@@ -204,34 +204,43 @@ def TpLinkOnOff(ip_octet, on_off):
 
 #==========================================================================================================================
 
-
+#==========================================================================================================================
 def TempFromSched(schedule, hour):
-    shh = -1;
     index = 0;
-    while (shh < hour):
-        if index+1 >= len(schedule): break;
-        if schedule[index+1][0] >= hour: break
+    TempUse = 10
+    while 1:
+        if index+1 >= len(schedule): 
+            TempUse = schedule[index][1]
+            break;
+        TimeDiff = schedule[index+1][0] - hour;
+        if TimeDiff >= 0:
+            tempdiff = schedule[index+1][1]-schedule[index][1];
+            if tempdiff > 0:
+                # Raise temperature ahead of target time, assume slew rate of 1.5 degree per hour.
+                TempUse = schedule[index+1][1]-TimeDiff * 1.0
+            if TempUse < schedule[index][1]: TempUse = schedule[index][1]
+            break
         index += 1
-    return schedule[index][1]
+    return TempUse
 
 tm = time.localtime()
 hour = tm.tm_hour + tm.tm_min/60
     
 #Weekday schedule
-kidsroom_schedule = [[0,17.5],[7.5,13],[15,15.5],[16,16.5],[18,17.5]]
-toyroom_schedule = [[0,16.5],[3,18],[4,19],[5,20],[6,21],[7.5,16],[15.5,19.5],[16.5,21],[19.75,16.5]]
+kidsroom_schedule = [[0,17.5],[7.5,13],[18.5,17.5]]
+toyroom_schedule = [[0,15.0],[7.1,21],[8,16.0],[16.75,21],[20.0,15.0]]
 
 #print ("week day is",tm.tm_wday, tm.tm_mday)
 if tm.tm_wday >= 5 and tm.tm_mday != 5:
     #Saturday=5, sunday=6
-    kidsroom_schedule = [[0,17.5],[17.75,17.5]]
-    toyroom_schedule = [[0,16],[4,18],[5.5,19],[6,21],[18,21],[19.5,16.5]]
+    kidsroom_schedule = [[0,17.5]]
+    toyroom_schedule = [[0,16],[7.1,21],[20,16]]
     if tm.tm_wday == 6: # Sunday  Cool down early cause dinner at Rachel's parents.
-        toyroom_schedule = [[0,16],[4,18],[5.5,19],[6,21],[17,16.5]]
+        toyroom_schedule = [[0,16],[7.1,21],[17,16]]
 
 # Special schedule for just now.        
-if tm.tm_mday == 19:
-    toyroom_schedule = [[0,16.5],[3,18],[4.5,19],[5,20],[6,21],[8,16],[17.5,19.5],[18,21],[19.75,16.5]]
+if tm.tm_mday == 2:
+    toyroom_schedule = [[0,16],[7,21],[19.75,16]]
 
 
 
@@ -244,8 +253,8 @@ try:
     tdiff = temp6 - TargetTempK
 
     on1 = 1; on2 = 1
-    if tdiff > 0.2:  on1 = 0
-    if tdiff > -0.2: on2 = 0
+    if tdiff > 0.4:  on1 = 0
+    if tdiff > -0.0: on2 = 0
     
     TpLinkOnOff(101, on1)
     TpLinkOnOff(188, on2)
