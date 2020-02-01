@@ -3,9 +3,9 @@
 # Uses subtitles to add timestamps in the bottom right corner.
 import  sys, glob, os, math
 
-framerate = 4
+framerate = 7.5
 timeunit = 1/framerate
-bitrate = framerate*120 #in kilobits
+bitrate = framerate*160 #in kilobits
 
 
 filepath = "*.jpg"
@@ -97,7 +97,6 @@ for i in images:
     prevname = i
     
     a += 1
-    if a > 250: break
 
 if prevname != "": WriteEntry(prevname, timeunit*2)
 
