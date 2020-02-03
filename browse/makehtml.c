@@ -73,6 +73,9 @@ void ShowActagram(int all, int h24)
     int daynum;
     VarList DayDirs;
     memset(&DayDirs, 0, sizeof(DayDirs));
+    float AspectRatio = 0;
+    int BinsPerHour = 15;
+    int MinutesPerBin = 60/BinsPerHour;
 
     printf(
         "<style type=text/css>\n"
@@ -91,7 +94,7 @@ void ShowActagram(int all, int h24)
     if (all){
         daynum = 0;
     }else{
-        daynum = DayDirs.NumEntries-45;
+        daynum = DayDirs.NumEntries-60;
     }
     
     if (daynum < 0) daynum = 0;
@@ -100,9 +103,13 @@ void ShowActagram(int all, int h24)
     
     for (;daynum<DayDirs.NumEntries;daynum++){
         int bins[300];
+        char BinImgName[300][18];
         char DirName[300];
         int a, h;
         VarList HourDirs;
+        char * DayName = DayDirs.Entries[daynum].Name;
+        
+        memset(BinImgName, 0, sizeof(BinImgName));
         if (strcmp(DayDirs.Entries[daynum].Name, "keep") == 0) continue;
         
         memset(bins, 0, sizeof(bins));
@@ -118,8 +125,8 @@ void ShowActagram(int all, int h24)
 
         if (isw >= 0) printf("<span class=\"wkend\">");
         
-        printf("<a href='view.cgi?%s'>%s</a>",DayDirs.Entries[daynum].Name, DayDirs.Entries[daynum].Name);
-        sprintf(DirName, "pix/%s",DayDirs.Entries[daynum].Name);
+        printf("<a href='view.cgi?%s'>%s</a>",DayName, DayName+2);
+        sprintf(DirName, "pix/%s",DayName);
         memset(&HourDirs, 0, sizeof(HourDirs));
         
         CollectDirectory(DirName, NULL, &HourDirs, NULL);
@@ -128,7 +135,7 @@ void ShowActagram(int all, int h24)
             int a;
             VarList HourPix;
             memset(&HourPix, 0, sizeof(HourPix));
-            sprintf(DirName, "pix/%s/%s",DayDirs.Entries[daynum].Name, HourDirs.Entries[h].Name);
+            sprintf(DirName, "pix/%s/%s",DayName, HourDirs.Entries[h].Name);
             CollectDirectory(DirName, &HourPix, NULL, ImageExtensions);
             
             for (a=0;a<HourPix.NumEntries;a++){
@@ -139,24 +146,27 @@ void ShowActagram(int all, int h24)
                 minute = (Name[5]-'0')*60*10 + (Name[6]-'0')*60
                        + (Name[7]-'0')*10    + (Name[8]-'0');
                        
-                binno = minute/5;
-                if (binno >= 0 && binno < 300) bins[binno] += 1;
+                binno = minute/MinutesPerBin;
+                if (binno >= 0 && binno < 300){
+                    bins[binno] += 1;
+                    if (bins[binno] < 10) strncpy(BinImgName[binno],Name+5,11);
+                }
             }
             free(HourPix.Entries);
         }
         free (HourDirs.Entries);
         
-        // Only show from 6 am to 8:30 pm
-        int from = 6*12;
-        int to = 12*20+6;
+        // Only show from 7 am to 8 pm
+        int from = 7*BinsPerHour;
+        int to = BinsPerHour*20+1;
         if (h24){
             from=0;
-            to=12*24;
+            to=BinsPerHour*24;
         }
         for (a=from;a<=to;a++){
             char nc = ' ';
-            if (a % 12 == 0) nc = '.';
-            if (a % 72 == 0) nc = '|';
+            if (a % BinsPerHour == 0) nc = '.';
+            if (a % (BinsPerHour*6) == 0) nc = '|';
             
             if (bins[a] > 5) nc = '-';
             if (bins[a] > 12) nc = '1';
@@ -164,9 +174,14 @@ void ShowActagram(int all, int h24)
             if (bins[a] > 100) nc = '#';
             
             if (bins[a] > 5){
-                char UrlString[100];
-                sprintf(UrlString, "view.cgi?%s/%02d/#%02d",DayDirs.Entries[daynum].Name,a/12, a%12*5);
-                printf("<a href='%s'>%c</a>",UrlString,nc);
+                printf("<a href='view.cgi?%s/%02d/#%02d'",DayName,a/BinsPerHour, (a%BinsPerHour)*MinutesPerBin);
+                printf(" onmouseover=\"mmo('%s/%02d/%4s-%s.jpg')\"",DayName,a/BinsPerHour,DayName+2,BinImgName[a]);
+                printf(">%c</a>", nc);
+                if (AspectRatio == 0){
+                    char HtmlPath[100];
+                    snprintf(HtmlPath,100,"%s/%02d/%4s-%s.jpg",DayName,a/BinsPerHour,DayName+2,BinImgName[a]);
+                    AspectRatio = ReadExifHeader(HtmlPath);
+                }
             }else{
                 putchar(nc);
             }
@@ -175,6 +190,20 @@ void ShowActagram(int all, int h24)
         printf("\n");
     }
     free(DayDirs.Entries);
+    
+    // Add javascript for hover-over preview when showing a whole day's worth of images
+    printf("<a id='prevh' href=""><img id='preview' src='' width=0 height=0></a>\n");
+
+    // Javascript
+    printf("<script>\n"
+           "function mmo(str){\n"
+           "el = document.getElementById('preview')\n");
+    printf("   el.src = '/pix/'+str\n");
+    printf("   el.width = 800\n"
+           "   el.height = %d\n",(int)(800/AspectRatio));
+    printf("el = document.getElementById('prevh')\n"
+           "   el.href = '/view.cgi?/'+str\n");
+    printf("}\n</script>\n");
 }
 
 //----------------------------------------------------------------------------------
@@ -541,13 +570,6 @@ void MakeHtmlOutput(Dir_t * Dir)
 
     // Add javascript for hover-over preview when showing a whole day's worth of images
     if (HasSubdirImages){
-        printf("<script>\n"
-           "function mmo(str) {\n"
-           "   document.getElementById(\"demo\").innerHTML = str;\n"
-           "}\n"
-           "</script>\n");
-
-        //printf("Demo:<b id='demo'>foo</b><p>");
         printf("<a id='prevh' href=""><img id='preview' src='' width=0 height=0></a>\n");
 
         // Javascript
