@@ -96,15 +96,16 @@ void ShowActagram(int all, int h24)
     }else{
         daynum = DayDirs.NumEntries-60;
     }
-    
+
     if (daynum < 0) daynum = 0;
 
     int prevwkd = 6, thiswkd=6;
+    const int NUMBINS = 15*24;
     
     for (;daynum<DayDirs.NumEntries;daynum++){
-        int bins[300];
-        char BinImgName[300][18];
-        char DirName[300];
+        int bins[NUMBINS];
+        char BinImgName[NUMBINS][18];
+        char DirName[NUMBINS];
         int a, h;
         VarList HourDirs;
         char * DayName = DayDirs.Entries[daynum].Name;
@@ -147,7 +148,7 @@ void ShowActagram(int all, int h24)
                        + (Name[7]-'0')*10    + (Name[8]-'0');
                        
                 binno = minute/MinutesPerBin;
-                if (binno >= 0 && binno < 300){
+                if (binno >= 0 && binno < NUMBINS){
                     bins[binno] += 1;
                     if (bins[binno] < 10) strncpy(BinImgName[binno],Name+5,11);
                 }
@@ -165,15 +166,16 @@ void ShowActagram(int all, int h24)
         }
         for (a=from;a<=to;a++){
             char nc = ' ';
-            if (a % BinsPerHour == 0) nc = '.';
+            if (a % BinsPerHour == 0) nc = ':';
             if (a % (BinsPerHour*6) == 0) nc = '|';
             
+            if (bins[a] > 1) nc = '.';
             if (bins[a] > 5) nc = '-';
             if (bins[a] > 12) nc = '1';
             if (bins[a] > 40) nc = '2';
             if (bins[a] > 100) nc = '#';
             
-            if (bins[a] > 5){
+            if (bins[a] > 1){
                 printf("<a href='view.cgi?%s/%02d/#%02d'",DayName,a/BinsPerHour, (a%BinsPerHour)*MinutesPerBin);
                 printf(" onmouseover=\"mmo('%s/%02d/%4s-%s.jpg')\"",DayName,a/BinsPerHour,DayName+2,BinImgName[a]);
                 printf(">%c</a>", nc);
@@ -339,18 +341,20 @@ void MakeHtmlOutput(Dir_t * Dir)
         printf("<br>\n");
         
         if (!IsKeepDir){
-            int Bins[30];
-            int BinImage[30];
+            const int NumBins = 30; // Bins per hour.
+            int Bins[NumBins];
+            int BinImage[NumBins];
             memset(&Bins, 0, sizeof(Bins));
             for (a=0;a<SubdImages.NumEntries;a++){
-                int minute, binno;
+                int Second, binno;
                 char * Name = SubdImages.Entries[a].Name;
                 int e = strlen(Name);
                 if (e < 5 || memcmp(Name+e-4,".jpg",4)) continue; // Not an image.
 
-                minute = (Name[7]-'0')*10 + Name[8]-'0';
-                binno = minute/3;
-                if (binno >= 0 && binno < 20){
+                Second = (Name[7]-'0')*600 + (Name[8]-'0') * 60
+                        +(Name[9]-'0')*10  + (Name[19]-'0');
+                binno = Second*NumBins/3600;
+                if (binno >= 0 && binno < NumBins){
                     Bins[binno] += 1;
                     BinImage[binno] = a-Bins[binno]/2;
                 }
@@ -363,7 +367,7 @@ void MakeHtmlOutput(Dir_t * Dir)
             }
         
             printf("<span class='a'>");
-            for (a=0;a<20;a++){
+            for (a=0;a<NumBins;a++){
                 if (Bins[a]){
                     char nc = '-';
                     int minute = a*3+1;
@@ -380,37 +384,32 @@ void MakeHtmlOutput(Dir_t * Dir)
             }
             printf("</span.a>\n");
         }
-        
         free(SubdImages.Entries);
-        
         printf("</div>\n");
     }
-    
+
     if (Directories.NumEntries) printf("<br clear=left><p>\n");
 
     int NumImages = 0;
     
-    {
-        // Check if all the images are from the same date.
-        char DateStr[10];
-        AllSameDate = 1;
-        DateStr[0] = 0;
-        for (a=0;a<Images.NumEntries;a++){
-            char * Name;
-            Name = Images.Entries[a].Name;
-            int e = strlen(Name);
-            if (e < 5 || memcmp(Name+e-4,".jpg",4)) continue; // Not an image.
-            NumImages += 1;
+    // Check if all the images are from the same date.
+    char DateStr[10];
+    AllSameDate = 1;
+    DateStr[0] = 0;
+    for (a=0;a<Images.NumEntries;a++){
+        char * Name = Images.Entries[a].Name;
+        int e = strlen(Name);
+        if (e < 5 || memcmp(Name+e-4,".jpg",4)) continue; // Not an image.
+        NumImages += 1;
 
-            if (Name[0] >= '0' && Name[0] <= '9' && Name[1] >= '0' && Name[1] <= '9'){                
-                if (AllSameDate){
-                    if (DateStr[0] == 0){
-                        memcpy(DateStr, Name, 4);
-                    }else{
-                        if(memcmp(DateStr, Name, 4)){
-                            AllSameDate = 0;
-                            break;
-                        }
+        if (Name[0] >= '0' && Name[0] <= '9' && Name[1] >= '0' && Name[1] <= '9'){
+            if (AllSameDate){
+                if (DateStr[0] == 0){
+                    memcpy(DateStr, Name, 4);
+                }else{
+                    if(memcmp(DateStr, Name, 4)){
+                        AllSameDate = 0;
+                        break;
                     }
                 }
             }
@@ -490,12 +489,11 @@ void MakeHtmlOutput(Dir_t * Dir)
         }
 
         for (a=0;a<num;a++){
-            char lc;
             char * Name;
             int dt;
             Name = Images.Entries[a+start].Name;
-            lc = Name[strlen(Name)-1];
-            if (lc == 'g'){ // It's a jpeg file.
+            int e = strlen(Name);
+            if (e >= 5 && memcmp(Name+e-4,".jpg",4) == 0){// It's a jpeg file.
                 int Minute;
                 if (SkipNum == 0) printf("<div class=\"pix\">\n");
 

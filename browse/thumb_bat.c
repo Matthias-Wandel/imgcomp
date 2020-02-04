@@ -15,6 +15,7 @@
 #include <jpeglib.h>
 #include <jerror.h>
 #include <setjmp.h>
+#include <sys/sysinfo.h>
 
 typedef struct {
     int width;
@@ -234,12 +235,7 @@ void ScaleBrightness(MemImage_t * MemImage)
             }
         }
     }
-    
-    
-    
 }
-
-
 
 //----------------------------------------------------------------------------------
 // Main
@@ -249,11 +245,15 @@ int main(int argc, char ** argv)
     int a,b;
 	char * qenv;
 	char FileName[100];
-    int ScaleFactor = 8;
     int ScaleBrightnessOn = 1;
 
     printf("Content-Type: image/jpg\n"); // heder for image type.
     printf("Cache-Control: max-age=7200\n\n");
+
+    int ScaleFactor = 8;
+    if (get_nprocs() > 1){
+        ScaleFactor = 4;
+    }
 	
     qenv = getenv("QUERY_STRING");	
 	
