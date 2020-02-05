@@ -1,5 +1,5 @@
 //----------------------------------------------------------------------------------
-// HTML output for html image viewer for my imgcomp program
+// HTML output for browsing one image at a time
 //---------------------------------------------------------------------------------- 
 #include <stdio.h>
 #include <errno.h>

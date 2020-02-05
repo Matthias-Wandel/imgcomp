@@ -9,8 +9,9 @@ all:view.cgi tb.cgi wait_change.cgi ../../www/realtime.html
 OBJ = obj
 
 OBJECTS_BROWSE = $(OBJ)/view.o \
-	$(OBJ)/makehtml.o    \
-	$(OBJ)/makehtml_img.o \
+	$(OBJ)/showdir.o    \
+    $(OBJ)/actagram.o    \
+	$(OBJ)/showimage.o \
 	$(OBJ)/collectdir.o  \
 	$(OBJ)/utility.o
     

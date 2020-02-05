@@ -30,7 +30,7 @@ typedef struct {
 
 
 extern char * ImageExtensions[];
-//extern float AspectRatio;
+int IsWeekendString(char * DirString);
 
 //-------------------------------------------------------------------
 float ReadExifHeader(char * ImagePath);
