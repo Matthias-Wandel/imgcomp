@@ -72,7 +72,7 @@ void MakeHtmlOutput(Dir_t * Dir)
         "  span.a {font-family: courier; font-weight: bold; font-size: 14px;}\n"
         "  span.wkend {background-color: #E8E8E8}\n"
         "  a {text-decoration: none;}\n"
-        "  div.ag { float:left; border-left: 1px solid black; margin-bottom:10px;}\n"
+        "  div.ag { float:left; border-left: 1px solid black; margin-bottom:10px; min-width:130px;}\n"
         "  div.pix { float:left; width:321px; height:%dpx;}\n", ThumbnailHeight+45);
     printf("  div.pix img { width: 320; height: %d;", ThumbnailHeight);
     printf(" margin-bottom:2px; display: block; background-color: #c0c0c0;}\n"
@@ -150,7 +150,8 @@ void MakeHtmlOutput(Dir_t * Dir)
         }
         printf("<br>\n");
         
-        if (!IsKeepDir){
+        if (!IsKeepDir && !IsRoot){
+            // Actagram for the hour.
             const int NumBins = 30; // Bins per hour.
             int Bins[NumBins];
             int BinImage[NumBins];
