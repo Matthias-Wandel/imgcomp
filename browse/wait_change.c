@@ -2,6 +2,11 @@
 #include <unistd.h>
 #include <string.h>
 
+#include <stdlib.h>
+#include <errno.h>
+#include <sys/types.h>
+#include <sys/inotify.h>
+
 //----------------------------------------------------------------------------------
 // 
 //----------------------------------------------------------------------------------
@@ -11,9 +16,11 @@ int main()
     FILE * LogFile;
     long FileSize;
     
+    const char *WATCH_FILE = "/ramdisk/log.txt";
+    
     printf("Content-Type: text/html\n\n<html>\n"); // html header
     
-    LogFile = fopen("/ramdisk/log.txt", "r");
+    LogFile = fopen(WATCH_FILE, "r");
     if (LogFile == NULL){
         printf("Error!  No log.txt file\n");
         sleep(1); // To keep from cycling too fast.
@@ -22,11 +29,19 @@ int main()
     fseek(LogFile, 0, SEEK_END);
     FileSize = ftell(LogFile);
     
-    for (n=0;n<30;n++){
+    int infd;
+    const int EVENT_BUF_LEN = 100;
+    char buffer[EVENT_BUF_LEN];
+    infd = inotify_init();
+    inotify_add_watch( infd, WATCH_FILE, IN_CREATE | IN_DELETE | IN_MODIFY);
+    
+    for (n=0;n<20;n++){
         char NewBytes[100];
         int nread;
         long NewSize;
-        usleep(100000);
+        
+        // read to wait for change.
+        read( infd, buffer, EVENT_BUF_LEN ); 
 
         // the following hack is necessary to work around a file system bug on the
         // raspian for raspberry pi 4.
