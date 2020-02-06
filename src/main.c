@@ -29,6 +29,8 @@
 
 #include "imgcomp.h"
 #include "config.h"
+#include <sys/inotify.h>
+#include <poll.h>
 
 // Configuration variables.
 char * progname;  // program name for error messages
@@ -373,42 +375,49 @@ static int DoDirectoryFunc(char * Directory, int DeleteProcessed)
 //-----------------------------------------------------------------------------------
 int DoDirectory(char * Directory)
 {
-    int a,b;
+    int a;
     Raspistill_restarted = 0;
 
+    if (!FollowDir){
+        // Offline mode - just a one shot, no polling.
+        return DoDirectoryFunc(Directory, FollowDir);
+    }
+
+    int wd, fd;
+    fd = inotify_init();
+    if (fd < 0) perror("inotify_init");
+
+    wd = inotify_add_watch( fd, Directory, IN_CREATE);
+    if (wd < 0){
+        fprintf(Log, "add watch failed\n");
+        return 0;
+    }
+
     for (;;){
-        struct timespec before, after;
-        clock_gettime(CLOCK_REALTIME_COARSE, &before);
         a = DoDirectoryFunc(Directory, FollowDir);
-        if (FollowDir){
-            int LastPicAgeMs, ProcessedMs, SleepMs;
+        int b = manage_raspistill(NumProcessed);
+        if (b) Raspistill_restarted = 1;
+        if (LogToFile[0] != '\0') LogFileMaintain(0);
 
-            b = manage_raspistill(NumProcessed);
-            if (b) Raspistill_restarted = 1;
-            if (LogToFile[0] != '\0') LogFileMaintain(0);
-
-            clock_gettime(CLOCK_REALTIME_COARSE, &after);
-            
-            LastPicAgeMs = (before.tv_sec-LastPic_mtime_ns.tv_sec)*1000
-                         +(before.tv_nsec-LastPic_mtime_ns.tv_nsec)/1000000;
-
-            ProcessedMs = (after.tv_sec -before.tv_sec)*1000
-                         +(after.tv_nsec-before.tv_nsec)/1000000;
-
-            // Sleep until next picture should be ready (allow for 120 ms of inter-image jitter)
-            // this cuts down on latency (for realtime display, or heater aimer)
-            SleepMs = MsPerCycle-LastPicAgeMs+120;
-            if (SleepMs < MsPerCycle*3/4) SleepMs = MsPerCycle*3/4; 
-            SleepMs -= ProcessedMs;
-            if (SleepMs < 0) SleepMs = 0;
-            if (SleepMs > MsPerCycle) SleepMs = MsPerCycle;
-
-            //printf("File t=%03d", (int)(LastPic_mtime_ns.tv_nsec)/1000000);
-            //printf(" age:%3dms  Took:%3dms  Sleep:%3dms\n",LastPicAgeMs,ProcessedMs, SleepMs);
-            usleep(SleepMs*1000);
-        }else{
-            break;
+        // Wait for more files to appear.
+        struct pollfd pfd = { fd, POLLIN, 0 };
+        int ret = poll(&pfd, 1, MsPerCycle);
+        //printf("poll ret = %d\n",ret);
+        if (ret < 0) {
+            fprintf(Log, "select failed: %s\n", strerror(errno));
+            sleep(1);
+            continue;
         }
+        if (ret == 0){
+            // Timeout waiting for a new file.
+            fprintf(Log, "wait file poll() timeout\n");
+            continue; 
+        }
+
+        // Read and ignore the event to clear it out.
+        const int EVENT_BUF_LEN = 200;
+        char buffer[EVENT_BUF_LEN];
+        read( fd, buffer, EVENT_BUF_LEN ); 
     }
     return a;
 }
