@@ -181,7 +181,7 @@ void MakeHtmlOutput(Dir_t * Dir)
             for (a=0;a<NumBins;a++){
                 if (Bins[a]){
                     char nc = '-';
-                    int minute = a*3+1;
+                    int minute = (a*60+NumBins/2)/NumBins;
                     if (Bins[a] >= 1) nc = '.';
                     if (Bins[a] >= 8) nc = '1';
                     if (Bins[a] >= 25) nc = '2';
