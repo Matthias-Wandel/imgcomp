@@ -4,7 +4,7 @@ CFLAGS=
 LINKER=link
 LINKCON = /nologo
 
-all:view.cgi tb.cgi wait_change.cgi ../../www/realtime.html
+all:objdir view.cgi tb.cgi wait_change.cgi ../../www/realtime.html
 
 OBJ = obj
 
@@ -23,6 +23,9 @@ $(OBJ)/%.o:../src/%.c ../src/jhead.h
 
 $(OBJ)/%.o:%.c view.h
 	${CC} -O3 -Wall -c $< -o $@
+
+objdir:
+	@mkdir -p obj
 
 view.cgi: ${OBJECTS_BROWSE} ${OBJECTS_SHARED}
 	${CC} -o view.cgi ${OBJECTS_BROWSE} ${OBJECTS_SHARED}

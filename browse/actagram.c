@@ -200,8 +200,8 @@ void ShowActagram(int all, int h24)
                 printf(">%c", nc);
                 HrefOpen = 1; // Don't close the href till after the next char, makes it easier to hover over single dot.
                 if (AspectRatio == 0){
-                    char HtmlPath[100];
-                    snprintf(HtmlPath,100,"%s/%02d/%4s-%s.jpg",DayName,a/BinsPerHour,DayName+2,BinImgName[a]);
+                    char HtmlPath[101];
+                    snprintf(HtmlPath,101,"%s/%02d/%4s-%s.jpg",DayName,a/BinsPerHour,DayName+2,BinImgName[a]);
                     AspectRatio = ReadExifHeader(HtmlPath);
                 }
             }else{
