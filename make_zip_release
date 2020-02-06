@@ -7,10 +7,10 @@ cd ..
 # Want to have high compression ratio because I'm icluding all this libjpeg stuff.
 tar --lzma --exclude=".git" -cvf imgcomp/imgcomp.tar.lzma imgcomp/README.txt \
   imgcomp/makefile imgcomp/make.bat imgcomp/makefile-win32 \
-  imgcomp/free_up_space imgcomp/setup-imgcomp* imgcomp/make_zip_release \
-  imgcomp/imgcomp.conf.example \
+  imgcomp/free_up_space imgcomp/setup/* imgcomp/make_zip_release \
+  imgcomp/conf-examples/* \
   imgcomp/docs/*.html imgcomp/src/*.c imgcomp/src/*.h \
-  imgcomp/libjpeg/*.h imgcomp/libjpeg/*.c imgcomp/libjpeg/makefile
+  imgcomp/browse/*.c imgcomp/browse/*.h imgcomp/browse/realtime.html imgcomp/browse/makefile
 
 echo
 echo "Created file imgcomp.tar.lzma"
