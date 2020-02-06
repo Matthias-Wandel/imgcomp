@@ -94,14 +94,43 @@ void ShowActagram(int all, int h24)
 
     int prevwkd = 6, thiswkd=6;
     const int NUMBINS = 15*24;
+
+    // Only show from 7 am to 8 pm
+    int from = 7*BinsPerHour;
+    int to = BinsPerHour*20+1;
+
+
+        //printf("n");
     
-    for (;daynum<DayDirs.NumEntries;daynum++){
+    int ShowLegend = 1;
+    
+    int HrefOpen = 0;
+    
+    for (;;daynum++){
         int bins[NUMBINS];
         char BinImgName[NUMBINS][18];
         char DirName[NUMBINS];
         int a, h;
         VarList HourDirs;
         char * DayName = DayDirs.Entries[daynum].Name;
+
+        if (ShowLegend || daynum == DayDirs.NumEntries){
+            // Show legend at the start and end of the actagram view.
+            printf("Time:");
+            for (int a=from;a<=to;a++){
+                char nc = ' ';
+                if (a % BinsPerHour == 0 && a+5 < to){
+                    printf("%02d:00",a/BinsPerHour);
+                    a += 5;
+                }
+                putchar(nc);
+            }
+            ShowLegend = 0;
+        }
+        if (daynum >= DayDirs.NumEntries){
+            printf("\n");
+            break;
+        }
         
         memset(BinImgName, 0, sizeof(BinImgName));
         if (strcmp(DayDirs.Entries[daynum].Name, "keep") == 0) continue;
@@ -119,7 +148,7 @@ void ShowActagram(int all, int h24)
 
         if (isw >= 0) printf("<span class=\"wkend\">");
         
-        printf("<a href='view.cgi?%s'>%s</a>",DayName, DayName+2);
+        printf("<a href='view.cgi?%s'>%s</a> ",DayName, DayName+2);
         sprintf(DirName, "pix/%s",DayName);
         memset(&HourDirs, 0, sizeof(HourDirs));
         
@@ -150,9 +179,6 @@ void ShowActagram(int all, int h24)
         }
         free (HourDirs.Entries);
         
-        // Only show from 7 am to 8 pm
-        int from = 7*BinsPerHour;
-        int to = BinsPerHour*20+1;
         if (h24){
             from=0;
             to=BinsPerHour*24;
@@ -162,16 +188,17 @@ void ShowActagram(int all, int h24)
             if (a % BinsPerHour == 0) nc = ':';
             if (a % (BinsPerHour*6) == 0) nc = '|';
             
-            if (bins[a] > 1) nc = '.';
-            if (bins[a] > 5) nc = '-';
-            if (bins[a] > 12) nc = '1';
-            if (bins[a] > 40) nc = '2';
-            if (bins[a] > 100) nc = '#';
+            if (bins[a] >= 1 && nc == ' ') nc = '.';
+            if (bins[a] >= 5) nc = '-';
+            if (bins[a] >= 12) nc = '1';
+            if (bins[a] >= 40) nc = '2';
+            if (bins[a] >= 100) nc = '#';
             
-            if (bins[a] > 1){
+            if (bins[a] >= 1){
                 printf("<a href='view.cgi?%s/%02d/#%02d'",DayName,a/BinsPerHour, (a%BinsPerHour)*MinutesPerBin);
                 printf(" onmouseover=\"mmo('%s/%02d/%4s-%s.jpg')\"",DayName,a/BinsPerHour,DayName+2,BinImgName[a]);
-                printf(">%c</a>", nc);
+                printf(">%c", nc);
+                HrefOpen = 1; // Don't close the href till after the next char, makes it easier to hover over single dot.
                 if (AspectRatio == 0){
                     char HtmlPath[100];
                     snprintf(HtmlPath,100,"%s/%02d/%4s-%s.jpg",DayName,a/BinsPerHour,DayName+2,BinImgName[a]);
@@ -179,8 +206,12 @@ void ShowActagram(int all, int h24)
                 }
             }else{
                 putchar(nc);
+                if (HrefOpen) printf("</a>");
+                HrefOpen = 0;
             }
         }
+        if (HrefOpen) printf("</a>");
+        HrefOpen = 0;
         if (isw >= 0) printf("</span>");
         printf("\n");
     }
