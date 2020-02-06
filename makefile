@@ -10,7 +10,7 @@ SRC=src
 
 CFLAGS:= $(CFLAGS) -O3 -Wall
 
-all: objdir imgcomp blink_camera_led run_stepper
+all: objdir imgcomp
 
 objdir:
 	@mkdir -p obj
@@ -26,15 +26,6 @@ $(OBJ)/%.o:$(SRC)/%.c $(SRC)/imgcomp.h
 
 imgcomp: $(objs)
 	${CC} -lm -o imgcomp $(objs) -ljpeg
-
-$(SRC)/pi_model.h:
-	$(SRC)/identify_pi >> $(SRC)/pi_model.h
-
-blink_camera_led: $(SRC)/blink_camera_led.c $(SRC)/pi_model.h
-	$(CC) -o blink_camera_led $(SRC)/blink_camera_led.c
-
-run_stepper: $(SRC)/run_stepper.c $(SRC)/stepper_ip.c $(SRC)/pi_model.h
-	$(CC) -lm -o run_stepper $(SRC)/run_stepper.c $(SRC)/stepper_ip.c
 
 clean:
 	rm -f $(objs) imgcomp

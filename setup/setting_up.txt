@@ -9,7 +9,6 @@ Things the script does:
 Make obj directory
 Compile
 File sharing
-Sudo blink LED program
 
 
 Addigional setup:
