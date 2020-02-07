@@ -379,7 +379,8 @@ void MakeHtmlOutput(Dir_t * Dir)
 
     // Add javascript for hover-over preview when showing a whole day's worth of images
     if (HasSubdirImages){
-        printf("<a id='prevh' href=""><img id='preview' src='' width=0 height=0></a>\n");
+        printf("<small id='prevn'></small><br>\n"
+               "<a id='prevh' href=""><img id='preview' src='' width=0 height=0></a>\n");
 
         // Javascript
         printf("<script>\n"
@@ -390,6 +391,9 @@ void MakeHtmlOutput(Dir_t * Dir)
                "   el.height = %d\n",(int)(800/AspectRatio));
         printf("el = document.getElementById('prevh')\n"
                "   el.href = '/view.cgi?/%s/'+str\n",Dir->HtmlPath);
+        printf("el = document.getElementById('prevn')\n"
+               "   el.innerHTML = str + ' &nbsp; &nbsp;'"
+               "   +str.substring(8, 10)+':'+str.substring(10,12);");
         printf("}\n"
                "</script>\n");
     }

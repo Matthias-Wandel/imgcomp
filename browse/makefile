@@ -4,7 +4,7 @@ CFLAGS=
 LINKER=link
 LINKCON = /nologo
 
-all:objdir view.cgi tb.cgi wait_change.cgi ../../www/realtime.html
+all:objdir view.cgi tb.cgi wait_change.cgi ../../www/realtime.html ../../www/favicon.ico
 
 OBJ = obj
 
@@ -42,3 +42,6 @@ wait_change.cgi:	$(OBJ)/wait_change.o
 
 ../../www/realtime.html: realtime.html
 	cp realtime.html ../../www
+
+../../www/favicon.ico: favicon.ico
+	cp favicon.ico  ../../www

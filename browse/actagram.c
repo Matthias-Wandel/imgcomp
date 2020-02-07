@@ -188,7 +188,7 @@ void ShowActagram(int all, int h24)
             if (a % BinsPerHour == 0) nc = ':';
             if (a % (BinsPerHour*6) == 0) nc = '|';
             
-            if (bins[a] >= 1 && nc == ' ') nc = '.';
+            //if (bins[a] >= 1 && nc == ' ') nc = '.';
             if (bins[a] >= 5) nc = '-';
             if (bins[a] >= 12) nc = '1';
             if (bins[a] >= 40) nc = '2';
@@ -217,8 +217,10 @@ void ShowActagram(int all, int h24)
     }
     free(DayDirs.Entries);
     
+    
     // Add javascript for hover-over preview when showing a whole day's worth of images
-    printf("<a id='prevh' href=""><img id='preview' src='' width=0 height=0></a>\n");
+    printf("</pre><small id='prevn'></small><br>\n"
+           "<a id='prevh' href=""><img id='preview' src='' width=0 height=0></a>\n");
 
     // Javascript
     printf("<script>\n"
@@ -229,5 +231,10 @@ void ShowActagram(int all, int h24)
            "   el.height = %d\n",(int)(800/AspectRatio));
     printf("el = document.getElementById('prevh')\n"
            "   el.href = '/view.cgi?/'+str\n");
+    printf("el = document.getElementById('prevn')\n"
+           "   el.innerHTML = str + ' &nbsp; &nbsp; 20'"
+           " + str.substring(0, 2)+'-'+str.substring(2,4)+'-'+str.substring(4,6)\n"
+           " + ' &nbsp;'+str.substring(15, 17)+':'+str.substring(17,19);");
+           
     printf("}\n</script>\n");
 }
