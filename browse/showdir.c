@@ -366,6 +366,7 @@ void MakeHtmlOutput(Dir_t * Dir)
     if (Dir->Next[0]){
         printf("<a href=\"view.cgi?%s\">[Next:%s]</a>\n",Dir->Next,Dir->Next);
     }
+    printf("<a href=\"view.cgi?%s//\">[JS view]</a><br>\n",Dir->HtmlPath);
     if (!IsKeepDir){
         char KeepDir[20];
         struct stat sb;        
@@ -375,7 +376,8 @@ void MakeHtmlOutput(Dir_t * Dir)
         }
     }
     printf("<a href='/realtime.html'>[Realtime]</a>\n");
-    printf("<a href='view.cgi?actagram'>[Actagram]</a><p>\n");
+    printf("<a href='view.cgi?actagram'>[Actagram]</a>\n");
+  
 
     // Add javascript for hover-over preview when showing a whole day's worth of images
     if (HasSubdirImages){

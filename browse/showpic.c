@@ -18,7 +18,7 @@
 #include "view.h"
 
 //----------------------------------------------------------------------------------
-// Create a HTML to view just one image.
+// Create a HTML to flip thru a directory of images
 //----------------------------------------------------------------------------------
 void MakeViewPage(char * ImageName, Dir_t * dir)
 {
@@ -47,11 +47,14 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
            "  a {text-decoration: none;}\n"
            "</style></head>\n\n");
 
-    {
+    if (Images.NumEntries){
         char PathToFile[300];
-        sprintf(PathToFile, "%s/%s", HtmlDir, ImageName);
+        sprintf(PathToFile, "%s/%s", HtmlDir, Images.Entries[0].Name);
         AspectRatio = ReadExifHeader(PathToFile);
+    }else{
+        AspectRatio = 1.0;
     }
+
 
     printf("<div style=\"width:950px;\">");
     // Scale it to a resolution that works well on iPad.
@@ -87,8 +90,8 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
             IndexInto[2] = ImageName[8];
             IndexInto[3] = '\0';
         }
-        printf("<a href=\"pix/%s/%s\">[Big]</a>\n",HtmlDir,ImageName);
-        printf("<a href=\"tb.cgi?pix/%s/%s$2\">[Adj]</a>\n",HtmlDir,ImageName);
+        printf("<a href=\"#\" onclick=\"ShowBig()\">[Big]</a>\n",HtmlDir,ImageName);
+        printf("<a href=\"#\" onclick=\"ShowAdj()\">[Adj]</a>\n",HtmlDir,ImageName);
         printf("<a href=\"pix/%s/Log.html#%.2s\">[Log]</a>\n",HtmlDir, ImageName+7);
         
         for (a=0;;a++){
@@ -105,7 +108,7 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
         if (!IsKeepDir){
             char KeepDir[20];
             struct stat sb;
-            printf("<a id=\"save\" href=\"#\" onclick=\"GetSaveUrl('view.cgi?~%s/%s\')\">[Save]</a>\n",HtmlDir,ImageName);
+            printf("<a id=\"save\" href=\"#\" onclick=\"DoSavePic()\">[Save]</a>\n",HtmlDir,ImageName);
             sprintf(KeepDir, "pix/keep/%.4s",HtmlDir);
             if (stat(KeepDir, &sb) == 0 && S_ISDIR(sb.st_mode)){
                 printf("<a href=\"view.cgi?%s\">[View saved]</a>\n",KeepDir+4);

@@ -151,13 +151,12 @@ void DoJpegView(char * ImagePath)
         strcpy(HtmlFile, dir->Images.Entries[dir->Images.NumEntries-1].Name);
     }
 
-    //MakeImageHtmlOutput(HtmlFile, dir);
-    MakeViewPage(HtmlFile, dir);
-    
+    MakeImageHtmlOutput(HtmlFile, dir);
+        
     free(dir->Dirs.Entries);
     free(dir->Images.Entries);
     free(dir);
-/*
+
     printf("<p>");
     
     printf("%s ",ImageInfo.DateTime);
@@ -185,7 +184,7 @@ void DoJpegView(char * ImagePath)
     }
     
     printf("\n");
-*/    
+    
 }
 
 //----------------------------------------------------------------------------------
@@ -351,7 +350,7 @@ int main(int argc, char ** argv)
     }
     
     //printf("QUERY_STRING=%s<br>\n",QueryString);
-    //printf("HTML path = %s\n",HtmlPath);
+    //printf("HTML path = %s<br>\n",HtmlPath);
 
     lp = 0;
     for (a=0;HtmlPath[a];a++){
@@ -363,15 +362,22 @@ int main(int argc, char ** argv)
 
     }else{
         // Doesn't end with .jpg.  Its a directory.
-        int l;
         Dir_t * Col;
-        l = strlen(HtmlPath);
-        if (l && HtmlPath[l-1] == '/'){
-            HtmlPath[l-1] = '\0';
+        int nts = 0;
+        int l = strlen(HtmlPath);
+        while (l && HtmlPath[l-1] == '/'){
+            HtmlPath[--l] = '\0';
+            nts += 1;
         }
+        //printf("nts = %d\n",nts);
 
         Col = CollectDir(HtmlPath, 0);
-        MakeHtmlOutput(Col);
+        if (nts >= 2){
+            // Two trailing slashes means new javascript view
+            MakeViewPage(HtmlPath, Col);   
+        }else{
+            MakeHtmlOutput(Col);
+        }
 
         free(Col->Dirs.Entries);
         free(Col->Images.Entries);

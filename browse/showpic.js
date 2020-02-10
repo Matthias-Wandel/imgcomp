@@ -46,6 +46,8 @@ function UpdatePix(){
     
     nu = window.location+""
     window.location = nu.split("#")[0]+"#"+piclist[pic_index].substring(0,4)
+    
+    document.getElementById("save").innerHTML = "[Save]"
 }
 
 function DoNext(dir){
@@ -83,16 +85,20 @@ function PicMouseUp()
     clearTimeout(ScrollTimer)
 }
 
-
-
 function SetIndex(index)
 {
     pic_index = index
     UpdatePix()
 }
 
-pic_index = piclist.indexOf("103311 0504");
-if (pic_index < 0) pic_index = 0
+// Find which picture is meant to show.
+pic_index=0
+pictime = (window.location+" ").split("#")[1];
+if (pictime){
+    for (;pic_index<piclist.length-1;pic_index++){
+        if (piclist[pic_index] >= pictime) break;
+    }
+}
 UpdatePix()
 
 function DoSavePic(){
@@ -111,6 +117,16 @@ function DoSavePic(){
   xhttp.open("GET", SaveUrl, true)
   xhttp.send()
 }
+
+function ShowBig(){
+    picurl = "pix/"+subdir+prefix+piclist[pic_index]+".jpg"
+    window.location = picurl
+}
+function ShowAdj(){
+    picurl = "tb.cgi?pix/"+subdir+prefix+piclist[pic_index]+".jpg$2"
+    window.location = picurl
+}
+
 
 index = 5
 
