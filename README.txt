@@ -6,6 +6,24 @@ Some incomplete notes in setup/setting_up.txt
 Some scripts to do some of the setting it up.
 --------------------------------------------------------------------------------------------------
 
+Assumed directory structure:
+~/www                   web root
+~/www/imgcomp/...       where imgcomp lives
+~/www/imgcomp.conf      config file, imgcomp should run in this directory (typing imgcomp/imgcomp to run)
+~/www/pix               Root of the pictures
+~/www/pix/200204        Root for pictures of feb 4 2020 (one dir for each day, named YYMMDD
+~/www/pix/200204/13     Pictures for 1 pm to 2 pm for feb 4 2020
+~/www/pix/200204/13/    Pictures for 1 pm to 2 pm for feb 4 2020
+~/www/pix/200204/13/0204-131445 0494.jpg
+                        Picture taken Feb 4 2020 at 13:14:45, change level 494
+~/www/view.cgi          view.cgi is dropped here on compiling viewing program
+~/www/showpic.js        Also dropped here on compiling viewing program                        
+
+Note that imgcomp can be configured for different directory structues, but the html browser
+must use the above directory structure.
+
+--------------------------------------------------------------------------------------------------
+
 IMGCOMP PROGRAM
 To use imgcomp, you must compile it.  
 After unpacking it on a Raspberry Pi, type "make" in the imgcomp directory.
@@ -52,6 +70,8 @@ wait_change.cgi is used for realtime to wait for a significant enough change.
 
 There is also the option to save an image (I use that a lot) in the view of view.cgi.
 I use the setuid bit on view.cgi to run as "me" so that the file ownerships are consistent.
+This requires the www/pix/keep directory to be writable by view.cgi (either make it public
+or make sure view.cgi runs as a user that has permission)
 
 
 --------------------------------------------------------------------------------------------------

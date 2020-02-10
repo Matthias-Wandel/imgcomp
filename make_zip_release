@@ -10,7 +10,7 @@ tar --lzma --exclude=".git" -cvf imgcomp/imgcomp.tar.lzma imgcomp/README.txt \
   imgcomp/free_up_space imgcomp/setup/* imgcomp/make_zip_release \
   imgcomp/conf-examples/* \
   imgcomp/docs/*.html imgcomp/src/*.c imgcomp/src/*.h \
-  imgcomp/browse/*.c imgcomp/browse/*.h imgcomp/browse/realtime.html imgcomp/browse/makefile
+  imgcomp/browse/*.c imgcomp/browse/*.h imgcomp/browse/realtime.html imgcomp/browse/makefile imgcomp/browse/showpic.js
 
 echo
 echo "Created file imgcomp.tar.lzma"
