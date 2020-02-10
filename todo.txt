@@ -1,8 +1,7 @@
-Cap shooter work:
-Stepper driver multi threaded
-Stepper driver precalculated curves
-Only shoot when target stops moving.
-Imgcomp do not shoot modes based on color spots?
+cd * Remove directory structure configuration option
+* Setup document - List dependencies, camera, apache, etc.
+* How to set it up
+* Better image flip setup
 
 
 
@@ -16,7 +15,6 @@ Future features:
 * glitch detection for more than one frame?
 * Option to not save pre and post event images?
 * Image save rate liminting (raise threshold when too many aquired)
-* Some sort of web image view interface
 
 
 

@@ -151,12 +151,13 @@ void DoJpegView(char * ImagePath)
         strcpy(HtmlFile, dir->Images.Entries[dir->Images.NumEntries-1].Name);
     }
 
-    MakeImageHtmlOutput(HtmlFile, dir);
+    //MakeImageHtmlOutput(HtmlFile, dir);
+    MakeViewPage(HtmlFile, dir);
     
     free(dir->Dirs.Entries);
     free(dir->Images.Entries);
     free(dir);
-
+/*
     printf("<p>");
     
     printf("%s ",ImageInfo.DateTime);
@@ -184,6 +185,7 @@ void DoJpegView(char * ImagePath)
     }
     
     printf("\n");
+*/    
 }
 
 //----------------------------------------------------------------------------------
