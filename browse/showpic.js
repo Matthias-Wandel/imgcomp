@@ -1,4 +1,3 @@
-
 function UpdatePix(){
     imgname = prefix+piclist[pic_index]+".jpg"
     document.getElementById("view").src = pixpath+subdir+imgname
@@ -52,7 +51,6 @@ function UpdatePix(){
 
 function DoNext(dir){
     if (pic_index+dir < 0 || pic_index+dir >= piclist.length){
-        alert("at last");
         return 0
     }else{
         pic_index += dir

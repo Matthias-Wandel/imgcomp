@@ -118,14 +118,19 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
    
     printf("\n<script type=\"text/javascript\">\n");
     printf("piclist = [");
+    int npic = 0;
     for (a=0;a<(int)Images.NumEntries;a++){
-        if (a){
-            putchar(',');
-            if (a % 5 == 0) putchar('\n');
-        }
-
+        int e = strlen(Images.Entries[a].Name);
+        if (e < 5 || memcmp(Images.Entries[a].Name+e-4,".jpg",4)) continue;
         char * Name = Images.Entries[a].Name+7;
+
+        if (npic){
+            putchar(',');
+            if (npic % 5 == 0) putchar('\n');
+        }
+        
         printf("\"%.9s\"",Name);
+        npic++;
     }
     printf("];\n");
     printf("pixpath = \"pix/\"\n");
