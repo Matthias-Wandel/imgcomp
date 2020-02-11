@@ -63,21 +63,9 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
     if (ShowWidth/AspectRatio > 535) ShowWidth = (int)535 * AspectRatio;
     ShowHeight = (int)(ShowWidth/AspectRatio+0.5);
 
-    printf("<center>");
-    printf("<img id='view' width=%d height=%d",ShowWidth, ShowHeight);
-    printf(" src=\"pix/%s/%s\" usemap=\"#prevnext\"></a><br>\n\n",HtmlDir,ImageName);
-
-    // Make left and right parts of the image clickable as previous and next.
-    if (Images.Entries){
-        printf("<map name=\"prevnext\">\n");
-        printf("  <area shape=\"rect\" coords= \"0,0,%d,%d\" ",ShowWidth/4, ShowHeight);
-        printf("onmousedown=\"PicMouseDown(-1)\" onmouseup=\"PicMouseUp()\">\n");
-        printf("  <area shape=\"rect\" coords=\"%d,0,%d,%d\" ",(ShowWidth*3)/4, ShowWidth, ShowHeight);
-        printf("onmousedown=\"PicMouseDown(1)\" onmouseup=\"PicMouseUp()\">\n");
-        printf("</map>\n");
-    }
-
-    printf("<span id='links'>links go here</span>\n");
+    printf("<center>\n");
+    printf("<span id='image'>image goes here</span>\n"); 
+    printf("<br>\n<span id='links'>links goes here</span>\n");
 
     printf("</center></div>");
 

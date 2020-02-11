@@ -89,14 +89,14 @@ function SetLateTimer()
     ScrollTimer = setTimeout(ScrollMoreTimer, 20)
 }
 
-function PicMouseDown(dir)
+function PicMd(dir)
 {
     DoNext(dir);
     ScrollDir = dir
     ScrollTimer = setTimeout(ScrollMoreTimer, 400)
 }
 
-function PicMouseUp()
+function PicMu()
 {
     ScrollDir = 0
     clearTimeout(ScrollTimer)
@@ -109,7 +109,7 @@ function SetIndex(index)
 }
 
 function DoSavePic(){
-  SaveUrl = "view.cgi?~"+subdir+prefix+piclist[pic_index]+".jpg"
+  var SaveUrl = "view.cgi?~"+subdir+prefix+piclist[pic_index]+".jpg"
   var xhttp = new XMLHttpRequest()
   xhttp.onreadystatechange=function(){
     if (this.readyState==4 && this.status==200){
@@ -126,8 +126,10 @@ function DoSavePic(){
 }
 
 function ShowBig(){
-    picurl = "pix/"+subdir+prefix+piclist[pic_index]+".jpg"
-    window.location = picurl
+    SizeImage(PicWidth)
+    UpdatePix()
+    //var picurl = "pix/"+subdir+prefix+piclist[pic_index]+".jpg"
+    //window.location = picurl
 }
 AdjustBright = 0
 function ShowAdj(){
@@ -135,6 +137,19 @@ function ShowAdj(){
     UpdatePix()
 }
 
+
+function SizeImage(ShwW)
+{
+    var ShwH = Math.round(ShwW/PicWidth*PicHeight)
+    var Qt = Math.round(ShwW/4)
+    document.getElementById("image").innerHTML
+      ="<map name='prevnext'><area shape='rect' coords='0,0,"+Qt+","+ShwH+"'"
+      +"onmousedown='PicMd(-1)' onmouseup='PicMu()'> <area shape='rect' "
+      +"coords='"+(ShwW-Qt)+",0,"+ShwW+","+ShwH+"' onmousedown='PicMd(1)' onmouseup='PicMu()'></map>"
+      +"<img id='view' width="+ShwW+" height="+ShwH+" src='' usemap='#prevnext'>"
+}
+
+SizeImage(850);
 
 // Find which picture is meant to show.
 pic_index=0

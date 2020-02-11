@@ -1,7 +1,10 @@
 * Remove directory structure configuration option
 * Setup document - List dependencies, camera, apache, etc.
 * How to set it up
-* Better image flip setup
+* Peers server pointers
+* Make it work for non absolute paths?
+* Browse to next from js image flipper
+* Make JS image flipper default
 
 
 
