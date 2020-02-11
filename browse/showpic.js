@@ -1,18 +1,18 @@
 function UpdatePix(){
-    imgname = subdir+prefix+piclist[pic_index]+".jpg"
-    url = pixpath+imgname;
+    var imgname = subdir+prefix+piclist[pic_index]+".jpg"
+    var url = pixpath+imgname;
     if (AdjustBright) url = "tb.cgi?"+imgname+"$1";
 
     document.getElementById("view").src = url
     document.title = imgname
 
     // Update the links at the bottom of the image.
-    links = ""
-    BEFORE = 4
-    AFTER = 5
-    From = pic_index-BEFORE;
+    var links = ""
+    var BEFORE = 4
+    var AFTER = 5
+    var From = pic_index-BEFORE;
     if (From < 0) From = 0;
-    To = From+BEFORE+AFTER+1;
+    var To = From+BEFORE+AFTER+1;
     if (To > piclist.length){
         To = piclist.length;
         From = To-BEFORE-AFTER-1;
@@ -20,7 +20,7 @@ function UpdatePix(){
     }
     if (From > 0) links += "<< "
 
-    PrevSecond = -1
+    var PrevSecond = -1
     for (a=From;a<To;a++){
         // Extract the time part of the file name to show.
         Name = piclist[a];
@@ -29,9 +29,9 @@ function UpdatePix(){
         }else{
             TimeStr = Name.substring(0,5);
         }
-        Second = Name.substring(0,2)*60 + Name.substring(2,4)*1
+        var Second = Name.substring(0,2)*60 + Name.substring(2,4)*1
 
-        between = " "
+        var between = " "
         if (a > From){
             dt = Second - PrevSecond;
             if (dt >= 3 && dt < 5) between = " &nbsp;"
@@ -50,10 +50,10 @@ function UpdatePix(){
     if (To < piclist.length) links += ">>";
     document.getElementById("links").innerHTML=links;
 
-    nu = window.location+""
+    var nu = window.location.toString()
     window.location = nu.split("#")[0]+"#"+piclist[pic_index].substring(0,4)
 
-    if (!isSavedDir) document.getElementById("save").innerHTML = "[Save]"
+    if (!isSavedDir) document.getElementById("save").innerHTML = "Save"
 }
 
 function DoNext(dir){
@@ -84,20 +84,16 @@ function ScrollMoreTimer()
         }
     }
 }
-function SetLateTimer()
-{
+function SetLateTimer(){
     ScrollTimer = setTimeout(ScrollMoreTimer, 20)
 }
 
-function PicMd(dir)
-{
+function PicMd(dir){
     DoNext(dir);
     ScrollDir = dir
     ScrollTimer = setTimeout(ScrollMoreTimer, 400)
 }
-
-function PicMu()
-{
+function PicMu(){
     ScrollDir = 0
     clearTimeout(ScrollTimer)
 }
@@ -113,11 +109,9 @@ function DoSavePic(){
   var xhttp = new XMLHttpRequest()
   xhttp.onreadystatechange=function(){
     if (this.readyState==4 && this.status==200){
-      wt=xhttp.responseText.trim()
+      var wt=xhttp.responseText.trim()
       if(wt.indexOf('Fail:')>=0)
         wt="<span style='color: rgb(255,0,0);'>["+wt+"]</span>"
-      else
-        wt="["+wt+"]"
       document.getElementById("save").innerHTML=wt
     }
   };
@@ -137,6 +131,13 @@ function ShowAdj(){
     UpdatePix()
 }
 
+function ShowOld(){
+    var nu = window.location.toString()
+    nu = nu.substring(0,nu.indexOf("#")-1)+prefix+piclist[pic_index]+".jpg"
+    window.location = nu
+    //alert(nu)
+}
+
 
 function SizeImage(ShwW)
 {
@@ -149,7 +150,7 @@ function SizeImage(ShwW)
       +"<img id='view' width="+ShwW+" height="+ShwH+" src='' usemap='#prevnext'>"
 }
 
-SizeImage(850);
+SizeImage(950);
 
 // Find which picture is meant to show.
 pic_index=0
