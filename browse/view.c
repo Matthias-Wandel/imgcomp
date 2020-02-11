@@ -232,7 +232,7 @@ void DoSaveImage(char * QueryString, char * HtmlPath)
         }
     }
     
-    strcpy(NewDir, "pix/keep/");
+    strcpy(NewDir, "pix/saved/");
     if (stat(NewDir, &sb) != 0){
         mkdir(NewDir, 0777);
     }

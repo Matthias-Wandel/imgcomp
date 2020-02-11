@@ -8,7 +8,7 @@ mspercycle = 1000
 vidmode = 1
 followdir = /ramdisk/vid
 tempdir = /ramdisk/tmp
-savedir = saved
+savedir = images
 brmonitor = 0
 sensitivity = 800
 timelapse = 1200
@@ -16,7 +16,7 @@ fatigue = 0
 
 
 #logtofile = /ramdisk/log.txt
-#movelognames = saved/%y%m%d/%H/Log.html
+#movelognames = images/%y%m%d/%H/Log.html
 
 
 #this one is too slow.

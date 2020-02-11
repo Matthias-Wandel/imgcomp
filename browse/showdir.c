@@ -33,13 +33,13 @@ void MakeHtmlOutput(Dir_t * Dir)
     unsigned NumBreakIndices = 0;
     int DirMinute = 0;
     int AllSameDate;
-    int IsKeepDir = 0;
+    int IsSavedDir = 0;
     int IsRoot;
     int HasSubdirImages = 0;
     int ThumbnailHeight = 100;
     float AspectRatio = 0;
         
-    if (strstr(Dir->HtmlPath, "keep") != NULL) IsKeepDir = 1;
+    if (strstr(Dir->HtmlPath, "saved") != NULL) IsSavedDir = 1;
     
     Images = Dir->Images;
     Directories = Dir->Dirs;    
@@ -119,7 +119,7 @@ void MakeHtmlOutput(Dir_t * Dir)
         VarList SubdImages;
         char * SubdirName = Directories.Entries[b].Name;
         
-        if (strcmp(SubdirName, "keep") == 0) continue;
+        if (strcmp(SubdirName, "saved") == 0) continue;
         
         int isw = -1;
         if (IsRoot){
@@ -150,7 +150,7 @@ void MakeHtmlOutput(Dir_t * Dir)
         }
         printf("<br>\n");
         
-        if (!IsKeepDir && !IsRoot){
+        if (!IsSavedDir && !IsRoot){
             // Actagram for the hour.
             const int NumBins = 30; // Bins per hour.
             int Bins[NumBins];
@@ -367,12 +367,12 @@ void MakeHtmlOutput(Dir_t * Dir)
         printf("<a href=\"view.cgi?%s\">[Next:%s]</a>\n",Dir->Next,Dir->Next);
     }
     printf("<a href=\"view.cgi?%s//\">[JS view]</a><br>\n",Dir->HtmlPath);
-    if (!IsKeepDir){
-        char KeepDir[20];
+    if (!IsSavedDir){
+        char SavedDir[20];
         struct stat sb;        
-        sprintf(KeepDir, "pix/keep/%.4s",Dir->HtmlPath);
-        if (stat(KeepDir, &sb) == 0 && S_ISDIR(sb.st_mode)){
-            printf("<a href=\"view.cgi?%s\">[Keep]\n",KeepDir+4);
+        sprintf(SavedDir, "pix/saved/%.4s",Dir->HtmlPath);
+        if (stat(SavedDir, &sb) == 0 && S_ISDIR(sb.st_mode)){
+            printf("<a href=\"view.cgi?%s\">[Saved]\n",SavedDir+4);
         }
     }
     printf("<a href='/realtime.html'>[Realtime]</a>\n");

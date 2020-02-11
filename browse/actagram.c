@@ -133,7 +133,7 @@ void ShowActagram(int all, int h24)
         }
         
         memset(BinImgName, 0, sizeof(BinImgName));
-        if (strcmp(DayDirs.Entries[daynum].Name, "keep") == 0) continue;
+        if (strcmp(DayDirs.Entries[daynum].Name, "saved") == 0) continue;
         
         memset(bins, 0, sizeof(bins));
 

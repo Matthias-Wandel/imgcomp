@@ -24,7 +24,7 @@ region = 320-1600,500-1440
 #spurious = 1
 
 # Where to save interesting images to
-savedir = saved
+savedir = images
 
 # Where to save images that have changes.  One directory per day
 # with subdirectories for each hour.  This is also the default naming

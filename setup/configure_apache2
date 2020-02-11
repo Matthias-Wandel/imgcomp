@@ -6,6 +6,6 @@ ln -s ../mods-available/cgi.load /etc/apache2/mods-enabled/cgi.load
 mkdir /home/pi/www
 service apache2 restart
 
-ln -s ../saved /home/pi/www/pix
+ln -s ../images /home/pi/www/pix
 
 #Next needto build imgcomp/browse to populate

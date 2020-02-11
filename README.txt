@@ -16,6 +16,8 @@ Assumed directory structure:
 ~/www/pix/200204/13/    Pictures for 1 pm to 2 pm for feb 4 2020
 ~/www/pix/200204/13/0204-131445 0494.jpg
                         Picture taken Feb 4 2020 at 13:14:45, change level 494
+~/www/pix/saved/...     Where picture are hardlinked to when "saved" from image browser.
+
 ~/www/view.cgi          view.cgi is dropped here on compiling viewing program
 ~/www/showpic.js        Also dropped here on compiling viewing program                        
 

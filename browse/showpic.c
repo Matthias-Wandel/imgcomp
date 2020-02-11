@@ -28,14 +28,14 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
     int From,To;
     int ShowWidth;
     int ShowHeight;
-    int IsKeepDir = 0;
+    int IsSavedDir = 0;
     char * HtmlDir;
     float AspectRatio = 1;
     VarList Images;
     Images = dir->Images;
     HtmlDir = dir->HtmlPath;
 
-    if (strstr(HtmlDir, "keep/") != NULL) IsKeepDir = 1;
+    if (strstr(HtmlDir, "saved/") != NULL) IsSavedDir = 1;
 
     printf("<title>%s</title>\n",ImageName);
     printf("<head><meta charset=\"utf-8\"/>\n");
@@ -105,13 +105,13 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
         printf("%.*s</a>/", a, HtmlDir);
         printf("<a href=\"view.cgi?%s/%s\">%s]</a>\n", HtmlDir, IndexInto, HtmlDir+a+1);
 
-        if (!IsKeepDir){
-            char KeepDir[20];
+        if (!IsSavedDir){
+            char SavedDir[20];
             struct stat sb;
             printf("<a id=\"save\" href=\"#\" onclick=\"DoSavePic()\">[Save]</a>\n",HtmlDir,ImageName);
-            sprintf(KeepDir, "pix/keep/%.4s",HtmlDir);
-            if (stat(KeepDir, &sb) == 0 && S_ISDIR(sb.st_mode)){
-                printf("<a href=\"view.cgi?%s\">[View saved]</a>\n",KeepDir+4);
+            sprintf(SavedDir, "pix/saved/%.4s",HtmlDir);
+            if (stat(SavedDir, &sb) == 0 && S_ISDIR(sb.st_mode)){
+                printf("<a href=\"view.cgi?%s\">[View saved]</a>\n",SavedDir+4);
             }
         }
     }
@@ -159,10 +159,10 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
         npic++;
     }
     printf("];\n");
-    printf("pixpath = \"pix/\"\n");
-    printf("subdir = \"%s/\"\n",dir);
-    printf("prefix = \"%.*s\"\n",prefixlen, Prefix);
-    printf("iskeep = %d\n",IsKeepDir);
+    printf("pixpath=\"pix/\"\n");
+    printf("subdir=\"%s/\"\n",dir);
+    printf("prefix=\"%.*s\"\n",prefixlen, Prefix);
+    printf("isSavedDir=%d\n",IsSavedDir);
     printf("</script>\n");
     printf("<script type=\"text/javascript\" src=\"showpic.js\"></script>\n");
 

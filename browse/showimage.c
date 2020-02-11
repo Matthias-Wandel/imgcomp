@@ -28,14 +28,14 @@ void MakeImageHtmlOutput(char * ImageName, Dir_t * dir)
     int From,To;
     int ShowWidth;
     int ShowHeight;
-    int IsKeepDir = 0;
+    int IsSavedDir = 0;
     char * HtmlDir;
     float AspectRatio = 1;
     VarList Images;
     Images = dir->Images;
     HtmlDir = dir->HtmlPath;
         
-    if (strstr(HtmlDir, "keep/") != NULL) IsKeepDir = 1;
+    if (strstr(HtmlDir, "saved/") != NULL) IsSavedDir = 1;
     
 
     printf("<title>%s</title>\n",ImageName);
@@ -197,13 +197,13 @@ void MakeImageHtmlOutput(char * ImageName, Dir_t * dir)
         printf("<a href=\"view.cgi?%s/%s\">%s]</a>\n", HtmlDir, IndexInto, HtmlDir+a+1);
         printf("<a href=\"view.cgi?%s//#%.4s\">[JS]</a>\n", HtmlDir, ImageName+7);
 
-        if (!IsKeepDir){
-            char KeepDir[20];
+        if (!IsSavedDir){
+            char SavedDir[20];
             struct stat sb;
             printf("<a id=\"save\" href=\"#\" onclick=\"GetSaveUrl('view.cgi?~%s/%s\')\">[Save]</a>\n",HtmlDir,ImageName);
-            sprintf(KeepDir, "pix/keep/%.4s",HtmlDir);
-            if (stat(KeepDir, &sb) == 0 && S_ISDIR(sb.st_mode)){
-                printf("<a href=\"view.cgi?%s\">[View saved]</a>\n",KeepDir+4);
+            sprintf(SavedDir, "pix/saved/%.4s",HtmlDir);
+            if (stat(SavedDir, &sb) == 0 && S_ISDIR(sb.st_mode)){
+                printf("<a href=\"view.cgi?%s\">[View saved]</a>\n",SavedDir+4);
             }
         }
     }

@@ -9,7 +9,7 @@ if [[ $EUID -ne 0 ]]; then
 	echo "You may be propted to enter your password"
 fi
 
-if [ ! -f imgcomp ]; then
+if [ ! -f ../imgcomp ]; then
 	echo "You need to build imgcomp first.  type \"make\" to build it."
 	exit 1
 fi
@@ -22,11 +22,11 @@ else
 fi
 
 # Make sure a configuration file exists
-if [ -e ../imgcomp.conf ] ; then
+if [ -e ../../imgcomp.conf ] ; then
 	echo "    imcomp.conf file aready in /home/pi"
 else
 	echo "copy imcomp.conf.example to /home/pi/imgcomp.conf"
-	cp -a imgcomp.conf.example /home/pi/imgcomp.conf
+	cp -a ../config/imgcomp.conf.example /home/pi/imgcomp.conf
 fi
 
 if [ -d /ramdisk ]; then
