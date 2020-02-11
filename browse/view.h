@@ -33,7 +33,7 @@ extern char * ImageExtensions[];
 int IsWeekendString(char * DirString);
 
 //-------------------------------------------------------------------
-float ReadExifHeader(char * ImagePath);
+float ReadExifHeader(char * ImagePath, int * width, int * height);
 //-------------------------------------------------------------------
 void MakeHtmlOutput(Dir_t * Dir);
 void ShowActagram(int all, int twentyfour);

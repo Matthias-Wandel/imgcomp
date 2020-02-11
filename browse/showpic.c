@@ -34,6 +34,8 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
     VarList Images;
     Images = dir->Images;
     HtmlDir = dir->HtmlPath;
+    int PicWidth = 0;
+    int PicHeight = 0;
 
     if (strstr(HtmlDir, "saved/") != NULL) IsSavedDir = 1;
 
@@ -50,11 +52,10 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
     if (Images.NumEntries){
         char PathToFile[300];
         sprintf(PathToFile, "%s/%s", HtmlDir, Images.Entries[0].Name);
-        AspectRatio = ReadExifHeader(PathToFile);
+        AspectRatio = ReadExifHeader(PathToFile, &PicWidth, &PicHeight);
     }else{
         AspectRatio = 1.0;
     }
-
 
     printf("<div style=\"width:950px;\">");
     // Scale it to a resolution that works well on iPad.
@@ -116,8 +117,6 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
         }
     }
 
-    printf("\n<script type=\"text/javascript\">\n");
-    printf("piclist = [");
     int npic = 0;
     char * Prefix = NULL;
     int prefixlen = 0;
@@ -143,6 +142,11 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
         if (prefixlen == 0) break;
     }
 
+    printf("\n<script type=\"text/javascript\">\n");
+    printf("pixpath=\"pix/\"\n");
+    printf("subdir=\"%s/\"\n",dir->HtmlPath);
+    printf("prefix=\"%.*s\"\n",prefixlen, Prefix);
+    printf("piclist = [");
 
     for (a=0;a<(int)Images.NumEntries;a++){
         char * Name = Images.Entries[a].Name;
@@ -158,12 +162,11 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
         printf("\"%.*s\"",e-prefixlen,Name+prefixlen);
         npic++;
     }
-    printf("];\n");
-    printf("pixpath=\"pix/\"\n");
-    printf("subdir=\"%s/\"\n",dir->HtmlPath);
-    printf("prefix=\"%.*s\"\n",prefixlen, Prefix);
+    printf("];\n\n");
     printf("isSavedDir=%d\n",IsSavedDir);
-    printf("</script>\n");
+    printf("PrevDir=\"%s\";NextDir=\"%s\"\n",dir->Previous, dir->Next);
+    printf("PicWidth=%d;PicHeight=%d\n",PicWidth, PicHeight);
+        printf("</script>\n");
     printf("<script type=\"text/javascript\" src=\"showpic.js\"></script>\n");
 
 }

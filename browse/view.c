@@ -22,8 +22,6 @@
 static char * FileExtensions[] = {"jpg","jpeg","txt","html","mp4",NULL};
        char * ImageExtensions[] = {"jpg","jpeg",NULL};
        
-float AspectRatio = 1; // width/height.  Set to nonzero but bogus initial value.
-
 //----------------------------------------------------------------------------------
 // Process one directory.  Returns pointer to summary.
 //----------------------------------------------------------------------------------
@@ -100,7 +98,7 @@ static Dir_t * CollectDir(char * HtmlPath, int ImagesOnly)
 //----------------------------------------------------------------------------------
 // Read exif header of an image to get aspect ratio and other info.
 //----------------------------------------------------------------------------------
-float ReadExifHeader(char * ImagePath)
+float ReadExifHeader(char * ImagePath, int * width, int * height)
 {
     char FileName[320];
     FILE * file;
@@ -112,6 +110,8 @@ float ReadExifHeader(char * ImagePath)
     }
 
     if (ImageInfo.Width > 10 && ImageInfo.Height > 10){
+        if (width) *width = ImageInfo.Width;
+        if (height) *height = ImageInfo.Height;
         return (float)ImageInfo.Width / ImageInfo.Height;
     }else{
         return 1; // Bogus but nonzero value.

@@ -1,4 +1,4 @@
-cd * Remove directory structure configuration option
+* Remove directory structure configuration option
 * Setup document - List dependencies, camera, apache, etc.
 * How to set it up
 * Better image flip setup

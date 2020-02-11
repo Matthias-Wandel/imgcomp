@@ -202,7 +202,7 @@ void ShowActagram(int all, int h24)
                 if (AspectRatio == 0){
                     char HtmlPath[101];
                     snprintf(HtmlPath,101,"%s/%02d/%4s-%s.jpg",DayName,a/BinsPerHour,DayName+2,BinImgName[a]);
-                    AspectRatio = ReadExifHeader(HtmlPath);
+                    AspectRatio = ReadExifHeader(HtmlPath, NULL, NULL);
                 }
             }else{
                 putchar(nc);

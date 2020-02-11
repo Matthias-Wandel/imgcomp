@@ -70,7 +70,7 @@ void MakeImageHtmlOutput(char * ImageName, Dir_t * dir)
     {
         char PathToFile[300];
         sprintf(PathToFile, "%s/%s", HtmlDir, ImageName);
-        AspectRatio = ReadExifHeader(PathToFile);
+        AspectRatio = ReadExifHeader(PathToFile, NULL, NULL);
     }
 
     printf("<div style=\"width:950px;\">");

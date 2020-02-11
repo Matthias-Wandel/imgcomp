@@ -59,7 +59,7 @@ void MakeHtmlOutput(Dir_t * Dir)
         if (e < 5 || memcmp(Name+e-4,".jpg",4)) continue; // Not an image.
         char HtmlPath[500];
         sprintf(HtmlPath, "%s/%s", Dir->HtmlPath, Images.Entries[a].Name);
-        AspectRatio = ReadExifHeader(HtmlPath);
+        AspectRatio = ReadExifHeader(HtmlPath, NULL, NULL);
         ThumbnailHeight = (int)(320/AspectRatio);
         break;
     }
@@ -173,7 +173,7 @@ void MakeHtmlOutput(Dir_t * Dir)
                 if (AspectRatio == 0){
                     char ImgPath[500];
                     sprintf(ImgPath, "%s/%s/%s", Dir->HtmlPath, SubdirName, Name);
-                    AspectRatio = ReadExifHeader(ImgPath);
+                    AspectRatio = ReadExifHeader(ImgPath, NULL, NULL);
                 }
             }
         
