@@ -1,6 +1,9 @@
 function UpdatePix(){
-    imgname = prefix+piclist[pic_index]+".jpg"
-    document.getElementById("view").src = pixpath+subdir+imgname
+    imgname = subdir+prefix+piclist[pic_index]+".jpg"
+    url = pixpath+imgname;
+    if (AdjustBright) url = "tb.cgi?"+imgname+"$1";
+
+    document.getElementById("view").src = url
     document.title = imgname
 
     // Update the links at the bottom of the image.
@@ -16,7 +19,7 @@ function UpdatePix(){
         if (From < 0) From = 0;
     }
     if (From > 0) links += "<< "
-    
+
     PrevSecond = -1
     for (a=From;a<To;a++){
         // Extract the time part of the file name to show.
@@ -37,7 +40,7 @@ function UpdatePix(){
         }
         PrevSecond = Second
         links += between
-        
+
         if (a == pic_index){
             links += "<b>["+TimeStr+"]</b>"
         }else{
@@ -46,10 +49,10 @@ function UpdatePix(){
     }
     if (To < piclist.length) links += ">>";
     document.getElementById("links").innerHTML=links;
-    
+
     nu = window.location+""
     window.location = nu.split("#")[0]+"#"+piclist[pic_index].substring(0,4)
-    
+
     if (!isSavedDir) document.getElementById("save").innerHTML = "[Save]"
 }
 
@@ -67,11 +70,23 @@ ScrollDir = 0
 ScrollTimer = 0
 function ScrollMoreTimer()
 {
+    var img = document.querySelector('img')
+    if (!img.complete) {
+        // Image is not loaded yet.  Once it's loaded, set a shorter timer
+        // (to avoid recursion problems)
+        img.addEventListener('load', SetLateTimer())
+        return;
+    }
+
     if (ScrollDir){
         if (DoNext(ScrollDir)){
             ScrollTimer = setTimeout(ScrollMoreTimer, 100)
         }
     }
+}
+function SetLateTimer()
+{
+    ScrollTimer = setTimeout(ScrollMoreTimer, 20)
 }
 
 function PicMouseDown(dir)
@@ -92,16 +107,6 @@ function SetIndex(index)
     pic_index = index
     UpdatePix()
 }
-
-// Find which picture is meant to show.
-pic_index=0
-pictime = (window.location+" ").split("#")[1];
-if (pictime){
-    for (;pic_index<piclist.length-1;pic_index++){
-        if (piclist[pic_index] >= pictime) break;
-    }
-}
-UpdatePix()
 
 function DoSavePic(){
   SaveUrl = "view.cgi?~"+subdir+prefix+piclist[pic_index]+".jpg"
@@ -124,11 +129,19 @@ function ShowBig(){
     picurl = "pix/"+subdir+prefix+piclist[pic_index]+".jpg"
     window.location = picurl
 }
+AdjustBright = 0
 function ShowAdj(){
-    picurl = "tb.cgi?"+subdir+prefix+piclist[pic_index]+".jpg$2"
-    window.location = picurl
+    AdjustBright = 1
+    UpdatePix()
 }
 
 
-index = 5
-
+// Find which picture is meant to show.
+pic_index=0
+pictime = (window.location+" ").split("#")[1];
+if (pictime){
+    for (;pic_index<piclist.length-1;pic_index++){
+        if (piclist[pic_index] >= pictime) break;
+    }
+}
+UpdatePix()
