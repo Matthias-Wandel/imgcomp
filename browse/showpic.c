@@ -90,8 +90,8 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
             IndexInto[2] = ImageName[8];
             IndexInto[3] = '\0';
         }
-        printf("<a href=\"#\" onclick=\"ShowBig()\">[Big]</a>\n",HtmlDir,ImageName);
-        printf("<a href=\"#\" onclick=\"ShowAdj()\">[Adj]</a>\n",HtmlDir,ImageName);
+        printf("<a href=\"#\" onclick=\"ShowBig()\">[Big]</a>\n");
+        printf("<a href=\"#\" onclick=\"ShowAdj()\">[Adj]</a>\n");
         printf("<a href=\"pix/%s/Log.html#%.2s\">[Log]</a>\n",HtmlDir, ImageName+7);
 
         for (a=0;;a++){
@@ -108,7 +108,7 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
         if (!IsSavedDir){
             char SavedDir[20];
             struct stat sb;
-            printf("<a id=\"save\" href=\"#\" onclick=\"DoSavePic()\">[Save]</a>\n",HtmlDir,ImageName);
+            printf("<a id=\"save\" href=\"#\" onclick=\"DoSavePic()\">[Save]</a>\n");
             sprintf(SavedDir, "pix/saved/%.4s",HtmlDir);
             if (stat(SavedDir, &sb) == 0 && S_ISDIR(sb.st_mode)){
                 printf("<a href=\"view.cgi?%s\">[View saved]</a>\n",SavedDir+4);
@@ -160,7 +160,7 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
     }
     printf("];\n");
     printf("pixpath=\"pix/\"\n");
-    printf("subdir=\"%s/\"\n",dir);
+    printf("subdir=\"%s/\"\n",dir->HtmlPath);
     printf("prefix=\"%.*s\"\n",prefixlen, Prefix);
     printf("isSavedDir=%d\n",IsSavedDir);
     printf("</script>\n");

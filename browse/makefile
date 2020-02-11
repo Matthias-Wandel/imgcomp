@@ -1,10 +1,9 @@
-CC=gcc
-CFLAGS=
+CC=gcc -std=c99
 
 LINKER=link
 LINKCON = /nologo
 
-all:objdir view.cgi tb.cgi wait_change.cgi ../../www/realtime.html ../../www/favicon.ico ../../www/showpic.js
+all:objdir view.cgi wait_change.cgi tb.cgi ../../www/realtime.html ../../www/favicon.ico ../../www/showpic.js
 
 OBJ = obj
 
