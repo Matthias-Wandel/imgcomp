@@ -125,7 +125,7 @@ function ShowBig(){
     window.location = picurl
 }
 function ShowAdj(){
-    picurl = "tb.cgi?pix/"+subdir+prefix+piclist[pic_index]+".jpg$2"
+    picurl = "tb.cgi?"+subdir+prefix+piclist[pic_index]+".jpg$2"
     window.location = picurl
 }
 

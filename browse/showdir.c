@@ -321,7 +321,7 @@ void MakeHtmlOutput(Dir_t * Dir)
                     if (FullresThumbs){
                         printf("<img src=\"pix/%s/%s\">",Dir->HtmlPath, Name);
                     }else{
-                        printf("<img src=\"tb.cgi?pix/%s/%s\">",Dir->HtmlPath, Name);
+                        printf("<img src=\"tb.cgi?%s/%s\">",Dir->HtmlPath, Name);
                     }
                     if (num > 1){
                         TimeStr[0] = Name[5]; TimeStr[1] = Name[6];

@@ -182,7 +182,7 @@ void MakeImageHtmlOutput(char * ImageName, Dir_t * dir)
             IndexInto[3] = '\0';
         }
         printf("<a href=\"pix/%s/%s\">[Big]</a>\n",HtmlDir,ImageName);
-        printf("<a href=\"tb.cgi?pix/%s/%s$2\">[Adj]</a>\n",HtmlDir,ImageName);
+        printf("<a href=\"tb.cgi?%s/%s$2\">[Adj]</a>\n",HtmlDir,ImageName);
         printf("<a href=\"pix/%s/Log.html#%.2s\">[Log]</a>\n",HtmlDir, ImageName+7);
         
         for (a=0;;a++){

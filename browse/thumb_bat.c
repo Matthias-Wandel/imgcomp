@@ -2,7 +2,7 @@
 // On the fly thumbnail maker
 // Uses libjpeg to load image at less than full resolution,
 // then write HTTP image header and image to stdout.
-//---------------------------------------------------------------------------------- 
+//----------------------------------------------------------------------------------
 #include <stdio.h>
 #include <stddef.h>
 #include <errno.h>
@@ -28,7 +28,7 @@ typedef struct {
 // for libjpeg - don't abort on corrupt jpeg data.
 //----------------------------------------------------------------------------------------
 struct my_error_mgr {
-    struct jpeg_error_mgr pub; // "public" fields 
+    struct jpeg_error_mgr pub; // "public" fields
 
     jmp_buf setjmp_buffer;	// for return to caller
 };
@@ -64,7 +64,7 @@ MemImage_t * LoadJPEG(char* FileName, int scale_denom)
        return NULL;
     }
 
-    info.err = jpeg_std_error(& jerr.pub);     
+    info.err = jpeg_std_error(& jerr.pub);
     jerr.pub.error_exit = my_error_exit; // Override library's default exit on error.
 
     if (setjmp(jerr.setjmp_buffer)) {
@@ -77,7 +77,7 @@ MemImage_t * LoadJPEG(char* FileName, int scale_denom)
 
     jpeg_create_decompress(& info);   // fills info structure
 
-    jpeg_stdio_src(&info, file);    
+    jpeg_stdio_src(&info, file);
     jpeg_read_header(&info, TRUE);   // read jpeg file header
 
     info.scale_num = 1;
@@ -90,7 +90,7 @@ MemImage_t * LoadJPEG(char* FileName, int scale_denom)
 
     components = info.out_color_space == JCS_GRAYSCALE ? 1 : 3;
 
-    data_size = info.output_width 
+    data_size = info.output_width
               * info.output_height * components;
 
     MemImage = malloc(data_size+offsetof(MemImage_t, pixels));
@@ -108,8 +108,8 @@ MemImage_t * LoadJPEG(char* FileName, int scale_denom)
     while (info.output_scanline < info.output_height){ // loop
         unsigned char * rowptr[1];  // pointer to an array
         // Enable jpeg_read_scanlines() to fill our jdata array
-        rowptr[0] = MemImage->pixels + 
-            components * info.output_width * info.output_scanline; 
+        rowptr[0] = MemImage->pixels +
+            components * info.output_width * info.output_scanline;
         jpeg_read_scanlines(&info, rowptr, 1);
     }
     //---------------------------------------------------
@@ -136,7 +136,7 @@ void SaveJPEG(FILE * outfile, MemImage_t * MemImage)
     cinfo.err = jpeg_std_error(&jerr);
     jpeg_create_compress(&cinfo);
     jpeg_stdio_dest(&cinfo, outfile);
- 
+
     cinfo.image_width      = MemImage->width;
     cinfo.image_height     = MemImage->height;
     cinfo.input_components = MemImage->components;
@@ -161,7 +161,7 @@ void SaveJPEG(FILE * outfile, MemImage_t * MemImage)
         jpeg_write_scanlines(&cinfo, &row_pointer, 1);
     }
 
-    // Finally, call finish 
+    // Finally, call finish
 
     jpeg_finish_compress(&cinfo);
 }
@@ -178,7 +178,7 @@ void ScaleBrightness(MemImage_t * MemImage)
     int Histogram[256];
 
     memset(Histogram, 0, sizeof(Histogram));
-    
+
     width = MemImage->width;
     for (row=0;row<MemImage->height;row+=2){
         unsigned char * RowPointer;
@@ -189,9 +189,9 @@ void ScaleBrightness(MemImage_t * MemImage)
             Histogram[RowPointer[c+2]] += 1;
         }
     }
-    
+
     //for (a=0;a<256;a++) printf("%3d %d\n",a,Histogram[a]);
-    
+
     // figure out what threshold value has no more than 0.4% of pixels above.
     satpix = (width * MemImage->height / 4) >> 8; // Pixesl near saturation
     medpix = (width * MemImage->height / 4) >> 2; // Don't make the image overall too bright.
@@ -204,9 +204,9 @@ void ScaleBrightness(MemImage_t * MemImage)
         if (medpix <= 0) break;
     }
 
-    
+
     //printf("scale %d to 255\n",a);
-    
+
     // If image is kind of dark, cale the brightness so that no more than 0.1% of the
     // pixels will saturate.
     if (a < 200){
@@ -215,7 +215,7 @@ void ScaleBrightness(MemImage_t * MemImage)
         Mult2 = 256*200/a;
         if (Mult2 < Mult) Mult = Mult2;
         if (Mult > 265*10) Mult = 256*10; // Don't boost by more than 10x.
-        
+
         for (row=0;row<MemImage->height;row++){
             unsigned char * RowPointer;
             RowPointer = MemImage->pixels+row*width*3;
@@ -242,11 +242,6 @@ void ScaleBrightness(MemImage_t * MemImage)
 //----------------------------------------------------------------------------------
 int main(int argc, char ** argv)
 {
-    int a,b;
-	char * qenv;
-	char FileName[100];
-    int ScaleBrightnessOn = 1;
-
     printf("Content-Type: image/jpg\n"); // heder for image type.
     printf("Cache-Control: max-age=7200\n\n");
 
@@ -254,24 +249,36 @@ int main(int argc, char ** argv)
     if (get_nprocs() > 1){
         ScaleFactor = 4;
     }
-	
-    qenv = getenv("QUERY_STRING");	
-	
+
+    char * qenv = getenv("QUERY_STRING");
+
 	if (qenv == NULL){
 		printf("No query string\n");
 		exit(0);
 	}
-	for (a=b=0;a<100;a++){
+
+    // Unescape %20 for space.
+    char FileName[100] = "pix/";
+    int a, b = 4;
+
+	for (a=0;a<100;a++){
         if (qenv[a] == '\0' || qenv[a] == '$') break;
+
 		if (qenv[a] == '%' && qenv[a+1] == '2' && qenv[a+2] == '0'){
+            // Only unescape the %20 to ' ' for safety.
 			FileName[b++] = ' ';
 			a += 2;
 		}else{
+            if (qenv[a] == '.' && FileName[b-1] == '.'){
+                // ".." in filename not allowed.
+                exit(0);
+            }
 			FileName[b++] = qenv[a];
 		}
 	}
     FileName[b] = '\0';
 
+    int ScaleBrightnessOn = 1;
     // Any characters past a '$' in the query string indicate image parameters
     for (;qenv[a];a++){
         switch(qenv[a]){
@@ -284,11 +291,11 @@ int main(int argc, char ** argv)
         }
     }
 
-    {
-        MemImage_t * Image;
-        Image = LoadJPEG(FileName, ScaleFactor);
-        if (ScaleBrightnessOn) ScaleBrightness(Image);
-        SaveJPEG(stdout, Image);
+    MemImage_t * Image = LoadJPEG(FileName, ScaleFactor);
+    if (!Image){
+        printf("Failed to load image\n");return 0;
     }
+    if (ScaleBrightnessOn) ScaleBrightness(Image);
+    SaveJPEG(stdout, Image);
 }
 
