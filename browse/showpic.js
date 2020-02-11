@@ -21,7 +21,11 @@ function UpdatePix(){
     for (a=From;a<To;a++){
         // Extract the time part of the file name to show.
         Name = piclist[a];
-        TimeStr = Name.substring(0,2)+":"+Name.substring(2,4)
+        if (!iskeep){
+            TimeStr = Name.substring(0,2)+":"+Name.substring(2,4)
+        }else{
+            TimeStr = Name.substring(0,5);
+        }
         Second = Name.substring(0,2)*60 + Name.substring(2,4)*1
 
         between = " "
@@ -46,7 +50,7 @@ function UpdatePix(){
     nu = window.location+""
     window.location = nu.split("#")[0]+"#"+piclist[pic_index].substring(0,4)
     
-    document.getElementById("save").innerHTML = "[Save]"
+    if (!iskeep) document.getElementById("save").innerHTML = "[Save]"
 }
 
 function DoNext(dir){

@@ -1,6 +1,6 @@
 //----------------------------------------------------------------------------------
 // HTML output for browsing one image at a time
-//---------------------------------------------------------------------------------- 
+//----------------------------------------------------------------------------------
 #include <stdio.h>
 #include <errno.h>
 #include <memory.h>
@@ -34,12 +34,12 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
     VarList Images;
     Images = dir->Images;
     HtmlDir = dir->HtmlPath;
- 
+
     if (strstr(HtmlDir, "keep/") != NULL) IsKeepDir = 1;
 
     printf("<title>%s</title>\n",ImageName);
     printf("<head><meta charset=\"utf-8\"/>\n");
-    
+
     printf("<style type=text/css>\n"
            "  body { font-family: sans-serif; font-size: 22;}\n"
            "  img { vertical-align: middle; margin-bottom: 5px; }\n"
@@ -72,14 +72,14 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
         printf("  <area shape=\"rect\" coords= \"0,0,%d,%d\" ",ShowWidth/4, ShowHeight);
         printf("onmousedown=\"PicMouseDown(-1)\" onmouseup=\"PicMouseUp()\">\n");
         printf("  <area shape=\"rect\" coords=\"%d,0,%d,%d\" ",(ShowWidth*3)/4, ShowWidth, ShowHeight);
-        printf("onmousedown=\"PicMouseDown(1)\" onmouseup=\"PicMouseUp()\">\n");       
+        printf("onmousedown=\"PicMouseDown(1)\" onmouseup=\"PicMouseUp()\">\n");
         printf("</map>\n");
     }
-    
+
     printf("<span id='links'>links go here</span>\n");
 
     printf("</center></div>");
-        
+
     printf("<p>\n");
     {
         char IndexInto[8];
@@ -93,7 +93,7 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
         printf("<a href=\"#\" onclick=\"ShowBig()\">[Big]</a>\n",HtmlDir,ImageName);
         printf("<a href=\"#\" onclick=\"ShowAdj()\">[Adj]</a>\n",HtmlDir,ImageName);
         printf("<a href=\"pix/%s/Log.html#%.2s\">[Log]</a>\n",HtmlDir, ImageName+7);
-        
+
         for (a=0;;a++){
             if (HtmlDir[a] == '/') break;
             if (HtmlDir[a] == '\0'){
@@ -115,27 +115,54 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
             }
         }
     }
-   
+
     printf("\n<script type=\"text/javascript\">\n");
     printf("piclist = [");
     int npic = 0;
+    char * Prefix = NULL;
+    int prefixlen = 0;
     for (a=0;a<(int)Images.NumEntries;a++){
-        int e = strlen(Images.Entries[a].Name);
-        if (e < 5 || memcmp(Images.Entries[a].Name+e-4,".jpg",4)) continue;
-        char * Name = Images.Entries[a].Name+7;
+        char * Name = Images.Entries[a].Name;
+        int e = strlen(Name);
+        if (e < 5 || memcmp(Name+e-4,".jpg",4)) continue;
+
+        if (Prefix == NULL){
+            Prefix = Name;
+            prefixlen = strlen(Name)-4;
+            continue;
+        }
+
+        if (memcmp(Prefix, Name, prefixlen)){
+            for (int b=0;b<prefixlen;b++){
+                if (Name[b] != Prefix[b]){
+                    prefixlen = b;
+                    break;
+                }
+            }
+        }
+        if (prefixlen == 0) break;
+    }
+
+
+    for (a=0;a<(int)Images.NumEntries;a++){
+        char * Name = Images.Entries[a].Name;
+        int e = strlen(Name);
+        if (e < 5 || memcmp(Name+e-4,".jpg",4)) continue;
+        e -= 4;
 
         if (npic){
             putchar(',');
             if (npic % 5 == 0) putchar('\n');
         }
-        
-        printf("\"%.9s\"",Name);
+
+        printf("\"%.*s\"",e-prefixlen,Name+prefixlen);
         npic++;
     }
     printf("];\n");
     printf("pixpath = \"pix/\"\n");
     printf("subdir = \"%s/\"\n",dir);
-    printf("prefix = \"%.7s\"\n",Images.Entries[0].Name);
+    printf("prefix = \"%.*s\"\n",prefixlen, Prefix);
+    printf("iskeep = %d\n",IsKeepDir);
     printf("</script>\n");
     printf("<script type=\"text/javascript\" src=\"showpic.js\"></script>\n");
 
