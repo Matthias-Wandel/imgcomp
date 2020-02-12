@@ -20,7 +20,7 @@ brmonitor = 1
 
 # Where to save images that have changes.  One directory per day
 # with subdirectories for each hour.  This is also the default naming
-# scheme.
+# scheme, and is required directory structure for the HTML image browser
 savenames = %y%m%d/%H/%m%d-%H%M%S
 
 # How many seconds between images kept regardless of motion for timelapses.
@@ -29,4 +29,4 @@ timelapse = 1200
 sensitivity = 300
 
 logtofile = /ramdisk/log.txt
-movelognames = saved/%y%m%d/%H/Log.html
+movelognames = images/%y%m%d/%H/Log.html
