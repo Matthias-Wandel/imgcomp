@@ -1,6 +1,5 @@
 * Remove directory structure configuration option
 * Setup document - List dependencies, camera, apache, etc.
-* How to set it up
 * Peers server pointers
 * Make it work for non absolute paths?
 * Browse to next from js image flipper

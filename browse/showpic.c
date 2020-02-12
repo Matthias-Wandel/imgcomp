@@ -91,11 +91,19 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
             printf("<button id='save' onclick=\"DoSavePic()\">Save</button>\n");
             sprintf(SavedDir, "pix/saved/%.4s",HtmlDir);
             if (stat(SavedDir, &sb) == 0 && S_ISDIR(sb.st_mode)){
-                printf("<a href=\"view.cgi?%s\">[View saved]</a>\n",SavedDir+4);
+                printf("<a href=\"view.cgi?%s\">[Saved]</a>\n",SavedDir+4);
             }
         }
 
-        printf("[<a href=\"view.cgi?/\">Dir</a>:\n");
+        {
+            int l = strlen(HtmlDir);
+            if (l && HtmlDir[l-1] == '/'){
+                printf("<a href=\"view.cgi?%.*s\">[Thumbnails]</a>\n",l-1,HtmlDir);
+            }
+        }
+
+
+        printf("[ <a href=\"view.cgi?/\">Dir</a>:\n");
         int pa = 0;
         for (int a=0;;a++){
             if (HtmlDir[a] == '/' || HtmlDir[a] == '\0' || HtmlDir[a] == '#'){
@@ -107,7 +115,10 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
                 pa = a;
             }
         }
-        printf("]<p>\n");
+        putchar(' ');
+        if (dir->Previous[0]) printf("<a href='view.cgi?%s/'>&lt;&lt;</a>",dir->Previous);
+        if (dir->Next[0]) printf(" <a href='view.cgi?%s/'>>></a>",dir->Next);
+        printf(" ]<p>\n");
     }
 
     int npic = 0;

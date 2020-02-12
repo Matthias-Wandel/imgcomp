@@ -186,7 +186,7 @@ void MakeHtmlOutput(Dir_t * Dir)
                     if (Bins[a] >= 8) nc = '1';
                     if (Bins[a] >= 25) nc = '2';
                     if (Bins[a] >= 60) nc = '#';
-                    printf("<a href=\"view.cgi?%s/%s#%02d\"",Dir->HtmlPath, SubdirName, minute);
+                    printf("<a href=\"view.cgi?%s/%s/#%02d\"",Dir->HtmlPath, SubdirName, minute);
                     printf(" onmouseover=\"mmo('%s/%s')\"",SubdirName, SubdImages.Entries[BinImage[a]].Name);
                     printf(">%c</a>", nc);
                 }else{
@@ -366,13 +366,18 @@ void MakeHtmlOutput(Dir_t * Dir)
     if (Dir->Next[0]){
         printf("<a href=\"view.cgi?%s\">[Next:%s]</a>\n",Dir->Next,Dir->Next);
     }
-    printf("<a href=\"view.cgi?%s/\">[JS view]</a><br>\n",Dir->HtmlPath);
+
+    if (!Directories.NumEntries){
+        printf("<a href=\"view.cgi?%s/\">[JS view]</a>\n",Dir->HtmlPath);
+    }
+
+
     if (!IsSavedDir){
         char SavedDir[20];
         struct stat sb;        
         sprintf(SavedDir, "pix/saved/%.4s",Dir->HtmlPath);
         if (stat(SavedDir, &sb) == 0 && S_ISDIR(sb.st_mode)){
-            printf("<a href=\"view.cgi?%s\">[Saved]\n",SavedDir+4);
+            printf("<a href=\"view.cgi?%s\">[Saved]</a>\n",SavedDir+4);
         }
     }
     printf("<a href='/realtime.html'>[Realtime]</a>\n");
@@ -381,8 +386,8 @@ void MakeHtmlOutput(Dir_t * Dir)
 
     // Add javascript for hover-over preview when showing a whole day's worth of images
     if (HasSubdirImages){
-        printf("<small id='prevn'></small><br>\n"
-               "<a id='prevh' href=""><img id='preview' src='' width=0 height=0></a>\n");
+        printf("<p><small id='prevn'></small><br>\n"
+               "<a id='prevh' href=''><img id='preview' src='' width=0 height=0></a>\n");
 
         // Javascript
         printf("<script>\n"
