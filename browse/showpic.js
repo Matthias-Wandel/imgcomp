@@ -175,7 +175,11 @@ function SizeImage(ShwW)
         return;
     }
     if (PicWidth > 0){
-        ShwH = Math.round(ShwW/PicWidth*PicHeight)
+        ShwH = Math.round(ShwW*PicHeight/PicWidth)
+        if (ShwH > 550){
+            ShwH = 550;
+            ShwW = Math.round(ShwH*PicWidth/PicHeight)
+        }
         Qt = Math.round(ShwW/4)
     }else{
         ShwW = 320; ShwH = 240
