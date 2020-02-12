@@ -142,13 +142,13 @@ void DoJpegView(char * ImagePath)
     HtmlPath[lastslash] = '\0';
     dir = CollectDir(HtmlPath, 1);
 
-    //printf("File:%s &nbsp; %s<br>\n", HtmlFile, HtmlPath+lastslash+1);
-    
-    if (strcmp(HtmlFile, "first.jpg") == 0){
-        strcpy(HtmlFile, dir->Images.Entries[0].Name);
-    }
-    if (strcmp(HtmlFile, "last.jpg") == 0){
-        strcpy(HtmlFile, dir->Images.Entries[dir->Images.NumEntries-1].Name);
+    if (dir->Images.NumEntries){
+        if (strcmp(HtmlFile, "first.jpg") == 0){
+            strcpy(HtmlFile, dir->Images.Entries[0].Name);
+        }
+        if (strcmp(HtmlFile, "last.jpg") == 0){
+            strcpy(HtmlFile, dir->Images.Entries[dir->Images.NumEntries-1].Name);
+        }
     }
 
     MakeImageHtmlOutput(HtmlFile, dir);

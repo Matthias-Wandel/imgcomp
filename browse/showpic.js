@@ -1,10 +1,14 @@
 function UpdatePix(){
-    var imgname = subdir+prefix+piclist[pic_index]+".jpg"
-    var url = pixpath+imgname;
-    if (AdjustBright) url = "tb.cgi?"+imgname+(ShowBigOn?"$1":"$2")
 
-    document.getElementById("view").src = url
-    document.title = imgname
+    if (piclist.length){
+        var imgname = subdir+prefix+piclist[pic_index]+".jpg"
+        var url = pixpath+imgname;
+        if (AdjustBright) url = "tb.cgi?"+imgname+(ShowBigOn?"$1":"$2")
+        document.getElementById("view").src = url
+        var nu = window.location.toString()
+        window.location = nu.split("#")[0]+"#"+piclist[pic_index].substring(0,4)
+        document.title = imgname
+    }
 
     // Update the links at the bottom of the image.
     var links = ""
@@ -23,11 +27,11 @@ function UpdatePix(){
     var PrevSecond = -1
     for (a=From;a<To;a++){
         if (a < 0){
-            links += "<a href='view.cgi?"+PrevDir+"//#9999'>[Prev dir]</a>"
+            if (PrevDir) links += "<a href='view.cgi?"+PrevDir+"//#9999'>[Prev dir]</a> &nbsp;"
             continue;
         }
         if (a >= piclist.length){
-            links += " <a href='view.cgi?"+NextDir+"//#0'>[Next dir]</a>"
+            if (NextDir) links += "&nbsp; <a href='view.cgi?"+NextDir+"//#0'>[Next dir]</a>"
             continue;
         }
         
@@ -41,7 +45,7 @@ function UpdatePix(){
         var Second = Name.substring(0,2)*60 + Name.substring(2,4)*1
 
         var between = " "
-        if (a > From){
+        if (a > From && a > 0){
             dt = Second - PrevSecond;
             if (dt >= 3 && dt < 5) between = " &nbsp;"
             if (dt >= 5 && dt < 10) between = " - "
@@ -51,16 +55,13 @@ function UpdatePix(){
         links += between
 
         if (a == pic_index){
-            links += "<b>["+TimeStr+"]</b>"
+            links += "<b>["+prefix.substring(5,7)+":"+TimeStr+"]</b>"
         }else{
             links += "<a href=\"#"+Name.substring(0,4)+"\" onclick=\"SetIndex("+a+")\">["+TimeStr+"]</a>";
         }
     }
-    if (To < piclist.length) links += ">>";
+    if (To < piclist.length) links += " >>";
     document.getElementById("links").innerHTML=links;
-
-    var nu = window.location.toString()
-    window.location = nu.split("#")[0]+"#"+piclist[pic_index].substring(0,4)
 
     if (!isSavedDir) document.getElementById("save").innerHTML = "Save"
 }
@@ -153,6 +154,11 @@ function ShowOld(){
 function SizeImage(ShwW)
 {
     var ShwH, Qt
+    if (piclist.length == 0){
+        document.getElementById("image").innerHTML 
+            = "<table border=1><td width=400 height=300><center><big><big><b>No images in this directory</table>"
+        return;
+    }
     if (PicWidth > 0){
         ShwH = Math.round(ShwW/PicWidth*PicHeight)
         Qt = Math.round(ShwW/4)
