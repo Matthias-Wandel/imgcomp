@@ -363,17 +363,16 @@ int main(int argc, char ** argv)
     }else{
         // Doesn't end with .jpg.  Its a directory.
         Dir_t * Col;
-        int nts = 0;
-        int l = strlen(HtmlPath);
-        while (l && HtmlPath[l-1] == '/'){
-            HtmlPath[--l] = '\0';
-            nts += 1;
+        int a;
+        int ts = 0;
+        for (a=0;;a++){
+            if (HtmlPath[a] == '#' || HtmlPath[a] == '\0') break;
         }
-        //printf("nts = %d\n",nts);
+        if (a > 1 && HtmlPath[a-1] == '/') ts = 1;
 
         Col = CollectDir(HtmlPath, 0);
-        if (nts >= 2){
-            // Two trailing slashes means new javascript view
+        if (ts){
+            // Trailing slash means new javascript view
             MakeViewPage(HtmlPath, Col);   
         }else{
             MakeHtmlOutput(Col);

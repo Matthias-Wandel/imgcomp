@@ -145,9 +145,17 @@ function ShowAdj(){
 
 function ShowOld(){
     var nu = window.location.toString()
-    nu = nu.substring(0,nu.indexOf("#")-1)+prefix+piclist[pic_index]+".jpg"
+    nu = nu.substring(0,nu.indexOf("#"))+prefix+piclist[pic_index]+".jpg"
     window.location = nu
-    //alert(nu)
+}
+function ShowLog(){
+    if (!hasLog){
+        alert("Directory has no log file");
+        return;
+    }
+    var nu = pixpath+subdir+"Log.html"
+    if (piclist.length > 0) nu += "#"+piclist[pic_index].substring(0,2)
+    window.location = nu
 }
 
 

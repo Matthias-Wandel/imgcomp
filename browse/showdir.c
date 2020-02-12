@@ -366,7 +366,7 @@ void MakeHtmlOutput(Dir_t * Dir)
     if (Dir->Next[0]){
         printf("<a href=\"view.cgi?%s\">[Next:%s]</a>\n",Dir->Next,Dir->Next);
     }
-    printf("<a href=\"view.cgi?%s//\">[JS view]</a><br>\n",Dir->HtmlPath);
+    printf("<a href=\"view.cgi?%s/\">[JS view]</a><br>\n",Dir->HtmlPath);
     if (!IsSavedDir){
         char SavedDir[20];
         struct stat sb;        

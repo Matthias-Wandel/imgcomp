@@ -24,7 +24,6 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
 {
     int DirIndex;
     int FoundMatch;
-    int a;
     int From,To;
     int ShowWidth;
     int ShowHeight;
@@ -86,13 +85,6 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
         printf("<button onclick=\"ShowLog()\">Log</button>\n");
         printf("<button onclick=\"ShowOld()\">Detail</button>\n");
 
-        for (a=0;;a++){
-            if (HtmlDir[a] == '/') break;
-            if (HtmlDir[a] == '\0'){
-                a = 0; break;
-            }
-        }
-
         if (!IsSavedDir){
             char SavedDir[20];
             struct stat sb;
@@ -102,17 +94,26 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
                 printf("<a href=\"view.cgi?%s\">[View saved]</a>\n",SavedDir+4);
             }
         }
-        printf("<a href=\"view.cgi?/\">[Dir</a>:");
-        printf("<a href=\"view.cgi?%.*s\">", a, HtmlDir);
-        printf("%.*s</a>/", a, HtmlDir);
-        printf("<a href=\"view.cgi?%s/%s\">%s]</a>\n", HtmlDir, IndexInto, HtmlDir+a+1);
 
+        printf("[<a href=\"view.cgi?/\">Dir</a>:\n");
+        int pa = 0;
+        for (int a=0;;a++){
+            if (HtmlDir[a] == '/' || HtmlDir[a] == '\0' || HtmlDir[a] == '#'){
+                //printf("Link to %.*s  <br>\n",a, HtmlDir);
+                printf("<a href=\"view.cgi?%.*s\">", a, HtmlDir);
+                printf("%.*s</a>",a-pa-1, HtmlDir+pa+1);
+                if (HtmlDir[a] != '/' || HtmlDir[a+1] == '\0' || HtmlDir[a+1] == '#') break;
+                putchar('/');
+                pa = a;
+            }
+        }
+        printf("]<p>\n");
     }
 
     int npic = 0;
     char * Prefix = NULL;
     int prefixlen = 0;
-    for (a=0;a<(int)Images.NumEntries;a++){
+    for (int a=0;a<(int)Images.NumEntries;a++){
         char * Name = Images.Entries[a].Name;
         int e = strlen(Name);
         if (e < 5 || memcmp(Name+e-4,".jpg",4)) continue;
@@ -137,14 +138,18 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
 
     printf("\n<script type=\"text/javascript\">\n");
     printf("pixpath=\"pix/\"\n");
-    printf("subdir=\"%s/\"\n",dir->HtmlPath);
+    printf("subdir=\"%s\"\n",dir->HtmlPath);
     printf("prefix=\"%.*s\"\n",prefixlen, Prefix);
     printf("piclist = [");
 
-    for (a=0;a<(int)Images.NumEntries;a++){
+    int HasLog = 0;
+    for (int a=0;a<(int)Images.NumEntries;a++){
         char * Name = Images.Entries[a].Name;
         int e = strlen(Name);
-        if (e < 5 || memcmp(Name+e-4,".jpg",4)) continue;
+        if (e < 5 || memcmp(Name+e-4,".jpg",4)){
+            if (strcmp(Name, "Log.html") == 0) HasLog = 1;
+            continue;
+        }
         e -= 4;
 
         if (npic){
@@ -156,6 +161,7 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
     }
     
     printf("];\n\n");
+    printf("hasLog=%d\n",HasLog);
     printf("isSavedDir=%d\n",IsSavedDir);
     printf("PrevDir=\"%s\";NextDir=\"%s\"\n",dir->Previous, dir->Next);
     printf("PicWidth=%d;PicHeight=%d\n",PicWidth, PicHeight);
