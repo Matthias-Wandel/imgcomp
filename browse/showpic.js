@@ -132,7 +132,11 @@ function DoSavePic(){
 ShowBigOn = 0
 function ShowBig(){
     ShowBigOn = !ShowBigOn
-    SizeImage(ShowBigOn ? PicWidth : 950)
+    if (ShowBigOn){
+        SizeImage(PicWidth, PicHeight)
+    }else{
+        SizeImage(950,550)
+    }
     UpdatePix()
 }
 AdjustBright = 0
@@ -166,7 +170,7 @@ function Play()
     }
 }
 
-function SizeImage(ShwW)
+function SizeImage(ShwW, maxh)
 {
     var ShwH, Qt
     if (piclist.length == 0){
@@ -176,8 +180,8 @@ function SizeImage(ShwW)
     }
     if (PicWidth > 0){
         ShwH = Math.round(ShwW*PicHeight/PicWidth)
-        if (ShwH > 550){
-            ShwH = 550;
+        if (ShwH > maxh){
+            ShwH = maxh;
             ShwW = Math.round(ShwH*PicWidth/PicHeight)
         }
         Qt = Math.round(ShwW/4)
@@ -191,7 +195,7 @@ function SizeImage(ShwW)
       +"<img id='view' width="+ShwW+" height="+ShwH+" src='' usemap='#prevnext'>"
 }
 
-SizeImage(950);
+SizeImage(950,550);
 
 // Find which picture is meant to show.
 pic_index=0
