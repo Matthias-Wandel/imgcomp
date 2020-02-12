@@ -153,7 +153,7 @@ function ShowOld(){
 function SizeImage(ShwW)
 {
     var ShwH, Qt
-    if (ShwW && ShwH){
+    if (PicWidth > 0){
         ShwH = Math.round(ShwW/PicWidth*PicHeight)
         Qt = Math.round(ShwW/4)
     }else{

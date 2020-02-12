@@ -1,22 +1,14 @@
-# Imgcomp configuration as used on my side door camera.
-# Please see docs/config.html for more details on cofiguring Imgcomp
-
 # The command to start aquiring
-# Tell rapistill to aquire a 1280x720 image every 500 miliseconds.
-aquire_cmd = raspistill -q 10 -n -bm -th none -n -w 1920 -h 1080 -o /ramdisk/out%05d.jpg -t 4000000 -tl 1000";
+aquire_cmd = raspistill -q 10 -ev +4 -n -bm -th none -n -w 1440 -h 1080 -o /ramdisk/out%05d.jpg -t 4000000 -tl 1000";
 
 # Directory to get images from as they are aquired
 # (aquire_cmd must also indicate to put images there)
 followdir = /ramdisk
 
-# Region of interst.  Format left-right,top-bottom 
-# Omitted left-right means full width.
-#region = ,390-700
-
 # Specify a map of which parts of the image to ignore.
 # Solid blue ares are ignored, solid red is twice as sensitive.
 # any other colour in the image is treated as normal detection area.
-#diffmap = diffmap.jpg
+diffmap = diffmap.jpg
 
 # Turn on spurious reject
 spurious = 1
@@ -34,9 +26,7 @@ savenames = %y%m%d/%H/%m%d-%H%M%S
 # How many seconds between images kept regardless of motion for timelapses.
 timelapse = 1200
 
-# Change detect sensitivity level (lower = more sensitive)
-sensitivity = 800
+sensitivity = 300
 
 logtofile = /ramdisk/log.txt
-movelognames = images/%y%m%d/%H/Log.html
-
+movelognames = saved/%y%m%d/%H/Log.html
