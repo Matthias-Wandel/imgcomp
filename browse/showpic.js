@@ -1,7 +1,7 @@
 function UpdatePix(){
     var imgname = subdir+prefix+piclist[pic_index]+".jpg"
     var url = pixpath+imgname;
-    if (AdjustBright) url = "tb.cgi?"+imgname+"$1";
+    if (AdjustBright) url = "tb.cgi?"+imgname+(ShowBigOn?"$1":"$2")
 
     document.getElementById("view").src = url
     document.title = imgname
@@ -11,17 +11,26 @@ function UpdatePix(){
     var BEFORE = 4
     var AFTER = 5
     var From = pic_index-BEFORE;
-    if (From < 0) From = 0;
+    if (From < -1) From = -1;
     var To = From+BEFORE+AFTER+1;
-    if (To > piclist.length){
-        To = piclist.length;
+    if (To > piclist.length+1){
+        To = piclist.length+1;
         From = To-BEFORE-AFTER-1;
-        if (From < 0) From = 0;
+        if (From < -1) From = -1;
     }
     if (From > 0) links += "<< "
 
     var PrevSecond = -1
     for (a=From;a<To;a++){
+        if (a < 0){
+            links += "<a href='view.cgi?"+PrevDir+"//#9999'>[Prev dir]</a>"
+            continue;
+        }
+        if (a >= piclist.length){
+            links += " <a href='view.cgi?"+NextDir+"//#0'>[Next dir]</a>"
+            continue;
+        }
+        
         // Extract the time part of the file name to show.
         Name = piclist[a];
         if (!isSavedDir){
@@ -119,15 +128,17 @@ function DoSavePic(){
   xhttp.send()
 }
 
+ShowBigOn = 0
 function ShowBig(){
-    SizeImage(PicWidth)
+    ShowBigOn = !ShowBigOn
+    SizeImage(ShowBigOn ? PicWidth : 950)
     UpdatePix()
     //var picurl = "pix/"+subdir+prefix+piclist[pic_index]+".jpg"
     //window.location = picurl
 }
 AdjustBright = 0
 function ShowAdj(){
-    AdjustBright = 1
+    AdjustBright = !AdjustBright
     UpdatePix()
 }
 
@@ -141,8 +152,13 @@ function ShowOld(){
 
 function SizeImage(ShwW)
 {
-    var ShwH = Math.round(ShwW/PicWidth*PicHeight)
-    var Qt = Math.round(ShwW/4)
+    var ShwH, Qt
+    if (ShwW && ShwH){
+        ShwH = Math.round(ShwW/PicWidth*PicHeight)
+        Qt = Math.round(ShwW/4)
+    }else{
+        ShwW = 320; ShwH = 240
+    }
     document.getElementById("image").innerHTML
       ="<map name='prevnext'><area shape='rect' coords='0,0,"+Qt+","+ShwH+"'"
       +"onmousedown='PicMd(-1)' onmouseup='PicMu()'> <area shape='rect' "

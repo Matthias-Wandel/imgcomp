@@ -150,10 +150,10 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
             putchar(',');
             if (npic % 5 == 0) putchar('\n');
         }
-
         printf("\"%.*s\"",e-prefixlen,Name+prefixlen);
         npic++;
     }
+    if (npic == 0) printf("'----'");
     printf("];\n\n");
     printf("isSavedDir=%d\n",IsSavedDir);
     printf("PrevDir=\"%s\";NextDir=\"%s\"\n",dir->Previous, dir->Next);
