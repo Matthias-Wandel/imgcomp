@@ -83,7 +83,8 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
         printf("<button onclick=\"ShowBig()\">Big</button>\n");
         printf("<button onclick=\"ShowAdj()\">Adj</button>\n");
         printf("<button onclick=\"ShowLog()\">Log</button>\n");
-        printf("<button onclick=\"ShowOld()\">Detail</button>\n");
+        printf("<button onclick=\"ShowDetails()\">Detail</button>\n");
+        printf("<button id='play' onclick=\"Play()\">Play</button>\n");
 
         if (!IsSavedDir){
             char SavedDir[20];

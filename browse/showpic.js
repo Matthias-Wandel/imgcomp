@@ -134,8 +134,6 @@ function ShowBig(){
     ShowBigOn = !ShowBigOn
     SizeImage(ShowBigOn ? PicWidth : 950)
     UpdatePix()
-    //var picurl = "pix/"+subdir+prefix+piclist[pic_index]+".jpg"
-    //window.location = picurl
 }
 AdjustBright = 0
 function ShowAdj(){
@@ -143,11 +141,6 @@ function ShowAdj(){
     UpdatePix()
 }
 
-function ShowOld(){
-    var nu = window.location.toString()
-    nu = nu.substring(0,nu.indexOf("#"))+prefix+piclist[pic_index]+".jpg"
-    window.location = nu
-}
 function ShowLog(){
     if (!hasLog){
         alert("Directory has no log file");
@@ -158,6 +151,20 @@ function ShowLog(){
     window.location = nu
 }
 
+function ShowDetails(){
+    var nu = window.location.toString()
+    nu = nu.substring(0,nu.indexOf("#"))+prefix+piclist[pic_index]+".jpg"
+    window.location = nu
+}
+function Play()
+{
+    document.getElementById("play").innerHTML=ScrollDir?"Play":"Stop"
+    if (ScrollDir){
+        PicMu()
+    }else{
+        PicMd(1)
+    }
+}
 
 function SizeImage(ShwW)
 {
