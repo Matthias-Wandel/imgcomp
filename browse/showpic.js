@@ -27,11 +27,11 @@ function UpdatePix(){
     var PrevSecond = -1
     for (a=From;a<To;a++){
         if (a < 0){
-            if (PrevDir) links += "<a href='view.cgi?"+PrevDir+"//#9999'>[Prev dir]</a> &nbsp;"
+            if (PrevDir) links += "<a href='view.cgi?"+PrevDir+"/#9999'>[Prev dir]</a> &nbsp;"
             continue;
         }
         if (a >= piclist.length){
-            if (NextDir) links += "&nbsp; <a href='view.cgi?"+NextDir+"//#0'>[Next dir]</a>"
+            if (NextDir) links += "&nbsp; <a href='view.cgi?"+NextDir+"/#0000'>[Next dir]</a>"
             continue;
         }
         
