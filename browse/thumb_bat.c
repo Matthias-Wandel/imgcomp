@@ -1,7 +1,9 @@
 //----------------------------------------------------------------------------------
-// On the fly thumbnail maker
+// On the fly thumbnail maker cgi program.
+//
 // Uses libjpeg to load image at less than full resolution,
-// then write HTTP image header and image to stdout.
+// then write HTTP image header and resized image to stdout.
+// Can scale by 1, 1/2, 1/4 or 1/8.  Also brightness adjust dark images.
 //----------------------------------------------------------------------------------
 #include <stdio.h>
 #include <stddef.h>

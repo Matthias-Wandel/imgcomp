@@ -1,4 +1,6 @@
 //----------------------------------------------------------------------------------
+// HTML based image browser to use with imgcomp output.
+//
 // Module to do operating system dependent directory scanning.
 //----------------------------------------------------------------------------------
 #include <stdio.h>
@@ -119,6 +121,7 @@ void CollectDirectory(char * PathName, VarList * Files, VarList * Dirs, char * P
 #else
 //----------------------------------------------------------------------------------
 // Collect information for a directory.  Windows version.
+// Windows build was only used during early development.
 //----------------------------------------------------------------------------------
 time_t CollectDirectory(char * PathName, VarList * Files, VarList * Dirs, char * Patterns[])
 {

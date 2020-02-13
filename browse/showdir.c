@@ -1,5 +1,7 @@
 //----------------------------------------------------------------------------------
-// HTML output for directory viewing
+// HTML based image browser to use with imgcomp output.
+//
+// HTML output for a list of thumbnails and subdirectories view.
 //---------------------------------------------------------------------------------- 
 #include <stdio.h>
 #include <errno.h>
@@ -151,7 +153,7 @@ void MakeHtmlOutput(Dir_t * Dir)
         printf("<br>\n");
         
         if (!IsSavedDir && !IsRoot){
-            // Actagram for the hour.
+            // Build an actagram for the hour.
             const int NumBins = 30; // Bins per hour.
             int Bins[NumBins];
             int BinImage[NumBins];

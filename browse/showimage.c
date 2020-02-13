@@ -1,5 +1,9 @@
 //----------------------------------------------------------------------------------
-// HTML output for browsing one image at a time
+// HTML based image browser to use with imgcomp output.
+//
+// HTML output for browsing one image at a time.  This for the non-javascript centric
+// version.  showpic.c largely replaces this, but the non-jabascript centric version
+// is still of use, like for showing exif camera settings.
 //---------------------------------------------------------------------------------- 
 #include <stdio.h>
 #include <errno.h>

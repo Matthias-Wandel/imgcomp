@@ -1,5 +1,10 @@
 //----------------------------------------------------------------------------------
-// HTML output for browsing one image at a time
+// HTML based image browser to use with imgcomp output.
+//
+// Makes HTML output for flipping through an hour's worth of images, javascript based version.
+// This code builds a HTML page, which contains a list of images.  The page includes
+// showpic.js to do most of the work.  Flips thru images with only reloading the
+// appropriate jpeg image, no flicker.
 //----------------------------------------------------------------------------------
 #include <stdio.h>
 #include <errno.h>
@@ -122,6 +127,7 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
         printf(" ]<p>\n");
     }
 
+    // check how long the constant part of the filename can be.
     int npic = 0;
     char * Prefix = NULL;
     int prefixlen = 0;
@@ -133,7 +139,7 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
         if (Prefix == NULL){
             Prefix = Name;
             prefixlen = strlen(Name)-4;
-            if (prefixlen > 7) prefixlen = 7;
+            if (prefixlen > 7) prefixlen = 7; // prefix length must not be more than 7!
             continue;
         }
 
@@ -154,6 +160,7 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
     printf("prefix=\"%.*s\"\n",prefixlen, Prefix);
     printf("piclist = [");
 
+    // Output list of images in the hour that we can flip through.
     int HasLog = 0;
     for (int a=0;a<(int)Images.NumEntries;a++){
         char * Name = Images.Entries[a].Name;

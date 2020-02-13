@@ -1,6 +1,10 @@
 //----------------------------------------------------------------------------------
+// HTML based image browser to use with imgcomp output.
+//
 // Main module for web image browser for parsing images produced
 // by my imgcomp program on raspberery pi.
+// Parses parameters, collects info, then depending on what is requested calls
+// appropirate module to generate the HTML.
 //----------------------------------------------------------------------------------
 #include <stdio.h>
 #include <errno.h>

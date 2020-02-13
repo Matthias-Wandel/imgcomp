@@ -2,9 +2,7 @@
 * Setup document - List dependencies, camera, apache, etc.
 * Peers server pointers
 * Make it work for non absolute paths?
-* Browse to next from js image flipper
-* Make JS image flipper default
-
+* Add 1 hour actagram
 
 
 To do next:

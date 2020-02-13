@@ -1,3 +1,9 @@
+//----------------------------------------------------------------------------------
+// HTML based image browser to use with imgcomp output.
+//
+// Small CGI program to watch log file and wait for significant enough change
+// to trigger an image update in realtime mode.
+//----------------------------------------------------------------------------------
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>

@@ -1,10 +1,14 @@
+//----------------------------------------------------------------------------------
+// HTML based image browser to use with imgcomp output.
+//
+// List manipulation functions
+//----------------------------------------------------------------------------------
 #include <stdio.h>
 #include <errno.h>
 #include <memory.h>
 #include <string.h>
 #include <time.h>
 #include <stdlib.h>
-
 #include "view.h"
 
 //----------------------------------------------------------------------------------
@@ -111,75 +115,6 @@ void CombinePaths(char * Dest, char * p1, char * p2)
     strcat(Dest, p2);
 }
 
-//----------------------------------------------------------------------------------
-// Compute how to get from 'From' path to 'To' path
-//----------------------------------------------------------------------------------
-void RelPath(char * Rel, char * From, char * To)
-{
-    int a;
-    int FirstDifference;
-    int WasSlash;
-    int LenFrom, LenTo;
-
-    FirstDifference = 0;
-    Rel[0] = 0;
-
-    // Starting from left, pop off all equal directory components.
-    for (a=0;;a++){
-        BOOL SepFrom, SepTo;
-        SepFrom = (From[a] == '\0' || From[a] == '\\' || From[a] == '/');
-        SepTo   = (To[a] == '\0' || To[a] == '\\' || To[a] == '/');
-
-        if (SepFrom && SepTo){
-            FirstDifference = a+1;
-        }
-
-        if (From[a] != To[a]){
-            break;
-        }
-
-        if (From[a] == '\0'){
-            // Paths are identical.
-            return;
-        }
-    }
-
-    //printf("first diff at %d\n",FirstDifference);
-
-    // Now count how many directories we need to go up before going back down.
-    // FirstDifference is index of first path segment that differs.
-
-    // Note: This code not smart enough to understand '..' in the 'from' path.
-
-    LenFrom = strlen(From);
-    LenTo = strlen(To);
-
-    WasSlash = 1;
-    for (a=FirstDifference;;a++){
-        if (a > LenFrom) break;
-        if (From[a] == '\0') break;
-        if (From[a] == '\\' || From[a] == '/'){
-            WasSlash = 1;                                       
-        }else{
-            if (WasSlash){
-                // Using forward slashes - Windows browsers understand this, and so
-                // do Unitx browsers (backslash is windows only)
-                strcat(Rel, "../");
-                WasSlash = 0;
-            }
-        }
-    } 
-    if (LenTo > FirstDifference){
-        strcat(Rel, To+FirstDifference);
-    }
-
-    /*
-    printf("From:%s\n",From);
-    printf("To  :%s\n",To  );
-    printf("Rel :%s\n",Rel );
-    */
-
-}
 
 //----------------------------------------------------------------------------------
 // Compare dates of two entries - helper function for qsort call.
