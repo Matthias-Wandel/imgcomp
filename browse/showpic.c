@@ -2,9 +2,10 @@
 // HTML based image browser to use with imgcomp output.
 //
 // Makes HTML output for flipping through an hour's worth of images, javascript based version.
-// This code builds a HTML page, which contains a list of images.  The page includes
-// showpic.js to do most of the work.  Flips thru images with only reloading the
-// appropriate jpeg image, no flicker.
+// This code builds a HTML page, which contains a basic layout and, a list of images
+// for javascript and some variables.
+// The page includes showpic.js to do most of the work.  Flips thru images with
+// only reloading the appropriate jpeg image, no flicker.
 //----------------------------------------------------------------------------------
 #include <stdio.h>
 #include <errno.h>
@@ -51,17 +52,12 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
            "  button {font-size: 20px;}\n"
            "</style></head>\n\n");
 
-    if (Images.NumEntries){
-        char PathToFile[300];
-        sprintf(PathToFile, "%s/%s", HtmlDir, Images.Entries[0].Name);
-        ReadExifHeader(PathToFile, &PicWidth, &PicHeight);
-    }
-
     printf("<div>");
     printf("<center>\n<span id='image'>image goes here</span>\n");
     printf("<br>\n<span id='links'>links goes here</span>\n");
     printf("</center></div>\n");
 
+    // Output HTML code for the buttons below the row of navigation links
     {
         char IndexInto[8];
         IndexInto[0] = 0;
@@ -112,7 +108,8 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
     }
     printf("<br>Actagram:\n<b><span id='actagram' style=\"font-family: courier, \'courier new\', monospace;\">Actagram here</span></b>\n");
 
-    // check how long the constant part of the filename can be.
+    
+    // check how many characters all the filenames have in common (typically 7)
     int npic = 0;
     char * Prefix = NULL;
     int prefixlen = 0;
@@ -122,6 +119,7 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
         if (e < 5 || memcmp(Name+e-4,".jpg",4)) continue;
 
         if (PicWidth == 0){
+            // Need to get image size (assume all the same size)
             char PathToFile[300];
             sprintf(PathToFile, "%s/%s", HtmlDir, Images.Entries[a].Name);
             ReadExifHeader(PathToFile, &PicWidth, &PicHeight);
@@ -171,11 +169,14 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
     }
     
     printf("];\n\n");
+    
+    // Dump some variables for the javascript code.
     printf("hasLog=%d\n",HasLog);
     printf("isSavedDir=%d\n",IsSavedDir);
     printf("PrevDir=\"%s\";NextDir=\"%s\"\n",dir->Previous, dir->Next);
     printf("PicWidth=%d;PicHeight=%d\n",PicWidth, PicHeight);
-        printf("</script>\n");
+    printf("</script>\n");
+    
+    // Include the showpic.js javascript file.
     printf("<script type=\"text/javascript\" src=\"showpic.js\"></script>\n");
-
 }
