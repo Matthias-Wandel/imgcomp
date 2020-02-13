@@ -473,7 +473,7 @@ int DoDirectoryVideos(char * DirName)
                 }
                 continue;
             }else{
-                fprintf(Log,"Vid '%s': %dk Analyze (%02d:%02d)...\n", FileNames[a].FileName, FileNames[a].FileSize>>10, 
+                fprintf(Log,"Vid '%s': %dk Extract keyframes (%02d:%02d)...\n", FileNames[a].FileName, FileNames[a].FileSize>>10, 
                     (int)(now%3600)/60, (int)(now%60));
             }
             
