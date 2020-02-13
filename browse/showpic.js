@@ -22,7 +22,7 @@ function UpdatePix(){
         From = To-BEFORE-AFTER-1;
         if (From < -1) From = -1;
     }
-    if (From > 0) links += "<< "
+    if (From > 0) links += "<a href=\"#\" onclick=\"SetIndex("+0+")\">&lt;&lt;</a> ";
 
     var PrevSecond = -1
     for (a=From;a<To;a++){
@@ -34,7 +34,7 @@ function UpdatePix(){
             if (NextDir) links += "&nbsp; <a href='view.cgi?"+NextDir+"/#0000'>[Next dir]</a>"
             continue;
         }
-        
+
         // Extract the time part of the file name to show.
         Name = piclist[a];
         if (!isSavedDir){
@@ -60,7 +60,7 @@ function UpdatePix(){
             links += "<a href=\"#"+Name.substring(0,4)+"\" onclick=\"SetIndex("+a+")\">["+TimeStr+"]</a>";
         }
     }
-    if (To < piclist.length) links += " >>";
+    if (To < piclist.length) links += " <a href=\"#\" onclick=\"SetIndex("+(piclist.length-1)+")\">>></a>";
     document.getElementById("links").innerHTML=links;
 
     if (!isSavedDir) document.getElementById("save").innerHTML = "Save"
@@ -68,6 +68,7 @@ function UpdatePix(){
 
 function DoNext(dir){
     if (pic_index+dir < 0 || pic_index+dir >= piclist.length){
+        Play()
         return 0
     }else{
         pic_index += dir
@@ -97,7 +98,6 @@ function ScrollMoreTimer()
 function SetLateTimer(){
     ScrollTimer = setTimeout(ScrollMoreTimer, 20)
 }
-
 function PicMd(dir){
     DoNext(dir);
     ScrollDir = dir
@@ -107,6 +107,16 @@ function PicMu(){
     ScrollDir = 0
     clearTimeout(ScrollTimer)
 }
+function Play()
+{
+    document.getElementById("play").innerHTML=ScrollDir?"Play":"Stop"
+    if (ScrollDir){
+        PicMu()
+    }else{
+        PicMd(1)
+    }
+}
+
 
 function SetIndex(index)
 {
@@ -160,21 +170,12 @@ function ShowDetails(){
     nu = nu.substring(0,nu.indexOf("#"))+prefix+piclist[pic_index]+".jpg"
     window.location = nu
 }
-function Play()
-{
-    document.getElementById("play").innerHTML=ScrollDir?"Play":"Stop"
-    if (ScrollDir){
-        PicMu()
-    }else{
-        PicMd(1)
-    }
-}
 
 function SizeImage(ShwW, maxh)
 {
     var ShwH, Qt
     if (piclist.length == 0){
-        document.getElementById("image").innerHTML 
+        document.getElementById("image").innerHTML
             = "<table border=1><td width=400 height=300><center><big><big><b>No images in this directory</table>"
         return;
     }
