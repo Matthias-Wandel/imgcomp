@@ -30,11 +30,8 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
     int DirIndex;
     int FoundMatch;
     int From,To;
-    int ShowWidth;
-    int ShowHeight;
     int IsSavedDir = 0;
     char * HtmlDir;
-    float AspectRatio = 1;
     VarList Images;
     Images = dir->Images;
     HtmlDir = dir->HtmlPath;
@@ -57,18 +54,10 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
     if (Images.NumEntries){
         char PathToFile[300];
         sprintf(PathToFile, "%s/%s", HtmlDir, Images.Entries[0].Name);
-        AspectRatio = ReadExifHeader(PathToFile, &PicWidth, &PicHeight);
-    }else{
-        AspectRatio = 1.0;
+        ReadExifHeader(PathToFile, &PicWidth, &PicHeight);
     }
 
-    //printf("<div style=\"width:950px;\">");
     printf("<div>");
-    // Scale it to a resolution that works well on iPad.
-    ShowWidth = 950;
-    if (ShowWidth/AspectRatio > 535) ShowWidth = (int)535 * AspectRatio;
-    ShowHeight = (int)(ShowWidth/AspectRatio+0.5);
-
     printf("<center>\n<span id='image'>image goes here</span>\n");
     printf("<br>\n<span id='links'>links goes here</span>\n");
     printf("</center></div>\n");
@@ -99,19 +88,16 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
             }
         }
 
-        {
-            int l = strlen(HtmlDir);
-            if (l && HtmlDir[l-1] == '/'){
-                printf("<a href=\"view.cgi?%.*s\">[Thumbnails]</a>\n",l-1,HtmlDir);
-            }
+        int l;
+        if ((l = strlen(HtmlDir)) && HtmlDir[l-1] == '/'){
+            printf("<a href=\"view.cgi?%.*s\">[Thumbnails]</a>\n",l-1,HtmlDir);
         }
 
-
+        // Link to each level of subdirectory.
         printf("[<a href=\"view.cgi?/\">Dir</a>:");
         int pa = 0;
         for (int a=0;;a++){
             if (HtmlDir[a] == '/' || HtmlDir[a] == '\0' || HtmlDir[a] == '#'){
-                //printf("Link to %.*s  <br>\n",a, HtmlDir);
                 printf("<a href=\"view.cgi?%.*s\">", a, HtmlDir);
                 printf("%.*s</a>",a-pa-1, HtmlDir+pa+1);
                 if (HtmlDir[a] != '/' || HtmlDir[a+1] == '\0' || HtmlDir[a+1] == '#') break;
@@ -134,6 +120,12 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
         char * Name = Images.Entries[a].Name;
         int e = strlen(Name);
         if (e < 5 || memcmp(Name+e-4,".jpg",4)) continue;
+
+        if (PicWidth == 0){
+            char PathToFile[300];
+            sprintf(PathToFile, "%s/%s", HtmlDir, Images.Entries[a].Name);
+            ReadExifHeader(PathToFile, &PicWidth, &PicHeight);
+        }
 
         if (Prefix == NULL){
             Prefix = Name;
