@@ -2,8 +2,8 @@
 * Setup document - List dependencies, camera, apache, etc.
 * Peers server pointers
 * Make it work for non absolute paths?
-* Add 1 hour actagram
-
+* Drag on image to scroll (use eyeballing game code)
+* Test install scripts
 
 To do next:
 

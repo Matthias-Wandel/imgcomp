@@ -99,6 +99,11 @@ void MakeHtmlOutput(Dir_t * Dir)
         printf("<a href=\"view.cgi?%s\">[Next:%s]</a>\n",Dir->Next,Dir->Next);
     }
     
+    if (!Directories.NumEntries){
+        printf("<a href=\"view.cgi?%s/\">[JS view]</a>\n",Dir->HtmlPath);
+    }
+
+    
     printf("<p>\n");
     
     if (IsRoot){
