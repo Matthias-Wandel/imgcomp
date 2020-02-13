@@ -1,0 +1,24 @@
+# Configuration file for mouse experiments.
+# Uses video mode hack.
+
+#aquire_cmd = raspivid -o /ramdisk/vid/vid%02d.h264 --mode 4 -t 12000000 -g 10 -sg 15000
+aquire_cmd = raspivid -o /ramdisk/vid/vid%02d.h264 -ev +4 --mode 2 -t 12000000 -g 15 -sg 15000
+
+# Use ffmpeg to extract key frames.
+viddecomposecmd = ffmpeg -hide_banner -loglevel panic -nostdin -skip_frame nokey -i <infile> -vsync 0 -r 30 -f image2
+
+mspercycle = 1000
+vidmode = 1
+followdir = /ramdisk/vid
+tempdir = /ramdisk/tmp
+savedir = images
+brmonitor = 0
+sensitivity = 800
+timelapse = 7200
+
+# Turn off motion fatigue (don't skip repetitive action)
+fatigue = 0
+
+
+logtofile = /ramdisk/log.txt
+movelognames = images/%y%m%d/%H/Log.html
