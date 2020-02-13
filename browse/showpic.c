@@ -62,19 +62,17 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
         AspectRatio = 1.0;
     }
 
-    printf("<div style=\"width:950px;\">");
+    //printf("<div style=\"width:950px;\">");
+    printf("<div>");
     // Scale it to a resolution that works well on iPad.
     ShowWidth = 950;
     if (ShowWidth/AspectRatio > 535) ShowWidth = (int)535 * AspectRatio;
     ShowHeight = (int)(ShowWidth/AspectRatio+0.5);
 
-    printf("<center>\n");
-    printf("<span id='image'>image goes here</span>\n");
+    printf("<center>\n<span id='image'>image goes here</span>\n");
     printf("<br>\n<span id='links'>links goes here</span>\n");
+    printf("</center></div>\n");
 
-    printf("</center></div>");
-
-    printf("<p>\n");
     {
         char IndexInto[8];
         IndexInto[0] = 0;
@@ -86,7 +84,7 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
         }
 
         printf("<button onclick=\"ShowBig()\">Big</button>\n");
-        printf("<button onclick=\"ShowAdj()\">Adj</button>\n");
+        printf("<button onclick=\"ShowAdj()\">Bright</button>\n");
         printf("<button onclick=\"ShowLog()\">Log</button>\n");
         printf("<button onclick=\"ShowDetails()\">Detail</button>\n");
         printf("<button id='play' onclick=\"Play()\">Play</button>\n");
@@ -109,7 +107,7 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
         }
 
 
-        printf("[ <a href=\"view.cgi?/\">Dir</a>:\n");
+        printf("[<a href=\"view.cgi?/\">Dir</a>:");
         int pa = 0;
         for (int a=0;;a++){
             if (HtmlDir[a] == '/' || HtmlDir[a] == '\0' || HtmlDir[a] == '#'){
@@ -121,11 +119,12 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
                 pa = a;
             }
         }
-        putchar(' ');
+        printf("&nbsp;");
         if (dir->Previous[0]) printf("<a href='view.cgi?%s/'>&lt;&lt;</a>",dir->Previous);
-        if (dir->Next[0]) printf(" <a href='view.cgi?%s/'>>></a>",dir->Next);
-        printf(" ]<p>\n");
+        if (dir->Next[0]) printf("&nbsp;<a href='view.cgi?%s/'>>></a>",dir->Next);
+        printf("]\n");
     }
+    printf("<br>Actagram:\n<b><span id='actagram' style=\"font-family: courier, \'courier new\', monospace;\">Actagram here</span></b>\n");
 
     // check how long the constant part of the filename can be.
     int npic = 0;

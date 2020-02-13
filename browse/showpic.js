@@ -1,16 +1,5 @@
-function UpdatePix(){
-
-    if (piclist.length){
-        var imgname = subdir+prefix+piclist[pic_index]+".jpg"
-        var url = pixpath+imgname;
-        if (AdjustBright) url = "tb.cgi?"+imgname+(ShowBigOn?"$1":"$2")
-        document.getElementById("view").src = url
-        var nu = window.location.toString()
-        window.location = nu.split("#")[0]+"#"+piclist[pic_index].substring(0,4)
-        document.title = imgname
-    }
-
-    // Update the links at the bottom of the image.
+function UpdateLinks(){
+    // Update list of nav links at botom of page.
     var links = ""
     var BEFORE = 4
     var AFTER = 5
@@ -37,17 +26,14 @@ function UpdatePix(){
 
         // Extract the time part of the file name to show.
         Name = piclist[a];
-        if (!isSavedDir){
-            TimeStr = Name.substring(0,2)+":"+Name.substring(2,4)
-        }else{
-            TimeStr = Name.substring(0,5);
-        }
+        TimeStr = Name.substring(0,2)+":"+Name.substring(2,4)
+        if (isSavedDir) TimeStr = Name.substring(0,5);
+        
         var Second = Name.substring(0,2)*60 + Name.substring(2,4)*1
-
         var between = " "
         if (a > From && a > 0){
             dt = Second - PrevSecond;
-            if (dt >= 3 && dt < 5) between = " &nbsp;"
+            if (dt >= 3 && dt < 5) between = "&nbsp;"
             if (dt >= 5 && dt < 10) between = " - "
             if (dt > 20) between = " || &nbsp;"
         }
@@ -62,8 +48,45 @@ function UpdatePix(){
     }
     if (To < piclist.length) links += " <a href=\"#\" onclick=\"SetIndex("+(piclist.length-1)+")\">>></a>";
     document.getElementById("links").innerHTML=links;
+}
 
+function UpdateActagram()
+{
+    act = ""
+    var thismin
+    if (piclist.length) thismin = parseInt(piclist[pic_index].substring(0,2))
+
+    for (a=0;a<60;a++){
+        if (!(b = ActBins[a])){
+            act += "&nbsp;"; continue
+        }
+        c = '-'
+        if (b>=6)c='='
+        if (b>=18)c='#'
+        if (a==thismin){
+            act += "<b style='background-color: #b0b0ff;'>"+c+"</b>"
+        }else{
+            act += "<a href='#"+piclist[ActNums[a]].substring(0,4)
+             +"' onclick='SetIndex("+ActNums[a]+")'>"+c+"</a>"
+        }
+    }
+    document.getElementById("actagram").innerHTML = "00"+act+"60"
+}
+
+function UpdatePix(){
+
+    if (piclist.length){
+        var imgname = subdir+prefix+piclist[pic_index]+".jpg"
+        var url = pixpath+imgname;
+        if (AdjustBright) url = "tb.cgi?"+imgname+(ShowBigOn?"$1":"$2")
+        document.getElementById("view").src = url
+        var nu = window.location.toString()
+        window.location = nu.split("#")[0]+"#"+piclist[pic_index].substring(0,4)
+        document.title = imgname
+    }
     if (!isSavedDir) document.getElementById("save").innerHTML = "Save"
+    UpdateLinks();
+    UpdateActagram()
 }
 
 function DoNext(dir){
@@ -117,12 +140,15 @@ function Play()
     }
 }
 
-
 function SetIndex(index)
 {
     pic_index = index
     UpdatePix()
 }
+
+function InitActagram(){
+}
+
 
 function DoSavePic(){
   var SaveUrl = "view.cgi?~"+subdir+prefix+piclist[pic_index]+".jpg"
@@ -174,6 +200,7 @@ function ShowDetails(){
 function SizeImage(ShwW, maxh)
 {
     var ShwH, Qt
+    if (ShwW > window.innerWidth-15) ShwW = window.innerWidth-15;
     if (piclist.length == 0){
         document.getElementById("image").innerHTML
             = "<table border=1><td width=400 height=300><center><big><big><b>No images in this directory</table>"
@@ -197,6 +224,17 @@ function SizeImage(ShwW, maxh)
 }
 
 SizeImage(950,550);
+
+// Initiate actagram.
+ActBins = []
+ActNums = []
+for (a=0;a<piclist.length;a++){
+    min = parseInt(piclist[a].substring(0,2))
+    if (ActBins[min]) ActBins[min]++
+    else ActBins[min] = 1
+    if (!ActNums[min] || piclist[a].substring(2,4) < "30") ActNums[min] = a;
+}
+
 
 // Find which picture is meant to show.
 pic_index=0
