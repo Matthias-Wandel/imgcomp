@@ -1,11 +1,10 @@
 //-----------------------------------------------------------------------------------
-// imgcomp Various utility functions.
-// Matthias Wandel 2015
+// imgcomp Various utility functions, paths, directories, file copying, log rotation
+// Matthias Wandel 2015-2020
 //
 // Imgcomp is licensed under GPL v2 (see README.txt)
 //-----------------------------------------------------------------------------------
 #include <stdio.h>
-#include <ctype.h>		// to declare isupper(), tolower() 
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>

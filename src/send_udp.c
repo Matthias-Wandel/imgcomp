@@ -1,5 +1,6 @@
 //----------------------------------------------------------------------------------
-// Module for sending UDP notifcations to stepper program, for aming heater or fan
+// Module for sending UDP notifcations to stepper program, 
+// for aming heater, fan, or cap shooter at kids and squirrels.
 //----------------------------------------------------------------------------------
 #include <stdio.h>
 #include <stdlib.h>

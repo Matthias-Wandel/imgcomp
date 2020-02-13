@@ -1,6 +1,5 @@
 //-----------------------------------------------------------------------------------
-// Simple tool for monitor continuously captured images for changes
-// and saving changed images, as well as an image every N seconds for timelapses.
+// Read imgcomp.conf configuration file.
 // Matthias Wandel 2015
 //
 // Imgcomp is licensed under GPL v2 (see README.txt)
@@ -10,7 +9,6 @@
 #include <stdlib.h>
 #include <string.h>
 #ifdef _WIN32
-//    #define unlink(n) _unlink(n)
 #else
     #include <dirent.h>
     #include <unistd.h>

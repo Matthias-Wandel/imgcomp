@@ -1,6 +1,6 @@
 //-----------------------------------------------------------------------------------
-// imgcomp image comparison module
-// Matthias Wandel 2015
+// imgcomp image comparison main module
+// Matthias Wandel 2015-2020
 //
 // Imgcomp is licensed under GPL v2 (see README.txt)
 //-----------------------------------------------------------------------------------

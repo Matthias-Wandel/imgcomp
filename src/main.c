@@ -1,12 +1,11 @@
 //-----------------------------------------------------------------------------------
-// Simple tool for monitor continuously captured images for changes
+// Tool for monitor continuously captured images for changes
 // and saving changed images, as well as an image every N seconds for timelapses.
-// Matthias Wandel 2015
+// Matthias Wandel 2015-2020
 //
 // Imgcomp is licensed under GPL v2 (see README.txt)
 //-----------------------------------------------------------------------------------
 #include <stdio.h>
-#include <ctype.h>		// to declare isupper(), tolower() 
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/stat.h>

@@ -1,5 +1,6 @@
 //----------------------------------------------------------------------------------------
-// Code to launch raspistill as a separately running process
+// Code to launch or relaunch raspistill as a separately program.
+// monitors that raspistill is still producing images, restarts it if it stops.
 // Matthias Wandel 2015
 //
 // Imgcomp is licensed under GPL v2 (see README.txt)
@@ -21,8 +22,6 @@
 
 #include "imgcomp.h"
 #include "jhead.h"
-
-//"raspistill -q 10 -n -bm -th none -p 480,0,800,480 -w 1280 -h 720 -o /ramdisk/out%05d.jpg -t 4000000 -tl 300";
 
 static int raspistill_pid = 0;
 static int blink_led_pid = 0;

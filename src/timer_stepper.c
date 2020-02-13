@@ -1,5 +1,6 @@
-// UDP / PING program
-// For testing UDP and ICMP behaviours on GPRS.
+//----------------------------------------------------------------------------------
+// Experimental code for driving steppers based on what imgcomp saw
+// Ignore this module
 //----------------------------------------------------------------------------------
 #define _CRT_SECURE_NO_WARNINGS
 #include <stdio.h>
