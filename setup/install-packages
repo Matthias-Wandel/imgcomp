@@ -1,10 +1,8 @@
-#Install needed and useful packages.  Run with sudo
+# Install needed and useful packages. 
+# Run with sudo.  type "sudo ./install-packages"
+
+# libjpeg is required to compile imgcomp and the browsing program.
 apt-get install -y libjpeg-dev
+
+# Apache is required for the web based browsing program
 apt-get install -y apache2
-
-apt-get install -y vim
-apt-get install -y jhead
-apt-get install -y fbi
-apt-get install -y jp2a
-apt-get install -y samba
-

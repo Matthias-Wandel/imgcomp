@@ -4,20 +4,23 @@
 # This script assumes imgcomp is in /home/pi/imgcomp
 
 # Make sure the camera is enabled
+
+if [ ! -f ../imgcomp ]; then
+	echo "You need to build imgcomp first."
+    echo "Go into the imgcomp directorytype \"make\" to build it."
+	exit 1
+fi
+
 if [[ $EUID -ne 0 ]]; then
 	echo "Parts of this script require administrator priviledged."
 	echo "You may be propted to enter your password"
 fi
 
-if [ ! -f ../imgcomp ]; then
-	echo "You need to build imgcomp first.  type \"make\" to build it."
-	exit 1
-fi
-
 if grep -q "start_x\=1" /boot/config.txt; then
 	echo "    camera module is already enabled"
 else	
-	echo "camera is not enabled.  Please run raspi-config to enable camera module"
+	echo "camera is not enabled."
+    echo "Run raspi-config to it under 'Interfacing Options'"
 	exit 1
 fi
 
@@ -26,7 +29,7 @@ if [ -e ../../imgcomp.conf ] ; then
 	echo "    imcomp.conf file aready in /home/pi"
 else
 	echo "copy imcomp.conf.example to /home/pi/imgcomp.conf"
-	cp -a ../config/imgcomp.conf.example /home/pi/imgcomp.conf
+	cp -a ../conf-examples/imgcomp.conf.example ~/imgcomp.conf
 fi
 
 if [ -d /ramdisk ]; then

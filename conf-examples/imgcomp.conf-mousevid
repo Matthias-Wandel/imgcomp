@@ -1,7 +1,12 @@
-# Configuration file for mouse experiments.
-# Uses video mode hack.
+# Configuration file for mouse experiments using video mode hack.
+# Requires raspberry pi 3 or faster.
 
-#aquire_cmd = raspivid -o /ramdisk/vid/vid%02d.h264 --mode 4 -t 12000000 -g 10 -sg 15000
+# The installation of two additonal packages is required:
+# sudo apt-get install imagemagick
+# sudo apt-get install gpac
+
+
+# this configuration uses full sensor size, but only 15 frames per second.
 aquire_cmd = raspivid -o /ramdisk/vid/vid%02d.h264 -ev +4 --mode 2 -t 12000000 -g 15 -sg 15000
 
 # Use ffmpeg to extract key frames.

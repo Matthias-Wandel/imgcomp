@@ -1,0 +1,18 @@
+# Create new web root directory.  These two commands must NOT run as root.
+echo "Make directories for apache2"
+mkdir -p /home/pi/www
+ln -s -f ../images /home/pi/www/pix
+
+# configure apached2
+echo "copying apache2 configuration file, enabling CGI"
+sudo cp 000-default.conf /etc/apache2/sites-available
+sudo ln -s -f ../mods-available/cgi.load /etc/apache2/mods-enabled/cgi.load
+
+# Restart apache2 to take new configuration
+echo "Restarting apache2"
+sudo service apache2 restart
+
+echo "Compiling imcomp/browse"
+echo ""
+cd ../browse
+make
