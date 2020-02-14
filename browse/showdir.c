@@ -291,22 +291,19 @@ void MakeHtmlOutput(Dir_t * Dir)
 
     // Show continuous runs of images, with breaks between.
     for (b=0;b<NumBreakIndices;b++){
-        unsigned start, num;
-        char TimeStr[10];
-        char * Name;
-        int SkipFactor, SkipNum;
-        start = BreakIndices[b];
-        num = BreakIndices[b+1]-BreakIndices[b];
+        int start = BreakIndices[b];
+        int num = BreakIndices[b+1]-BreakIndices[b];
 
         // If there are a LOT of images, don't show all of them
-        SkipNum = 0;
-        SkipFactor = 1;
+        int SkipNum = 0;
+        int SkipFactor = 1;
         if (num > 8) SkipFactor = 2;
         if (num > 15) SkipFactor = 3;
         if (num > 20) SkipFactor = 4;
         if (num > 40) SkipFactor = 5;
 
-        Name = Images.Entries[start].Name;
+        char * Name = Images.Entries[start].Name;
+        
         if (Name[0] >= '0' && Name[0] <= '9' && Name[1] >= '0' && Name[1] <= '9'){
             char DateStr[10];
             if (!AllSameDate){
@@ -318,8 +315,7 @@ void MakeHtmlOutput(Dir_t * Dir)
             }else{
                 DateStr[0] = 0;
             }
-            
-            
+            char TimeStr[10];
             TimeStr[0] = Name[5]; TimeStr[1] = Name[6];
             TimeStr[2] = ':';
             TimeStr[3] = Name[7]; TimeStr[4] = Name[8];
@@ -330,9 +326,7 @@ void MakeHtmlOutput(Dir_t * Dir)
         }
 
         for (a=0;a<num;a++){
-            char * Name;
-            int dt;
-            Name = Images.Entries[a+start].Name;
+            char * Name = Images.Entries[a+start].Name;
             int e = strlen(Name);
             if (e >= 5 && memcmp(Name+e-4,".jpg",4) == 0){// It's a jpeg file.
                 int Minute;
@@ -345,9 +339,8 @@ void MakeHtmlOutput(Dir_t * Dir)
                         printf("<b id=\"%02d\"></b>\n",++DirMinute);
                     }
                 }
-
                 //printf("<a href=\"view.cgi?%s/%s\">",Dir->HtmlPath, Name);
-                printf("<a href=\"view.cgi?%s/#%.4s\">",Dir->HtmlPath, Name+12);
+                printf("<a href=\"view.cgi?%s/#%.4s\">",Dir->HtmlPath, Name+7);
                 if (SkipNum == 0){
                     if (FullresThumbs){
                         printf("<img src=\"pix/%s/%s\">",Dir->HtmlPath, Name);
@@ -355,6 +348,7 @@ void MakeHtmlOutput(Dir_t * Dir)
                         printf("<img src=\"tb.cgi?%s/%s\">",Dir->HtmlPath, Name);
                     }
                     if (num > 1){
+                        char TimeStr[10];
                         TimeStr[0] = Name[5]; TimeStr[1] = Name[6];
                         TimeStr[2] = ':';
                         TimeStr[3] = Name[7]; TimeStr[4] = Name[8];
@@ -373,7 +367,7 @@ void MakeHtmlOutput(Dir_t * Dir)
                 printf("%s</a><p>", Name);
                 SkipNum = 0;
             }
-            dt = 0;
+            int dt = 0;
             if (a < num-1) dt = Images.Entries[a+1+start].DaySecond - Images.Entries[a+start].DaySecond;
             if (SkipNum >= SkipFactor || a >= num-1 || dt > 3){
                 if (dt <= 3 && a < num-1) printf("...");
