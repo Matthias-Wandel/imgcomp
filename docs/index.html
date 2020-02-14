@@ -32,9 +32,8 @@ it will not trigger in the dark.
 
 <h2>What imgcomp does not do</h2>
 <li>Not for battery powered application.  It uses too much power.
-<li>Does not capture video
+<li>Not video centric (but has a video mode hack)
 <li>Does not work with USB web cameras (frame rate too low, cameras too unreliable)
-<li>Has no user interface to speak of
 <li>Is not for people unfamiliar with using Linux from the command line.
 <p>
 <b>
@@ -71,10 +70,6 @@ to compile it.  The compiler is already included in the default installation of
 raspian.  If you don't know what compiling a program is, then you will not
 have much luck with other aspects of setting up imgcomp.
 <p>
-Imgcomp uses libjpeg.  Because I don't like external dependencies, I included
-a stripped down version of libjpeg in the distribution.  This will automatically
-compile when you compile imgcomp.  Compiling everything will take a minute or two.
-<p>
 You can compile imgcomp by going into the imgcomp directory and typing:<br>
 <div class="c">make</div><br>
 This will compile imgcomp and the required library.
@@ -89,112 +84,8 @@ using the Microsoft Visual C compiler.  If you set up the compiler to be on
 your path, running "make.bat" from the windows command prompt will build the
 windows build.
 
-<h2>Imgcomp setup scripts (automatic setup)</h2>
-Most of the steps of setting up imgcomp described below can be automated
-by unpacking the archive in the /home/pi/imgcomp directory and running:<br>
-<span class="c">/home/pi/setup-imgcomp</span>
-<p>
-This automates creating the ram disk and a few other tweaks to make it run better.
-<p>
-If you want imgcomp to automaticall run at startup, run the script:<br>
-<span class="c">/home/pi/setup-imgcomp-autorun</span>
-<p>
-This sets imgcomp to run in console mode at startup  (Best not to boot your pi
-into graphical user interface mode).  It also adds a cron job to delete the
-oldest recorded directory in /home/pi/images if free flash space is getting low. 
-
-<h2>Manual imgcomp setup</h2>
-<h3>Enable camera module</h3>
-Run raspi-config to enable the camera module<p>
-You also need to make sure that your camera module is installed and functioning.
-Take some pictures with raspistill to test.  Type:
-<div class="c">raspistill -o foo.jpg"</div><br>
-Then check that foo.jpg is an image of what the camera was pointed at.
-
-<h3>Make a ram disk</h3>
-Imgcomp uses raspistill to capture images to the file system.  To avoid wearing out
-the flash card, it's best to capture to a ramdisk.  Make a 20 megabyte ramdisk
-by adding the following line to the end of <span class="c">/etc/fstab</span> :
-<div class="c">tmpfs   /ramdisk        tmpfs   nodev,nosuid,size=20M   0       0</div>
-<p>
-Note that /etc/fstab is only read at startup, so to make this ramdisk active,
-you will have to reboot your raspberry pi or type "mount /ramdisk"
-
-<!-- Section on blinking the camera LED commented out because I can't figure out
-     how to make this work on Raspberry Pi 2 -->
-
-<!--
-<h3>Setting up Camera LED blinking</h2>
-Imgcomp can optionally blink the camera module's LED when it detects motion.
-If you wish to enable this, please follow the steps below.
-
-Disable normal function of the camera LED, add the following line to the end of
-the file at <span class="c">/boot/config.txt</span>:
-
-<div class="c">disable_camera_led=1</div>
-
-<a href="http://www.raspberrypi-spy.co.uk/2013/05/how-to-disable-the-red-led-on-the-pi-camera-module/">
-More on how to do this here</a>
-<p>
-Imgcomp runs a separate program with root privileges to blink the LED.
-This program is compiled as "blink_camera_led" along with imgcomp.
-You can test that this blinks the camera's LED by running blink_camera_led with
-root privileges with this command (which will prompt you for your password)
-<p>
-<div class="c">sudo ./blink_camera_led</div>
-<p>
-blink_camera_led toggles the GPIO line that goes to the camera LED on the raspberry Pi model b+.
-If you are using a model A, you will have to modify the file blink_camera_led.c to specify
-the appropriate GPIO line, then recompile by typing "make".
-<p>
-Once you have made sure that blink_camera_led blinks the LED, you will have to change the owner
-of the file to root and set the "setuid bit".  This will allow the program to run with administrator
-privileges even when invoked by a regular user.
-<p>
-<div class="c">sudo chown root blink_camera_led</div>
-<div class="c">sudo chmod +s blink_camera_led</div>
-<p>
-After this, type "ls -l".  The blink_camera_led file should show roughly like this<br>
-<div class="c">-rwsr-sr-x 1 root pi   6702 Jun 11 16:13 blink_camera_led</div>
-<br>
-If your terminal program supports colour highlighting, this line will also be highlighted.
-Its important that the file attributes "-rwsr-sr-x 1 root" should match what is shown here.
-<p>
--->
-<h3>Configure startup on boot</h3>
-It's best if imgcomp will automatically start after a power failure.  The easiest way to do
-this is to add a line to /etc/rc.local.  Add the following line near the end of rc.local,
-just above the line that reads <span class="c">exit 0</span>
-<p>
-<div class="c">su - pi -c "/home/pi/imgcomp/imgcomp" &amp;</div>
-<p>
-This will cause imgcomp to run on startup.  The login prompt will also start, but will quickly
-become hidden by all the output that imgcomp produces.  However, you will still be able to
-log into the console by typing your username and password.  However, your have to do this
-blindly because your typing will be obscured by all the imgcomp output.
-After logging in, type "killall -9 imgcomp" to kill
-the program.  You can restart it by typing "imcomp/imgcomp &amp;" from the home directory.
-Started this way, it will keep running even after you log out.
-
-
-<h3>Disable screen blanking</h3>
-To disable screen blanking in console mode:<br>
-
-In the file /etc/kbd/config change:<p>
-<span class="c">BLANK_TIME=30</span> to <span class="c">BLANK_TIME=0</span><br>
-Also change:<br>
-<span class="c">POWERDOWN_TIME=30</span> to <span class="c">POWERDOWN_TIME=0</span>
-<br>
-<a href="https://www.raspberrypi.org/forums/viewtopic.php?f=66&t=18200">more on this here</a>
-
-<h3>Disable on screen logo</h3>
-I prefer to disable the raspberry pi logo at the top of the screen
-to leave more room for text.  To disable the logo, add <span class="c">logo.nologo</span> to the end of the line
-in the file <span class="c">/boot/cmdline.txt</span>.  The line should look like this:<p>
-<small>dwc_otg.lpm_enable=0 console=ttyAMA0,115200 console=tty1 root=/dev/mmcblk0p2 rootfstype=ext4 elevator=deadline rootwait <b>logo.nologo</b></small>
-<p>
-<a href="http://ananddrs.com/2013/09/18/remove-rpi-logo-startup/">more on this here</a>
-<p><br>
+<h2>Imgcomp setup scripts</h2>
+Please see imgcomp/setup/setup-imgcomp.txt for how to set it up.
 
 
 <h2>How image detection works</h2>

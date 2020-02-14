@@ -1,8 +1,8 @@
 # Install extra packages I like to use with imgcomp.
 # These are not required.
-apt-get install -y vim
-apt-get install -y jhead
-apt-get install -y fbi
-apt-get install -y jp2a
-apt-get install -y samba
+sudo apt-get install -y vim
+sudo apt-get install -y jhead
+sudo apt-get install -y fbi
+sudo apt-get install -y jp2a
+sudo apt-get install -y samba
 

@@ -3,28 +3,9 @@
 # It is assumed that setup-imgcomp has already been run.
 # This script assumes imgcomp is in /home/pi/imgcomp
 
-if [ "$(pwd)" != "/home/pi/imgcomp" ]; then
-	echo "imgcomp needs to be in /home/imgcomp for this to work"
-	echo "Aborting!"
-	exit -1
-fi
-
-if grep -q "/home/pi/imgcomp/imgcomp" /etc/rc.local; then
-	echo "    imgcomp already set up to run at startup"
+if crontab -l 2>/dev/null | grep -q "imgcomp/imgcomp"; then
+	echo "    crontab entry for starting at startup already exists"
 else
-	echo "adding imcomp to rc.local to run at startup"
-	# Note: This makes imgcomp run at startup.  this prionts lot of stuff all the time,
-	# but you can still log in and kill imgcomp if you ignore all the stuff being printed.
-	sudo sed -i '/exit 0$/c\# Start my imgcomp program on startup\nsu - pi -c \"/home/pi/imgcomp/imgcomp\" &\n\nexit 0\n' /etc/rc.local
+	echo "Adding crontab entry to start imcgomp at startup"
+	crontab -l 2>/dev/null| { cat; echo "@reboot imgcomp/imgcomp &"; } | crontab -
 fi
-
-if crontab -l 2>/dev/null | grep -q "/imgcomp/free_up_space"; then
-	echo "    crontab entry for free_up_space script already exists"
-else
-	echo "Adding crontab entry to periodically delete old images"
-	# Run the free_up_space script every hour to delete the oldest day's directory
-	# if space on the flash card is runninglow.
-	crontab -l 2>/dev/null| { cat; echo "3 * * * * /home/pi/imgcomp/free_up_space"; } | crontab -
-fi
-
-

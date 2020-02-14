@@ -6,14 +6,11 @@
 # Make sure the camera is enabled
 
 if [ ! -f ../imgcomp ]; then
-	echo "You need to build imgcomp first."
-    echo "Go into the imgcomp directorytype \"make\" to build it."
-	exit 1
-fi
-
-if [[ $EUID -ne 0 ]]; then
-	echo "Parts of this script require administrator priviledged."
-	echo "You may be propted to enter your password"
+	echo "Building imgcomp first."
+    echo
+    cd ..
+    make
+    cd setup
 fi
 
 if grep -q "start_x\=1" /boot/config.txt; then
