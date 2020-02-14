@@ -29,6 +29,8 @@ mode is primarily used for development and diagnostics.  The invocation for this
 <div class="c">imgcomp [image1.jpg] [image2.jpg]</div>
 
 <h2>Imgcomp options</h2>
+The directory <b>conf-examples</b> contains a number of xample imgcomp.conf configuration files.
+<p>
 Imgcomp parameters can be provided on the command line or in a file "imgcomp.conf"
 which is read from the current directory.
 When parameters are specified in the imgcomp.conf file 
@@ -41,12 +43,16 @@ The imgcomp.conf file is read before command line arguments are interpreted.
 The file "imgcomp.conf.example" contains an example imgcomp.conf file.
 I recommend you start with that file.
 
+<div class="p">aquire_cmd</div>
+Specifies the raspistill command and command line options to use.  This line contains
+all the raspistill options.
 
 <div class="p">scale</div>
 How much to scale jpeg images by before running the detection algorithm.  Scaling the image
 down makes the program run faster and less susceptible to pixel noise.  Scale value can be
 1, 2, 4 or 8.  Default is 4.  I only use it with a scaling of 4 myself.
-This equates to the command line option "-scale 4" or an imcomp.conf entry of "scale = 4"
+This equates to the command line option "-scale 4" or an imcomp.conf entry of "scale = 4".
+Warning, I have not tested this with non-default values.
 
 <div class="p">region</div>
 Specifies what region of the image that detection is to be done over.
@@ -124,14 +130,10 @@ Spurious detection ignores any changes where the images before and after the ima
 are identical.  This ignores single image events, such as an insect flying past
 the lens.  Changes that do not return to the previous image will not be ignored.
 
-<div class="p">blink_cmd</div>
-Raspistill can trigger another program to blink the LED on the raspberry pi camera
-module when it detects motion.<br>
-<p>
-A separate program, "blink_camera_led" is used to blink the LED.<br>
-This program needs to be setuid root to have sufficient privileges
-for manipulating the hardware I/O lines.  The "blink_camera_led" program works
-on Raspberry Pi model B+ and Raspbery Pi 2 model B
+<div> class="p">fatigue</div>
+Set tins parameter to zero to disable "motion fatigue".  Motion fatigue makes
+imgcomp insensitive to areas that have had a lot of motion.  Motion detection is useful
+to avoid false triggers from tree shadows and such, but it can cause it to miss stuff.
 
 <div class="p">timelapse</div>
 Specifies a time-lapse interval, in seconds.  For example "tl=600" will cause imgcomp

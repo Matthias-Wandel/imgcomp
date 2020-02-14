@@ -1,9 +1,7 @@
 
-Setting up:
-imgcomp and the browsing program (view.cgi) must be compiled with their respective makefiles.
+Setting up imgcomp
+Please see setup/setting_up.txt for instructions on which scripts to run to set up.
 
-Some incomplete notes in setup/setting_up.txt
-Some scripts to do some of the setting it up.
 --------------------------------------------------------------------------------------------------
 
 Assumed directory structure:

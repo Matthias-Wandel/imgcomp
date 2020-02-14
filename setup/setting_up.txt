@@ -1,18 +1,72 @@
-Things to set up:
+-----------------------------------------------------------
+Setting up imgcomp.
+-----------------------------------------------------------
+From the default user pi, 
+put imgcomp into /home/pi/imgcomp/...
+either by git cloning it or by unzipping the archive.
 
-Things the script does:
-  Disable screen blanking
-  Make ram disk
-  Enable camera module
+Make sure you can sudo.  Type:
+  sudo whoami
+
+You may be prompted for your password.  It sould print "root" afterwards.
+
+Start setting things up:
+  cd imgcomp/setup
+  ./install-packages
+Optionally install additional packages (useful but not necessary)
+  ./install-packages-extra
 
 
-Make obj directory
-Compile
-File sharing
+Configure build imgcomp, configure imgcomp, make ramdisk
+  cd ~/imgcomp/setup
+  ./setup-imgcomp
+  
+Now try running imgcomp
+  cd ~
+  imgcomp/imgcomp
+
+After a whole bunch of initialization lines, you should see lines printed
+starting with a 6 digit number.  This number is time in HHMMSS
+If there is motion, you will see lines that look roughly like this:
+
+        110643  133 (1188, 617) (motion)
+        
+These images will be saved in the ~/images directory.
+        
+
+if you want to have imgcomp automatically start at startup
+do the following
+  cd ~/imgcomp/setup
+  ./setup-imgcomp-autorun
+
+-----------------------------------------------------------
+HTML based image viewing:
+Configure apache2 and compile the viewing program.
+-----------------------------------------------------------
+Configure web server and make directories
+  cd ~/imgcomp/setup
+  ./setup-browsing
+
+Determine your Pi's IP address (I assume you already configured
+it to run on your WIFI or plugged it into your LAN)
+Type
+  ifconfig
+  
+Your IP address will be under eth0: (for plugged in) or under "wlan0:"
+if you are using wifi.  The line looks roughly like this:
+        inet 192.168.0.106  netmask 255.255.255.0  broadcast 192.168.0.255
+        
+In this case, your IP addres would be 192.168.0.106
+
+From a browser on another computer, go to this URL 
+    (using your IP address instead of the .106 address)
+    http://192.168.0.106/view.cgi
 
 
-Addigional setup:
-Setting up samba
+-----------------------------------------------------------
+Addigional setup notes (to myself)
+-----------------------------------------------------------
+Setting up samba manually:
   apt-get install samba
   Add this to the end of /etc/smb.cof:
 	[pi]
@@ -34,12 +88,11 @@ Configure static ip
 
 
 Other useful things to install
-    vim
-    jhead
+    vim          Text editor I like to use.
+    jhead        Show exif metadata
     fbi          View images on console.
     jp2a         Display jpeg as ascii
-    imagemagick  Needed for video mode. 
-    gpac         This installs the untility "mp4box".  Needed for video.
-    cifs utils.  Example: mount -t cifs -o username=pi,password=mine,dir_mode=0777,file_mode=0777 //192.168.0.10/pi p
- 
-
+    imagemagick  Needed for video mode mode hack.
+    gpac         This installs the untility "mp4box".  Needed for video mode hack.
+    cifs utils.  For mounting windows or samba shares as file systems.
+                 Example: mount -t cifs -o username=pi,password=mine,dir_mode=0777,file_mode=0777 //192.168.0.10/pi p
