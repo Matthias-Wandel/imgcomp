@@ -21,6 +21,38 @@
 #include "view.h"
 
 //----------------------------------------------------------------------------------
+// Nav linkgs for top and bottom of page.
+//----------------------------------------------------------------------------------
+static void PrintNavLinks(Dir_t * Dir)
+{
+    if (strlen(Dir->HtmlPath) > 2){
+        printf("<a href=\"view.cgi?%s\">[Up:%s]</a>\n",Dir->Parent,Dir->Parent);
+    }
+    if (Dir->Previous[0]){
+        printf("<a href=\"view.cgi?%s\">[Prev:%s]</a>\n",Dir->Previous,Dir->Previous);
+    }
+    if (Dir->Next[0]){
+        printf("<a href=\"view.cgi?%s\">[Next:%s]</a>\n",Dir->Next,Dir->Next);
+    }
+
+    if (!Dir->Dirs.NumEntries){
+        printf("<a href=\"view.cgi?%s/\">[JS view]</a>\n",Dir->HtmlPath);
+    }
+    
+    if (strstr(Dir->HtmlPath, "saved") == NULL){
+        char SavedDir[50];
+        struct stat sb;        
+        sprintf(SavedDir, "pix/saved/%.4s",Dir->HtmlPath);
+        if (stat(SavedDir, &sb) == 0 && S_ISDIR(sb.st_mode)){
+            printf("<a href=\"view.cgi?%s\">[Saved]</a>\n",SavedDir+4);
+        }
+    }
+    printf("<a href='/realtime.html'>[Realtime]</a>\n");
+    printf("<a href='view.cgi?actagram'>[Actagram]</a>\n");
+
+}
+
+//----------------------------------------------------------------------------------
 // Create browsable HTML index for a directory
 //----------------------------------------------------------------------------------
 void MakeHtmlOutput(Dir_t * Dir)
@@ -36,7 +68,7 @@ void MakeHtmlOutput(Dir_t * Dir)
     int DirMinute = 0;
     int AllSameDate;
     int IsSavedDir = 0;
-    int IsRoot;
+    int IsRoot = 0;
     int HasSubdirImages = 0;
     int ThumbnailHeight = 100;
     float AspectRatio = 0;
@@ -80,27 +112,20 @@ void MakeHtmlOutput(Dir_t * Dir)
     printf(" margin-bottom:2px; display: block; background-color: #c0c0c0;}\n"
         "</style></head>\n");
 
-    printf("%s\n",Dir->HtmlPath);
+    //printf("%s\n",Dir->HtmlPath);
     if (strlen(Dir->HtmlPath) > 2){
         if (Dir->Parent[0] == '\0'){
             // Empty query string would mean "today", so make it a '/'
             Dir->Parent[0] = '/';
             Dir->Parent[1] = '\0';
         }
-        printf("<a href=\"view.cgi?%s\">[Up:%s]</a>\n",Dir->Parent,Dir->Parent);
-        IsRoot = 0;
     }else{
         IsRoot = 1;
     }
-    if (Dir->Previous[0]){
-        printf("<a href=\"view.cgi?%s\">[Prev:%s]</a>\n",Dir->Previous,Dir->Previous);
-    }
-    if (Dir->Next[0]){
-        printf("<a href=\"view.cgi?%s\">[Next:%s]</a>\n",Dir->Next,Dir->Next);
-    }
+
     
     printf("<p>\n");
-    
+        
     if (IsRoot){
         struct statvfs sv;
         char HostName[30];
@@ -112,8 +137,11 @@ void MakeHtmlOutput(Dir_t * Dir)
         
         statvfs("pix/", &sv);
         printf("%s: %5.1f gig ", HostName, (double)sv.f_bavail * sv.f_bsize / 1000000000);
-        printf("(%4.1f%%) free<p>\n", (double)(sv.f_bavail*100.0/sv.f_blocks));
+        printf("(%4.1f%%) free<br>\n", (double)(sv.f_bavail*100.0/sv.f_blocks));
     }
+    
+    PrintNavLinks(Dir);
+    puts("<br>");
 
     int prevwkd = 6, thiswkd=6;
 
@@ -230,7 +258,7 @@ void MakeHtmlOutput(Dir_t * Dir)
     }
 
     if (Images.NumEntries){
-        printf("%s: %d Images<p>\n",Dir->HtmlPath, NumImages);
+        printf("Directory <b>%s</b>: <b>%d</b> Images<p>\n",Dir->HtmlPath, NumImages);
     }
 
     // Find time breaks in images.
@@ -318,7 +346,8 @@ void MakeHtmlOutput(Dir_t * Dir)
                     }
                 }
 
-                printf("<a href=\"view.cgi?%s/%s\">",Dir->HtmlPath, Name);
+                //printf("<a href=\"view.cgi?%s/%s\">",Dir->HtmlPath, Name);
+                printf("<a href=\"view.cgi?%s/#%.4s\">",Dir->HtmlPath, Name+12);
                 if (SkipNum == 0){
                     if (FullresThumbs){
                         printf("<img src=\"pix/%s/%s\">",Dir->HtmlPath, Name);
@@ -359,32 +388,7 @@ void MakeHtmlOutput(Dir_t * Dir)
     }
 
     printf("<p>\n");    
-    if (strlen(Dir->HtmlPath) > 2){
-        printf("<a href=\"view.cgi?%s\">[Up:%s]</a>\n",Dir->Parent,Dir->Parent);
-    }
-    if (Dir->Previous[0]){
-        printf("<a href=\"view.cgi?%s\">[Prev:%s]</a>\n",Dir->Previous,Dir->Previous);
-    }
-    if (Dir->Next[0]){
-        printf("<a href=\"view.cgi?%s\">[Next:%s]</a>\n",Dir->Next,Dir->Next);
-    }
-
-    if (!Directories.NumEntries){
-        printf("<a href=\"view.cgi?%s/\">[JS view]</a>\n",Dir->HtmlPath);
-    }
-
-
-    if (!IsSavedDir){
-        char SavedDir[20];
-        struct stat sb;        
-        sprintf(SavedDir, "pix/saved/%.4s",Dir->HtmlPath);
-        if (stat(SavedDir, &sb) == 0 && S_ISDIR(sb.st_mode)){
-            printf("<a href=\"view.cgi?%s\">[Saved]</a>\n",SavedDir+4);
-        }
-    }
-    printf("<a href='/realtime.html'>[Realtime]</a>\n");
-    printf("<a href='view.cgi?actagram'>[Actagram]</a>\n");
-  
+    PrintNavLinks(Dir);
 
     // Add javascript for hover-over preview when showing a whole day's worth of images
     if (HasSubdirImages){

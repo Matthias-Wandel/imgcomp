@@ -52,10 +52,9 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
            "  button {font-size: 20px;}\n"
            "</style></head>\n\n");
 
-    printf("<div>");
     printf("<center>\n<span id='image'>image goes here</span>\n");
     printf("<br>\n<span id='links'>links goes here</span>\n");
-    printf("</center></div>\n");
+    printf("<br>");
 
     // Output HTML code for the buttons below the row of navigation links
     {
