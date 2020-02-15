@@ -2,8 +2,10 @@
 // HTML based image browser to use with imgcomp output.
 //
 // HTML output for browsing one image at a time.  This for the non-javascript centric
-// version.  showpic.c largely replaces this, but the non-jabascript centric version
+// version.  showpic.c largely replaces this, but the non-javascript centric version
 // is still of use, like for showing exif camera settings.
+//
+// Imgcomp and html browsing tool is licensed under GPL v2 (see README.txt)
 //---------------------------------------------------------------------------------- 
 #include <stdio.h>
 #include <errno.h>

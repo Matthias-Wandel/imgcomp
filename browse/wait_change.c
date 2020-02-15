@@ -3,6 +3,8 @@
 //
 // Small CGI program to watch log file and wait for significant enough change
 // to trigger an image update in realtime mode.
+//
+// Imgcomp and html browsing tool is licensed under GPL v2 (see README.txt)
 //----------------------------------------------------------------------------------
 #include <stdio.h>
 #include <unistd.h>

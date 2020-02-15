@@ -5,6 +5,8 @@
 // by my imgcomp program on raspberery pi.
 // Parses parameters, collects info, then depending on what is requested calls
 // appropirate module to generate the HTML.
+//
+// Imgcomp and html browsing tool is licensed under GPL v2 (see README.txt)
 //----------------------------------------------------------------------------------
 #include <stdio.h>
 #include <errno.h>

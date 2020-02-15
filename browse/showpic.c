@@ -6,6 +6,8 @@
 // for javascript and some variables.
 // The page includes showpic.js to do most of the work.  Flips thru images with
 // only reloading the appropriate jpeg image, no flicker.
+//
+// Imgcomp and html browsing tool is licensed under GPL v2 (see README.txt)
 //----------------------------------------------------------------------------------
 #include <stdio.h>
 #include <errno.h>

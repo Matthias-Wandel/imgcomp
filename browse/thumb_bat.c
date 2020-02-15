@@ -4,6 +4,8 @@
 // Uses libjpeg to load image at less than full resolution,
 // then write HTTP image header and resized image to stdout.
 // Can scale by 1, 1/2, 1/4 or 1/8.  Also brightness adjust dark images.
+//
+// Imgcomp and html browsing tool is licensed under GPL v2 (see README.txt)
 //----------------------------------------------------------------------------------
 #include <stdio.h>
 #include <stddef.h>

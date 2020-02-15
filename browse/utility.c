@@ -2,6 +2,8 @@
 // HTML based image browser to use with imgcomp output.
 //
 // List manipulation functions
+//
+// Imgcomp and html browsing tool is licensed under GPL v2 (see README.txt)
 //----------------------------------------------------------------------------------
 #include <stdio.h>
 #include <errno.h>
