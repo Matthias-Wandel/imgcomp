@@ -216,13 +216,13 @@ void MakeHtmlOutput(Dir_t * Dir)
             for (a=0;a<NumBins;a++){
                 if (Bins[a]){
                     char nc = '-';
-                    int minute = (a*60+NumBins/2)/NumBins;
                     if (Bins[a] >= 1) nc = '.';
                     if (Bins[a] >= 8) nc = '1';
                     if (Bins[a] >= 25) nc = '2';
                     if (Bins[a] >= 60) nc = '#';
-                    printf("<a href=\"view.cgi?%s/%s/#%02d\"",Dir->HtmlPath, SubdirName, minute);
-                    printf(" onmouseover=\"mmo('%s/%s')\"",SubdirName, SubdImages.Entries[BinImage[a]].Name);
+                    char * Name = SubdImages.Entries[BinImage[a]].Name;
+                    printf("<a href=\"view.cgi?%s/%s/#%.5s\"",Dir->HtmlPath, SubdirName, Name+7);
+                    printf(" onmouseover=\"mmo('%s/%s')\"",SubdirName, Name);
                     printf(">%c</a>", nc);
                 }else{
                     printf("&nbsp;");
@@ -345,7 +345,7 @@ void MakeHtmlOutput(Dir_t * Dir)
                     }
                 }
                 //printf("<a href=\"view.cgi?%s/%s\">",Dir->HtmlPath, Name);
-                printf("<a href=\"view.cgi?%s/#%.4s\">",Dir->HtmlPath, Name+7);
+                printf("<a href=\"view.cgi?%s/#%.5s\">",Dir->HtmlPath, Name+7);
                 if (SkipNum == 0){
                     if (FullresThumbs){
                         printf("<img src=\"pix/%s/%s\">",Dir->HtmlPath, Name);

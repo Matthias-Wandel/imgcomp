@@ -199,7 +199,7 @@ void MakeImageHtmlOutput(char * ImageName, Dir_t * dir)
         printf("<a href=\"view.cgi?%.*s\">", a, HtmlDir);
         printf("%.*s</a>/", a, HtmlDir);
         printf("<a href=\"view.cgi?%s%s\">%s]</a>\n", HtmlDir, IndexInto, HtmlDir+a+1);
-        printf("<a href=\"view.cgi?%s/#%.4s\">[JS]</a>\n", HtmlDir, ImageName+7);
+        printf("<a href=\"view.cgi?%s/#%.5s\">[JS]</a>\n", HtmlDir, ImageName+7);
 
         if (!IsSavedDir){
             char SavedDir[20];

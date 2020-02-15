@@ -43,10 +43,12 @@ function UpdateLinks(){
         if (a == pic_index){
             links += "<b>["+prefix.substring(5,7)+":"+TimeStr+"]</b>"
         }else{
-            links += "<a href=\"#"+Name.substring(0,4)+"\" onclick=\"SetIndex("+a+")\">["+TimeStr+"]</a>";
+            links += "<a href=\"#"+Name.substring(0,5).trim()
+                 +"\" onclick=\"SetIndex("+a+")\">["+TimeStr+"]</a>";
         }
     }
-    if (To < piclist.length) links += " <a href=\"#\" onclick=\"SetIndex("+(piclist.length-1)+")\">>></a>";
+    if (To < piclist.length) links += 
+        " <a href=\"#\" onclick=\"SetIndex("+(piclist.length-1)+")\">>></a>";
     document.getElementById("links").innerHTML=links;
 }
 
@@ -66,22 +68,23 @@ function UpdateActagram()
         if (a==thismin){
             act += "<b style='background-color: #b0b0ff;'>"+c+"</b>"
         }else{
-            act += "<a href='#"+piclist[ActNums[a]].substring(0,4)
-             +"' onclick='SetIndex("+ActNums[a]+")'>"+c+"</a>"
+            act += "<a href='#"+piclist[ActNums[a]].substring(0,5).trim()
+                + "' onclick='SetIndex("+ActNums[a]+")'>"+c+"</a>"
         }
     }
+    act += a+"!"
     document.getElementById("actagram").innerHTML = "00"+act+"60"
 }
 
 function UpdatePix(){
-
     if (piclist.length){
         var imgname = subdir+prefix+piclist[pic_index]+".jpg"
         var url = pixpath+imgname;
         if (AdjustBright) url = "tb.cgi?"+imgname+(ShowBigOn?"$1":"$2")
         document.getElementById("view").src = url
         var nu = window.location.toString()
-        window.location = nu.split("#")[0]+"#"+piclist[pic_index].substring(0,4)
+        window.location = nu.split("#")[0]+"#"
+            +piclist[pic_index].substring(0,5).trim();
         document.title = imgname
     }
     if (!isSavedDir) document.getElementById("save").innerHTML = "Save"

@@ -110,7 +110,7 @@ void ShowActagram(int all, int h24)
     
     for (;;daynum++){
         int bins[NUMBINS];
-        char BinImgName[NUMBINS][18];
+        char BinImgName[NUMBINS][24];
         char DirName[NUMBINS];
         int a, h;
         VarList HourDirs;
@@ -174,7 +174,7 @@ void ShowActagram(int all, int h24)
                 binno = minute/MinutesPerBin;
                 if (binno >= 0 && binno < NUMBINS){
                     bins[binno] += 1;
-                    if (bins[binno] < 10) strncpy(BinImgName[binno],Name+5,11);
+                    if (bins[binno] < 10) strncpy(BinImgName[binno],Name,23);
                 }
             }
             free(HourPix.Entries);
@@ -197,13 +197,15 @@ void ShowActagram(int all, int h24)
             if (bins[a] >= 100) nc = '#';
             
             if (bins[a] >= 1){
-                printf("<a href='view.cgi?%s/%02d/#%02d'",DayName,a/BinsPerHour, (a%BinsPerHour)*MinutesPerBin);
-                printf(" onmouseover=\"mmo('%s/%02d/%4s-%s.jpg')\"",DayName,a/BinsPerHour,DayName+2,BinImgName[a]);
+                int n = 4;
+                if (BinImgName[a][11] != ' ') n = 5;
+                printf("<a href='view.cgi?%s/%02d/#%.*s'",DayName,a/BinsPerHour, n,BinImgName[a]+7);
+                printf(" onmouseover=\"mmo('%s/%02d/%s')\"",DayName,a/BinsPerHour,BinImgName[a]);
                 printf(">%c", nc);
                 HrefOpen = 1; // Don't close the href till after the next char, makes it easier to hover over single dot.
                 if (AspectRatio == 0){
-                    char HtmlPath[101];
-                    snprintf(HtmlPath,101,"%s/%02d/%4s-%s.jpg",DayName,a/BinsPerHour,DayName+2,BinImgName[a]);
+                    char HtmlPath[200];
+                    snprintf(HtmlPath,199,"%s/%02d/%s",DayName,a/BinsPerHour,BinImgName[a]);
                     AspectRatio = ReadExifHeader(HtmlPath, NULL, NULL);
                 }
             }else{
@@ -235,8 +237,8 @@ void ShowActagram(int all, int h24)
            "   el.href = '/view.cgi?/'+str\n");
     printf("el = document.getElementById('prevn')\n"
            "   el.innerHTML = str + ' &nbsp; &nbsp; 20'"
-           " + str.substring(0, 2)+'-'+str.substring(2,4)+'-'+str.substring(4,6)\n"
-           " + ' &nbsp;'+str.substring(15, 17)+':'+str.substring(17,19);");
+           " + str.substring(0, 2)+'-'+str.substring(2,4)+'-'+str.substring(5,7)\n"
+           " + ' &nbsp;'+str.substring(13, 15)+':'+str.substring(15,17);");
            
     printf("}\n</script>\n");
 }
