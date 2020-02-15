@@ -72,7 +72,6 @@ function UpdateActagram()
                 + "' onclick='SetIndex("+ActNums[a]+")'>"+c+"</a>"
         }
     }
-    act += a+"!"
     document.getElementById("actagram").innerHTML = "00"+act+"60"
 }
 
