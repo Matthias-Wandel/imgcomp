@@ -3,10 +3,10 @@
 
 # The command to start aquiring
 # Tell rapistill to aquire a 1280x720 image every 500 miliseconds.
-aquire_cmd = raspistill -q 10 -n -bm -th none -p 480,0,800,480 -w 1280 -h 720 -o /ramdisk/out%05d.jpg -t 4000000 -tl 500
+aquire_cmd = raspistill -q 10 -n -bm -th none -p 1000,40,600,400 -w 1280 -h 720 -o /ramdisk/out%05d.jpg -t 4000000 -tl 500
 
 # Directory to get images from as they are aquired
-# (aquire_cmd must also indicate to put images there)
+# (raspistill aquire_cmd must also indicate to put images there)
 followdir = /ramdisk
 
 # Region of interst.  Format left-right,top-bottom 
@@ -18,8 +18,12 @@ followdir = /ramdisk
 # any other colour in the image is treated as normal detection area.
 #diffmap = "diffmap.jpg"
 
-# Turn on spurious reject
+# Turn on spurious reject (change that reverts to previous after just 1 frame)
 spurious = 1
+
+# Brightness change monitor, on (1) by default.  Restarts rasistill
+# if image brightness changes to reset auto exposure.
+brmonitor = 1
 
 # Where to save interesting images to
 savedir = images
@@ -27,14 +31,15 @@ savedir = images
 # Where to save images that have changes.  One directory per day
 # with subdirectories for each hour.  This is also the default naming
 # scheme.
-savenames = %m%d/%H/%m%d-%H%M%S
+savenames = %y%m%d/%H/%m%d-%H%M%S
 
-# How many seconds between images kept regardless of motion for timelapses.
-# Configure for every 300 seconds (5 minutes)
-timelapse = 300
+# How many seconds between images kept regardless of motion.
+timelapse = 600
 
 # Sensitivity.  50 would be quite senstive.  400 is relatively insensitive.
 sensitivity = 100
 
-# Specify command to run to blink  the LED when motion is detected
-blink_cmd = /home/pi/imgcomp/blink_camera_led
+# Log to file instead of console, and where to copy logs to.
+# Logging needs to be on and use /ramdisk/log.txt for realtime view mode to work.
+logtofile = /ramdisk/log.txt
+movelognames = images/%y%m%d/%H/Log.html
