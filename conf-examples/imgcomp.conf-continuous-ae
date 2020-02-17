@@ -1,11 +1,12 @@
 # Imgcomp test configruation file
 # Please see docs/config.html for more details on cofiguring Imgcomp
 
-# The command to start aquiring
-# Tell rapistill to aquire a 1280x720 image every 500 miliseconds.
-#aquire_cmd = raspistill -q 10 -n -bm -th none -ev 1 -p 300,0,980,600 -w 1920 -h 1440 -o /ramdisk/out%05d.jpg -t 4000000 -tl 1000
-#aquire_cmd  = raspistill -q 10 -s     -th none       -p 300,0,980,600 -w 640  -h 480  -o /ramdisk/out%05d.jpg -t 0       -tl 0 
-aquire_cmd = raspistill -q 10  -tl 0 -t 0 -s -th none                        -w 320 -h 240   -o /ramdisk/out%05d.jpg 
+# The command to start aquiring, as fast as it can (-tl 0) without burst mode
+# Burst mode (-bm) is faster but turns off exposure tracking.
+aquire_cmd  = raspistill -q 10  -th none -w 1600 -h 1200 -o /ramdisk/out%05d.jpg  -tl 0 -t 0
+
+# Turn off raspistill restarts (not needed with continuous AE)
+brmonitor = 0
 
 # Directory to get images from as they are aquired
 # (aquire_cmd must also indicate to put images there)
@@ -28,13 +29,15 @@ savedir = images
 
 # How many seconds between images kept regardless of motion for timelapses.
 # Configure for every 300 seconds (5 minutes)
-timelapse = 60
+timelapse = 600
 
 # Sensitivity.  50 would be quite senstive.  400 is relatively insensitive.
-# 1000 never triggers
-sensitivity = 1000
+sensitivity = 150
 
-savenames = %m%d/%H%M%S
+savenames = %y%m%d/%H/%m%d-%H%M%S
 
-brmonitor = 0
-sendsigs = 1
+
+# Log to file instead of console, and where to copy logs to.
+# Logging needs to be on and use /ramdisk/log.txt for realtime view mode to work.
+logtofile = /ramdisk/log.txt
+movelognames = images/%y%m%d/%H/Log.html
