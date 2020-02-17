@@ -126,8 +126,8 @@ function SetLateTimer(){
     ScrollTimer = setTimeout(ScrollMoreTimer, 20)
 }
 function PicMd(dir){
-    DoNext(dir);
     ScrollDir = dir
+    DoNext(dir);
     ScrollTimer = setTimeout(ScrollMoreTimer, 400)
 }
 function PicMu(){
