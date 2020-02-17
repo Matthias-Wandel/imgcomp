@@ -132,14 +132,15 @@ function PicMd(dir){
 }
 function PicMu(){
     ScrollDir = 0
+    document.getElementById("play").innerHTML="Play"
     clearTimeout(ScrollTimer)
 }
 function Play()
 {
-    document.getElementById("play").innerHTML=ScrollDir?"Play":"Stop"
     if (ScrollDir){
         PicMu()
     }else{
+        document.getElementById("play").innerHTML="Stop"
         PicMd(1)
     }
 }
