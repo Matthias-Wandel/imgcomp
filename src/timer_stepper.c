@@ -581,8 +581,3 @@ void ReadTimer(void)
         printf(" l=%d\n",longest);
     }
 }
-
-// Notes:
-// Calling CheckUdp adds about 650 microseconds!
-// Calling uSleep adds 60 microseconds + specified time.
-

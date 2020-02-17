@@ -8,11 +8,6 @@
 #include <ctype.h>		// to declare isupper(), tolower() 
 #include <stdlib.h>
 #include <string.h>
-#ifdef _WIN32
-#else
-    #include <dirent.h>
-    #include <unistd.h>
-#endif
 
 #include "imgcomp.h"
 #include "config.h"

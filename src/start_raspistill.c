@@ -10,15 +10,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
-
-#ifdef _WIN32
-    typedef int pid_t;
-    #define execvp(a,b)
-    #define fork() 1
-#else
-    #include <unistd.h>
-    #include <sys/wait.h>
-#endif
+#include <unistd.h>
+#include <sys/wait.h>
 
 #include "imgcomp.h"
 #include "jhead.h"
@@ -72,9 +65,6 @@ static void do_launch_program(char * cmd_string)
 // Parse command line and launch.
 //-----------------------------------------------------------------------------------
 static int launch_raspistill(void)
-#ifdef _WIN32
-{ return 0; }
-#else
 {
     pid_t pid;
     int ignore;
@@ -112,8 +102,6 @@ static int launch_raspistill(void)
     }
     return 0;
 }
-#endif
-
 
 //-----------------------------------------------------------------------------------
 // Parse command line and launch.
@@ -225,9 +213,7 @@ int manage_raspistill(int NewImages)
         // trigger signals.  In this mode, it does running exposure adjustments, but
         // only takes pictures when it receives a signal.
         fprintf(Log,"send signal to raspistill (pid=%d)\n",raspistill_pid);
-        #ifndef _WIN32
         kill(raspistill_pid, SIGUSR1);
-        #endif
     }
     return 0;
     

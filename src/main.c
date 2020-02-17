@@ -12,19 +12,8 @@
 #include <string.h>
 #include <time.h>
 #include <math.h>
-#ifdef _WIN32
-    #include "readdir.h"
-    #define S_ISREG(m) (((m) & S_IFMT) == S_IFREG)
-    #define strdup(a) _strdup(a) 
-    extern void sleep(int);
-    extern void usleep(int);    
-    #define unlink(n) _unlink(n)
-    #define PATH_MAX _MAX_PATH
-#else
-    #include <dirent.h>
-    #include <unistd.h>
-    #include <errno.h>
-#endif
+#include <unistd.h>
+#include <errno.h>
 
 #include "imgcomp.h"
 #include "config.h"
@@ -89,8 +78,6 @@ static time_t NextTimelapsePix;
 static LastPic_t BaselinePic;
 
 time_t LastPic_mtime;
-struct timespec LastPic_mtime_ns;
-
 
 //-----------------------------------------------------------------------------------
 // Convert picture coordinates from 120 degree fishey lens
@@ -218,6 +205,7 @@ static int ProcessImage(LastPic_t * New, int DeleteProcessed)
 
 		
         if (Trig.DiffLevel > Sensitivity && UdpDest[0]){
+            // For my cap shooter experiment.  Not useful for anything else.
             char showx[1001];
             int xs, a;
             const int colwidth=120;
@@ -236,9 +224,7 @@ static int ProcessImage(LastPic_t * New, int DeleteProcessed)
 			
 			GeometryConvert(&Trig);
             
-            #ifndef _WIN32
-                if (UdpDest[0]) SendUDP(Trig.x, Trig.y, Trig.DiffLevel, Trig.Motion);
-            #endif
+            if (UdpDest[0]) SendUDP(Trig.x, Trig.y, Trig.DiffLevel, Trig.Motion);
         }
         
         Raspistill_restarted = 0;
@@ -266,7 +252,6 @@ static int ProcessImage(LastPic_t * New, int DeleteProcessed)
     }
     
     if (DeleteProcessed){
-        //printf("Delete %s\n",LastPics[2].Name);
         unlink(LastPics[2].Name);
     }
     return LastPics[0].IsMotion;
@@ -347,7 +332,6 @@ static int DoDirectoryFunc(char * Directory, int DeleteProcessed)
                 exit(1);
             }
             NewPic.mtime = (unsigned)statbuf.st_mtime;
-            LastPic_mtime_ns = statbuf.st_mtim;
         }
         LastPic_mtime = NewPic.mtime;
         
@@ -360,10 +344,6 @@ static int DoDirectoryFunc(char * Directory, int DeleteProcessed)
     FileNames = NULL;
 
 	SinceMotionMs += MsPerCycle;
-
-    //if (SawMotion){
-    //    run_blink_program();
-    //}
 
     return SawMotion;
 }
@@ -599,9 +579,7 @@ int main(int argc, char **argv)
         LogFileMaintain(0);
     }
     
-    #ifndef _WIN32
     if (UdpDest[0]) InitUDP(UdpDest);
-    #endif
 
     // Adjust region of interest to scale.
     ScaleRegion(&Regions.DetectReg, ScaleDenom);
@@ -683,9 +661,4 @@ int main(int argc, char **argv)
     }
     return 0;
 }
-
-// Features to consider adding:
-//--------------------------------------------------------
-// Polling same file mode (for use with  uvccapture)
-// Dynamic thresholding if too much is happening?
 
