@@ -31,17 +31,12 @@ void usage (void)// complain about bad command line
      " -savedir <saveto>    Where to save images with changes\n"
      " -savenames <scheme>  Output naming scheme.  Uses strftime\n"
      " -tempdir <dir>       Where to put temp images for video mode\n"
-	 " -mspercycle <ms>     Change default check interval (alters timeouts)\n"
-     "                      to format the output name.  May include\n"
-     "                      '/' characters for directories.\n"
      " -sensitivity N       Set sensitivity.  Lower=more sensitive\n"
      " -blink_cmd <command> Run this command when motion detected\n"
      "                      (used to blink the camera LED)\n"
      " -tl N                Save image every N seconds regardless\n"
      " -spurious            Ignore any change that returns to\n"
      "                      previous image in the next frame\n"
-     " -sendsigs            Send signal to raspistil every second\n"
-     "                      For continous AE rapsistill, default off\n"
      " -brmonitor           Restart raspistill on brightness\n"
      "                      changes (default on)\n"
      " -fatigue             Motion fatigue time constant, 0=0ff\n"
@@ -128,8 +123,6 @@ static int parse_parameter (const char * tag, const char * value)
 		}
     }else if (keymatch(tag, "postmotion", 10)) {
         if (sscanf(value, "%d", &PostMotionKeep) != 1) return -1;
-    }else if (keymatch(tag, "sendsigs", 8)) {
-        if (sscanf(value, "%d", &SendTriggerSignals) != 1) return -1;        
     }else if (keymatch(tag, "brmonitor", 5)) {
         if (sscanf(value, "%d", &BrightnessChangeRestart) != 1) return -1;        
     }else if (keymatch(tag, "fatigue", 7)) {
@@ -178,8 +171,6 @@ static int parse_parameter (const char * tag, const char * value)
         if (!ParseRegion(&Regions.DetectReg, value)) goto bad_value;
     } else if (keymatch(tag, "gatedelay", 9)) {
         if (sscanf(value, "%d", &GateDelay) != 1) return -1;
-    } else if (keymatch(tag, "mspercycle", 10)) {
-        if (sscanf(value, "%d", &MsPerCycle) != 1) return -1;
     } else if (keymatch(tag, "exclude", 4)) {
         if (Regions.NumExcludeReg >= MAX_EXCLUDE_REGIONS){
             fprintf(stderr, "too many exclude regions");

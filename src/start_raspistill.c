@@ -104,7 +104,7 @@ static int launch_raspistill(void)
 }
 
 //-----------------------------------------------------------------------------------
-// Parse command line and launch.
+// Manage raspistill - may need restarting if it dies or brightness changed too much.
 //-----------------------------------------------------------------------------------
 static int MsSinceImage = 0;
 static int MsSinceLaunch = 0;
@@ -117,12 +117,12 @@ static double RunningAverageBright;
 int manage_raspistill(int NewImages)
 {
 	int timeout;
-    MsSinceImage += MsPerCycle;
-    MsSinceLaunch += MsPerCycle;
+    MsSinceImage += 1000;
+    MsSinceLaunch += 1000;
     if (NewImages > 0){
         MsSinceImage = 0;
 		NumTotalImages += NewImages;
-        if (MsSinceLaunch <= MsPerCycle*2 && BrightnessChangeRestart){
+        if (MsSinceLaunch <= 2000 && BrightnessChangeRestart){
             fprintf(Log,"Exp:%5.1fms Iso:%d  Bright:%d  av=%5.2f\n",
                 ImageInfo.ExposureTime*1000, ImageInfo.ISOequivalent, 
                 NewestAverageBright, RunningAverageBright);
@@ -168,11 +168,6 @@ int manage_raspistill(int NewImages)
 		}
     }
 
-    if (MsSinceLaunch/MsPerCycle > 7200){
-        fprintf(Log,"2 hour raspistill relaunch\n");
-        goto force_restart;
-    }
-
     if (BrightnessChangeRestart){
         // If brightness of image changes a lot, restart raspistill, because
         // raspistill doesn't normally do running exposure adjustments.
@@ -207,13 +202,6 @@ int manage_raspistill(int NewImages)
         // Smarter things to do later:
         // If image too bright and shutter speed is not fastest, launch raspistill
         // if image is too dark and shutter speed is not 1/8, launch raspistill.
-    }
-    if (SendTriggerSignals){
-        // It's possible to run raspistill so it runs continuously and receives
-        // trigger signals.  In this mode, it does running exposure adjustments, but
-        // only takes pictures when it receives a signal.
-        fprintf(Log,"send signal to raspistill (pid=%d)\n",raspistill_pid);
-        kill(raspistill_pid, SIGUSR1);
     }
     return 0;
     

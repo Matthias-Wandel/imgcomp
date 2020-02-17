@@ -33,8 +33,6 @@ int PostMotionKeep = 0;
 
 int BrightnessChangeRestart = 1;
 int MotionFatigueTc = 30;
-int SendTriggerSignals = 0;
-int MsPerCycle;
 
 char DiffMapFileName[200];
 Regions_t Regions;
@@ -88,26 +86,26 @@ static void GeometryConvert(TriggerInfo_t  * Trig)
 	double x,y, magxy, mag_rad;
 	double px, py,ta;
 	double pan,tilt;
-	
+
 	// Center-referenced coordinates.
 	x = (Trig->x-1920/2)/1920.0;
 	y = -(Trig->y-1440/2)/1920.0;
 	magxy = sqrt(x*x+y*y); // Magnitude from center.
-	
+
 	// Convert to degrees from center and correct for lens distortion
 	mag_rad = magxy * (109 + magxy*magxy * 21);
 	mag_rad = mag_rad * 3.1415/180; // Convert to radians.
-	
+
 	// Now convert to planar coordinates.
 	ta = tan(mag_rad);
 	px = (ta*x)/magxy; // px and py are in "screen" meters from center
 	py = (ta*y)/magxy;
 	printf("px,py = %5.2f,%5.2f  ",px,py);
-	
+
 	// Now convert planar coordinates to pan angle and elevation, in degrees.
 	pan = atan(px)*180/3.1415;
 	tilt = atan(py/sqrt(1+px*px))*180/3.1415;
-	
+
 	printf("Pan: %5.1f tilt:%5.1f\n",pan,tilt);
 	Trig->x = (int)(pan*10); // Return it as tenth's of a degree
 	Trig->y = (int)(tilt*10);
@@ -173,7 +171,7 @@ static int ProcessImage(LastPic_t * New, int DeleteProcessed)
             LastPics[0].IsMotion = 1;
         }
 
-        if (SpuriousReject && LastPics[2].Image && 
+        if (SpuriousReject && LastPics[2].Image &&
             LastPics[0].IsMotion && LastPics[1].IsMotion
             && LastPics[2].DiffMag < (Sensitivity>>1)){
             // Compare to picture before last picture.
@@ -199,17 +197,17 @@ static int ProcessImage(LastPic_t * New, int DeleteProcessed)
                 BackupImageFile(LastPics[2].Name, LastPics[2].DiffMag, 0);
             }
         }
-                
+
         fprintf(Log,"\n");
 		SinceMotionPix += 1;
 
-		
+
         if (Trig.DiffLevel > Sensitivity && UdpDest[0]){
             // For my cap shooter experiment.  Not useful for anything else.
             char showx[1001];
             int xs, a;
             const int colwidth=120;
-            
+
             for (a=0;a<colwidth;a++){
                 showx[a] = '.';
             }
@@ -217,23 +215,23 @@ static int ProcessImage(LastPic_t * New, int DeleteProcessed)
             xs = (Trig.x*colwidth)/(1920);
             if (xs < 0) xs = 0;
             if (xs > colwidth-3) xs = colwidth-3;
-           
+
             showx[xs] = '#';
             showx[xs+1] = '#';
             printf("%s %d,%d\n",showx, Trig.x, Trig.y);
-			
+
 			GeometryConvert(&Trig);
-            
+
             if (UdpDest[0]) SendUDP(Trig.x, Trig.y, Trig.DiffLevel, Trig.Motion);
         }
-        
+
         Raspistill_restarted = 0;
     }
 
     if (LastPics[2].Image){
 		static int PrintFlag;
         // Third picture now falls out of the window.  Free it and delete it.
-        
+
         if (UdpDest[0] && (SinceMotionMs > 4000 || (SinceMotionMs > 2000 && !BaselinePic.Image))){
             // If it's been 30 seconds since we saw motion, save this image
             // as a background image for later squirrel detection
@@ -250,7 +248,7 @@ static int ProcessImage(LastPic_t * New, int DeleteProcessed)
 			if (SinceMotionMs < 1000) PrintFlag = 0;
         }
     }
-    
+
     if (DeleteProcessed){
         unlink(LastPics[2].Name);
     }
@@ -268,7 +266,7 @@ static int DoDirectoryFunc(char * Directory, int DeleteProcessed)
     int a;
     int ReadExif;
     int SawMotion;
-    
+
     SawMotion = 0;
 
     FileNames = GetSortedDir(Directory, &NumEntries);
@@ -282,21 +280,21 @@ static int DoDirectoryFunc(char * Directory, int DeleteProcessed)
         // not yet deleted because we may still need them.
         if (strcmp(LastPics[0].Name+LastPics[0].nind, FileNames[a].FileName) == 0
            || strcmp(LastPics[1].Name+LastPics[1].nind, FileNames[a].FileName) == 0){
-            // Zero out file name to indicate skip this one.   
+            // Zero out file name to indicate skip this one.
             FileNames[a].FileName[0] = 0;
         }
-    }        
+    }
 
-    
+
     for (a=0;a<NumEntries;a++){
         LastPic_t NewPic;
         char * ThisName;
         int l;
-       
+
         // Check that name ends in ".jpg", ".jpeg", or ".JPG", etc...
         ThisName = FileNames[a].FileName;
         if (ThisName[0] == 0) continue; // We already did this one.
-        
+
         l = strlen(ThisName);
         if (l < 5) continue;
         if (ThisName[l-1] != 'g' && ThisName[l-1] != 'G') continue;
@@ -305,7 +303,7 @@ static int DoDirectoryFunc(char * Directory, int DeleteProcessed)
         if (ThisName[l-3] != 'j' && ThisName[l-3] != 'J') continue;
         if (ThisName[l-4] != '.') continue;
         //printf("use: %s\n",ThisName);
-        
+
         strcpy(NewPic.Name, CatPath(Directory, ThisName));
         NewPic.nind = strlen(Directory)+1;
 
@@ -322,7 +320,7 @@ static int DoDirectoryFunc(char * Directory, int DeleteProcessed)
 		ReadExif = 0; // Only read exif for first image.
 
         if (ThisName[0] == 's' && ThisName[1] == 'f' && ThisName[2] >= '0' && ThisName[2] <= '9'){
-            // Video decomposed files have no meaningful timestamp, 
+            // Video decomposed files have no meaningful timestamp,
             // but filename starts with 'sf' and contains unix time minus 1 billion.
             NewPic.mtime = atoi(ThisName+2) + (time_t)1000000000;
         }else{
@@ -334,20 +332,19 @@ static int DoDirectoryFunc(char * Directory, int DeleteProcessed)
             NewPic.mtime = (unsigned)statbuf.st_mtime;
         }
         LastPic_mtime = NewPic.mtime;
-        
+
         SawMotion += ProcessImage(&NewPic, DeleteProcessed);
 
         NumProcessed += 1;
     }
-	
+
     FreeDir(FileNames, NumEntries); // Free up the whole directory structure.
     FileNames = NULL;
 
-	SinceMotionMs += MsPerCycle;
+	SinceMotionMs += 1000;
 
     return SawMotion;
 }
-
 
 //-----------------------------------------------------------------------------------
 // Process a whole directory of jpeg files.
@@ -380,7 +377,7 @@ int DoDirectory(char * Directory)
 
         // Wait for more files to appear.
         struct pollfd pfd = { fd, POLLIN, 0 };
-        int ret = poll(&pfd, 1, MsPerCycle);
+        int ret = poll(&pfd, 1, 1000);
         //printf("poll ret = %d\n",ret);
         if (ret < 0) {
             fprintf(Log, "select failed: %s\n", strerror(errno));
@@ -390,14 +387,15 @@ int DoDirectory(char * Directory)
         if (ret == 0){
             // Timeout waiting for a new file.
             fprintf(Log, "wait file poll() timeout\n");
-            continue; 
+            continue;
         }
 
         // Read and ignore the event to clear it out.
         const int EVENT_BUF_LEN = 200;
         char buffer[EVENT_BUF_LEN];
-        read( fd, buffer, EVENT_BUF_LEN ); 
+        read( fd, buffer, EVENT_BUF_LEN );
     }
+
     return a;
 }
 
@@ -409,15 +407,15 @@ int DoDirectoryVideos(char * DirName)
     int a,ret;
     int infileindex;
     int alt = 0;
-        
+
     Raspistill_restarted = 0;
     infileindex = strstr(VidDecomposeCmd, "<infile>")-VidDecomposeCmd;
-    
+
     if (infileindex <= 0){
         fprintf(stderr, "Must specify '<infile>' as part of videodecomposecmd\n");
         exit(-1);
     }
- 
+
     for (;;){
         DirEntry_t * FileNames;
         int NumEntries;
@@ -426,16 +424,16 @@ int DoDirectoryVideos(char * DirName)
         int Saw_motion;
         time_t now;
         int VideoActive = 0;
-        
+
         NumProcessed = 0;
         alt += 1;
-        
+
         FileNames = GetSortedDir(DirName, &NumEntries);
         if (FileNames == NULL){
             fprintf(stderr, "Could not read dir %s\n",DirName);
             return 0;
-        } 
-        
+        }
+
         now = time(NULL);
         if (NumEntries != 1){
             fprintf(Log,"%d files to process",NumEntries);
@@ -443,7 +441,7 @@ int DoDirectoryVideos(char * DirName)
         }
         for (a=0;a<NumEntries;a++){
             int age;
-            
+
             age = (int)(now-FileNames[a].MTime);
             if (age < 1){
                 VideoActive = 1; // Video files getting updated.
@@ -453,20 +451,20 @@ int DoDirectoryVideos(char * DirName)
                 }
                 continue;
             }else{
-                fprintf(Log,"Vid '%s': %dk Extract keyframes (%02d:%02d)...\n", FileNames[a].FileName, FileNames[a].FileSize>>10, 
+                fprintf(Log,"Vid '%s': %dk Extract keyframes (%02d:%02d)...\n", FileNames[a].FileName, FileNames[a].FileSize>>10,
                     (int)(now%3600)/60, (int)(now%60));
             }
-            
+
             strcpy(VidFileName, CatPath(DirName, FileNames[a].FileName));
             strncpy(FFCmd, VidDecomposeCmd, infileindex);
             FFCmd[infileindex] = 0;
             strcpy(FFCmd+infileindex, VidFileName);
             strcat(FFCmd, VidDecomposeCmd+infileindex+8);
-            
+
             // Use timestamp of video file to sequence output file names (so we'll have the respective times for those)
             unsigned seq = (unsigned)FileNames[a].MTime - 1000000000;
             sprintf(FFCmd+strlen(FFCmd), " -start_number %u %s/sf%%d.jpg",seq, TempDirName);
-            
+
             errno = 0;
             ret = system(FFCmd);
             if (ret || errno){
@@ -475,7 +473,7 @@ int DoDirectoryVideos(char * DirName)
                 fprintf(Log, "Error on command %s\n",FFCmd);
                 continue;
             }
-            
+
             // Now should have some files in temp dir.
             Saw_motion = DoDirectoryFunc(TempDirName, 1);
             if (Saw_motion){
@@ -484,10 +482,10 @@ int DoDirectoryVideos(char * DirName)
                 fprintf(Log,"Vid has motion %d\n", Saw_motion);
                 // Make filename, but don't copy the file.
                 DstName = BackupImageFile(VidFileName, Saw_motion,1);
-				
+
 				Ext = strstr(DstName, ".h264");
 				if (Ext) strcpy(Ext, ".mp4"); // Change xtension to .mp4
-				
+
 				if (DstName){
 					sprintf(FFCmd,"MP4Box -add %s \"%s\"",VidFileName, DstName);
 					errno = 0;
@@ -499,23 +497,23 @@ int DoDirectoryVideos(char * DirName)
 					}
 				}
             }
-            
+
             if (FollowDir){
                 //fprintf(Log, "Delete video %s\n",VidFileName);
                 unlink(VidFileName);
             }
         }
         FreeDir(FileNames, NumEntries); // Free up the whole directory structure.
-        
+
         if (FollowDir){
             int b = manage_raspistill(VideoActive);
             if (b) Raspistill_restarted = 1;
             if (LogToFile[0] != '\0') LogFileMaintain(0);
-            usleep(MsPerCycle*1000);
+            sleep(1);
         }else{
             break;
         }
-        
+
     }
     return a;
 }
@@ -546,7 +544,6 @@ int main(int argc, char **argv)
     ScaleDenom = 4;
     DoDirName[0] = '\0';
     Sensitivity = 10;
-	MsPerCycle = 1000; // Default check interval
     Regions.DetectReg.x1 = 0;
     Regions.DetectReg.x2 = 1000000;
     Regions.DetectReg.y1 = 0;
@@ -573,12 +570,12 @@ int main(int argc, char **argv)
 
     // Get command line arguments (which may override configuration file)
     file_index = parse_switches(argc, argv, 0);
-    
+
     if (LogToFile[0] != '\0'){
         Log = NULL;
         LogFileMaintain(0);
     }
-    
+
     if (UdpDest[0]) InitUDP(UdpDest);
 
     // Adjust region of interest to scale.
@@ -587,7 +584,7 @@ int main(int argc, char **argv)
         ScaleRegion(&Regions.ExcludeReg[a], ScaleDenom);
     }
 
-    if (DoDirName[0]) printf("    Source directory = %s, follow=%d\n",DoDirName, FollowDir); 
+    if (DoDirName[0]) printf("    Source directory = %s, follow=%d\n",DoDirName, FollowDir);
     if (SaveDir[0]) printf("    Save to dir %s\n",SaveDir);
     if (TimelapseInterval) printf("    Timelapse interval %d seconds\n",TimelapseInterval);
 
@@ -611,14 +608,14 @@ int main(int argc, char **argv)
         ProcessDiffMap(MapPic);
         free(MapPic);
     }
-    
-    
+
+
     // These directories are likely to be on ramdisk, so they may need re-creating.
     if (FollowDir) EnsurePathExists(DoDirName,0);
     if (TempDirName[0]) EnsurePathExists(TempDirName,0);
-        
-    
- 
+
+
+
     if (DoDirName[0] && file_index == argc){
         // if dodir is specified in config file, but files are specified
         // on the command line, do the files instead.
@@ -630,12 +627,12 @@ int main(int argc, char **argv)
                 exit(-1);
             }
             DoDirectoryVideos(DoDirName);
-        }   
+        }
     }
 
     if (argc-file_index == 2){
         MemImage_t *pic1, *pic2;
-        
+
         printf("load %s\n",argv[file_index]);
         pic1 = LoadJPEG(argv[file_index], ScaleDenom, 0, 0);
         printf("\nload %s\n",argv[file_index+1]);

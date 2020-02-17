@@ -41,7 +41,6 @@ extern char TempDirName[200];
 extern FILE * Log;
 
 extern int BrightnessChangeRestart;
-extern int SendTriggerSignals;
 
 extern char SaveDir[200];
 extern char SaveNames[200];

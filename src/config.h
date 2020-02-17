@@ -9,7 +9,6 @@ extern int PostMotionKeep;
 
 extern int BrightnessChangeRestart;
 extern int MotionFatigueTc;
-extern int SendTriggerSignals;
 
 extern char DiffMapFileName[200];
 extern Regions_t Regions;
