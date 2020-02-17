@@ -277,10 +277,6 @@ TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, char * DebugImgNa
         if (b1average < 0.5) b1average = 0.5; // Avoid possible division by zero.
         if (b2average < 0.5) b2average = 0.5;
 
-        if (b1average < 15 || b2average < 15){
-            if (Verbosity > 0) printf("Using night mode diff\n");
-        }
-
         m1 = 80/b1average;
         m2 = 80/b2average;
 
@@ -383,8 +379,9 @@ TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, char * DebugImgNa
    
 
     if (Verbosity > 1){
-        for (a=0;a<60;a+= 2){
-            printf("%3d:%5d,%5d\n",a,DiffHist[a], DiffHist[a+1]);
+        printf("Difference histogram\n");
+        for (a=0;a<60;a+=4){
+            printf("%3d:%6d,%6d,%6d,%6d\n",a,DiffHist[a], DiffHist[a+1], DiffHist[a+2], DiffHist[a+3]);
         }
     }
 
@@ -406,15 +403,6 @@ TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, char * DebugImgNa
         if (threshold > 80) threshold = 80;
 
         if (Verbosity) printf("2/3 of image is below %d diff.  Using %d threshold\n",a, threshold);
-        
-        cumsum = 0;
-        for (a=threshold;a<256;a++){
-            cumsum += DiffHist[a] * (a-threshold);
-        }
-        if (Verbosity) printf("Above threshold: %d\n",cumsum);
-
-        cumsum = (cumsum * 100) / DetectionPixels;
-        if (Verbosity) printf("Normalized diff: %d\n",cumsum);
 
         // Try to gauge the difference noise (assuming two thirds of the image
         // has not changed)
@@ -427,7 +415,7 @@ TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, char * DebugImgNa
 //----------------------------------------------------------------------------------------
 // Search for an N x N window with the maximum differences in it.
 // This algorithm is optimized for rejecting spurious differences outdoors
-// where grass and leaves can cause a lot of weak spurious motion.
+// where grass and leaves can cause a lot of weak spurious motion over large areas.
 //----------------------------------------------------------------------------------------
 static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold)
 {
@@ -436,11 +424,12 @@ static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold)
     int fs;
         
     // Scale down by this factor before applying windowing algorithm to look for max localized change
-	const int scalef = 6;
-    #define ROOF(x) ((x+scalef-1)/scalef)
+    // Thee factors work well with source images that are 1000-2000 pixels across.
+	const int scalef = 5;
 
     // these determine the window over over which to look for the change (after scaling)    
-    const int wind_w = 5, wind_h = 8;
+    const int wind_w = 4, wind_h = 7;
+    //const int wind_w = 5, wind_h = 8;
     
     static int * DiffScaled = NULL;
     static int * DiffScaledCum = NULL;
@@ -449,7 +438,7 @@ static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold)
     
     static int * Fatigue = NULL;
     if (DiffScaled == NULL){
-
+        #define ROOF(x) ((x+scalef-1)/scalef)
         widthSc = ROOF(DiffVal->w);
         heightSc = ROOF(DiffVal->h);
         DiffScaled = malloc(sizeof(int)*widthSc*heightSc);
@@ -612,7 +601,7 @@ static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold)
 
         row = maxr-wind_h+1;
         if (row < 0) row = 0;
-        //if (Verbosity) printf("Window contents.  Cols %d-%d Rows %d-%d\n",maxc-wind_w+1,maxc,row,maxr);
+        if (Verbosity) printf("Window contents.  Cols %d-%d Rows %d-%d\n",maxc-wind_w+1,maxc,row,maxr);
         if (maxval > 0){
             double xsum, ysum;
             int sum;
