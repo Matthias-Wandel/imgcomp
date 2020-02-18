@@ -47,14 +47,20 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
     printf("<head><meta charset=\"utf-8\"/>\n");
 
     printf("<style type=text/css>\n"
-           "  body { font-family: sans-serif; font-size: 22;}\n"
+           "  body { font-family: sans-serif; font-size: 22; -webkit-user-select: none; -webkit-touch-callout: none;}\n"
            "  img { vertical-align: middle; margin-bottom: 5px; }\n"
            "  p {margin-bottom: 0px}\n"
            "  a {text-decoration: none;}\n"
            "  button {font-size: 20px;}\n"
+           "  img {-webkit-user-select: none; -webkit-touch-callout: none;}\n"
+                    
            "</style></head>\n\n");
 
-    printf("<center>\n<span id='image'>image goes here</span>\n");
+    printf("<center>\n");
+    
+    printf("<img id='view' width=640 height=480 src=''>\n");
+   
+    
     printf("<br>\n<span id='links'>links goes here</span>\n");
     printf("<br>");
 
@@ -73,7 +79,7 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
         printf("<button onclick=\"ShowAdj()\">Bright</button>\n");
         printf("<button onclick=\"ShowLog()\">Log</button>\n");
         printf("<button onclick=\"ShowDetails()\">Detail</button>\n");
-        printf("<button id='play' onclick=\"Play()\">Play</button>\n");
+        printf("<button id='play' onclick=\"PlayButton()\">Play</button>\n");
 
         if (!IsSavedDir){
             char SavedDir[20];
@@ -109,6 +115,7 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
     }
     printf("<br>Actagram:\n<b><span id='actagram' style=\"font-family: courier, \'courier new\', monospace;\">Actagram here</span></b>\n");
 
+//printf("</center><br>Debug:\n<b><span id='dbg'>dbg</span>\n");
     
     // check how many characters all the filenames have in common (typically 7)
     int npic = 0;

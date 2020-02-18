@@ -123,25 +123,95 @@ function ScrollMoreTimer()
     }
 }
 function SetLateTimer(){
+    console.log("late timer");
     ScrollTimer = setTimeout(ScrollMoreTimer, 20)
 }
-function PicMd(dir){
+
+function PlayStart(dir)
+{
     ScrollDir = dir
-    DoNext(dir);
+    DoNext(ScrollDir)
     ScrollTimer = setTimeout(ScrollMoreTimer, 400)
 }
-function PicMu(){
+function PlayStop()
+{
     ScrollDir = 0
     document.getElementById("play").innerHTML="Play"
     clearTimeout(ScrollTimer)
+    
 }
-function Play()
+
+function PlayButton()
 {
     if (ScrollDir){
-        PicMu()
+        PlayStop()
     }else{
+        PlayStart(1)
         document.getElementById("play").innerHTML="Stop"
-        PicMd(1)
+    }
+}
+
+DragActive = 0
+xref = 0;
+ref_index = 0;
+MouseIsDown = 0
+
+
+function PicMouse(picX,picY,IsDown)
+{
+    picX -= vc.offsetLeft
+    picY -= vc.offsetTop
+    //dbg.innerHTML = "Mouse "+picX+", "+picY+" Down="+IsDown;
+    if (IsDown){
+        var leftright = 0;
+        if (picX < ShwW*.2) leftright = -1
+        if (picX > ShwW*.8) leftright = 1
+        if (!MouseIsDown){
+            // Mouse was just pressed.
+            if (leftright){
+                // Start playing forwards or backwards.
+                PlayStart(leftright)
+            }else{
+                // Start of drag scrolling.
+                xref = picX;
+                ref_index = pic_index;
+            }
+        }else{
+            if (ref_index >= 0){
+                // Drag scrolling is active.
+                var relmove = (picX-xref)/ShwW;
+                targindex = Math.round(ref_index+relmove*piclist.length);
+                if (targindex < 0) targindex = 0
+                if (targindex >= piclist.length) targindex = piclist.length-1
+                if (vc.complete){
+                    SetIndex(targindex)
+                }
+            }else{
+                if (leftright == 0){
+                    // Drag start out of left/right region
+                    PlayStop();
+                    xref = picX
+                    ref_index = pic_index;
+                }
+            }
+        }
+    }else{
+        if (MouseIsDown){
+            // Mouse was just released.
+            PlayStop();
+        }
+        ref_index = -1;
+    }
+    MouseIsDown = IsDown;
+}
+
+
+function picLoaded()
+{
+    if (DragActive && targindex != pic_index){
+        //console.log("delayed change");
+        //dbg.innerHTML = "delayed"
+        SetIndex(targindex)
     }
 }
 
@@ -149,9 +219,6 @@ function SetIndex(index)
 {
     pic_index = index
     UpdatePix()
-}
-
-function InitActagram(){
 }
 
 function DoSavePic(){
@@ -202,13 +269,12 @@ function ShowDetails(){
     window.location = nu
 }
 
-function SizeImage(ShwW, maxh)
+function SizeImage(maxw, maxh)
 {
-    var ShwH, Qt
+    var Qt
+    ShwW = maxw
     if (ShwW > window.innerWidth-15) ShwW = window.innerWidth-15;
     if (piclist.length == 0){
-        document.getElementById("image").innerHTML
-            = "<table border=1><td width=400 height=300><center><big><big><b>No images in this directory</table>"
         return;
     }
     if (PicWidth > 0){
@@ -221,12 +287,35 @@ function SizeImage(ShwW, maxh)
     }else{
         ShwW = 320; ShwH = 240
     }
-    document.getElementById("image").innerHTML
-      ="<map name='prevnext'><area shape='rect' coords='0,0,"+Qt+","+ShwH+"'"
-      +"onmousedown='PicMd(-1)' onmouseup='PicMu()'> <area shape='rect' "
-      +"coords='"+(ShwW-Qt)+",0,"+ShwW+","+ShwH+"' onmousedown='PicMd(1)' onmouseup='PicMu()'></map>"
-      +"<img id='view' width="+ShwW+" height="+ShwH+" src='' usemap='#prevnext'>"
+    vc.width = ShwW
+    vc.height = ShwH
 }
+
+vc = document.getElementById('view');
+vc.onload = picLoaded
+
+// Functions to consolidate the various ways of reporting mouse or finger actions into one place.
+// so that it works the same way on PC and iPad
+function picMouseDown(e) { PicMouse(e.clientX,e.clientY,1); }
+function picMouseMove(e) { PicMouse(e.clientX,e.clientY,MouseIsDown); }
+function picDrag(e){
+    if ((e.clientY-vc.offsetTop) < ShwH*.2) return true; // Allow dragging image out of brwser near top.
+    PicMouse(e.clientX,e.clientY,1);
+    return false;
+}
+function picMouseUp() {PicMouse(0,0,0);}
+function picTouchStart(e){PicMouse(e.touches[0].clientX,e.touches[0].clientY,1);}
+function picTouchMove(e){PicMouse(e.touches[0].clientX,e.touches[0].clientY,1)}
+
+vc.ondragstart = picDrag
+vc.onmousedown = picMouseDown
+vc.onmouseup = picMouseUp
+vc.onmouseleave = picMouseUp
+vc.onmousemove = picMouseMove
+vc.ontouchstart = picTouchStart
+vc.ontouchend = picMouseUp
+vc.ontouchmove = picTouchMove
+//dbg = document.getElementById("dbg");
 
 SizeImage(950,550);
 
