@@ -5,6 +5,7 @@ function UpdateLinks(){
     var links = ""
     var BEFORE = 4
     var AFTER = 5
+    if (prefix.length != 7) {BEFORE=3;AFTER=4}
     var From = pic_index-BEFORE;
     if (From < -1) From = -1;
     var To = From+BEFORE+AFTER+1;
@@ -19,37 +20,40 @@ function UpdateLinks(){
     
     for (a=From;a<To;a++){
         if (a < 0){
-            if (PrevDir) links += "<a href='view.cgi?"+PrevDir+"/#9999'>[Prev dir]</a> &nbsp;"
+            if (PrevDir) links += "<a href='view.cgi?"+PrevDir+"/#9999'>Prev dir</a> &nbsp;"
             continue;
         }
         if (piclist.length == 0) links += "Directory contains no images"
         if (a >= piclist.length){
-            if (NextDir) links += "&nbsp; <a href='view.cgi?"+NextDir+"/#0000'>[Next dir]</a>"
+            if (NextDir) links += "&nbsp; <a href='view.cgi?"+NextDir+"/#0000'>Next dir</a>"
             continue;
         }
         
-
-        // Extract the time part of the file name to show.
         Name = piclist[a];
-        TimeStr = Name.substring(0,2)+":"+Name.substring(2,4)
-        if (isSavedDir) TimeStr = Name.substring(0,5);
-        
-        var Second = Name.substring(0,2)*60 + Name.substring(2,4)*1
         var between = " "
-        if (a > From && a > 0){
-            dt = Second - PrevSecond;
-            if (dt >= 3 && dt < 5) between = "&nbsp;"
-            if (dt >= 5 && dt < 10) between = " - "
-            if (dt > 20) between = " || &nbsp;"
+        if (prefix.length == 7){
+            // Extract the time (MM:SS) part of the file name to show.
+            TimeStr = Name.substring(0,2)+":"+Name.substring(2,4)
+            var Second = Name.substring(0,2)*60 + Name.substring(2,4)*1
+            if (a > From && a > 0){
+                dt = Second - PrevSecond;
+                if (dt >= 3 && dt < 5) between = "&nbsp;"
+                if (dt >= 5 && dt < 10) between = " - "
+                if (dt > 20) between = " || &nbsp;"
+            }
+            PrevSecond = Second
+        }else{
+            // Show MMDD-HH
+            TimeStr = (prefix+Name).substring(0,7)
         }
-        PrevSecond = Second
         links += between
 
         if (a == pic_index){
-            links += "<b>["+prefix.substring(5,7)+":"+TimeStr+"]</b>"
+            if (prefix.length == 7) TimeStr = prefix.substring(5,7)+":"+TimeStr
+            links += "<b>"+TimeStr+"</b>"
         }else{
             links += "<a href=\"#"+Name.substring(0,5).trim()
-                 +"\" onclick=\"SetIndex("+a+")\">["+TimeStr+"]</a>";
+                 +"\" onclick=\"SetIndex("+a+")\">"+TimeStr+"</a>";
         }
     }
     if (To < piclist.length) links += 
@@ -121,7 +125,7 @@ function ScrollMoreTimer()
 
     if (ScrollDir){
         if (DoNext(ScrollDir)){
-            ScrollTimer = setTimeout(ScrollMoreTimer, 100)
+            ScrollTimer = setTimeout(ScrollMoreTimer,isSavedDir?400:100)
         }
     }
 }

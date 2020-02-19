@@ -86,17 +86,17 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
             printf("<button id='save' onclick=\"DoSavePic()\">Save</button>\n");
             sprintf(SavedDir, "pix/saved/%.4s",HtmlDir);
             if (stat(SavedDir, &sb) == 0 && S_ISDIR(sb.st_mode)){
-                printf("<a href=\"view.cgi?%s\">[View saved]</a>\n",SavedDir+4);
+                printf("&nbsp;<a href=\"view.cgi?%s\">View saved</a>&nbsp;\n",SavedDir+4);
             }
         }
 
         int l;
         if ((l = strlen(HtmlDir)) && HtmlDir[l-1] == '/'){
-            printf("<a href=\"view.cgi?%.*s\">[Thumbnails]</a>\n",l-1,HtmlDir);
+            printf("<a href=\"view.cgi?%.*s\">Thumbnails</a>&nbsp;\n",l-1,HtmlDir);
         }
 
         // Link to each level of subdirectory.
-        printf("[<a href=\"view.cgi?/\">Dir</a>:");
+        printf("<a href=\"view.cgi?/\">Dir</a>:");
         int pa = 0;
         for (int a=0;;a++){
             if (HtmlDir[a] == '/' || HtmlDir[a] == '\0' || HtmlDir[a] == '#'){
@@ -110,7 +110,7 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
         printf("&nbsp;");
         if (dir->Previous[0]) printf("<a href='view.cgi?%s/'>&lt;&lt;</a>",dir->Previous);
         if (dir->Next[0]) printf("&nbsp;<a href='view.cgi?%s/'>>></a>",dir->Next);
-        printf(" ]\n");
+        printf("\n");
     }
     printf("<br>Actagram:\n<b><span id='actagram' style=\"font-family: courier, \'courier new\', monospace;\">Actagram here</span></b>\n");
 
