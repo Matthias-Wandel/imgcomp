@@ -16,15 +16,18 @@ function UpdateLinks(){
     if (From > 0) links += "<a href=\"#\" onclick=\"SetIndex("+0+")\">&lt;&lt;</a> ";
 
     var PrevSecond = -1
+    
     for (a=From;a<To;a++){
         if (a < 0){
             if (PrevDir) links += "<a href='view.cgi?"+PrevDir+"/#9999'>[Prev dir]</a> &nbsp;"
             continue;
         }
+        if (piclist.length == 0) links += "Directory contains no images"
         if (a >= piclist.length){
             if (NextDir) links += "&nbsp; <a href='view.cgi?"+NextDir+"/#0000'>[Next dir]</a>"
             continue;
         }
+        
 
         // Extract the time part of the file name to show.
         Name = piclist[a];
@@ -146,6 +149,7 @@ function PlayButton()
     if (ScrollDir){
         PlayStop()
     }else{
+        if (pic_index >= piclist.length-1) pic_index = 0
         PlayStart(1)
         document.getElementById("play").innerHTML="Stop"
     }
@@ -212,8 +216,6 @@ function PicMouse(picX,picY,IsDown)
 function picLoaded()
 {
     if (DragActive && targindex != pic_index){
-        //console.log("delayed change");
-        //dbg.innerHTML = "delayed"
         SetIndex(targindex)
     }
 }
@@ -243,6 +245,7 @@ function DoSavePic(){
 ShowBigOn = 0
 function ShowBig(){
     ShowBigOn = !ShowBigOn
+    document.getElementById("big").innerHTML= ShowBigOn?"Smaller":"Enlarge"
     if (ShowBigOn){
         SizeImage(PicWidth, PicHeight)
     }else{
@@ -251,19 +254,10 @@ function ShowBig(){
     UpdatePix()
 }
 AdjustBright = 0
-function ShowAdj(){
+function ShowBright(){
     AdjustBright = !AdjustBright
+    document.getElementById("bright").innerHTML= AdjustBright?"Normal":"Brighten"
     UpdatePix()
-}
-
-function ShowLog(){
-    if (!hasLog){
-        alert("Directory has no log file");
-        return;
-    }
-    var nu = pixpath+subdir+"Log.html"
-    if (piclist.length > 0) nu += "#"+piclist[pic_index].substring(0,2)
-    window.location = nu
 }
 
 function ShowDetails(){

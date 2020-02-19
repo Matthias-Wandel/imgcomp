@@ -51,7 +51,7 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
            "  img { vertical-align: middle; margin-bottom: 5px; }\n"
            "  p {margin-bottom: 0px}\n"
            "  a {text-decoration: none;}\n"
-           "  button {font-size: 20px;}\n"
+           "  button {font-size: 18px;}\n"
            "  img {-webkit-user-select: none; -webkit-touch-callout: none;}\n"
                     
            "</style></head>\n\n");
@@ -75,10 +75,9 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
             IndexInto[3] = '\0';
         }
 
-        printf("<button onclick=\"ShowBig()\">Big</button>\n");
-        printf("<button onclick=\"ShowAdj()\">Bright</button>\n");
-        printf("<button onclick=\"ShowLog()\">Log</button>\n");
-        printf("<button onclick=\"ShowDetails()\">Detail</button>\n");
+        printf("<button id='big' onclick=\"ShowBig()\">Enlarge</button>\n");
+        printf("<button id='bright' onclick=\"ShowBright()\">Brighten</button>\n");
+        printf("<button onclick=\"ShowDetails()\">Details</button>\n");
         printf("<button id='play' onclick=\"PlayButton()\">Play</button>\n");
 
         if (!IsSavedDir){
@@ -87,7 +86,7 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
             printf("<button id='save' onclick=\"DoSavePic()\">Save</button>\n");
             sprintf(SavedDir, "pix/saved/%.4s",HtmlDir);
             if (stat(SavedDir, &sb) == 0 && S_ISDIR(sb.st_mode)){
-                printf("<a href=\"view.cgi?%s\">[Saved]</a>\n",SavedDir+4);
+                printf("<a href=\"view.cgi?%s\">[View saved]</a>\n",SavedDir+4);
             }
         }
 
@@ -111,7 +110,7 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
         printf("&nbsp;");
         if (dir->Previous[0]) printf("<a href='view.cgi?%s/'>&lt;&lt;</a>",dir->Previous);
         if (dir->Next[0]) printf("&nbsp;<a href='view.cgi?%s/'>>></a>",dir->Next);
-        printf("]\n");
+        printf(" ]\n");
     }
     printf("<br>Actagram:\n<b><span id='actagram' style=\"font-family: courier, \'courier new\', monospace;\">Actagram here</span></b>\n");
 
