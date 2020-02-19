@@ -95,7 +95,7 @@ function UpdatePix(){
 
 function DoNext(dir){
     if (pic_index+dir < 0 || pic_index+dir >= piclist.length){
-        Play()
+        PlayStop()
         return 0
     }else{
         pic_index += dir
@@ -151,7 +151,7 @@ function PlayButton()
     }
 }
 
-DragActive = 0
+DragActive = false
 xref = 0;
 ref_index = 0;
 MouseIsDown = 0
@@ -175,6 +175,7 @@ function PicMouse(picX,picY,IsDown)
                 // Start of drag scrolling.
                 xref = picX;
                 ref_index = pic_index;
+                DragActive = true
             }
         }else{
             if (ref_index >= 0){
@@ -192,6 +193,7 @@ function PicMouse(picX,picY,IsDown)
                     PlayStop();
                     xref = picX
                     ref_index = pic_index;
+                    DragActive = true
                 }
             }
         }
@@ -201,6 +203,7 @@ function PicMouse(picX,picY,IsDown)
             PlayStop();
         }
         ref_index = -1;
+        DragActive = false;
     }
     MouseIsDown = IsDown;
 }
