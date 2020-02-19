@@ -1,15 +1,14 @@
 #!/usr/bin/python3
-# Script to make timelapses from output from my imgcomp program
-# Uses subtitles to add timestamps in the bottom right corner.
+# Script to make timelapses from output from my imgcomp program using ffmpeg.
+# Makes use of subtitling feature to add timestamps in the bottom right corner.
 import  sys, glob, os, math
 
-framerate = 7.5
+framerate = 7.5         # utput frame rate.
 timeunit = 1/framerate
-bitrate = framerate*160 #in kilobits
+bitrate = framerate*160 # Vary bitrate with frame rate.
+filepath = "*.jpg" # Run it from the directory with all the images in it.
+if len(sys.argv) > 1: filepath = sys.argv[1] # Or specify whee files are on command line.
 
-
-filepath = "*.jpg"
-if len(sys.argv) > 1: filepath = sys.argv[1]
 
 # Come up with a reasonable output name.
 outname = os.path.dirname(filepath)
@@ -31,6 +30,8 @@ Format:Name,Fontname ,Fontsize,Bold,PrimaryColour,OutlineColour,ScaleX,ScaleY,Bo
 Style: Def ,monospace,16      ,1   ,&H80FFFF     ,&H000000     ,100   ,100   ,2          ,6      ,0     ,3        ,1      ,1      ,1      ,1
 \n[Events]
 Format:   Start,   End,     Style,Text\n""")
+
+# Entries will look like this:
 #Dialogue: 0:00:1.9,0:00:2.2,Def,Hello
 #Dialogue: 0:00:2.2,0:00:3.0,Def,World
 #Dialogue: 0:00:3.9,0:00:4.1,Def,Again!
@@ -48,7 +49,7 @@ def WriteEntry(filename, duration):
     if vidtime >= lastsubtotime:
         fromtime = lastsubtotime
         totime = vidtime+duration
-        if totime-fromtime < 1: totime = fromtime+1 # Must show at least one second
+        if totime-fromtime < 1: totime = fromtime+1 # Must show at least one second or it won't show up.
     
         fromstr = "%d:%02d:%04.1f"%(int(fromtime/3600),int((fromtime/60)%60),math.modf(fromtime/60)[0]*60)
         tostr   = "%d:%02d:%04.1f"%(int(totime/3600),int((totime/60)%60),math.modf(totime/60)[0]*60)
