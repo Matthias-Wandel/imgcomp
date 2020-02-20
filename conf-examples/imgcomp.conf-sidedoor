@@ -2,8 +2,7 @@
 # Please see docs/config.html for more details on cofiguring Imgcomp
 
 # The command to start aquiring
-# Tell rapistill to aquire a 1280x720 image every 500 miliseconds.
-aquire_cmd = raspistill -q 10 -n -bm -th none -n -w 1920 -h 1080 -o /ramdisk/out%05d.jpg -t 4000000 -tl 1000";
+aquire_cmd = raspistill -q 10 -n -th none -n -w 1920 -h 1080 -o /ramdisk/out%05d.jpg -t 0 -tl 0";
 
 # Directory to get images from as they are aquired
 # (aquire_cmd must also indicate to put images there)
@@ -35,7 +34,7 @@ savenames = %y%m%d/%H/%m%d-%H%M%S
 timelapse = 1200
 
 # Change detect sensitivity level (lower = more sensitive)
-sensitivity = 800
+sensitivity = 600
 
 logtofile = /ramdisk/log.txt
 movelognames = images/%y%m%d/%H/Log.html

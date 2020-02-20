@@ -2,8 +2,8 @@
 # Please see docs/config.html for more details on cofiguring Imgcomp
 
 # The command to start aquiring
-# Tell rapistill to aquire a 1280x720 image every 500 miliseconds.
-aquire_cmd = raspistill -q 10 -n -bm -th none -p 1000,40,600,400 -w 1280 -h 720 -o /ramdisk/out%05d.jpg -t 4000000 -tl 500
+# Tell rapistill to aquire a 1600x1200 image every second.
+aquire_cmd = raspistill -q 10 -n -th none -p 1000,40,600,400 -w 1600 -h 1200 -o /ramdisk/out%05d.jpg -t 0 -tl 1000
 
 # Directory to get images from as they are aquired
 # (raspistill aquire_cmd must also indicate to put images there)
@@ -23,7 +23,7 @@ spurious = 1
 
 # Brightness change monitor, on (1) by default.  Restarts rasistill
 # if image brightness changes to reset auto exposure.
-brmonitor = 1
+brmonitor = 0
 
 # Where to save interesting images to
 savedir = images

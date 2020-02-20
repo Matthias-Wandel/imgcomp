@@ -1,5 +1,5 @@
 # The command to start aquiring
-aquire_cmd = raspistill -q 10 -ev +4 -n -bm -th none -n -w 1440 -h 1080 -o /ramdisk/out%05d.jpg -t 4000000 -tl 1000";
+aquire_cmd = raspistill -q 10 -ev +4 -n -th none -n -w 1440 -h 1080 -o /ramdisk/out%05d.jpg -t 0 -tl 1000";
 
 # Directory to get images from as they are aquired
 # (aquire_cmd must also indicate to put images there)
@@ -16,7 +16,7 @@ spurious = 1
 # Where to save interesting images to
 savedir = images
 
-brmonitor = 1
+brmonitor = 0
 
 # Where to save images that have changes.  One directory per day
 # with subdirectories for each hour.  This is also the default naming
