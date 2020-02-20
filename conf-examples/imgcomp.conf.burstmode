@@ -1,4 +1,5 @@
-# Imgcomp test configruation file
+# Imgcomp test configruation file for capturing images as fast as possible.
+
 # Please see docs/config.html for more details on cofiguring Imgcomp
 
 # The command to start aquiring
