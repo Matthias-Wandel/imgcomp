@@ -25,7 +25,7 @@
 //----------------------------------------------------------------------------------
 // Nav linkgs for top and bottom of page.
 //----------------------------------------------------------------------------------
-static void PrintNavLinks(Dir_t * Dir)
+static void PrintNavLinks(Dir_t * Dir, int IsRoot)
 {
     if (strlen(Dir->HtmlPath) > 2){
         printf("<a href=\"view.cgi?%s\">[Up:%s]</a>\n",Dir->Parent,Dir->Parent);
@@ -43,8 +43,13 @@ static void PrintNavLinks(Dir_t * Dir)
     
     if (strstr(Dir->HtmlPath, "saved") == NULL){
         char SavedDir[50];
-        struct stat sb;        
-        sprintf(SavedDir, "pix/saved/%.4s",Dir->HtmlPath);
+        struct stat sb;
+        if (IsRoot){
+            strcpy(SavedDir, "pix/saved");
+        }else{
+            sprintf(SavedDir, "pix/saved/%.4s",Dir->HtmlPath);
+        }
+        
         if (stat(SavedDir, &sb) == 0 && S_ISDIR(sb.st_mode)){
             printf("<a href=\"view.cgi?%s\">[Saved]</a>\n",SavedDir+4);
         }
@@ -147,7 +152,7 @@ void MakeHtmlOutput(Dir_t * Dir)
         printf("(%4.1f%%) free<br>\n", (double)(sv.f_bavail*100.0/sv.f_blocks));
     }
     
-    PrintNavLinks(Dir);
+    PrintNavLinks(Dir, IsRoot);
     puts("<br>");
 
     int prevwkd = 6, thiswkd=6;
@@ -389,7 +394,7 @@ void MakeHtmlOutput(Dir_t * Dir)
     }
 
     printf("<p>\n");    
-    PrintNavLinks(Dir);
+    PrintNavLinks(Dir, IsRoot);
 
     // Add javascript for hover-over preview when showing a whole day's worth of images
     if (HasSubdirImages){

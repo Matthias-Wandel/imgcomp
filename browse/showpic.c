@@ -101,10 +101,10 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
         for (int a=0;;a++){
             if (HtmlDir[a] == '/' || HtmlDir[a] == '\0' || HtmlDir[a] == '#'){
                 printf("<a href=\"view.cgi?%.*s\">", a, HtmlDir);
-                printf("%.*s</a>",a-pa-1, HtmlDir+pa+1);
+                printf("%.*s</a>",a-pa, HtmlDir+pa);
                 if (HtmlDir[a] != '/' || HtmlDir[a+1] == '\0' || HtmlDir[a+1] == '#') break;
                 putchar('/');
-                pa = a;
+                pa = a+1;
             }
         }
         printf("&nbsp;");
