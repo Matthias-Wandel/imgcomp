@@ -239,8 +239,8 @@ void ShowActagram(int all, int h24)
            "   el.href = '/view.cgi?/'+str\n");
     printf("el = document.getElementById('prevn')\n"
            "   el.innerHTML = str + ' &nbsp; &nbsp; 20'"
-           " + str.substring(0, 2)+'-'+str.substring(2,4)+'-'+str.substring(5,7)\n"
-           " + ' &nbsp;'+str.substring(13, 15)+':'+str.substring(15,17);");
+           " + str.substring(0, 2)+'-'+str.substring(2,4)+'-'+str.substring(4,6)\n"
+           " + ' &nbsp;'+str.substring(15, 17)+':'+str.substring(17,19);");
            
     printf("}\n</script>\n");
 }
