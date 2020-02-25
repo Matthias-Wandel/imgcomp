@@ -68,7 +68,7 @@ Addigional setup notes (to myself)
 -----------------------------------------------------------
 Setting up samba manually:
   apt-get install samba
-  Add this to the end of /etc/smb.cof:
+  Add this to the end of /etc/samba/smb.conf:
 	[pi]
 	comment = picture share
 	valid users = pi
