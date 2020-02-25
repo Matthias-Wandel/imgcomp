@@ -84,12 +84,19 @@ function UpdateActagram(){
     document.getElementById("actagram").innerHTML = "00"+act+"60"
 }
 
+ImgLoading = false
+NextImgUrl = ""
 function UpdatePix(){
     if (piclist.length){
         var imgname = subdir+prefix+piclist[pic_index]+".jpg"
         var url = pixpath+imgname;
         if (AdjustBright) url = "tb.cgi?"+imgname+(ShowBigOn?"$1":"$2")
-        document.getElementById("view").src = url
+        if (ImgLoading){
+            NextImgUrl = url;
+        }else{
+            document.getElementById("view").src = url
+            ImgLoading = true
+        }
         var nu = window.location.toString()
         window.location = nu.split("#")[0]+"#"
             +piclist[pic_index].substring(0,5).trim();
@@ -116,7 +123,7 @@ ScrollTimer = 0
 function ScrollMoreTimer()
 {
     var img = document.querySelector('img')
-    if (!img.complete) {
+    if (ImgLoading) {
         // Image is not loaded yet.  Once it's loaded, set a shorter timer
         // (to avoid recursion problems)
         img.addEventListener('load', SetLateTimer())
@@ -189,12 +196,10 @@ function PicMouse(picX,picY,IsDown)
             if (ref_index >= 0){
                 // Drag scrolling is active.
                 var relmove = (picX-xref)/ShwW;
-                targindex = Math.round(ref_index+relmove*piclist.length);
+                var targindex = Math.round(ref_index+relmove*piclist.length);
                 if (targindex < 0) targindex = 0
                 if (targindex >= piclist.length) targindex = piclist.length-1
-                if (vc.complete){
-                    SetIndex(targindex)
-                }
+                SetIndex(targindex)
             }else{
                 if (leftright == 0){
                     // Drag start out of left/right region
@@ -216,11 +221,14 @@ function PicMouse(picX,picY,IsDown)
     MouseIsDown = IsDown;
 }
 
-
 function picLoaded()
 {
-    if (DragActive && targindex != pic_index){
-        SetIndex(targindex)
+    if (!ImgLoading) return;
+    if (NextImgUrl){
+        document.getElementById("view").src = NextImgUrl
+        NextImgUrl = ""
+    }else{
+        ImgLoading = false;
     }
 }
 
