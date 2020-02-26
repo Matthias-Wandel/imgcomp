@@ -194,29 +194,26 @@ void ScaleBrightness(MemImage_t * MemImage)
         }
     }
 
-    //for (a=0;a<256;a++) printf("%3d %d\n",a,Histogram[a]);
+    //for (a=0;a<256;a++) printf("%3d %d<br>\n",a,Histogram[a]);
 
     // figure out what threshold value has no more than 0.4% of pixels above.
-    satpix = (width * MemImage->height / 4) >> 8; // Pixesl near saturation
+    satpix = (width * MemImage->height / 4) >> 7; // Pixesl near saturation
     medpix = (width * MemImage->height / 4) >> 2; // Don't make the image overall too bright.
     for (a=255;a>=0;a--){
         satpix -= Histogram[a];
         if (satpix <= 0) break;
     }
     for (b=255;b>=0;b--){
-        medpix -= Histogram[a];
+        medpix -= Histogram[b];
         if (medpix <= 0) break;
     }
 
-
-    //printf("scale %d to 255\n",a);
-
-    // If image is kind of dark, cale the brightness so that no more than 0.1% of the
+    // If image is kind of dark, scale the brightness so that no more than 0.4% of the
     // pixels will saturate.
-    if (a < 200){
+    if (a < 220){
         int Mult, Mult2;
         Mult = 256*240/a;
-        Mult2 = 256*200/a;
+        Mult2 = 256*220/b;
         if (Mult2 < Mult) Mult = Mult2;
         if (Mult > 265*10) Mult = 256*10; // Don't boost by more than 10x.
 
