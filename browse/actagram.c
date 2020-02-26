@@ -240,11 +240,10 @@ void ShowActagram(int all, int h24)
     printf("function mmo(str){\n"
            "el = document.getElementById('preview')\n"
            "   el.src = '/pix/'+str\n"
-           "   el.onload = sizeit\n");
-           
-    printf("var eh = document.getElementById('prevh')\n"
-           "   eh.href = '/view.cgi?/'+str\n"
-           "var en = document.getElementById('prevn')\n"
+           "   el.onload = sizeit\n"
+           "   var eh = document.getElementById('prevh')\n"
+           "   eh.href = '/view.cgi?'+str.substring(0,9)+'/#'+str.substring(17,21)\n"
+           "   var en = document.getElementById('prevn')\n"
            "   en.innerHTML = str + ' &nbsp; &nbsp; 20'"
            " + str.substring(0, 2)+'-'+str.substring(2,4)+'-'+str.substring(4,6)\n"
            " + ' &nbsp;'+str.substring(15, 17)+':'+str.substring(17,19);"
