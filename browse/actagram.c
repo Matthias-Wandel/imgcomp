@@ -70,9 +70,13 @@ void ShowActagram(int all, int h24)
     int daynum;
     VarList DayDirs;
     memset(&DayDirs, 0, sizeof(DayDirs));
-    float AspectRatio = 0;
     int BinsPerHour = 15;
     int MinutesPerBin = 60/BinsPerHour;
+
+    printf("<head\n"
+           "<title>Actagram</title>\n"
+           "<head><meta charset=\"utf-8\"/>\n"
+           "</head>");
 
     printf(
         "<style type=text/css>\n"
@@ -205,11 +209,6 @@ void ShowActagram(int all, int h24)
                 printf(" onmouseover=\"mmo('%s/%02d/%s')\"",DayName,a/BinsPerHour,BinImgName[a]);
                 printf(">%c", nc);
                 HrefOpen = 1; // Don't close the href till after the next char, makes it easier to hover over single dot.
-                if (AspectRatio == 0){
-                    char HtmlPath[200];
-                    snprintf(HtmlPath,199,"%s/%02d/%s",DayName,a/BinsPerHour,BinImgName[a]);
-                    AspectRatio = ReadExifHeader(HtmlPath, NULL, NULL);
-                }
             }else{
                 putchar(nc);
                 if (HrefOpen) printf("</a>");
@@ -228,19 +227,30 @@ void ShowActagram(int all, int h24)
     printf("</pre><small id='prevn'></small><br>\n"
            "<a id='prevh' href=""><img id='preview' src='' width=0 height=0></a>\n");
 
+
     // Javascript
-    printf("<script>\n"
-           "function mmo(str){\n"
-           "el = document.getElementById('preview')\n");
-    printf("   el.src = '/pix/'+str\n");
-    printf("   el.width = 800\n"
-           "   el.height = %d\n",(int)(800/AspectRatio));
-    printf("el = document.getElementById('prevh')\n"
-           "   el.href = '/view.cgi?/'+str\n");
-    printf("el = document.getElementById('prevn')\n"
-           "   el.innerHTML = str + ' &nbsp; &nbsp; 20'"
-           " + str.substring(0, 2)+'-'+str.substring(2,4)+'-'+str.substring(4,6)\n"
-           " + ' &nbsp;'+str.substring(15, 17)+':'+str.substring(17,19);");
+    printf("<script>\n" // Script to resize the image to the right aspect ratio
+           "function sizeit(){\n"
+           "  var h = 300\n"
+           "  var w = h/el.naturalHeight*el.naturalWidth;\n"
+           "  if (w > 850){ w=850;h=w/el.naturalWidth*el.naturalHeight;}\n"
+           "  el.width=w;el.height=h;\n"
+           "}\n");
            
-    printf("}\n</script>\n");
+    printf("function mmo(str){\n"
+           "el = document.getElementById('preview')\n"
+           "   el.src = '/pix/'+str\n"
+           "   el.onload = sizeit\n");
+           
+    printf("var eh = document.getElementById('prevh')\n"
+           "   eh.href = '/view.cgi?/'+str\n"
+           "var en = document.getElementById('prevn')\n"
+           "   en.innerHTML = str + ' &nbsp; &nbsp; 20'"
+           " + str.substring(0, 2)+'-'+str.substring(2,4)+'-'+str.substring(4,6)\n"
+           " + ' &nbsp;'+str.substring(15, 17)+':'+str.substring(17,19);"
+           "}\n</script>\n");
 }
+
+
+
+
