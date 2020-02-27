@@ -61,7 +61,7 @@ static void PrintNavLinks(Dir_t * Dir, int IsRoot)
 //----------------------------------------------------------------------------------
 // Show an actagram for one hour.
 //----------------------------------------------------------------------------------
-static int ShowHourActagram(char * HtmlPath, char * SubdirName)
+static int ShowHourActagram(char * HtmlPath, char * SubdirName, int IsRoot)
 {
     VarList SubdImages;
     {
@@ -76,47 +76,52 @@ static int ShowHourActagram(char * HtmlPath, char * SubdirName)
     }
     printf("<br>\n");
 
-     // Build an actagram for the hour.
-     const int NumBins = 30; // Bins per hour.
-     int Bins[NumBins];
-     int BinImage[NumBins];
-     int NumImages = 0;
-     memset(&Bins, 0, sizeof(Bins));
-     for (int a=0;a<SubdImages.NumEntries;a++){
-         int Second, binno;
-         char * Name = SubdImages.Entries[a].Name;
-         int e = strlen(Name);
-         if (e < 5 || memcmp(Name+e-4,".jpg",4)) continue; // Not an image.
-         NumImages += 1;
+    // Build an actagram for the hour.
+    const int MaxBins = 30; // Bins per hour.
+    int Bins[MaxBins];
+    int BinImage[MaxBins];
+    int NumBins = MaxBins;
+    if (IsRoot){
+        // Less space for actagram in root dir so 7 days fit across (and the actagram is probably blank)
+        NumBins = 15; 
+    }
+    int NumImages = 0;
+    memset(&Bins, 0, sizeof(Bins));
+    for (int a=0;a<SubdImages.NumEntries;a++){
+        int Second, binno;
+        char * Name = SubdImages.Entries[a].Name;
+        int e = strlen(Name);
+        if (e < 5 || memcmp(Name+e-4,".jpg",4)) continue; // Not an image.
+        NumImages += 1;
  
-         Second = (Name[7]-'0')*600 + (Name[8]-'0') * 60
-                 +(Name[9]-'0')*10  + (Name[10]-'0');
-         binno = Second*NumBins/3600;
-         if (binno >= 0 && binno < NumBins){
-             Bins[binno] += 1;
-             BinImage[binno] = a-Bins[binno]/2;
-         }
-     }
+        Second = (Name[7]-'0')*600 + (Name[8]-'0') * 60
+                +(Name[9]-'0')*10  + (Name[10]-'0');
+        binno = Second*NumBins/3600;
+        if (binno >= 0 && binno < NumBins){
+            Bins[binno] += 1;
+            BinImage[binno] = a-Bins[binno]/2;
+        }
+    }
  
-     printf("<span class='a'>");
-     for (int a=0;a<NumBins;a++){
-         if (Bins[a]){
-             char nc = '-';
-             if (Bins[a] >= 1) nc = '.';
-             if (Bins[a] >= 8) nc = '1';
-             if (Bins[a] >= 25) nc = '2';
-             if (Bins[a] >= 60) nc = '#';
-             char * Name = SubdImages.Entries[BinImage[a]].Name;
-             printf("<a href=\"view.cgi?%s/%s/#%.5s\"",HtmlPath, SubdirName, Name+7);
-             printf(" onmouseover=\"mmo('%s/%s')\"",SubdirName, Name);
-             printf(">%c</a>", nc);
-         }else{
-             printf("&nbsp;");
-         }
-     }
-     printf("</span.a>\n");
-     free(SubdImages.Entries);
-     return NumImages;
+    printf("<span class='a'>");
+    for (int a=0;a<NumBins;a++){
+        if (Bins[a]){
+            char nc = '-';
+            if (Bins[a] >= 1) nc = '.';
+            if (Bins[a] >= 8) nc = '1';
+            if (Bins[a] >= 25) nc = '2';
+            if (Bins[a] >= 60) nc = '#';
+            char * Name = SubdImages.Entries[BinImage[a]].Name;
+            printf("<a href=\"view.cgi?%s/%s/#%s\"",HtmlPath, SubdirName, Name);
+            printf(" onmouseover=\"mmo('%s/%s')\"",SubdirName, Name);
+            printf(">%c</a\n>", nc);
+        }else{
+            printf("&nbsp;");
+        }
+    }
+    printf("</span>\n");
+    free(SubdImages.Entries);
+    return NumImages;
 }
 
 //----------------------------------------------------------------------------------
@@ -144,7 +149,7 @@ static int ShowHourlyDirs(char * HtmlPath, int IsRoot, VarList Directories)
         printf("<a href=\"view.cgi?%s/%s\">%s:</a>",HtmlPath, SubdirName, Directories.Entries[b].Name);
         if (isw >= 0) printf("</span>");
         
-        TotImages += ShowHourActagram(HtmlPath, SubdirName);
+        TotImages += ShowHourActagram(HtmlPath, SubdirName, IsRoot);
         printf("</div>\n");
     }
     printf("<br clear=left>\n");
@@ -268,16 +273,8 @@ static void ShowThumbnailList(char * HtmlPath, int IsSavedDir, VarList Images)
                         printf("<b id=\"%02d\"></b>\n",++DirMinute);
                     }
                 }
-                printf("<a href=\"view.cgi?%s/",HtmlPath);
-                if (IsSavedDir){
-                    int k;
-                    for (k=0;k<12;k++){
-                        if (Name[k] == ' ' || Name[k] == '.' || Name[k] == '\0') break;
-                    }
-                    printf("#%.*s\">", k,Name);
-                }else{
-                    printf("#%.5s\">", Name+7);
-                }
+                printf("<a href=\"view.cgi?%s/#%s\">",HtmlPath, Name);
+
                 if (SkipNum == 0){
                     printf("<img src=\"tb.cgi?%s/%s\">",HtmlPath, Name);
                     if (num > 1){
@@ -326,7 +323,6 @@ void MakeHtmlOutput(Dir_t * Dir)
 
     int IsSavedDir = 0;
     int IsRoot = 0;
-    int TotImages = 0;
             
     if (strstr(Dir->HtmlPath, "saved") != NULL) IsSavedDir = 1;
     
@@ -394,11 +390,12 @@ void MakeHtmlOutput(Dir_t * Dir)
     PrintNavLinks(Dir, IsRoot);
     puts("<br>");
 
+    int SubdirImages = 0;
     if (Directories.NumEntries){
         if (!IsSavedDir){
             printf("<b>20%.2s/%.2s/%.2s</b><br>",Dir->HtmlPath,Dir->HtmlPath+2,Dir->HtmlPath+4);
         }
-        ShowHourlyDirs(Dir->HtmlPath, IsRoot, Directories);
+        SubdirImages = ShowHourlyDirs(Dir->HtmlPath, IsRoot, Directories);
     }
 
     if (Images.NumEntries){
@@ -409,7 +406,7 @@ void MakeHtmlOutput(Dir_t * Dir)
     PrintNavLinks(Dir, IsRoot);
 
     // Add javascript for hover-over preview when showing a whole day's worth of images
-    if (TotImages){
+    if (SubdirImages){
         
         printf("<br><small id='prevn'></small><br>\n"
            "<a id='prevh' href=""><img id='preview' src='' width=0 height=0></a>\n");

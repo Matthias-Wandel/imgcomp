@@ -203,9 +203,7 @@ void ShowActagram(int all, int h24)
             if (bins[a] >= 100) nc = '#';
             
             if (bins[a] >= 1){
-                int n = 4;
-                if (BinImgName[a][11] != ' ') n = 5;
-                printf("<a href='view.cgi?%s/%02d/#%.*s'",DayName,a/BinsPerHour, n,BinImgName[a]+7);
+                printf("<a href='view.cgi?%s/%02d/#%s'",DayName,a/BinsPerHour, BinImgName[a]);
                 printf(" onmouseover=\"mmo('%s/%02d/%s')\"",DayName,a/BinsPerHour,BinImgName[a]);
                 printf(">%c", nc);
                 HrefOpen = 1; // Don't close the href till after the next char, makes it easier to hover over single dot.

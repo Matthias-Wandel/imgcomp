@@ -20,12 +20,12 @@ function UpdateLinks(){
     
     for (a=From;a<To;a++){
         if (a < 0){
-            if (PrevDir) links += "<a href='view.cgi?"+PrevDir+"/#9999'>Prev dir</a> &nbsp;"
+            if (PrevDir) links += "<a href='view.cgi?"+PrevDir+"/#last'>Prev dir</a> &nbsp;"
             continue;
         }
         if (piclist.length == 0) links += "Directory contains no images"
         if (a >= piclist.length){
-            if (NextDir) links += "&nbsp; <a href='view.cgi?"+NextDir+"/#0000'>Next dir</a>"
+            if (NextDir) links += "&nbsp; <a href='view.cgi?"+NextDir+"/#first'>Next dir</a>"
             continue;
         }
         
@@ -52,7 +52,7 @@ function UpdateLinks(){
             if (prefix.length == 7) TimeStr = prefix.substring(5,7)+":"+TimeStr
             links += "<b>"+TimeStr+"</b>"
         }else{
-            links += "<a href=\"#"+Name.substring(0,5).trim()
+            links += "<a href=\"#"+Name+".jpg"
                  +"\" onclick=\"SetIndex("+a+")\">"+TimeStr+"</a>";
         }
     }
@@ -77,7 +77,7 @@ function UpdateActagram(){
         if (a==thismin){
             act += "<b style='background-color: #b0b0ff;'>"+c+"</b>"
         }else{
-            act += "<a href='#"+piclist[ActNums[a]].substring(0,5).trim()
+            act += "<a href='#"+prefix+piclist[ActNums[a]]+".jpg"
                 + "' onclick='SetIndex("+ActNums[a]+")'>"+c+"</a>"
         }
     }
@@ -98,13 +98,7 @@ function UpdatePix(){
             ImgLoading = true
         }
         var nu = window.location.toString()
-        nu = nu.split("#")[0]+"#";
-        console.log(prefix)
-        if (prefix.length){
-            nu += piclist[pic_index].substring(0,5).trim();
-        }else{
-            nu += piclist[pic_index].trim();
-        }
+        nu = nu.split("#")[0]+"#"+prefix+piclist[pic_index]+".jpg"
         window.location = nu;
             
         document.title = imgname
@@ -334,7 +328,6 @@ vc.onmousemove = picMouseMove
 vc.ontouchstart = picTouchStart
 vc.ontouchend = picMouseUp
 vc.ontouchmove = picTouchMove
-//dbg = document.getElementById("dbg");
 
 SizeImage(950,550);
 
@@ -348,12 +341,18 @@ for (a=0;a<piclist.length;a++){
     if (!ActNums[min] || piclist[a].substring(2,4) < "30") ActNums[min] = a;
 }
 
-// Figure out index in picture list given the time in the URL after the #
+// Figure out index in picture list given the filename after the #
 pic_index=0
-pictime = (window.location.toString()).split("#")[1];
-if (pictime){
+var pct = unescape(window.location).split("#")[1];
+if (pct){
+    var m = pct.substring(prefix.length)
+    if (m.substring(m.length-4) == ".jpg") m = m.substring(0,m.length-4)
     for (;pic_index<piclist.length-1;pic_index++){
-        if (piclist[pic_index] >= pictime) break;
+        if (piclist[pic_index] >= m) break;
     }
+    if (pct == "first") pic_index = 0;
+    if (pct == "last") pic_index = piclist.length-1
+}else{
+    pic_index = 0
 }
 UpdatePix()
