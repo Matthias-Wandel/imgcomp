@@ -114,8 +114,6 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
     }
     printf("<br>Actagram:\n<b><span id='actagram' style=\"font-family: courier, \'courier new\', monospace;\">Actagram here</span></b>\n");
 
-//printf("</center><br>Debug:\n<b><span id='dbg'>dbg</span>\n");
-    
     // check how many characters all the filenames have in common (typically 7)
     int npic = 0;
     char * Prefix = NULL;
@@ -149,6 +147,7 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
         }
         if (prefixlen == 0) break;
     }
+    prefixlen = prefixlen >= 7 ? 7 : 0;
 
     printf("\n<script type=\"text/javascript\">\n");
     printf("pixpath=\"pix/\"\n");

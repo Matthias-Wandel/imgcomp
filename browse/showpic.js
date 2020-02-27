@@ -98,8 +98,15 @@ function UpdatePix(){
             ImgLoading = true
         }
         var nu = window.location.toString()
-        window.location = nu.split("#")[0]+"#"
-            +piclist[pic_index].substring(0,5).trim();
+        nu = nu.split("#")[0]+"#";
+        console.log(prefix)
+        if (prefix.length){
+            nu += piclist[pic_index].substring(0,5).trim();
+        }else{
+            nu += piclist[pic_index].trim();
+        }
+        window.location = nu;
+            
         document.title = imgname
     }
     if (!isSavedDir) document.getElementById("save").innerHTML = "Save"
@@ -343,7 +350,7 @@ for (a=0;a<piclist.length;a++){
 
 // Figure out index in picture list given the time in the URL after the #
 pic_index=0
-pictime = (window.location+" ").split("#")[1];
+pictime = (window.location.toString()).split("#")[1];
 if (pictime){
     for (;pic_index<piclist.length-1;pic_index++){
         if (piclist[pic_index] >= pictime) break;

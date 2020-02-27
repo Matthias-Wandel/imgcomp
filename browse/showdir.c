@@ -156,7 +156,7 @@ static int ShowHourlyDirs(char * HtmlPath, int IsRoot, VarList Directories)
 //----------------------------------------------------------------------------------
 // Show list of thumbnails in this directory.
 //----------------------------------------------------------------------------------
-static void ShowThumbnailList(char * HtmlPath, VarList Images)
+static void ShowThumbnailList(char * HtmlPath, int IsSavedDir, VarList Images)
 {
     int NumImages = 0;
     
@@ -268,7 +268,16 @@ static void ShowThumbnailList(char * HtmlPath, VarList Images)
                         printf("<b id=\"%02d\"></b>\n",++DirMinute);
                     }
                 }
-                printf("<a href=\"view.cgi?%s/#%.5s\">",HtmlPath, Name+7);
+                printf("<a href=\"view.cgi?%s/",HtmlPath);
+                if (IsSavedDir){
+                    int k;
+                    for (k=0;k<12;k++){
+                        if (Name[k] == ' ' || Name[k] == '.' || Name[k] == '\0') break;
+                    }
+                    printf("#%.*s\">", k,Name);
+                }else{
+                    printf("#%.5s\">", Name+7);
+                }
                 if (SkipNum == 0){
                     printf("<img src=\"tb.cgi?%s/%s\">",HtmlPath, Name);
                     if (num > 1){
@@ -393,7 +402,7 @@ void MakeHtmlOutput(Dir_t * Dir)
     }
 
     if (Images.NumEntries){
-        ShowThumbnailList(Dir->HtmlPath, Images);
+        ShowThumbnailList(Dir->HtmlPath, IsSavedDir, Images);
     }
 
     printf("<p>\n");    
