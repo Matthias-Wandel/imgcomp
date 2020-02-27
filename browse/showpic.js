@@ -183,6 +183,7 @@ function PicMouse(picX,picY,IsDown)
         if (picX > ShwW*.8) leftright = 1
         if (!MouseIsDown){
             // Mouse was just pressed.
+            ImgLoading = false
             if (leftright){
                 // Start playing forwards or backwards.
                 PlayStart(leftright)
@@ -263,12 +264,14 @@ function ShowBig(){
     }else{
         SizeImage(950,550)
     }
+    ImgLoading = false
     UpdatePix()
 }
 AdjustBright = 0
 function ShowBright(){
     AdjustBright = !AdjustBright
     document.getElementById("bright").innerHTML= AdjustBright?"Normal":"Brighten"
+    ImgLoading = false
     UpdatePix()
 }
 
