@@ -1,10 +1,14 @@
 <title>Realtime display</title>
 <meta charset="utf-8"/>
-<img id='rti' src="/view.cgi?now.jpg" width=800 height=600>
+<style type=text/css>
+  body { font-family: sans-serif; font-size: 22; }
+</style>
+<body>
+<img id='rti' src="/view.cgi?now.jpg" onload="sizeImage()" width=100 height=60>
 <br>
 <small>
 <!--<span id="imgseq">Sequence</span><br>-->
-<span id="logdata">Result goes here</span>
+<span id="logdata">Waiting for changes<br>Log output goes here.</span>
 </small>
 
 
@@ -19,6 +23,14 @@ function DoBeep()
     o.connect(context.destination)
     o.start(0)
     setTimeout(function () { o.stop(0)}, 50);
+}
+
+function sizeImage(){
+    el=document.getElementById('rti')
+    var h = 600
+    var w = h/el.naturalHeight*el.naturalWidth;
+    if (w > 1200){ w=1200;h=w/el.naturalWidth*el.naturalHeight;}
+    el.width=w;el.height=h;
 }
 
 
@@ -49,9 +61,8 @@ const now = new Date()
 imgseq = Math.round(now.getTime() / 1000) % 100000
 function RefreshImage()
 {
-    newsrc = "view.cgi?now.jpg#"+imgseq
+    newsrc = "view.cgi?now.jpg?"+imgseq
     imgseq += 1;
-    //document.getElementById("imgseq").innerHTML = newsrc
     image=document.getElementById('rti')
     image.src = newsrc
     

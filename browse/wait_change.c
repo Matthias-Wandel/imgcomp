@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
+#include <time.h>
 
 #include <stdlib.h>
 #include <errno.h>
@@ -43,16 +44,18 @@ int main()
     infd = inotify_init();
     inotify_add_watch( infd, WATCH_FILE, IN_CREATE | IN_DELETE | IN_MODIFY);
     
+    time_t now = time(NULL);
     for (n=0;n<20;n++){
         char NewBytes[100];
         int nread;
         long NewSize;
-        
+
+        if (time(NULL) >= now+5) break; // Wait at most five seconds.
         // read to wait for change.
         read( infd, buffer, EVENT_BUF_LEN ); 
 
-        // the following hack is necessary to work around a file system bug on the
-        // raspian for raspberry pi 4.
+        // the following hack is necessary to work around a 
+        // file system bug on the raspian
         fseek(LogFile, 0, SEEK_END);
         NewSize = ftell(LogFile);
         if (NewSize != FileSize){
@@ -63,7 +66,7 @@ int main()
             // File wasn't appended to.
             continue;
         }
-        
+
         nread = fread(NewBytes, 1, 99, LogFile);
         if (nread > 0){
             GotBytes = 1;

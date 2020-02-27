@@ -319,7 +319,7 @@ int main(int argc, char ** argv)
         return 0;
     }
     
-    if (strcmp(QueryString, "now.jpg") == 0){
+    if (memcmp(QueryString, "now.jpg",7) == 0){
         ShowLatestJpg();
         return 0;
     }
