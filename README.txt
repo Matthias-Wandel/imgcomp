@@ -44,7 +44,7 @@ date/time if there is no EXIF date in the pictures.
 
 There is the imgcomp/setup directory which contains scripts that I use to
 configure it to run on a raspberry pi, plus some scripts that are only
-useful to me.  Also read file "imgcomp/setup/settomg_up.txt"
+useful to me.  Also read file "imgcomp/setup/setting_up.txt"
 
 ------------------------------------------------------------------------------
 
