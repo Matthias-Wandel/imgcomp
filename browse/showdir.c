@@ -189,7 +189,7 @@ static void ShowThumbnailList(char * HtmlPath, int IsSavedDir, VarList Images)
     }
     
     printf("Directory <b>%s</b>: <b>%d</b> Images<p>\n",HtmlPath, NumImages);
-    
+
     // Find time breaks in images.
     int LastSeconds = -1000;
     int BreakIndices[101];
@@ -240,7 +240,7 @@ static void ShowThumbnailList(char * HtmlPath, int IsSavedDir, VarList Images)
         
         if (Name[0] >= '0' && Name[0] <= '9' && Name[1] >= '0' && Name[1] <= '9'){
             char DateStr[10];
-            if (!AllSameDate){
+            if (!AllSameDate || IsSavedDir){
                 DateStr[0] = Name[0]; DateStr[1] = Name[1];
                 DateStr[2] = '-';
                 DateStr[3] = Name[2]; DateStr[4] = Name[3];
