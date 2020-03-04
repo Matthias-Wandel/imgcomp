@@ -17,13 +17,8 @@
 #include <errno.h>
 #include "view.h"
 #include "../src/jhead.h"
-#ifdef _WIN32
-    #include <io.h>
-    #include <direct.h>
-#else
-    #include <sys/stat.h>
-    #include <unistd.h>
-#endif
+#include <sys/stat.h>
+#include <unistd.h>
 
 static char * FileExtensions[] = {"jpg","jpeg","txt","html","mp4",NULL};
        char * ImageExtensions[] = {"jpg","jpeg",NULL};
@@ -148,46 +143,45 @@ void DoJpegView(char * ImagePath)
     HtmlPath[lastslash] = '\0';
     dir = CollectDir(HtmlPath, 1);
 
-    if (dir->Images.NumEntries){
-        if (strcmp(HtmlFile, "first.jpg") == 0){
-            strcpy(HtmlFile, dir->Images.Entries[0].Name);
-        }
-        if (strcmp(HtmlFile, "last.jpg") == 0){
-            strcpy(HtmlFile, dir->Images.Entries[dir->Images.NumEntries-1].Name);
-        }
-    }
+    ReadExifHeader(ImagePath, NULL, NULL);
 
-    MakeImageHtmlOutput(HtmlFile, dir);
+    MakeImageHtmlOutput(HtmlFile, dir, (float)ImageInfo.Width / ImageInfo.Height);
         
     free(dir->Dirs.Entries);
     free(dir->Images.Entries);
     free(dir);
 
-    printf("<p>");
-    
-    printf("%s ",ImageInfo.DateTime);
+    printf("<p>Date, time: %s<br>\n",ImageInfo.DateTime);
+    printf("Image size: %d x %d<br>\n",ImageInfo.Width, ImageInfo.Height);
 
-    printf("&nbsp; %dx%d &nbsp;",ImageInfo.Width, ImageInfo.Height);
-
-    if (ImageInfo.ExposureTime){
-        if (ImageInfo.ExposureTime <= 0.5){
-            printf("1/%ds",(int)(0.5 + 1/ImageInfo.ExposureTime));
-        }else{
-            printf("%1.1fs",ImageInfo.ExposureTime);
+    if (ImageInfo.ExposureTime || ImageInfo.ISOequivalent || ImageInfo.ApertureFNumber){
+        printf("Exposure: ");
+        if (ImageInfo.ExposureTime){
+            if (ImageInfo.ExposureTime <= 0.5){
+                printf("1/%ds\n",(int)(0.5 + 1/ImageInfo.ExposureTime));
+            }else{
+                printf("%1.1fs\n",ImageInfo.ExposureTime);
+            }
         }
-    }
-
-    if (ImageInfo.ISOequivalent != 0){
-        printf("&nbsp; ISO:%2d\n",(int)ImageInfo.ISOequivalent);
-    }
-    
-    if (ImageInfo.ApertureFNumber){
-        printf("&nbsp; f/%3.1f",(double)ImageInfo.ApertureFNumber);
+        if (ImageInfo.ApertureFNumber){
+            printf("f/%3.1f\n",(double)ImageInfo.ApertureFNumber);
+        }
+        if (ImageInfo.ISOequivalent != 0){
+            printf("ISO:%2d\n",(int)ImageInfo.ISOequivalent);
+        }
+        printf("<br>\n");
     }
 
     if (ImageInfo.FocalLength35mmEquiv){
-        printf("&nbsp; f(35)=%dmm",ImageInfo.FocalLength35mmEquiv);
+        printf("Focal length equivalent: f(35)=%dmm",ImageInfo.FocalLength35mmEquiv);
     }
+    
+    
+    struct stat buf;
+    char FileName[320];
+    sprintf(FileName, "pix/%s",ImagePath);
+    stat(FileName, &buf);
+    printf("File size: %d bytes, Location: %s<br>\n",(int)buf.st_size, ImagePath);
     
     printf("\n");
     

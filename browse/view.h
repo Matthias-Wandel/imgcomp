@@ -38,7 +38,7 @@ float ReadExifHeader(char * ImagePath, int * width, int * height);
 void MakeHtmlOutput(Dir_t * Dir);
 void ShowActagram(int all, int twentyfour);
 //-------------------------------------------------------------------
-void MakeImageHtmlOutput(char * ImagePath, Dir_t * Dir);
+void MakeImageHtmlOutput(char * ImagePath, Dir_t * Dir, float AspectRatio);
 void MakeViewPage(char * ImageName, Dir_t * dir);
 //-------------------------------------------------------------------
 void CollectDirectory(char * PathName, VarList * Files, VarList * Dirs, char * Patterns[]);
