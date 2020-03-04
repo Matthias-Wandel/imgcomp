@@ -91,17 +91,13 @@ void MakeImageHtmlOutput(char * ImageName, Dir_t * dir, float AspectRatio)
     // Make left and right parts of the image clickable as previous and next.
     if (Images.Entries){
         printf("<map name=\"prevnext\">\n");
-        if (DirIndex > 0 || dir->Previous[0]){
+        if (DirIndex > 0){
             printf("  <area shape=\"rect\" coords= \"0,0,%d,%d\" ",ShowWidth/4, ShowHeight);
-            printf("href=\"view.cgi?%s/%s\">\n", 
-                DirIndex > 0 ? HtmlDir : dir->Previous, 
-                DirIndex > 0 ? Images.Entries[DirIndex-1].Name : "last.jpg");
+            printf("href=\"view.cgi?%s/%s\">\n", HtmlDir, Images.Entries[DirIndex-1].Name);
         }
-        if (DirIndex < Images.NumEntries-1 || dir->Next[0]){
+        if (DirIndex < Images.NumEntries-1){
             printf("  <area shape=\"rect\" coords=\"%d,0,%d,%d\" ",(ShowWidth*3)/4, ShowWidth, ShowHeight);
-            printf("href=\"view.cgi?%s/%s\">\n",
-                DirIndex < Images.NumEntries-1 ? HtmlDir : dir->Next, 
-                DirIndex < Images.NumEntries-1 ? Images.Entries[DirIndex+1].Name : "first.jpg");
+            printf("href=\"view.cgi?%s/%s\">\n", HtmlDir, Images.Entries[DirIndex+1].Name);
         }
         printf("</map>\n");
     }
