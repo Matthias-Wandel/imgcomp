@@ -1,8 +1,12 @@
-* Peers server pointers
-* Make it work for non absolute paths?
-* use canvas method for better actagrams?
-
 To do next:
+* Figure out stops on pi zero.
+* Saved thumbnail view: Save dates.
+* Make it work for non absolute paths / multiple instances
+* Peers server pointers
+* Make it work with webcams also.
+* Use native image size in js image flipper
+* use canvas method instead of chracter graphics for actagrams
+
 
 Future features:
 * Calculate separate motion fatigues for luma and chroma

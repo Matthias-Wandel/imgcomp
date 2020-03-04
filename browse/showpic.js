@@ -49,7 +49,11 @@ function UpdateLinks(){
         links += between
 
         if (a == pic_index){
-            if (prefix.length == 7) TimeStr = prefix.substring(5,7)+":"+TimeStr
+            if (prefix.length == 7){
+                TimeStr = prefix.substring(5,7)+":"+TimeStr
+            }else{
+                TimeStr += ":"+Name.substring(7,9)
+            }
             links += "<b>"+TimeStr+"</b>"
         }else{
             links += "<a href=\"#"+Name+".jpg"
