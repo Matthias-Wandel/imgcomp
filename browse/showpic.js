@@ -227,8 +227,15 @@ function PicMouse(picX,picY,IsDown)
     MouseIsDown = IsDown;
 }
 
+LastWidth = LastHeight = 0;
 function picLoaded()
 {
+    if (vc.naturalWidth != LastWidth || vc.naturalHeight != LastHeight){
+        LastWidth = vc.naturalWidth;
+        LastHeight = vc.naturalHeight;
+        SizeImage();
+    }
+    
     if (!ImgLoading) return;
     if (NextImgUrl){
         document.getElementById("view").src = NextImgUrl
@@ -264,12 +271,8 @@ ShowBigOn = 0
 function ShowBig(){
     ShowBigOn = !ShowBigOn
     document.getElementById("big").innerHTML= ShowBigOn?"Smaller":"Enlarge"
-    if (ShowBigOn){
-        SizeImage(PicWidth, PicHeight)
-    }else{
-        SizeImage(950,550)
-    }
-    ImgLoading = false
+    SizeImage();
+    ImgLoading = false // Potentially need to re-load image.
     UpdatePix()
 }
 AdjustBright = 0
@@ -286,21 +289,26 @@ function ShowDetails(){
     window.location = nu
 }
 
-function SizeImage(maxw, maxh)
+function SizeImage()
 {
-    var Qt
+    if (ShowBigOn){
+        vc.width = vc.natualWidth;
+        vc.height = vc.naturalHeight;
+        return;
+    }
+    maxw = 950; maxh = 550;
+    
     ShwW = maxw
     if (ShwW > window.innerWidth-15) ShwW = window.innerWidth-15;
     if (piclist.length == 0){
         return;
     }
-    if (PicWidth > 0){
-        ShwH = Math.round(ShwW*PicHeight/PicWidth)
+    if (vc.naturalWidth > 0){
+        ShwH = Math.round(ShwW*vc.naturalHeight/vc.naturalWidth)
         if (ShwH > maxh){
             ShwH = maxh;
-            ShwW = Math.round(ShwH*PicWidth/PicHeight)
+            ShwW = Math.round(ShwH*vc.naturalWidth/vc/naturalHeight)
         }
-        Qt = Math.round(ShwW/4)
     }else{
         ShwW = 320; ShwH = 240
     }
@@ -332,8 +340,6 @@ vc.onmousemove = picMouseMove
 vc.ontouchstart = picTouchStart
 vc.ontouchend = picMouseUp
 vc.ontouchmove = picTouchMove
-
-SizeImage(950,550);
 
 // Fill bins for actagram (a sort of motion time histogram)
 ActBins = []

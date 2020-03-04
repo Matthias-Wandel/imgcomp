@@ -38,8 +38,6 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
     VarList Images;
     Images = dir->Images;
     HtmlDir = dir->HtmlPath;
-    int PicWidth = 0;
-    int PicHeight = 0;
 
     if (strstr(HtmlDir, "saved/") != NULL) IsSavedDir = 1;
 
@@ -123,13 +121,6 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
         int e = strlen(Name);
         if (e < 5 || memcmp(Name+e-4,".jpg",4)) continue;
 
-        if (PicWidth == 0){
-            // Need to get image size (assume all the same size)
-            char PathToFile[300];
-            sprintf(PathToFile, "%s/%s", HtmlDir, Images.Entries[a].Name);
-            ReadExifHeader(PathToFile, &PicWidth, &PicHeight);
-        }
-
         if (Prefix == NULL){
             Prefix = Name;
             prefixlen = strlen(Name)-4;
@@ -180,7 +171,6 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
     printf("hasLog=%d\n",HasLog);
     printf("isSavedDir=%d\n",IsSavedDir);
     printf("PrevDir=\"%s\";NextDir=\"%s\"\n",dir->Previous, dir->Next);
-    printf("PicWidth=%d;PicHeight=%d\n",PicWidth, PicHeight);
     printf("</script>\n");
     
     // Include the showpic.js javascript file.
