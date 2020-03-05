@@ -55,7 +55,7 @@ function UpdateLinks(){
                 TimeStr += ":"+Name.substring(7,9)
             }
         }
-        if (parseInt(Name) < 1000 || Name.substring(4,5) != "-") TimeStr = Name.substring(0,8)
+        if (parseInt(Name) < 100 || Name.substring(4,5) != "-") TimeStr = Name.substring(0,8)
 
         if (a == pic_index){
             links += "<b>"+TimeStr+"</b>"
