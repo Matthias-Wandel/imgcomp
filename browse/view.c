@@ -181,7 +181,7 @@ void DoJpegView(char * ImagePath)
     char FileName[320];
     sprintf(FileName, "pix/%s",ImagePath);
     stat(FileName, &buf);
-    printf("File size: %d bytes, Location: %s<br>\n",(int)buf.st_size, ImagePath);
+    printf("File size: %d bytes<br>\nLocation: %s<br>\n",(int)buf.st_size, ImagePath);
     
     printf("\n");
     

@@ -4,7 +4,7 @@ function UpdateLinks(){
     // Update list of nav links at botom of page.
     var links = ""
     var BEFORE = 4
-    var AFTER = 5
+    var AFTER = 4
     if (prefix.length != 7) {BEFORE=3;AFTER=4}
     var From = pic_index-BEFORE;
     if (From < -1) From = -1;
@@ -29,12 +29,12 @@ function UpdateLinks(){
             continue;
         }
         
-        Name = piclist[a];
+        Name = prefix+piclist[a];
         var between = " "
         if (prefix.length == 7){
             // Extract the time (MM:SS) part of the file name to show.
-            TimeStr = Name.substring(0,2)+":"+Name.substring(2,4)
-            var Second = Name.substring(0,2)*60 + Name.substring(2,4)*1
+            TimeStr = Name.substring(7,9)+":"+Name.substring(9,11)
+            var Second = Name.substring(7,9)*60 + Name.substring(9,11)*1
             if (a > From && a > 0){
                 dt = Second - PrevSecond;
                 if (dt >= 3 && dt < 5) between = "&nbsp;"
@@ -44,16 +44,20 @@ function UpdateLinks(){
             PrevSecond = Second
         }else{
             // Show MMDD-HH
-            TimeStr = (prefix+Name).substring(0,7)
+            TimeStr = Name.substring(0,7)
         }
         links += between
 
         if (a == pic_index){
             if (prefix.length == 7){
-                TimeStr = prefix.substring(5,7)+":"+TimeStr
+                TimeStr = Name.substring(5,7)+":"+TimeStr
             }else{
                 TimeStr += ":"+Name.substring(7,9)
             }
+        }
+        if (parseInt(Name) < 1000 || Name.substring(4,5) != "-") TimeStr = Name.substring(0,8)
+
+        if (a == pic_index){
             links += "<b>"+TimeStr+"</b>"
         }else{
             links += "<a href=\"#"+Name+".jpg"
@@ -307,7 +311,7 @@ function SizeImage()
         ShwH = Math.round(ShwW*vc.naturalHeight/vc.naturalWidth)
         if (ShwH > maxh){
             ShwH = maxh;
-            ShwW = Math.round(ShwH*vc.naturalWidth/vc/naturalHeight)
+            ShwW = Math.round(ShwH*vc.naturalWidth/vc.naturalHeight)
         }
     }else{
         ShwW = 320; ShwH = 240
