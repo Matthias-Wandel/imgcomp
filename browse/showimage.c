@@ -1,9 +1,9 @@
 //----------------------------------------------------------------------------------
 // HTML based image browser to use with imgcomp output.
 //
-// HTML output for browsing one image at a time.  This for the non-javascript centric
-// version.  showpic.c largely replaces this, but the non-javascript centric version
-// is still of use, like for showing exif camera settings.
+// HTML output for "details" view page.  This for the non-javascript centric
+// version.  showpic.c largely replaced this, but this view shows
+// some details that the javascript version doesn't show, like camera settings.
 //
 // Imgcomp and html browsing tool is licensed under GPL v2 (see README.txt)
 //---------------------------------------------------------------------------------- 
@@ -13,20 +13,14 @@
 #include <string.h>
 #include <time.h>
 #include <stdlib.h>
-
-#ifdef _WIN32
-    #include <io.h>
-    #include <direct.h>
-#else
-    #include <sys/stat.h>
-#endif
+#include <sys/stat.h>
 
 #include "view.h"
 
 //----------------------------------------------------------------------------------
 // Create a HTML to view just one image.
 //----------------------------------------------------------------------------------
-void MakeImageHtmlOutput(char * ImageName, Dir_t * dir)
+void MakeImageHtmlOutput(char * ImageName, Dir_t * dir, float AspectRatio)
 {
     int DirIndex;
     int FoundMatch;
@@ -36,7 +30,6 @@ void MakeImageHtmlOutput(char * ImageName, Dir_t * dir)
     int ShowHeight;
     int IsSavedDir = 0;
     char * HtmlDir;
-    float AspectRatio = 1;
     VarList Images;
     Images = dir->Images;
     HtmlDir = dir->HtmlPath;
@@ -73,12 +66,6 @@ void MakeImageHtmlOutput(char * ImageName, Dir_t * dir)
            "  xhttp.send()\n"
            "}\n </script>\n");
 
-    {
-        char PathToFile[300];
-        sprintf(PathToFile, "%s/%s", HtmlDir, ImageName);
-        AspectRatio = ReadExifHeader(PathToFile, NULL, NULL);
-    }
-
     printf("<div style=\"width:950px;\">");
     // Scale it to a resolution that works well on iPad.
     ShowWidth = 950;
@@ -104,17 +91,13 @@ void MakeImageHtmlOutput(char * ImageName, Dir_t * dir)
     // Make left and right parts of the image clickable as previous and next.
     if (Images.Entries){
         printf("<map name=\"prevnext\">\n");
-        if (DirIndex > 0 || dir->Previous[0]){
+        if (DirIndex > 0){
             printf("  <area shape=\"rect\" coords= \"0,0,%d,%d\" ",ShowWidth/4, ShowHeight);
-            printf("href=\"view.cgi?%s/%s\">\n", 
-                DirIndex > 0 ? HtmlDir : dir->Previous, 
-                DirIndex > 0 ? Images.Entries[DirIndex-1].Name : "last.jpg");
+            printf("href=\"view.cgi?%s/%s\">\n", HtmlDir, Images.Entries[DirIndex-1].Name);
         }
-        if (DirIndex < Images.NumEntries-1 || dir->Next[0]){
+        if (DirIndex < Images.NumEntries-1){
             printf("  <area shape=\"rect\" coords=\"%d,0,%d,%d\" ",(ShowWidth*3)/4, ShowWidth, ShowHeight);
-            printf("href=\"view.cgi?%s/%s\">\n",
-                DirIndex < Images.NumEntries-1 ? HtmlDir : dir->Next, 
-                DirIndex < Images.NumEntries-1 ? Images.Entries[DirIndex+1].Name : "first.jpg");
+            printf("href=\"view.cgi?%s/%s\">\n", HtmlDir, Images.Entries[DirIndex+1].Name);
         }
         printf("</map>\n");
     }
@@ -187,9 +170,9 @@ void MakeImageHtmlOutput(char * ImageName, Dir_t * dir)
             IndexInto[2] = ImageName[8];
             IndexInto[3] = '\0';
         }
-        printf("<a href=\"pix/%s/%s\">[Enlarge]</a>\n",HtmlDir,ImageName);
-        printf("<a href=\"tb.cgi?%s/%s$2\">[Brighten]</a>\n",HtmlDir,ImageName);
-        printf("<a href=\"pix/%s/Log.html#%.2s\">[Log]</a>\n",HtmlDir, ImageName+7);
+        //printf("<a href=\"pix/%s/%s\">[Enlarge]</a>\n",HtmlDir,ImageName);
+        //printf("<a href=\"tb.cgi?%s/%s$2\">[Brighten]</a>\n",HtmlDir,ImageName);
+        printf("<a href=\"pix/%s/Log.html#%.2s\">Show log</a>\n",HtmlDir, ImageName+7);
         
         for (a=0;;a++){
             if (HtmlDir[a] == '/') break;
@@ -201,7 +184,7 @@ void MakeImageHtmlOutput(char * ImageName, Dir_t * dir)
         printf("<a href=\"view.cgi?%.*s\">", a, HtmlDir);
         printf("%.*s</a>/", a, HtmlDir);
         printf("<a href=\"view.cgi?%s%s\">%s]</a>\n", HtmlDir, IndexInto, HtmlDir+a+1);
-        printf("<a href=\"view.cgi?%s/#%.5s\">[JS]</a>\n", HtmlDir, ImageName+7);
+        printf("<a href=\"view.cgi?%s/#%.5s\">JS</a>\n", HtmlDir, ImageName+7);
 
         if (!IsSavedDir){
             char SavedDir[20];
