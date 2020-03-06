@@ -69,11 +69,14 @@ function UpdateLinks(){
     document.getElementById("links").innerHTML=links;
 }
 
+thismin_last = -1
 function UpdateActagram(){
 // Update the actagram text character display below the nav links.    
     act = ""
     var thismin
     if (piclist.length) thismin = parseInt(piclist[pic_index].substring(0,2))
+    if (thismin == thismin_last) return;
+    thismin_last = thismin
 
     for (a=0;a<60;a++){
         if (!(b = ActBins[a])){
@@ -132,22 +135,13 @@ ScrollTimer = 0
 function ScrollMoreTimer()
 {
     var img = document.querySelector('img')
-    if (ImgLoading) {
-        // Image is not loaded yet.  Once it's loaded, set a shorter timer
-        // (to avoid recursion problems)
-        img.addEventListener('load', SetLateTimer())
-        return;
-    }
+    if (ImgLoading)  return;
 
     if (ScrollDir){
         if (DoNext(ScrollDir)){
             ScrollTimer = setTimeout(ScrollMoreTimer,isSavedDir?400:100)
         }
     }
-}
-function SetLateTimer(){
-    console.log("late timer");
-    ScrollTimer = setTimeout(ScrollMoreTimer, 20)
 }
 
 function PlayStart(dir)
@@ -200,6 +194,7 @@ function PicMouse(picX,picY,IsDown)
                 // Start of drag scrolling.
                 xref = picX;
                 ref_index = pic_index;
+                ScrollDir = 0
                 DragActive = true
             }
         }else{
@@ -209,7 +204,8 @@ function PicMouse(picX,picY,IsDown)
                 var targindex = Math.round(ref_index+relmove*piclist.length);
                 if (targindex < 0) targindex = 0
                 if (targindex >= piclist.length) targindex = piclist.length-1
-                SetIndex(targindex)
+                pic_index = targindex
+                UpdatePix()
             }else{
                 if (leftright == 0){
                     // Drag start out of left/right region
@@ -241,16 +237,18 @@ function picLoaded()
     }
     
     if (!ImgLoading) return;
-    if (NextImgUrl){
+    if (NextImgUrl && ImgLoading){
         document.getElementById("view").src = NextImgUrl
         NextImgUrl = ""
     }else{
         ImgLoading = false;
+        if (ScrollDir) ScrollMoreTimer();
     }
 }
 
 function SetIndex(index)
 {
+    ImgLoading = false;
     pic_index = index
     UpdatePix()
 }
