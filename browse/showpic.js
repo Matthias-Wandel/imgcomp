@@ -297,7 +297,7 @@ function ShowDetails(){
 function SizeImage()
 {
     if (ShowBigOn){
-        vc.width = vc.natualWidth;
+        vc.width = vc.naturalWidth;
         vc.height = vc.naturalHeight;
         return;
     }
