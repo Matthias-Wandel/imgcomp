@@ -134,6 +134,7 @@ ScrollDir = 0
 ScrollTimer = 0
 function ScrollMoreTimer()
 {
+    ScrollTimer = 0
     var img = document.querySelector('img')
     if (ImgLoading)  return;
 
@@ -143,6 +144,33 @@ function ScrollMoreTimer()
         }
     }
 }
+
+LastWidth = LastHeight = 0;
+function picLoaded()
+{
+    if (vc.naturalWidth != LastWidth || vc.naturalHeight != LastHeight){
+        LastWidth = vc.naturalWidth;
+        LastHeight = vc.naturalHeight;
+        SizeImage();
+    }
+    
+    if (!ImgLoading) return;
+    if (NextImgUrl && ImgLoading){
+        document.getElementById("view").src = NextImgUrl
+        NextImgUrl = ""
+    }else{
+        ImgLoading = false;
+        if (ScrollDir && !ScrollTimer) ScrollMoreTimer();
+    }
+}
+
+function SetIndex(index)
+{
+    ImgLoading = false;
+    pic_index = index
+    UpdatePix()
+}
+
 
 function PlayStart(dir)
 {
@@ -155,7 +183,7 @@ function PlayStop()
     ScrollDir = 0
     document.getElementById("play").innerHTML="Play"
     clearTimeout(ScrollTimer)
-    
+    ScrollTimer = 0
 }
 
 function PlayButton()
@@ -227,31 +255,6 @@ function PicMouse(picX,picY,IsDown)
     MouseIsDown = IsDown;
 }
 
-LastWidth = LastHeight = 0;
-function picLoaded()
-{
-    if (vc.naturalWidth != LastWidth || vc.naturalHeight != LastHeight){
-        LastWidth = vc.naturalWidth;
-        LastHeight = vc.naturalHeight;
-        SizeImage();
-    }
-    
-    if (!ImgLoading) return;
-    if (NextImgUrl && ImgLoading){
-        document.getElementById("view").src = NextImgUrl
-        NextImgUrl = ""
-    }else{
-        ImgLoading = false;
-        if (ScrollDir) ScrollMoreTimer();
-    }
-}
-
-function SetIndex(index)
-{
-    ImgLoading = false;
-    pic_index = index
-    UpdatePix()
-}
 
 function DoSavePic(){
     // Instruct back end to copy picture to the "Saved" directory.
