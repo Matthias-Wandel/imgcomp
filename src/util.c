@@ -361,21 +361,7 @@ void LogFileMaintain(int ForceLogSaveReboot)
         return;
     }
     HaveLogAlready = (Log != NULL);
-    
-
-    {
-        time_t now;
-        struct tm * nowTm;
-        static int lastmin = 0;
-        time(&now);
-        nowTm = localtime(&now);
-        if (nowTm->tm_min != lastmin && Log != NULL){
-            // Put an indexable tag into the log file every minute.
-            fprintf(Log, "<z id=\"%02d\"/>\n", nowTm->tm_min);
-        }
-        lastmin = nowTm->tm_min;
-    }
-    
+   
     if (MoveLogNames[0]){
         strftime(NewLogTo, PATH_MAX, MoveLogNames, localtime(&LastPic_mtime));
 		if (ForceLogSaveReboot){
@@ -394,7 +380,6 @@ void LogFileMaintain(int ForceLogSaveReboot)
                 CopyFile(LogToFile, ThisLogTo);
                 unlink(LogToFile);
             }
-            strcpy(ThisLogTo, NewLogTo);
         }
     }
     
@@ -412,13 +397,20 @@ void LogFileMaintain(int ForceLogSaveReboot)
         if (ThisLogTo[0]){
             strncpy(ThisLogTo, NewLogTo, PATH_MAX);
         }
-        
-        return;
-    }else{
-        fflush(Log); // Do log to ram disk, or this wears out flash!
+        strcpy(ThisLogTo, NewLogTo);        
     }
     
-
+    static int lastmin = 0;
+    time_t now;
+    time(&now);
+    struct tm * nowTm = localtime(&now);
+    if (nowTm->tm_min != lastmin && Log != NULL){
+        // Put an indexable tag into the log file every minute.
+        fprintf(Log, "<z id=\"%02d\"/>\n", nowTm->tm_min);
+        lastmin = nowTm->tm_min;
+    }
+    
+    fflush(Log); // Assuming logging to ramdisk, or we wear out flash.
 }
 
 
