@@ -15,6 +15,61 @@
 
 #include "view.h"
 
+static int is_valid_date(int date)
+{
+    int d = date%100;
+    int m = (date/100)%100;
+    int y = date/10000;
+
+    return d >= 1 && d <= 31
+        && m >= 1 && m <= 12
+        && y >= 10 && y <= 99;
+}
+
+//----------------------------------------------------------------------------------
+// Read the browse.conf file to get holidays in the format YYMMDD and
+// store them in the Holidays array.
+//
+// Returns the count stored in the Holidays array.
+int read_holiday_config()
+{
+
+    printf("<head><meta charset=\"utf-8\"/></head>");
+
+    FILE * file = fopen("browse.conf", "r");
+    if (file == NULL) {
+        printf("<script>\n"
+            "console.log(\"[ERROR]: Could not open file browse.conf.\")\n"
+            "\n</script>\n");
+        return 0;
+    }
+
+    int count = 0;
+    int linenum = 0;
+    char line[200];
+    while (fgets(line, sizeof line, file) != NULL) {
+        int date = atoi(line);
+        linenum++;
+        if (date == 0) {
+            // comment, empty line, or garbage
+            continue;
+        } else if (is_valid_date(date)) {
+            if (count > 200) {
+                printf("<script>console.log(\"[ERROR]: browse.conf has too many dates.\")"
+                        "</script>\n");
+                break;
+            }
+            Holidays[count++] = date;
+        } else {
+            printf("<script>console.log(\"[ERROR]: %d is not a valid date, line %d.\")"
+                    "</script>\n", date, linenum);
+        }
+    }
+    fclose(file);
+    return count;
+}
+
+
 //----------------------------------------------------------------------------------
 // Determine if it's a weekend day or a holiday
 // Returns < 0 for weekday, >= 0 for weekend/holiday.  3 lsbs indicate day of week.
@@ -47,12 +102,7 @@ int IsWeekendString(char * DirString)
         // Sunday = 0, Saturday = 6
     }
 
-    // New brunswick holidays thru end of 2021.
-    static const int Holidays[] = {190701, 190902, 191225,
-                200101, 200217, 200410, 200518, 200701, 200907, 201225,
-                210101, 210402, 210524, 210701, 210802, 210906, 211227};
-
-    for (a=0;a<sizeof(Holidays)/sizeof(int);a++){
+    for (a=0;a<HolidaysLength;a++){
         // Check if date is a holday.
         if (Holidays[a] == daynum) return weekday;
     }

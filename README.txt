@@ -22,6 +22,7 @@ Assumed directory structure:
 ~/www/wait_change.cgi
 ~/www/showpic.js        Also dropped here on compiling viewing program                        
 ~/www/pix/              Root of the pictures (a soft link to ~/images)
+~/www/browse.conf       config file, used for setting local holidays
 
 Note that imgcomp can be configured for different directory structures,
 but the html browser must use the above directory structure.
@@ -81,6 +82,8 @@ very fast using libjpeg's built in undersampling.
 wait_change.cgi is used for realtime to wait for a significant enough change.
 showpic.js is the javascript code for flipping through the images.
 
+Local holidays can be set in the browse.conf file in the format YYMMDD.
+There is a sample configuration file in imgcomp/conf-examples.
 
 ------------------------------------------------------------------------------
 

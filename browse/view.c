@@ -22,7 +22,9 @@
 
 static char * FileExtensions[] = {"jpg","jpeg","txt","html","mp4",NULL};
        char * ImageExtensions[] = {"jpg","jpeg",NULL};
-       
+int Holidays[200];
+int HolidaysLength;
+
 //----------------------------------------------------------------------------------
 // Process one directory.  Returns pointer to summary.
 //----------------------------------------------------------------------------------
@@ -319,6 +321,8 @@ int main(int argc, char ** argv)
     }
 
     printf("Content-Type: text/html\n\n"); // html header
+
+    HolidaysLength = read_holiday_config();
 
     if (memcmp(QueryString, "actagram", 8) == 0){
         int all = 0;
