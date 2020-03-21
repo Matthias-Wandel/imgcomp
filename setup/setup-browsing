@@ -12,6 +12,14 @@ sudo ln -s -f ../mods-available/cgi.load /etc/apache2/mods-enabled/cgi.load
 echo "Restarting apache2"
 sudo service apache2 restart
 
+# Make sure a configuration file exists
+if [ -e ../../browse.conf ] ; then
+	echo "    browse.conf file aready in /home/pi"
+else
+	echo "copy browse.conf.example to /home/pi/www/browse.conf"
+	cp -a ../conf-examples/browse.conf.example /home/pi/www/browse.conf
+fi
+
 echo "Compiling imcomp/browse"
 echo ""
 cd ../browse

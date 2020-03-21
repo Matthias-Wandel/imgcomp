@@ -28,9 +28,13 @@ typedef struct {
     VarList   Images; // List of Image files in this directory.
 }Dir_t;
 
+//-------------------------------------------------------------------
+extern int Holidays[200];
+extern int HolidaysLength;
 
 extern char * ImageExtensions[];
 int IsWeekendString(char * DirString);
+int read_holiday_config();
 
 //-------------------------------------------------------------------
 float ReadExifHeader(char * ImagePath, int * width, int * height);
