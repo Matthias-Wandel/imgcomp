@@ -73,9 +73,8 @@ void ShowActagram(int all, int h24)
     int BinsPerHour = 15;
     int MinutesPerBin = 60/BinsPerHour;
 
-    printf("<head\n"
+    printf("<head><meta charset=\"utf-8\"/>\n"
            "<title>Actagram</title>\n"
-           "<head><meta charset=\"utf-8\"/>\n"
            "</head>");
 
     printf(
