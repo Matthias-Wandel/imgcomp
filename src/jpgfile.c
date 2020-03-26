@@ -5,6 +5,11 @@
 // Imgcomp is licensed under GPL v2 (see README.txt)
 //--------------------------------------------------------------------------
 #include "jhead.h"
+#ifdef VIEWCGI
+    #define Log stdout
+#else
+    #include "imgcomp.h"
+#endif
 
 // Storage for simplified info extracted from file.
 ImageInfo_t ImageInfo;
@@ -20,9 +25,9 @@ void ErrNonfatal(const char * msg, int a1, int a2)
 {
     if (SupressNonFatalErrors) return;
 
-    fprintf(stderr,"\nNonfatal Error : ");
-    fprintf(stderr, msg, a1, a2);
-    fprintf(stderr, "\n");
+    fprintf(Log,"\nNonfatal Error : ");
+    fprintf(Log, msg, a1, a2);
+    fprintf(Log, "\n");
 }
 
 //--------------------------------------------------------------------------
@@ -87,13 +92,13 @@ static int FindExifInFile (FILE * infile)
             marker = fgetc(infile);
             if (marker != 0xff && prev == 0xff) break;
             if (marker == EOF){
-                fprintf(stderr, "Unexpected end of file");
+                fprintf(Log, "Unexpected end of file");
                 return 0;
             }
         }
 
         if (a > 10){
-            fprintf(stderr, "Extraneous %d padding bytes before section %02X",a-1,marker);
+            fprintf(Log, "Extraneous %d padding bytes before section %02X",a-1,marker);
             return 0;
         }
 
@@ -102,20 +107,20 @@ static int FindExifInFile (FILE * infile)
         lh = fgetc(infile);
         ll = fgetc(infile);
         if (lh == EOF || ll == EOF){
-            fprintf(stderr, "Unexpected end of file");
+            fprintf(Log, "Unexpected end of file");
             return 0;
         }
 
         itemlen = (lh << 8) | ll;
 
         if (itemlen < 2){
-            fprintf(stderr, "invalid marker");
+            fprintf(Log, "invalid jpg marker");
             return 0;
         }
 
         Data = (uchar *)malloc(itemlen);
         if (Data == NULL){
-            fprintf(stderr, "Could not allocate memory");
+            fprintf(Log, "Could not allocate memory");
             return 0;
         }
 
@@ -125,7 +130,7 @@ static int FindExifInFile (FILE * infile)
 
         got = fread(Data+2, 1, itemlen-2, infile); // Read the whole section.
         if (got != itemlen-2){
-            fprintf(stderr, "Premature end of file?");
+            fprintf(Log, "Premature end of file?");
             return 0;
         }
         

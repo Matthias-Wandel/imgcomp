@@ -53,7 +53,7 @@ char * CatPath(char *Dir, char * FileName)
 
     pathlen = strlen(Dir);
     if (pathlen > 300){
-        fprintf(stderr, "path too long!");
+        fprintf(Log, "path too long!");
         exit(-1);
     }
     memcpy(catpath, Dir, pathlen+1);
@@ -165,7 +165,7 @@ DirEntry_t * GetSortedDir(char * Directory, int * NumFiles)
   
     dirp = opendir(Directory);
     if (dirp == NULL){
-        fprintf(stderr, "could not open dir\n");
+        fprintf(Log, "could not open dir\n");
         return NULL;
     }
 
@@ -304,7 +304,7 @@ int CopyFile(char * src, char * dest)
     // Open input and output files  
     inputFd = open(src, O_RDONLY | O_BINARY, 0);
     if (inputFd == -1){
-        fprintf(stderr,"CopyFile could not open src %s\n",src);
+        fprintf(Log,"CopyFile could not open src %s\n",src);
         exit(-1);
     }
  
@@ -314,7 +314,7 @@ int CopyFile(char * src, char * dest)
 
     outputFd = open(dest, openFlags, filePerms);
     if (outputFd == -1){
-        fprintf(stderr,"CopyFile could not open dest %s\n",dest);
+        fprintf(Log,"CopyFile could not open dest %s\n",dest);
         exit(-1);
     }
 
@@ -324,13 +324,13 @@ int CopyFile(char * src, char * dest)
         numRead = read(inputFd, buf, BUF_SIZE);
         if (numRead <= 0) break;
         if (write(outputFd, buf, numRead) != numRead){
-            fprintf(stderr,"write error to %s",dest);
+            fprintf(Log,"write error to %s",dest);
             exit(-1);
         }
     }
 
     if (numRead == -1){
-        fprintf(stderr,"CopyFile read error from %s\n",src);
+        fprintf(Log,"CopyFile read error from %s\n",src);
         exit(-1);
     }
 
