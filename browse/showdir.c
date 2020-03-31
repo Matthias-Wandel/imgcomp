@@ -61,20 +61,8 @@ static void PrintNavLinks(Dir_t * Dir, int IsRoot)
 //----------------------------------------------------------------------------------
 // Show an actagram for one hour.
 //----------------------------------------------------------------------------------
-static int ShowHourActagram(char * HtmlPath, char * SubdirName, int IsRoot)
+static void ShowHourActagram(VarList SubdImages, char * HtmlPath, char * SubdirName, int IsRoot)
 {
-    VarList SubdImages;
-    {
-        char SubdirPath[220];
-        snprintf(SubdirPath,210,"pix/%s/%s",HtmlPath, SubdirName);
-        memset(&SubdImages, 0, sizeof(VarList));
-        CollectDirectory(SubdirPath, &SubdImages, NULL, ImageExtensions);
-    }
-    
-    if (SubdImages.NumEntries){
-        printf(" <small>(%d)</small>\n",SubdImages.NumEntries);
-    }
-    printf("<br>\n");
 
     // Build an actagram for the hour.
     const int MaxBins = 30; // Bins per hour.
@@ -120,12 +108,10 @@ static int ShowHourActagram(char * HtmlPath, char * SubdirName, int IsRoot)
         }
     }
     printf("</span>\n");
-    free(SubdImages.Entries);
-    return NumImages;
 }
 
 //----------------------------------------------------------------------------------
-// Show directories for all the hours.
+// Show directories for all the hours (or days)
 //----------------------------------------------------------------------------------
 static int ShowHourlyDirs(char * HtmlPath, int IsRoot, VarList Directories)
 {
@@ -146,10 +132,25 @@ static int ShowHourlyDirs(char * HtmlPath, int IsRoot, VarList Directories)
         
         printf("<div class='ag'>\n");
         if (isw >= 0) printf("<span class=\"wkend\">");
-        printf("<a href=\"view.cgi?%s/%s\">%s:</a>",HtmlPath, SubdirName, Directories.Entries[b].Name);
+        printf("<a href=\"view.cgi?%s/%s/\">%s:</a>\n",HtmlPath, SubdirName, Directories.Entries[b].Name);
         if (isw >= 0) printf("</span>");
+
+        VarList SubdImages;
+        char SubdirPath[220];
+        snprintf(SubdirPath,210,"pix/%s/%s",HtmlPath, SubdirName);
+        memset(&SubdImages, 0, sizeof(VarList));
+        CollectDirectory(SubdirPath, &SubdImages, NULL, ImageExtensions);
+
+		if (SubdImages.NumEntries){
+			printf("<small><small>(<a href=\"view.cgi?%s/%s\">",HtmlPath, SubdirName);
+			printf("%d</a>)</small></small>\n",SubdImages.NumEntries);
+			TotImages += SubdImages.NumEntries;
+		}
+		printf("<br>\n");
         
-        TotImages += ShowHourActagram(HtmlPath, SubdirName, IsRoot);
+        ShowHourActagram(SubdImages, HtmlPath, SubdirName, IsRoot);
+		free(SubdImages.Entries);
+
         printf("</div>\n");
     }
     printf("<br clear=left>\n");
