@@ -129,17 +129,19 @@ static int ShowHourlyDirs(char * HtmlPath, int IsRoot, VarList Directories)
             printf("<br clear=left>");
         }
         prevwkd = thiswkd;
-        
-        printf("<div class='ag'>\n");
-        if (isw >= 0) printf("<span class=\"wkend\">");
-        printf("<a href=\"view.cgi?%s/%s/\">%s:</a>\n",HtmlPath, SubdirName, Directories.Entries[b].Name);
-        if (isw >= 0) printf("</span>");
 
         VarList SubdImages;
         char SubdirPath[220];
-        snprintf(SubdirPath,210,"pix/%s/%s",HtmlPath, SubdirName);
         memset(&SubdImages, 0, sizeof(VarList));
+        snprintf(SubdirPath,210,"pix/%s/%s",HtmlPath, SubdirName);
         CollectDirectory(SubdirPath, &SubdImages, NULL, ImageExtensions);
+
+        printf("<div class='ag'>\n");
+        if (isw >= 0) printf("<span class=\"wkend\">");
+        printf("<a href=\"view.cgi?%s/%s",HtmlPath, SubdirName);
+		if (SubdImages.NumEntries) printf("/");
+        printf("\">%s:</a>\n",Directories.Entries[b].Name);
+        if (isw >= 0) printf("</span>");
 
 		if (SubdImages.NumEntries){
 			printf("<small><small>(<a href=\"view.cgi?%s/%s\">",HtmlPath, SubdirName);
