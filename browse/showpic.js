@@ -293,6 +293,8 @@ function SizeImage()
     if (ShowBigOn){
         vc.width = vc.naturalWidth;
         vc.height = vc.naturalHeight;
+		ShwW = vc.width;
+		ShwH = vc.height;
         return;
     }
     maxw = 950; maxh = 550;
