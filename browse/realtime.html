@@ -27,38 +27,40 @@ function DoBeep()
 
 function sizeImage(){
     el=document.getElementById('rti')
-    var h = 600
+    var h = 800
     var w = h/el.naturalHeight*el.naturalWidth;
     if (w > 1200){ w=1200;h=w/el.naturalWidth*el.naturalHeight;}
     el.width=w;el.height=h;
 }
 
+//----------------------------------------------------------------------------------
+// Function to call on ready state change
+//----------------------------------------------------------------------------------
+function ReadyStateChange(){
+    if (this.readyState == 4 && this.status == 200) {
+        document.getElementById("logdata").innerHTML = xhttp.responseText;
+        n = xhttp.responseText.indexOf("Error!");
+        if (n >= 0){
+            alert(xhttp.responseText.substring(n))
+        }else{
+            n = xhttp.responseText.indexOf("motion");
+            RefreshImage()
+            if (n >= 0) DoBeep(); // Do beep last, won't work on iPad
+        }
+    }
+}
 
 //----------------------------------------------------------------------------------
 // To an XMLHttpRequest to back end to wait until something has changed
 //----------------------------------------------------------------------------------
 function WaitForChangeNotify()
 {
-    var xhttp = new XMLHttpRequest();
-    xhttp.onreadystatechange = function() {
-        if (this.readyState == 4 && this.status == 200) {
-            document.getElementById("logdata").innerHTML = xhttp.responseText;
-            n = xhttp.responseText.indexOf("Error!");
-            if (n >= 0){
-                alert(xhttp.responseText.substring(n))
-            }else{
-                n = xhttp.responseText.indexOf("motion");
-                RefreshImage()
-                if (n >= 0) DoBeep(); // Do beep last, won't work on iPad
-            }
-        }
-    };
+    xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange =  ReadyStateChange
     xhttp.open("GET", "wait_change.cgi", true);
     xhttp.send();
 }
 
-const now = new Date()
-imgseq = Math.round(now.getTime() / 1000) % 100000
 function RefreshImage()
 {
     newsrc = "view.cgi?now.jpg?"+imgseq
@@ -68,6 +70,9 @@ function RefreshImage()
     
     WaitForChangeNotify();
 }
+
+const now = new Date()
+imgseq = Math.round(now.getTime() / 1000) % 100000
 
 WaitForChangeNotify()
 
