@@ -154,3 +154,21 @@ to use the Realtime display, otherwise you will see an error when accessing the 
 Where to copy logs files to.  I normally have it copy the log file to the pictures
 directory every hour, so that it's easy to find the log file that goes with the pictures.
 
+<div class="p">configfile</div>
+If this is given as part of the command line parameters, it overrides the default "imgcomp.conf"
+for the default options.  This is for running multiple imgcomp instances in the same user account
+for multiple cameras.
+
+<div class="p">wait_close_write</div>
+If this is set to nonzero, the inotify watch for new pictures to appear uses IN_CLOSE_WRITE
+rather than IN_CREATE.  This works properly with ffmpeg as as source of pictures.
+
+<div class="p">relaunch_timeout</div>
+If this is set, it replaces the default 5 seconds until imgcomp gives up on the capture
+program, kills it and restarts it.  RTSP cameras with ffmpeg benefit from a longer timeout.
+
+<div class="p">give_up_timeout</div>
+If this is set, it replaces the default 15 seconds from last valid picture seen, until
+imgcomp gives up and tries (assuming it has permission) to reboot the Raspberry Pi.  Highly
+recommended to set if imgcomp is running on something other than a dedicated Raspi, e.g.
+watching an RTSP camera as a normal process on a multiuser Linux machine.

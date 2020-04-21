@@ -54,7 +54,7 @@ static void PrintNavLinks(Dir_t * Dir, int IsRoot)
             printf("<a href=\"view.cgi?%s\">[Saved]</a>\n",SavedDir+4);
         }
     }
-    printf("<a href='/realtime.html'>[Realtime]</a>\n");
+    printf("<a href='realtime.html'>[Realtime]</a>\n");
     printf("<a href='view.cgi?actagram'>[Actagram]</a>\n");
 }
 

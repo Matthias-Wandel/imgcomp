@@ -22,6 +22,7 @@ void usage (void)// complain about bad command line
 
     fprintf(stderr, 
      "Switches (names may be abbreviated):\n"
+     " -configfile file     Override default imgcomp.conf file name\n"
      " -scale   N           Scale before detection by 1/N.  Default 1/4\n"
      " -region  x1-x2,y1-y2 Specify region of interest\n"
      " -exclude x1-x2,y1-y2 Exclude from area of interest\n"
@@ -45,6 +46,10 @@ void usage (void)// complain about bad command line
      " -movelognames <schme> Rotate log files, scheme works just like\n"
      "                      it does for savenames\n"
      " -sendudp <ipaddr>    Send UDP packets for motion detection\n"
+     " -wait_close_write 1  Wait for IN_CLOSE_WRITE rather than IN_CREATE\n"
+     " -relaunch_timeout    Timeout (in seconds) before giving up on capture command and relaunching\n"
+     " -give_up_timeout     Timeout (in seconds) before giving up completely and attempting to reboot\n"
+     "                      (set to zero to disable)\n"
      );
    
     exit(-1);
@@ -112,7 +117,7 @@ static int parse_parameter (const char * tag, const char * value)
         return 1;
 	}
 	if (!value){
-        fprintf(stderr, "Parameter '%s' needs to be followed by a vaue\n",tag);
+        fprintf(stderr, "Parameter '%s' needs to be followed by a value\n",tag);
         return -1;
 	}
 
@@ -121,10 +126,17 @@ static int parse_parameter (const char * tag, const char * value)
 		if ((SpuriousReject != 0 && SpuriousReject != 1) || value[1] != 0){
 			fprintf(stderr, "Spurious value can only be 0 or 1\n");
 		}
+    }else if (keymatch(tag, "configfile", 10)) {
+        // do nothing; this arg was already interpreted earlier.  Also this is meaningless
+        // inside a config file.
     }else if (keymatch(tag, "postmotion", 10)) {
         if (sscanf(value, "%d", &PostMotionKeep) != 1) return -1;
     }else if (keymatch(tag, "brmonitor", 5)) {
         if (sscanf(value, "%d", &BrightnessChangeRestart) != 1) return -1;        
+    }else if (keymatch(tag, "relaunch_timeout", 16)) {
+        if (sscanf(value, "%d", &relaunch_timeout) != 1) return -1;        
+    }else if (keymatch(tag, "give_up_timeout", 15)) {
+        if (sscanf(value, "%d", &give_up_timeout) != 1) return -1;        
     }else if (keymatch(tag, "fatigue", 7)) {
         if (sscanf(value, "%d", &MotionFatigueTc) != 1) return -1;        
     } else if (keymatch(tag, "scale", 5)) {
@@ -200,6 +212,8 @@ static int parse_parameter (const char * tag, const char * value)
         strncpy(VidDecomposeCmd, value, sizeof(VidDecomposeCmd)-1);
     } else if (keymatch(tag, "sendudp", 7)) {
         strncpy(UdpDest,value, sizeof(UdpDest)-1);
+    } else if (keymatch(tag, "wait_close_write", 16)) {
+        if (sscanf(value, "%d", &wait_close_write) != 1) return -1;
     }else{
         fprintf(stderr,"argument %s not understood\n",tag);
         return -1;	   // bogus switch
@@ -209,7 +223,6 @@ static int parse_parameter (const char * tag, const char * value)
     }
     return 2;
 }
-
 
 //-----------------------------------------------------------------------------------
 // Parse command line switches
@@ -241,15 +254,15 @@ int parse_switches (int argc, char **argv, int last_file_arg_seen)
 //-----------------------------------------------------------------------------------
 // Too many parameters for imgcomp running.  Just read them from a configuration file.
 //-----------------------------------------------------------------------------------
-void read_config_file()
+void read_config_file(char *config_file)
 {
     FILE * file;
     char ConfLine[201];
     int linenum = 0;
 
-    file = fopen("imgcomp.conf", "r");
+    file = fopen(config_file, "r");
     if (file == NULL){
-        fprintf(stderr, "No configuration file imgcomp.conf\n");
+        fprintf(stderr, "No configuration file %s\n",config_file);
         return;
     }
     for(;;){

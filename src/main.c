@@ -30,6 +30,7 @@ int FollowDir = 0;
 int ScaleDenom;
 int SpuriousReject = 0;
 int PostMotionKeep = 0;
+int wait_close_write = 0;
 
 int BrightnessChangeRestart = 1;
 int MotionFatigueTc = 30;
@@ -363,7 +364,10 @@ int DoDirectory(char * Directory)
     fd = inotify_init();
     if (fd < 0) perror("inotify_init");
 
-    wd = inotify_add_watch( fd, Directory, IN_CREATE);
+    // raspistill first writes under a temporary file name, then renames.  So the IN_CREATE
+    // event is the one to watch for.  But ffmpeg writes the files under the original name,
+    // so IN_CREATE often triggers too early, whereas IN_CLOSE_WRITE does the right thing.
+    wd = inotify_add_watch( fd, Directory, wait_close_write ? IN_CLOSE_WRITE : IN_CREATE);
     if (wd < 0){
         fprintf(Log, "add watch failed\n");
         return 0;
@@ -554,6 +558,9 @@ int main(int argc, char **argv)
     strcpy(SaveNames, "%y%m%d/%H/%m%d-%H%M%S");
 	LastPic_mtime = time(NULL); // Log names are based on this time, need before images.
 
+    // Default configuration file to look for
+    char *config_file = "imgcomp.conf";
+
     for (argn = 1; argn < argc; argn++) {
         //printf("argn = %d\n",argn);
         char * arg;
@@ -561,12 +568,16 @@ int main(int argc, char **argv)
         if (strcmp(arg, "-h") == 0){
             usage();
             exit (-1);
+        } else if(strcmp(arg, "-configfile") == 0) {
+            // Allow multiple config files by specifying them with -c configfilename.
+            // This silently fails (does not override the config file name) if the
+            // -configfile is the last argument.
+            if(argv[argn+1]) config_file = argv[argn+1];
         }
     }
 
-
     // First read the configuration file.
-    read_config_file();
+    read_config_file(config_file);
 
     // Get command line arguments (which may override configuration file)
     file_index = parse_switches(argc, argv, 0);

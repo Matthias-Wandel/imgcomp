@@ -270,18 +270,20 @@ void DoSaveImage(char * QueryString, char * HtmlPath)
 }
 
 //----------------------------------------------------------------------------------
-// Dump latest qauired image in /ramdisk.
+// Dump latest acquired image in /ramdisk or custom "in" directory.
 //----------------------------------------------------------------------------------
 void ShowLatestJpg(void)
 {
     VarList files;
 
+    char *dirname = access("in",F_OK) ? "/ramdisk" : "in";
+    
     memset(&files, 0, sizeof(files));
-    CollectDirectory("/ramdisk", &files, NULL, ImageExtensions);
+    CollectDirectory(dirname, &files, NULL, ImageExtensions);
     
     if (files.NumEntries){
         char InName[100];
-        sprintf(InName, "/ramdisk/%s",files.Entries[files.NumEntries-1].Name);
+        sprintf(InName, "%s/%s",dirname,files.Entries[files.NumEntries-1].Name);
         
         printf("Content-Type: image/jpg\n\n");
         //printf("input file name = %s\n",InName);
@@ -289,6 +291,7 @@ void ShowLatestJpg(void)
         {
             unsigned char Chunk[4096];
             FILE * infile = fopen(InName, "rb");
+
             for (;;){
                 int nr = fread(Chunk, 1, 4096, infile);
                 if (nr <= 0) break;

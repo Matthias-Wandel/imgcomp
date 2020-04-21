@@ -1,0 +1,34 @@
+#!/bin/bash
+
+# This needs customization to use!  You need ssh login credentials on the server
+# where the files are to be transfered and then set up the appropriate sync_to lines
+# as in the example below.
+
+function sync_to() {
+   touch /tmp/sync_timestamp
+   rsync -rl -e ssh . $1
+   retVal=$?
+   echo "rsync returned $retVal"
+   if [ $retVal -eq 0 ]; then
+      echo "nuking old files"
+      find . -type f ! -newer /tmp/sync_timestamp -delete
+   fi
+}
+
+while true;do
+   # This script will blindly MOVE files (i.e. delete the local copy) elsewhere
+   # If the cd to a /tmp/blah directory fails becaue that directory doesn't exist,
+   # it'll happily move everything in your home directory!  As a simple fix, go
+   # to /tmp first on the assumption that that always exists.
+   # somewhere
+   cd /tmp
+   echo "sync started"
+   cd /tmp/saved1
+   sync_to imgcomp3@192.168.0.1:/web/cameras/backyard/saved
+   cd /tmp/saved2
+   sync_to imgcomp3@192.168.0.1:/web/cameras/driveway/saved
+   cd /tmp/saved3
+   sync_to imgcomp3@192.168.0.1:/web/cameras/basement_stairs/saved
+   echo "sleep started"
+   sleep 60
+done

@@ -19,6 +19,9 @@
 static int raspistill_pid = 0;
 static int blink_led_pid = 0;
 
+int relaunch_timeout = 6;
+int give_up_timeout = 18;
+
 //-----------------------------------------------------------------------------------
 // Parse command line and launch.
 //-----------------------------------------------------------------------------------
@@ -67,12 +70,10 @@ static void do_launch_program(char * cmd_string)
 static int launch_raspistill(void)
 {
     pid_t pid;
-    int ignore;
 
     // Kill raspistill if it's already running.
-    ignore = system("killall -9 raspistill");
-    ignore += 1;  // Do something with it to supress warning
     if (raspistill_pid){
+        kill(raspistill_pid,SIGKILL);
         // If we launched raspistill, need to call wait() so that we dont't
         // accumulate an army of child zombie processes
         int exit_code = 123;
@@ -82,6 +83,10 @@ static int launch_raspistill(void)
         fprintf(Log,"Child exit code %d, wait returned %d",exit_code, a);
         then = time(NULL);
         fprintf(Log," At %02d:%02d (%d s)\n",(int)(then%3600)/60, (int)(then%60), (int)(then-now));
+    } else {
+        // Original way of killing raspistill, still used if it was launched externally
+        // and we don't have the pid.  Cannot be used with capture programs other than raspistill
+        (void) system("killall -9 raspistill");
     }
 
     fprintf(Log,"Launching raspistill program\n");
@@ -116,7 +121,7 @@ static double RunningAverageBright;
 
 int manage_raspistill(int NewImages)
 {
-	int timeout;
+    int timeout;
     MsSinceImage += 1000;
     MsSinceLaunch += 1000;
     if (NewImages > 0){
@@ -140,12 +145,12 @@ int manage_raspistill(int NewImages)
         goto force_restart;
     }
 
-    timeout = 5 * 1000;
+    timeout = relaunch_timeout * 1000;
     if (MsSinceImage > timeout){
         // Not getting any images for 5 seconds or vide ofiles for 10.
         // Probably something went wrong with raspistill or raspivid.
 		if (MsSinceLaunch > timeout){
-			if (MsSinceImage > timeout * 3){
+			if (give_up_timeout && MsSinceImage > give_up_timeout * 1000){
 				if (NumTotalImages >= 5){
 					fprintf(Log,"Relaunch raspistill didn't fix.  Reboot!.  (%d sec since image)\n",MsSinceImage/1000);
 					// force rotation of log.
