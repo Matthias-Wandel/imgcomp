@@ -25,11 +25,20 @@ int main()
     FILE * LogFile;
     long FileSize;
     
-    const char *WATCH_FILE = "/ramdisk/log.txt";
+    char *WATCH_FILE;
     
     printf("Content-Type: text/html\n\n<html>\n"); // html header
-    
-    LogFile = fopen(WATCH_FILE, "r");
+ 
+    // First try to follow symlink "in" in the current directory.  Only if that fails,
+    // use the hardcoded path to ramdisk.
+   
+    WATCH_FILE = "in/log.txt"; LogFile = fopen(WATCH_FILE,"r");
+
+    if (LogFile == NULL) {
+        WATCH_FILE = "/ramdisk/log.txt";
+        LogFile = fopen(WATCH_FILE, "r");
+    }
+
     if (LogFile == NULL){
         printf("Error!  No log.txt file\n");
         sleep(1); // To keep from cycling too fast.
