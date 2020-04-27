@@ -39,6 +39,8 @@ do the following
   cd ~/imgcomp/setup
   ./setup-imgcomp-autorun
 
+Alternatively imgcomp can be set up to run as a service. You can install the service this by running `make install-service`. To start the service, `systemctl start imgcomp`, and to configure the service to run on startup, `systemctl enable imgcomp`.
+
 -----------------------------------------------------------
 HTML based image viewing:
 Configure apache2 and compile the viewing program.

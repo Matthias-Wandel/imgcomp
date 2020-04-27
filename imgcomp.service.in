@@ -1,0 +1,12 @@
+[Unit]
+Description=Imgcomp
+After=local-fs.target
+
+[Service]
+User=${USER}
+Restart=always
+Type=simple
+ExecStart=${PREFIX}${BINDIR}/imgcomp -configfile ${CONFIGDIR}${CONFIGFILE}
+
+[Install]
+WantedBy=multi-user.target
