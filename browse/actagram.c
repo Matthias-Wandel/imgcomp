@@ -182,7 +182,9 @@ void ShowActagram(int all, int h24)
                 }
                 putchar(nc);
             }
-            ShowLegend = 0;
+            
+			if (ShowLegend) puts("<br>");
+			ShowLegend = 0;
         }
         if (daynum >= DayDirs.NumEntries){
             printf("\n");
@@ -270,12 +272,12 @@ void ShowActagram(int all, int h24)
     free(DayDirs.Entries);
     
     
-    // Add javascript for hover-over preview when showing a whole day's worth of images
+    // Preview image html code.
     printf("</pre><small id='prevn'></small><br>\n"
            "<a id='prevh' href=""><img id='preview' src='' width=0 height=0></a>\n");
 
 
-    // Javascript
+    // Add javascript for hover-over preview when showing a whole day's worth of images
     printf("<script>\n" // Script to resize the image to the right aspect ratio
            "function sizeit(){\n"
            "  var h = 300\n"
