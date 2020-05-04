@@ -211,9 +211,9 @@ void ScaleBrightness(MemImage_t * MemImage)
     // If image is kind of dark, scale the brightness so that no more than 0.4% of the
     // pixels will saturate.
     if (a < 220){
-        int Mult, Mult2;
-        Mult = 256*240/a;
-        Mult2 = 256*220/b;
+        int Mult=256*10,Mult2=256*10;
+        if (a) Mult = 256*240/a;
+        if (b) Mult2 = 256*220/b;
         if (Mult2 < Mult) Mult = Mult2;
         if (Mult > 265*10) Mult = 256*10; // Don't boost by more than 10x.
 
