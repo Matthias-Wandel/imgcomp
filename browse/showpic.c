@@ -73,15 +73,15 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
             IndexInto[3] = '\0';
         }
 
-        printf("<button id='big' onclick=\"ShowBig()\">Enlarge</button>\n");
-        printf("<button id='bright' onclick=\"ShowBright()\">Brighten</button>\n");
-        printf("<button onclick=\"ShowDetails()\">Details</button>\n");
-        printf("<button id='play' onclick=\"PlayButton()\">Play</button>\n");
+        printf("<button id='big' onclick=\"ShowBigClick()\">Enlarge</button>\n");
+        printf("<button id='bright' onclick=\"ShowBrightClick()\">Brighten</button>\n");
+        printf("<button onclick=\"ShowDetailsClick()\">Details</button>\n");
+        printf("<button id='play' onclick=\"PlayButtonClick()\">Play</button>\n");
 
         if (!IsSavedDir){
             char SavedDir[20];
             struct stat sb;
-            printf("<button id='save' onclick=\"DoSavePic()\">Save</button>\n");
+            printf("<button id='save' onclick=\"SavePicClick()\">Save</button>\n");
             sprintf(SavedDir, "pix/saved/%.4s",HtmlDir);
             if (stat(SavedDir, &sb) == 0 && S_ISDIR(sb.st_mode)){
                 printf("&nbsp;<a href=\"view.cgi?%s\">View saved</a>&nbsp;\n",SavedDir+4);

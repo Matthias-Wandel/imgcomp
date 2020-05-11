@@ -102,15 +102,24 @@ function UpdatePix(){
     if (piclist.length){
         var imgname = subdir+prefix+piclist[pic_index]+".jpg"
         var url = pixpath+imgname;
-        if (AdjustBright) url = "tb.cgi?"+imgname+(ShowBigOn?"$1":"$2")
+		var flags = ""
+        if (AdjustBright){
+			flags = "b";
+			url = "tb.cgi?"+imgname+(ShowBigOn?"$1":"$2")
+		}
         if (!document.getElementById("view").complete){
             NextImgUrl = url;
         }else{
             document.getElementById("view").src = url
         }
-        var nu = window.location.toString()
-        nu = nu.split("#")[0]+"#"+prefix+piclist[pic_index]+".jpg"
-        window.location = nu;
+		if (ShowBigOn) flags = flags + "e";
+		if (flags != "") flags = flags +","
+		var nch = "#"+flags+prefix+piclist[pic_index]+".jpg"
+console.log("update new="+nch+"  was=",currenthash);		
+		if (nch != currenthash){
+			console.log("set to: "+nch)
+			location.hash = currenthash = nch
+		}else console.log("hash stays same");
             
         document.title = imgname
     }
@@ -252,7 +261,7 @@ function PicMouse(picX,picY,IsDown)
 }
 
 
-function DoSavePic(){
+function SavePicClick(){
     // Instruct back end to copy picture to the "Saved" directory.
     var SaveUrl = "view.cgi?~"+subdir+prefix+piclist[pic_index]+".jpg"
     var xhttp = new XMLHttpRequest()
@@ -268,21 +277,21 @@ function DoSavePic(){
     xhttp.send()
 }
 
-ShowBigOn = 0
-function ShowBig(){
+function UpdBrBt() { document.getElementById("bright").innerHTML= AdjustBright?"Normal":"Brighten"}
+ShowBigOn = false
+function ShowBigClick(){
     ShowBigOn = !ShowBigOn
-    document.getElementById("big").innerHTML= ShowBigOn?"Smaller":"Enlarge"
     SizeImage();
     UpdatePix()
 }
-AdjustBright = 0
-function ShowBright(){
+AdjustBright = false
+function ShowBrightClick(){
     AdjustBright = !AdjustBright
-    document.getElementById("bright").innerHTML= AdjustBright?"Normal":"Brighten"
+    UpdBrBt()
     UpdatePix()
 }
 
-function ShowDetails(){
+function ShowDetailsClick(){
     var nu = window.location.toString()
     nu = nu.substring(0,nu.indexOf("#"))+prefix+piclist[pic_index]+".jpg"
     window.location = nu
@@ -290,9 +299,11 @@ function ShowDetails(){
 
 function SizeImage()
 {
+console.log("Size image:"+ShowBigOn);		
+	document.getElementById("big").innerHTML= ShowBigOn?"Smaller":"Enlarge"
     if (ShowBigOn){
-        vc.width = vc.naturalWidth;
-        vc.height = vc.naturalHeight;
+        vc.width = vc.naturalWidth/2;
+        vc.height = vc.naturalHeight/2;
 		ShwW = vc.width;
 		ShwH = vc.height;
         return;
@@ -352,18 +363,50 @@ for (a=0;a<piclist.length;a++){
     if (!ActNums[min] || piclist[a].substring(2,4) < "30") ActNums[min] = a;
 }
 
-// Figure out index in picture list given the filename after the #
 pic_index=0
-var pct = unescape(window.location).split("#")[1];
-if (pct){
-    var m = pct.substring(prefix.length)
-    if (m.substring(m.length-4) == ".jpg") m = m.substring(0,m.length-4)
-    for (;pic_index<piclist.length-1;pic_index++){
-        if (piclist[pic_index] >= m) break;
-    }
-    if (pct == "first") pic_index = 0;
-    if (pct == "last") pic_index = piclist.length-1
-}else{
-    pic_index = 0
+currenthash = "x"
+function ReadHash(){
+	var pct = location.hash.replace("%20", " ");
+	if (currenthash == pct) return;
+	console.log("hash changed to: "+pct);
+	currenthash = pct
+	
+	if (pct){
+		var ci = pct.indexOf(",");
+		var flags = ""
+		if (ci > 0 && ci < 5){
+			flags=pct.substring(0,ci)
+			pct = pct.substring(ci)
+		}
+		var nab = flags.indexOf("b") >= 0
+		if (nab != AdjustBright){
+			AdjustBright = nab;
+			UpdBrBt();
+		}
+		var lsb = ShowBigOn;
+		ShowBigOn = flags.indexOf("e") >= 0
+		if (lsb != ShowBigOn && LastWidth !=0) SizeImage();
+		
+		// Figure out index in picture list based on URL after '#'
+		var m = pct.substring(prefix.length+1)
+		if (m.substring(m.length-4) == ".jpg") m = m.substring(0,m.length-4)
+		console.log("match to: '"+m+"' first is:",piclist[0]);
+		for (pic_index=0;pic_index<piclist.length-1;pic_index++){
+			if (piclist[pic_index] >= m) break;
+		}
+		if (pct == "first") pic_index = 0;
+		if (pct == "last") pic_index = piclist.length-1
+		//console.log("big:"+ShowBigOn+"   Bright:"+AdjustBright);
+	}else{
+		pic_index = 0
+		AdjustBright = ShowBigOn = false;
+	}
+	UpdatePix();
 }
-UpdatePix()
+
+window.onhashchange = ReadHash
+ReadHash();
+
+// Still do:
+// Navigate URL bar to include extra bits, including prev dir and next dir.
+// Skip to prev / next dir links include extra bits (those come from back end, so replace URL?)
