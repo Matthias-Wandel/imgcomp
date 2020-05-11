@@ -245,7 +245,7 @@ function SizeImage()
         ShwH = vc.height;
         return;
     }
-    maxw = 950; maxh = 600;
+    maxw = 950; maxh = 650;
     
     ShwW = maxw
     if (ShwW > window.innerWidth-15) ShwW = window.innerWidth-15;
