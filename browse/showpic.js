@@ -10,7 +10,7 @@ function UpdateActagram(){
     if (piclist.length) thismin = parseInt(piclist[pic_index].substring(0,2))
     if (thismin == thismin_last && flags_last == flagsstr) return;
     thismin_last = thismin
-	flags_last = flagsstr;
+    flags_last = flagsstr;
 
     for (a=0;a<60;a++){
         if (!(b = ActBins[a])){
@@ -35,26 +35,26 @@ function UpdatePix(){
     if (piclist.length){
         var imgname = subdir+prefix+piclist[pic_index]+".jpg"
         var url = pixpath+imgname;
-		flagsstr = ""
+        flagsstr = ""
         if (AdjustBright){
-			flagsstr = "b";
-			url = "tb.cgi?"+imgname+(ShowBigOn?"$1":"$2")
-		}
+            flagsstr = "b";
+            url = "tb.cgi?"+imgname+(ShowBigOn?"$1":"$2")
+        }
         if (!document.getElementById("view").complete){
             NextImgUrl = url;
         }else{
             document.getElementById("view").src = url
         }
-		if (ShowBigOn) flagsstr = flagsstr + "e";
-		if (flagsstr != "") flagsstr = flagsstr +","
-		var nch = "#"+flagsstr+prefix+piclist[pic_index]+".jpg"
-		if (nch != currenthash)	location.hash = currenthash = nch
+        if (ShowBigOn) flagsstr = flagsstr + "e";
+        if (flagsstr != "") flagsstr = flagsstr +","
+        var nch = "#"+flagsstr+prefix+piclist[pic_index]+".jpg"
+        if (nch != currenthash) location.hash = currenthash = nch
             
         document.title = imgname
-		var n = prefix+piclist[pic_index];
-		document.getElementById("this").innerHTML = n.substring(5,7)+":"+n.substring(7,9)+":"+n.substring(9,11)
+        var n = prefix+piclist[pic_index];
+        document.getElementById("this").innerHTML = n.substring(5,7)+":"+n.substring(7,9)+":"+n.substring(9,11)
     }
-		
+        
     UpdateActagram()
 }
 
@@ -132,10 +132,10 @@ function PlayButtonClick()
     }
 }
 
-function NextDirClick(next)
+function PrevNextDirLinkUpdate()
 {
-	location = "view.cgi?"+(next?NextDir:PrevDir)+"/#"+flagsstr
-	return false;
+    document.getElementById("prevdir").href = "view.cgi?"+PrevDir+"/#"+flagsstr
+    document.getElementById("nextdir").href = "view.cgi?"+NextDir+"/#"+flagsstr
 }
 
 
@@ -219,12 +219,14 @@ function ShowBigClick(){
     ShowBigOn = !ShowBigOn
     SizeImage();
     UpdatePix()
+    PrevNextDirLinkUpdate()
 }
 AdjustBright = false
 function ShowBrightClick(){
     AdjustBright = !AdjustBright
     UpdBrBt()
     UpdatePix()
+    PrevNextDirLinkUpdate()
 }
 
 function ShowDetailsClick(){
@@ -235,15 +237,15 @@ function ShowDetailsClick(){
 
 function SizeImage()
 {
-	document.getElementById("big").innerHTML= ShowBigOn?"Smaller":"Enlarge"
+    document.getElementById("big").innerHTML= ShowBigOn?"Smaller":"Enlarge"
     if (ShowBigOn){
         vc.width = vc.naturalWidth;
         vc.height = vc.naturalHeight;
-		ShwW = vc.width;
-		ShwH = vc.height;
+        ShwW = vc.width;
+        ShwH = vc.height;
         return;
     }
-    maxw = 950; maxh = 550;
+    maxw = 950; maxh = 600;
     
     ShwW = maxw
     if (ShwW > window.innerWidth-15) ShwW = window.innerWidth-15;
@@ -257,7 +259,7 @@ function SizeImage()
             ShwW = Math.round(ShwH*vc.naturalWidth/vc.naturalHeight)
         }
     }else{
-		console.log("Unknown width")
+        console.log("Unknown width")
         ShwW = 320; ShwH = 240
     }
     vc.width = ShwW
@@ -302,40 +304,41 @@ for (a=0;a<piclist.length;a++){
 pic_index=0
 currenthash = "x"
 function ReadHash(){
-	var pct = location.hash.replace("%20", " ");
-	if (currenthash == pct) return;
-	currenthash = pct
-	
-	if (pct){
-		var ci = pct.indexOf(",");
-		var flags = ""
-		if (ci > 0 && ci < 5){
-			flags=pct.substring(0,ci)
-			pct = pct.substring(ci)
-		}
-		var nab = flags.indexOf("b") >= 0
-		if (nab != AdjustBright){
-			AdjustBright = nab;
-			UpdBrBt();
-		}
-		var lsb = ShowBigOn;
-		ShowBigOn = flags.indexOf("e") >= 0
-		if (lsb != ShowBigOn && LastWidth !=0) SizeImage();
-		
-		// Figure out index in picture list based on URL after '#'
-		var m = pct.substring(prefix.length+1)
-		if (m.substring(m.length-4) == ".jpg") m = m.substring(0,m.length-4)
-		for (pic_index=0;pic_index<piclist.length-1;pic_index++){
-			if (piclist[pic_index] >= m) break;
-		}
-		if (pct == "first") pic_index = 0;
-		if (pct == "last") pic_index = piclist.length-1
-		//console.log("big:"+ShowBigOn+"   Bright:"+AdjustBright);
-	}else{
-		pic_index = 0
-		AdjustBright = ShowBigOn = false;
-	}
-	UpdatePix();
+    var pct = location.hash.replace("%20", " ");
+    if (currenthash == pct) return;
+    currenthash = pct
+    
+    if (pct){
+        var ci = pct.indexOf(",");
+        var flags = ""
+        if (ci > 0 && ci < 5){
+            flags=pct.substring(0,ci)
+            pct = pct.substring(ci)
+        }
+        var nab = flags.indexOf("b") >= 0
+        if (nab != AdjustBright){
+            AdjustBright = nab;
+            UpdBrBt();
+        }
+        var lsb = ShowBigOn;
+        ShowBigOn = flags.indexOf("e") >= 0
+        if (lsb != ShowBigOn && LastWidth !=0) SizeImage();
+        
+        // Figure out index in picture list based on URL after '#'
+        var m = pct.substring(prefix.length+1)
+        if (m.substring(m.length-4) == ".jpg") m = m.substring(0,m.length-4)
+        for (pic_index=0;pic_index<piclist.length-1;pic_index++){
+            if (piclist[pic_index] >= m) break;
+        }
+        if (pct == "first") pic_index = 0;
+        if (pct == "last") pic_index = piclist.length-1
+        //console.log("big:"+ShowBigOn+"   Bright:"+AdjustBright);
+    }else{
+        pic_index = 0
+        AdjustBright = ShowBigOn = false;
+    }
+    UpdatePix();
+    PrevNextDirLinkUpdate();
 }
 
 window.onhashchange = ReadHash

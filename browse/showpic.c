@@ -45,7 +45,7 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
     printf("<head><meta charset=\"utf-8\"/>\n");
 
     printf("<style type=text/css>\n"
-           "  body { font-family: sans-serif; font-size: 22; -webkit-user-select: none; -webkit-touch-callout: none;}\n"
+           "  body { font-family: sans-serif; font-size: 20; -webkit-user-select: none; -webkit-touch-callout: none;}\n"
            "  img { vertical-align: middle; margin-bottom: 5px; }\n"
            "  p {margin-bottom: 0px}\n"
            "  a {text-decoration: none;}\n"
@@ -105,8 +105,8 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
         }
 		
         printf("&nbsp;");
-        if (dir->Previous[0]) printf("<a href='#' onclick='NextDirClick(0)'>&lt;&lt;</a>",dir->Previous);
-        if (dir->Next[0]) printf("&nbsp;<a href='#' onclick='NextDirClick(1)'>>></a> ",dir->Next);
+        if (dir->Previous[0]) printf("<a href='#' id='prevdir'>&lt;&lt;</a>",dir->Previous);
+        if (dir->Next[0]) printf("&nbsp;<a href='#' id='nextdir'>>></a> ",dir->Next);
         printf("\n");
     }
     printf("<br>Actagram:\n<b><span id='actagram' style=\"font-family: courier, \'courier new\', monospace;\">Actagram here</span></b>\n");
