@@ -105,8 +105,8 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
         }
 		
         printf("&nbsp;");
-        if (dir->Previous[0]) printf("<a href='view.cgi?%s/'>&lt;&lt;</a>",dir->Previous);
-        if (dir->Next[0]) printf("&nbsp;<a href='view.cgi?%s/'>>></a> ",dir->Next);
+        if (dir->Previous[0]) printf("<a href='#' onclick='NextDirClick(0)'>&lt;&lt;</a>",dir->Previous);
+        if (dir->Next[0]) printf("&nbsp;<a href='#' onclick='NextDirClick(1)'>>></a> ",dir->Next);
         printf("\n");
     }
     printf("<br>Actagram:\n<b><span id='actagram' style=\"font-family: courier, \'courier new\', monospace;\">Actagram here</span></b>\n");
