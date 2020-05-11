@@ -57,9 +57,7 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
     printf("<center>\n");
     
     printf("<img id='view' width=640 height=480 src=''>\n");
-   
     
-    printf("<br>\n<span id='links'>links goes here</span>\n");
     printf("<br>");
 
     // Output HTML code for the buttons below the row of navigation links
@@ -72,7 +70,7 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
             IndexInto[2] = ImageName[8];
             IndexInto[3] = '\0';
         }
-
+		printf("<span id='this'>this</span>\n");
         printf("<button id='big' onclick=\"ShowBigClick()\">Enlarge</button>\n");
         printf("<button id='bright' onclick=\"ShowBrightClick()\">Brighten</button>\n");
         printf("<button onclick=\"ShowDetailsClick()\">Details</button>\n");
@@ -84,7 +82,7 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
             printf("<button id='save' onclick=\"SavePicClick()\">Save</button>\n");
             sprintf(SavedDir, "pix/saved/%.4s",HtmlDir);
             if (stat(SavedDir, &sb) == 0 && S_ISDIR(sb.st_mode)){
-                printf("&nbsp;<a href=\"view.cgi?%s\">View saved</a>&nbsp;\n",SavedDir+4);
+                printf("&nbsp;<a href=\"view.cgi?%s\">Saved</a>&nbsp;\n",SavedDir+4);
             }
         }
 
@@ -105,9 +103,10 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
                 pa = a+1;
             }
         }
+		
         printf("&nbsp;");
         if (dir->Previous[0]) printf("<a href='view.cgi?%s/'>&lt;&lt;</a>",dir->Previous);
-        if (dir->Next[0]) printf("&nbsp;<a href='view.cgi?%s/'>>></a>",dir->Next);
+        if (dir->Next[0]) printf("&nbsp;<a href='view.cgi?%s/'>>></a> ",dir->Next);
         printf("\n");
     }
     printf("<br>Actagram:\n<b><span id='actagram' style=\"font-family: courier, \'courier new\', monospace;\">Actagram here</span></b>\n");
