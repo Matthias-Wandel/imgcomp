@@ -344,7 +344,3 @@ function ReadHash(){
 window.onhashchange = ReadHash
 ReadHash();
 if (!isSavedDir) document.getElementById("save").innerHTML = "Save"
-
-// Still do:
-// Navigate URL bar to include extra bits, including prev dir and next dir.
-// Skip to prev / next dir links include extra bits (those come from back end, so replace URL?)
