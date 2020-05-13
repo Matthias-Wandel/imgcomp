@@ -31,6 +31,7 @@ function UpdateActagram(){
 
 NextImgUrl = ""
 flagsstr = ""
+SaveResp = ""
 function UpdatePix(){
     if (piclist.length){
         var imgname = subdir+prefix+piclist[pic_index]+".jpg"
@@ -56,6 +57,10 @@ function UpdatePix(){
     }
         
     UpdateActagram()
+    if (SaveResp){
+        document.getElementById("save").innerHTML = "Save"
+        SaveResp = ""
+    }
 }
 
 function DoNext(dir){
@@ -84,6 +89,8 @@ function ScrollMoreTimer()
     }
 }
 
+// Functon runs when picture is loaded.
+// Check size, and reschedule next picture in animation
 LastWidth = LastHeight = 0;
 function picLoaded()
 {
@@ -203,10 +210,9 @@ function SavePicClick(){
     var xhttp = new XMLHttpRequest()
     xhttp.onreadystatechange=function(){
         if (this.readyState==4 && this.status==200){
-            var wt=xhttp.responseText.trim()
-            if(wt.indexOf('Fail:')>=0)
-               wt="<span style='color: rgb(255,0,0);'>["+wt+"]</span>"
-             document.getElementById("save").innerHTML=wt
+            SaveResp=xhttp.responseText.trim()
+            if(SaveResp.indexOf('Fail:')>=0) wt="<span style='color: rgb(255,0,0);'>["+wt+"]</span>"
+            document.getElementById("save").innerHTML=SaveResp
         }
     };
     xhttp.open("GET", SaveUrl, true)
@@ -303,6 +309,8 @@ for (a=0;a<piclist.length;a++){
 
 pic_index=0
 currenthash = "x"
+// Read hash and figure out which image to load with what settings.
+// Used for direct links to iamge, page reload, and back button URL changes.
 function ReadHash(){
     var pct = location.hash.replace("%20", " ");
     if (currenthash == pct) return;
@@ -343,4 +351,3 @@ function ReadHash(){
 
 window.onhashchange = ReadHash
 ReadHash();
-if (!isSavedDir) document.getElementById("save").innerHTML = "Save"
