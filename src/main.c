@@ -381,7 +381,7 @@ int DoDirectory(char * Directory)
 
         // Wait for more files to appear.
         struct pollfd pfd = { fd, POLLIN, 0 };
-        int ret = poll(&pfd, 1, 1000);
+        int ret = poll(&pfd, 1, 1100);
         //printf("poll ret = %d\n",ret);
         if (ret < 0) {
             fprintf(Log, "select failed: %s\n", strerror(errno));

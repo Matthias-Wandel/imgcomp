@@ -141,8 +141,8 @@ function PlayButtonClick()
 
 function PrevNextDirLinkUpdate()
 {
-    document.getElementById("prevdir").href = "view.cgi?"+PrevDir+"/#"+flagsstr
-    document.getElementById("nextdir").href = "view.cgi?"+NextDir+"/#"+flagsstr
+    if (PrevDir) document.getElementById("prevdir").href = "view.cgi?"+PrevDir+"/#"+flagsstr
+    if (NextDir) document.getElementById("nextdir").href = "view.cgi?"+NextDir+"/#"+flagsstr
 }
 
 
