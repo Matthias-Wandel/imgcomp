@@ -426,7 +426,7 @@ void MakeHtmlOutput(Dir_t * Dir)
         printf("function mmo(str){\n"
            "   str='%s/'+str\n",Dir->HtmlPath);
         printf("   el = document.getElementById('preview')\n"
-           "   el.src = '/pix/'+str\n"
+           "   el.src = 'pix/'+str\n"
            "   el.onload = sizeit\n"
            "   var eh = document.getElementById('prevh')\n"
            "   eh.href = '/view.cgi?'+str.substring(0,9)+'/#'+str.substring(17,21)\n"
