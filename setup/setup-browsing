@@ -1,9 +1,13 @@
+# Setup browsing imgcomp output images using view.cgi (from the browse directory)
+
 # Create new web root directory.  These two commands must NOT run as root.
 echo "Make directories for apache2"
 mkdir -p /home/pi/www
+mkdir -p /home/images
 ln -s -f ../images /home/pi/www/pix
 
-# configure apached2
+
+# configure apache2
 echo "copying apache2 configuration file, enabling CGI"
 sudo cp 000-default.conf /etc/apache2/sites-available
 sudo ln -s -f ../mods-available/cgi.load /etc/apache2/mods-enabled/cgi.load
