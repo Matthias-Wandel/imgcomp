@@ -67,6 +67,7 @@ MemImage_t * LoadJPEG(char* FileName, int scale_denom, int discard_colors, int P
     if (setjmp(jerr.setjmp_buffer)) {
         // If we get here, the JPEG code has signaled an error.
         // We need to clean up the JPEG object, close the input file, and return.
+		fprintf(Log, "Error reading jpeg \"%s\" at %ld\n", FileName, ftell(file));
         jpeg_destroy_decompress(&info);
         fclose(file);
         return NULL;

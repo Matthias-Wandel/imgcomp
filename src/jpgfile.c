@@ -107,7 +107,7 @@ static int FindExifInFile (FILE * infile)
         lh = fgetc(infile);
         ll = fgetc(infile);
         if (lh == EOF || ll == EOF){
-            fprintf(Log, "Unexpected end of file");
+            fprintf(Log, "Unexpected end of file at %ld",ftell(infile));
             return 0;
         }
 
