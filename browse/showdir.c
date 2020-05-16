@@ -429,7 +429,7 @@ void MakeHtmlOutput(Dir_t * Dir)
            "   el.src = 'pix/'+str\n"
            "   el.onload = sizeit\n"
            "   var eh = document.getElementById('prevh')\n"
-           "   eh.href = 'view.cgi?'+str.substring(0,9)+'/#'+str.substring(17,21)\n"
+           "   eh.href = 'view.cgi?'+str.substring(0,9)+'/#'+str.substring(10)\n"
            "   var en = document.getElementById('prevn')\n"
            "   en.innerHTML = str + ' &nbsp; &nbsp; '"
            " + ' &nbsp;'+str.substring(15, 17)+':'+str.substring(17,19);"

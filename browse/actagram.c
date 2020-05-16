@@ -291,7 +291,7 @@ void ShowActagram(int all, int h24)
            "   el.src = 'pix/'+str\n"
            "   el.onload = sizeit\n"
            "   var eh = document.getElementById('prevh')\n"
-           "   eh.href = 'view.cgi?'+str.substring(0,9)+'/#'+str.substring(17,21)\n"
+           "   eh.href = 'view.cgi?'+str.substring(0,9)+'/#'+str.substring(10)\n"
            "   var en = document.getElementById('prevn')\n"
            "   en.innerHTML = str + ' &nbsp; &nbsp; 20'"
            " + str.substring(0, 2)+'-'+str.substring(2,4)+'-'+str.substring(4,6)\n"
