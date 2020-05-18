@@ -1,0 +1,7 @@
+#! /bin/bash
+# This script re-launches imgcomp if it isn't running
+# because on one of my pi zero's, imgcomp segfaults inside libjpeg about once a week.
+if ! pgrep imgcomp; then 
+	imgcomp/imgcomp &
+fi
+

@@ -7,5 +7,6 @@ if crontab -l 2>/dev/null | grep -q "imgcomp/imgcomp"; then
 	echo "    crontab entry for starting at startup already exists"
 else
 	echo "Adding crontab entry to start imcgomp at startup"
-	crontab -l 2>/dev/null| { cat; echo "@reboot imgcomp/imgcomp &"; } | crontab -
+	crontab -l 2>/dev/null| { cat; echo "@reboot imgcomp/imgcomp &"; \
+		echo "0 * * * * imgcomp/setup/relaunch_imgcomp"; } | crontab -
 fi
