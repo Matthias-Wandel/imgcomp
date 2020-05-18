@@ -3,7 +3,7 @@
 # Create new web root directory.  These two commands must NOT run as root.
 echo "Make directories for apache2"
 mkdir -p /home/pi/www
-mkdir -p /home/images
+mkdir -p /home/pi/images
 ln -s -f ../images /home/pi/www/pix
 
 
