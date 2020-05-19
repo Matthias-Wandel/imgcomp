@@ -52,7 +52,7 @@ static double AverageBright(MemImage_t * pic, Region_t Region, ImgMap_t* WeightM
             }
             p1 += 3;
         }
-		baverage += brow;
+        baverage += brow;
     }
 
     if (DetectionPixels < 1000){
@@ -195,6 +195,7 @@ TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, char * DebugImgNa
     int a;
     int DetectionPixels;
     int m1i, m2i;
+    double BrightnessRatio;
     Region_t MainReg;
     TriggerInfo_t RetVal;
     RetVal.x = RetVal.y = 0;
@@ -262,6 +263,7 @@ TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, char * DebugImgNa
         printf("Detection region is %d-%d, %d-%d\n",MainReg.x1, MainReg.x2, MainReg.y1, MainReg.y2);
     }
 
+
     // Compute brightness multipliers.
     {
         double b1average, b2average;
@@ -281,7 +283,14 @@ TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, char * DebugImgNa
         m2 = 80/b2average;
 
         {
-            double maxm = m1 > m2 ? m1 : m2;
+            double maxm, minm;
+            if (m1 > m2){
+                maxm = m1; minm = m2;
+            }else{
+                maxm = m2; minm = m1;
+            }
+            BrightnessRatio = maxm/minm;
+
             if (maxm > 4.0){
                 // Don't allow multiplier to get bigger than 4.  Otherwise, for dark images
                 // we just end up multiplying pixel noise!
@@ -400,7 +409,8 @@ TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, char * DebugImgNa
 
         threshold = a*3+12;
         if (threshold < 30) threshold = 30;
-        if (threshold > 80) threshold = 80;
+        int maxth = 85 + BrightnessRatio*5;
+        if (threshold > maxth) threshold = maxth;
 
         if (Verbosity) printf("2/3 of image is below %d diff.  Using %d threshold\n",a, threshold);
 
@@ -425,7 +435,7 @@ static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold)
         
     // Scale down by this factor before applying windowing algorithm to look for max localized change
     // Thee factors work well with source images that are 1000-2000 pixels across.
-	const int scalef = 5;
+    const int scalef = 5;
 
     // these determine the window over over which to look for the change (after scaling)    
     const int wind_w = 4, wind_h = 7;
@@ -481,7 +491,7 @@ static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold)
     }
 
     if (Verbosity > 1){
-		printf("Scaled difference array (%d x %d)\n", widthSc, heightSc);
+        printf("Scaled difference array (%d x %d)\n", widthSc, heightSc);
         for (row=0;row<heightSc;row++){
             for (col=0;col<widthSc;col++) printf("%3d",DiffScaled[row*widthSc+col]/100);
             printf("\n");
