@@ -409,7 +409,7 @@ TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, char * DebugImgNa
 
         threshold = a*3+12;
         if (threshold < 30) threshold = 30;
-        int maxth = 85 + BrightnessRatio*5;
+        int maxth = 110 + BrightnessRatio*5;
         if (threshold > maxth) threshold = maxth;
 
         if (Verbosity) printf("2/3 of image is below %d diff.  Using %d threshold\n",a, threshold);
