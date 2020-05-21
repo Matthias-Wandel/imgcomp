@@ -12,7 +12,6 @@ aquire_cmd = raspivid -o /ramdisk/vid/vid%02d.h264 -ev +4 --mode 2 -t 12000000 -
 # Use ffmpeg to extract key frames.
 viddecomposecmd = ffmpeg -hide_banner -loglevel panic -nostdin -skip_frame nokey -i <infile> -vsync 0 -r 30 -f image2
 
-mspercycle = 1000
 vidmode = 1
 followdir = /ramdisk/vid
 tempdir = /ramdisk/tmp
