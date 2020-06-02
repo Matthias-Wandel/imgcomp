@@ -49,10 +49,9 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
            "  img { vertical-align: middle; margin-bottom: 5px; }\n"
            "  p {margin-bottom: 0px}\n"
            "  a {text-decoration: none;}\n"
-           "  button {font-size: 18px;}\n"
+           "  button {-webkit-appearance: none; font-size: 20px; padding-left:9px; padding-right:8px; padding-bottom:3px;background-color:#E8E8E8;border-radius:8px;}\n"
            "  img {-webkit-user-select: none; -webkit-touch-callout: none;}\n"
-                    
-           "</style></head>\n\n");
+		   "</style></head>\n\n");
 
     printf("<center>\n");
     

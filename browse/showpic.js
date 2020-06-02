@@ -211,7 +211,8 @@ function SavePicClick(){
     xhttp.onreadystatechange=function(){
         if (this.readyState==4 && this.status==200){
             SaveResp=xhttp.responseText.trim()
-            if(SaveResp.indexOf('Fail:')>=0) wt="<span style='color: rgb(255,0,0);'>["+wt+"]</span>"
+			var fi = SaveResp.indexOf('Fail:')
+            if(fi>=0) SaveResp="<span style='color: rgb(255,0,0);'>"+SaveResp.substring(fi+5)+"</span>"
             document.getElementById("save").innerHTML=SaveResp
         }
     };
