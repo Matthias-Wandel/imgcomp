@@ -1,6 +1,4 @@
 //----------------------------------------------------------------------------------
-// HTML based image browser to use with imgcomp output.
-//
 // Small CGI program to watch log file and wait for significant enough change
 // to trigger an image update in realtime mode.
 //
@@ -24,10 +22,16 @@ int main()
     int n, GotBytes = 0;
     FILE * LogFile;
     long FileSize;
+	int RefreshEveryFrame = 0;
     
     char *WATCH_FILE;
     
     printf("Content-Type: text/html\n\n<html>\n"); // html header
+	
+	char * QueryString = getenv("QUERY_STRING");
+	if (QueryString && QueryString[0] == '1'){
+		RefreshEveryFrame = 1;
+	}
  
     // First try to follow symlink "in" in the current directory.  Only if that fails,
     // use the hardcoded path to ramdisk.
@@ -81,7 +85,7 @@ int main()
             GotBytes = 1;
             NewBytes[nread] = 0;
             printf("%s<br>",NewBytes);
-            if (strstr(NewBytes, "(")){
+            if (strstr(NewBytes, "(") || RefreshEveryFrame){
                 // Saw enough motion to show location (though not necessarily enough to save image).
                 // Enouch change for live mode update.
                 break;

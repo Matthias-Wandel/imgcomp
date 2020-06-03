@@ -2,15 +2,18 @@
 <meta charset="utf-8"/>
 <style type=text/css>
   body { font-family: sans-serif; font-size: 22; }
+  input[type=checkbox] {transform: scale(1.8);}
 </style>
 <body>
+<b>Real time display</b>
+&nbsp; <input type="checkbox" id="beep"> Beep on change
+&nbsp; <input type="checkbox" id="everyframe"> Refresh every frame
+<p>
 <img id='rti' src="view.cgi?now.jpg" onload="sizeImage()" width=100 height=60>
 <br>
 <small>
-<!--<span id="imgseq">Sequence</span><br>-->
 <span id="logdata">Waiting for changes<br>Log output goes here.</span>
 </small>
-
 
 <script type="text/javascript">
 
@@ -38,6 +41,7 @@ function sizeImage(){
 //----------------------------------------------------------------------------------
 function ReadyStateChange(){
     if (this.readyState == 4 && this.status == 200) {
+		// Show what was in the log below the image.
         document.getElementById("logdata").innerHTML = xhttp.responseText;
         n = xhttp.responseText.indexOf("Error!");
         if (n >= 0){
@@ -45,7 +49,11 @@ function ReadyStateChange(){
         }else{
             n = xhttp.responseText.indexOf("motion");
             RefreshImage()
-            if (n >= 0) DoBeep(); // Do beep last, won't work on iPad
+            if (n >= 0){
+                // Do beep last, won't work on iPad
+                var b = document.getElementById("beep").checked; 
+                if (b) DoBeep(); 
+            }
         }
     }
 }
@@ -57,7 +65,8 @@ function WaitForChangeNotify()
 {
     xhttp = new XMLHttpRequest();
     xhttp.onreadystatechange =  ReadyStateChange
-    xhttp.open("GET", "wait_change.cgi", true);
+    qs = "wait_change.cgi?" + (document.getElementById("everyframe").checked ? "1" : "0")
+    xhttp.open("GET", qs, true);
     xhttp.send();
 }
 
@@ -71,6 +80,7 @@ function RefreshImage()
     WaitForChangeNotify();
 }
 
+// Must add an arbitrary number to the image fetch, or we may get a cached one.
 const now = new Date()
 imgseq = Math.round(now.getTime() / 1000) % 100000
 
