@@ -151,9 +151,12 @@ xref = 0;
 ref_index = 0;
 MouseIsDown = 0
 
+TouchDebounce = false; // Touch and mouse events arrive out of order on iPad, so "debounce" to avoid turning
+                        // single taps into double taps.
 
 function PicMouse(picX,picY,IsDown)
 {
+	DbgAdd("pm("+IsDown+")")
     picX -= vc.offsetLeft
     picY -= vc.offsetTop
     //dbg.innerHTML = "Mouse "+picX+", "+picY+" Down="+IsDown;
@@ -165,7 +168,7 @@ function PicMouse(picX,picY,IsDown)
             // Mouse was just pressed.
             if (leftright){
                 // Start playing forwards or backwards.
-                PlayStart(leftright)
+                if (!TouchDebounce) PlayStart(leftright)
             }else{
                 // Start of drag scrolling.
                 xref = picX;
@@ -252,7 +255,8 @@ function SizeImage()
         ShwH = vc.height;
         return;
     }
-    maxw = 950; maxh = 650;
+    maxw = 950; maxh = 650
+	//maxw = 600; maxh = 350
     
     ShwW = maxw
     if (ShwW > window.innerWidth-15) ShwW = window.innerWidth-15;
@@ -278,24 +282,28 @@ vc.onload = picLoaded
 
 // Functions to consolidate the various ways of reporting mouse or finger actions into one place.
 // so that it works the same way on PC and iPad
-function picMouseDown(e) { PicMouse(e.clientX,e.clientY,1); }
-function picMouseMove(e) { PicMouse(e.clientX,e.clientY,MouseIsDown); }
+function picMouseDown(e) { DbgAdd("picMD");PicMouse(e.clientX,e.clientY,1); }
+function picMouseMove(e) { DbgAdd("picMM");PicMouse(e.clientX,e.clientY,MouseIsDown); }
 function picDrag(e){
     if ((e.clientY-vc.offsetTop) < ShwH*.2) return true; // Allow dragging image out of brwser near top.
+	DbgAdd("picDrag")
     PicMouse(e.clientX,e.clientY,1);
     return false;
 }
-function picMouseUp() {PicMouse(0,0,0);}
-function picTouchStart(e){PicMouse(e.touches[0].clientX,e.touches[0].clientY,1);}
-function picTouchMove(e){PicMouse(e.touches[0].clientX,e.touches[0].clientY,1)}
+function picMouseUp() {DbgAdd("picMU");PicMouse(0,0,0);}
+
+function picTouchStart(e){DbgAdd("picTS");TouchDebounce=false;PicMouse(e.touches[0].clientX,e.touches[0].clientY,1);}
+function picTouchMove(e){DbgAdd("picTM");PicMouse(e.touches[0].clientX,e.touches[0].clientY,1)}
+function picTouchEnd(e){DbgAdd("picTE");TouchDebounce=true;PicMouse(0,0,0);}
 
 vc.ondragstart = picDrag
 vc.onmousedown = picMouseDown
 vc.onmouseup = picMouseUp
 vc.onmouseleave = picMouseUp
 vc.onmousemove = picMouseMove
+
 vc.ontouchstart = picTouchStart
-vc.ontouchend = picMouseUp
+vc.ontouchend = picTouchEnd
 vc.ontouchmove = picTouchMove
 
 // Fill bins for actagram (a sort of motion time histogram)
@@ -352,3 +360,7 @@ function ReadHash(){
 
 window.onhashchange = ReadHash
 ReadHash();
+function DbgAdd(msg){
+//	dbg = (dbg+" "+msg)
+//	document.getElementById("dbg").innerHTML = dbg
+}
