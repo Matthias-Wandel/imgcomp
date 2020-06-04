@@ -215,6 +215,8 @@ TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, char * DebugImgNa
     height = pic1->height;
     bPerRow = width * 3;    
 
+	// Make sure we have an allocated working array and weight map.
+	
     if (DiffVal != NULL && (width != DiffVal->w || height != DiffVal->h)){
         // DiffVal allocated size is wrong.
         free(DiffVal);
@@ -233,18 +235,17 @@ TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, char * DebugImgNa
             }
         }
     }
-
     memset(DiffVal->values, 0,  sizeof(DiffVal->values)*width*height);
 
     if (DebugImgName){
+		// Create image for writing difference to.
         int data_size;
         data_size = height * bPerRow;
         DiffOut = malloc(data_size+offsetof(MemImage_t, pixels));
         memcpy(DiffOut, pic1, offsetof(MemImage_t, pixels));
         memset(DiffOut->pixels, 0, data_size);
     }
-    memset(DiffHist, 0, sizeof(DiffHist));
-
+	
     MainReg = Regions.DetectReg;
     if (MainReg.y2 > height) MainReg.y2 = height;
     if (MainReg.x2 > width) MainReg.x2 = width;
@@ -264,7 +265,7 @@ TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, char * DebugImgNa
     }
 
 
-    // Compute brightness multipliers.
+    // Compute brightness multipliers for the two images
     {
         double b1average, b2average;
         double m1, m2;
@@ -310,6 +311,7 @@ TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, char * DebugImgNa
     }
 
     // Compute differences
+	memset(DiffHist, 0, sizeof(DiffHist));
     for (row=MainReg.y1;row<MainReg.y2;){
         unsigned char * p1, *p2, *pd = NULL;
         unsigned char * ExRow;
@@ -342,19 +344,23 @@ TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, char * DebugImgNa
                     if (max < 40) max = 40; // Don't allow under 40 to avoid amlifying dark noise.
                 }
 
-                
+                // Compute red green and blue differences
                 dr = (p1[0]*m1i - p2[0]*m2i);
                 dg = (p1[1]*m1i - p2[1]*m2i);
                 db = (p1[2]*m1i - p2[2]*m2i);
                 
+				// Make differences absolute values.
                 if (dr < 0) dr = -dr;
                 if (dg < 0) dg = -dg;
                 if (db < 0) db = -db;
+				
+				// compute composite difference.
                 dcomp = (dr + dg*2 + db) >> 8; // Put more emphasis on green
-                dcomp = dcomp * 120/max; // Adjust for dark parts of image.
+                dcomp = dcomp * 120/max;       // Normalize difference to local brightness.
 
 
-                if (dcomp >= 256) dcomp = 255;// put it in a histogram.
+				// Add computed difference value to histogram bins.
+                if (dcomp >= 256) dcomp = 255;
                 if (dcomp < 0){
                     fprintf(stderr,"Internal error dcomp\n");
                     dcomp = 0;
@@ -363,7 +369,7 @@ TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, char * DebugImgNa
                 diffrow[col] = dcomp;
         
                 if (DebugImgName){
-                    // Save the difference image, scaled 4x.
+                    // Save the difference image, scale brightness up 4x
                     dr=(dr*60/max)>> 6; if (dr > 255) dr = 255;
                     dg=(dg*60/max)>> 6; if (dg > 255) dg = 255;
                     db=(db*60/max)>> 6; if (db > 255) db = 255;
@@ -373,6 +379,7 @@ TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, char * DebugImgNa
                 }
             }
 
+			// Advance pointers to next pixel.
             pd += 3;
             p1 += 3;
             p2 += 3;
@@ -395,8 +402,8 @@ TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, char * DebugImgNa
     }
 
     {
-        // Try to gauge the difference noise (assuming two thirds of the image
-        // has not changed)
+        // Try to gauge the noise level of the difference maps using the built histogram.
+		// assuming two thirds of the image has not changed
         int cumsum = 0;
         int threshold;
         int twothirds = DetectionPixels*2/3;
@@ -409,14 +416,16 @@ TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, char * DebugImgNa
 
         threshold = a*3+12;
         if (threshold < 30) threshold = 30;
+		
         int maxth = 180 + BrightnessRatio*5;
-        if (threshold > maxth) threshold = maxth;
+        if (threshold > maxth){
+			threshold = maxth;
+			if (Verbosity) printf("Using limit threshold of %d\n", threshold);			
+		}else{
+			if (Verbosity) printf("2/3 of image is below %d diff.  Using %d threshold\n",a, threshold);
+		}
 
-        if (Verbosity) printf("2/3 of image is below %d diff.  Using %d threshold\n",a, threshold);
-
-        // Try to gauge the difference noise (assuming two thirds of the image
-        // has not changed)
-
+		// Search for a window with the largest difference in it
         Trigger = SearchDiffMaxWindow(MainReg, threshold);
         return Trigger;
     }
@@ -424,29 +433,28 @@ TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, char * DebugImgNa
 
 //----------------------------------------------------------------------------------------
 // Search for an N x N window with the maximum differences in it.
-// This algorithm is optimized for rejecting spurious differences outdoors
-// where grass and leaves can cause a lot of weak spurious motion over large areas.
+// This for rejecting spurious differences outdoors where grass and leaves can cause a
+// lot of weak spurious motion over large areas.
 //----------------------------------------------------------------------------------------
 static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold)
 {
     int row,col;
     TriggerInfo_t retval;
-    int fs;
-        
+            
     // Scale down by this factor before applying windowing algorithm to look for max localized change
     // Thee factors work well with source images that are 1000-2000 pixels across.
     const int scalef = 5;
 
-    // these determine the window over over which to look for the change (after scaling)    
+    // these determine the window over which to look for the change (after scaling)    
     const int wind_w = 4, wind_h = 7;
-    //const int wind_w = 5, wind_h = 8;
     
     static int * DiffScaled = NULL;
     static int * DiffScaledCum = NULL;
     static int * DiffScaledC2 = NULL;
     static int widthSc, heightSc;
-    
     static int * Fatigue = NULL;
+	
+	// Allocate working arrays, if necessary.
     if (DiffScaled == NULL){
         #define ROOF(x) ((x+scalef-1)/scalef)
         widthSc = ROOF(DiffVal->w);
@@ -465,30 +473,29 @@ static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold)
     }
     
     // Compute scaled down array of differences.  Destination: DiffScaled[]
-    {
-        int width = DiffVal->w;
-        memset(DiffScaled, 0, sizeof(int)*widthSc*heightSc);
-        for (row=Region.y1;row<Region.y2;row++){
-            // Compute difference by column using established threshold value
-            unsigned char * diffrow, *ExRow;
-            int * widthScrow;
-            diffrow = &DiffVal->values[width*row];
-            ExRow = &WeightMap->values[width*row];
+    int width = DiffVal->w;
+    memset(DiffScaled, 0, sizeof(int)*widthSc*heightSc);
+    for (row=Region.y1;row<Region.y2;row++){
+        // Compute difference by column using established threshold value
+        unsigned char * diffrow, *ExRow;
+        int * widthScrow;
+        diffrow = &DiffVal->values[width*row];
+        ExRow = &WeightMap->values[width*row];
 
-            widthScrow = &DiffScaled[widthSc*(row/scalef)];
-            for (col=Region.x1;col<Region.x2;col++){
-                int d = diffrow[col] - threshold;
-                if (d > 0){
+        widthScrow = &DiffScaled[widthSc*(row/scalef)];
+        for (col=Region.x1;col<Region.x2;col++){
+            int d = diffrow[col] - threshold;
+            if (d > 0){
+                widthScrow[col/scalef] += d;
+                if (ExRow[col] > 1){
+                    
+                    // Double weight region
                     widthScrow[col/scalef] += d;
-                    if (ExRow[col] > 1){
-                        
-                        // Double weight region
-                        widthScrow[col/scalef] += d;
-                    }
                 }
             }
         }
     }
+    
 
     if (Verbosity > 1){
         printf("Scaled difference array (%d x %d)\n", widthSc, heightSc);
@@ -500,27 +507,28 @@ static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold)
 
     if (MotionFatigueTc > 0){
         static int SinceFatiguePrint = 0;
+		int FatigueAverage;
         // Compute motion fatigue
-        fs = 0;
+        FatigueAverage = 0;
         for (row=0;row<heightSc;row++){
             for (col=0;col<widthSc;col++){
                 int ds, nFat;
                 ds = DiffScaled[row*widthSc+col];
                 nFat = (Fatigue[row*widthSc+col]*(MotionFatigueTc-1) + ds)/MotionFatigueTc; // Expontential decay on it.
                 Fatigue[row*widthSc+col] = nFat;
-                fs += nFat;
+                FatigueAverage += nFat;
             }
         }
-        fs = fs/(heightSc*widthSc);
+        FatigueAverage = FatigueAverage/(heightSc*widthSc); // Divide by array size to get average.
         
         // Show fatigue map from time to time.
-        if (Verbosity > 1 || (fs > 50 && SinceFatiguePrint > 60)){
+        if (Verbosity > 1 || (FatigueAverage > 50 && SinceFatiguePrint > 60)){
             // Print the fatigure array every minuts if there is stuff in it.
-            fprintf(Log, "Fatigue map (%d x %d) sum=%d<small>\n", widthSc, heightSc, fs);
+            fprintf(Log, "Fatigue map (%d x %d) sum=%d<small>\n", widthSc, heightSc, FatigueAverage);
             for (row=0;row<heightSc;row++){
                 for (col=0;col<widthSc;col++){
                     int v = Fatigue[row*widthSc+col]/50;
-                    //                             00112233445566778899
+                    //                                 00112233445566778899
                     static const char LowDigits[20] = " . - = 3 4~5~6~7=8=9";
                     if (v < 10){
                         fprintf(Log,"%c%c",LowDigits[v*2],LowDigits[v*2+1]);
@@ -556,6 +564,8 @@ static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold)
         }
     }
 
+	// Now search for the maximum inside a rectangular window.
+	
     // Transform array to column sums wind_h above.  DiffScaled[] --> DiffScaledCum[]
     memset(DiffScaledCum, 0, sizeof(int)*widthSc*heightSc);
     for (row=0;row<heightSc;row++){
@@ -647,3 +657,4 @@ static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold)
     return retval;
 }
 
+  
