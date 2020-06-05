@@ -17,7 +17,7 @@ int NewestAverageBright;
 
 typedef struct {
     int w, h;
-    unsigned char values[1];
+    int values[0];
 }ImgMap_t;
 
 static ImgMap_t * DiffVal = NULL;
@@ -39,7 +39,8 @@ static double AverageBright(MemImage_t * pic, Region_t Region, ImgMap_t* WeightM
     // Compute average brightnesses.
     baverage = 0;//rzaverage = 0;
     for (row=Region.y1;row<Region.y2;row++){
-        unsigned char *p1, *px;
+        unsigned char *p1;
+		int *px;
         int col, brow = 0;//, redrow = 0;
         p1 = pic->pixels+rowbytes*row;
         px = &WeightMap->values[pic->width*row];
@@ -144,7 +145,7 @@ void ProcessDiffMap(MemImage_t * MapPic)
     lastrow = 0;
 
     for (row=0;row<height;row++){
-        unsigned char * map;
+        int * map;
         unsigned char * img;
         map = &WeightMap->values[width*row];
         img = &MapPic->pixels[width*3*row];
@@ -314,8 +315,8 @@ TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, char * DebugImgNa
 	memset(DiffHist, 0, sizeof(DiffHist));
     for (row=MainReg.y1;row<MainReg.y2;){
         unsigned char * p1, *p2, *pd = NULL;
-        unsigned char * ExRow;
-        unsigned char * diffrow;
+        int * ExRow;
+        int * diffrow;
         p1 = pic1->pixels+row*bPerRow + MainReg.x1*3;
         p2 = pic2->pixels+row*bPerRow + MainReg.x1*3;
         diffrow = &DiffVal->values[width*row];
@@ -477,7 +478,7 @@ static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold)
     memset(DiffScaled, 0, sizeof(int)*widthSc*heightSc);
     for (row=Region.y1;row<Region.y2;row++){
         // Compute difference by column using established threshold value
-        unsigned char * diffrow, *ExRow;
+        int * diffrow, *ExRow;
         int * widthScrow;
         diffrow = &DiffVal->values[width*row];
         ExRow = &WeightMap->values[width*row];
