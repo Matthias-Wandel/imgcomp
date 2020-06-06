@@ -24,12 +24,17 @@ typedef struct {
     int NumExcludeReg;
 }Regions_t;
 
-
 typedef struct {
     int DiffLevel;
     int x, y;
 	int Motion;
 }TriggerInfo_t;
+
+typedef struct {
+    int w, h;
+    int values[0];
+}ImgMap_t;
+
 
 MemImage_t MemImage;
 extern int NewestAverageBright;
@@ -46,8 +51,7 @@ extern char SaveDir[200];
 extern char SaveNames[200];
 
 extern Regions_t Regions;
-
-extern Region_t MouseDetectRegion;
+ImgMap_t * WeightMap;
 
 extern time_t LastPic_mtime;
 extern int GateDelay; // In frames, how long no motion before inching gate closed.
@@ -57,10 +61,13 @@ extern int GateDelay; // In frames, how long no motion before inching gate close
 extern int VidMode; // Video mode flag
 extern char VidDecomposeCmd[200];
 
+// compare_util.c functions
+void FillWeightMap(int width, int height);
+void ProcessDiffMap(MemImage_t * MapPic);
+double AverageBright(MemImage_t * pic, Region_t Region, ImgMap_t* WeightMap);
 
 // compare.c functions
 TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, char * DebugImgName);
-void ProcessDiffMap(MemImage_t * MapPic);
 
 // jpeg2mem.c functions
 MemImage_t * LoadJPEG(char* FileName, int scale_denom, int discard_colors, int ParseExif);

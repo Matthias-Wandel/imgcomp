@@ -15,7 +15,7 @@ all: objdir imgcomp
 objdir:
 	@mkdir -p obj
 
-objs = $(OBJ)/main.o $(OBJ)/config.o $(OBJ)/compare.o $(OBJ)/jpeg2mem.o \
+objs = $(OBJ)/main.o $(OBJ)/config.o $(OBJ)/compare.o $(OBJ)/compare_util.o $(OBJ)/jpeg2mem.o \
 	$(OBJ)/jpgfile.o $(OBJ)/exif.o $(OBJ)/start_raspistill.o $(OBJ)/util.o $(OBJ)/send_udp.o
 
 $(OBJ)/jpgfile.o $(OBJ)/exif.o $(OBJ)/start_raspistill.o: $(SRC)/jhead.h
