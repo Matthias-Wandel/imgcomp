@@ -63,8 +63,8 @@ TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, char * DebugImgNa
         DiffVal = NULL;
     }
     if (DiffVal == NULL){
-        DiffVal = malloc(offsetof(ImgMap_t, values) + sizeof(DiffVal->values[0])*width*height);
-        DiffVal->w = width; DiffVal->h = height;
+		DiffVal = MakeImgMap(width,height);
+		
         if (!WeightMap){
             FillWeightMap(width,height);
         }else{
@@ -277,7 +277,6 @@ TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, char * DebugImgNa
 //----------------------------------------------------------------------------------------
 static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold)
 {
-    int row,col;
     TriggerInfo_t retval;
             
     // Scale down by this factor before applying windowing algorithm to look for max localized change
@@ -287,22 +286,21 @@ static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold)
     // these determine the window over which to look for the change (after scaling)    
     const int wind_w = 4, wind_h = 7;
     
-    static int * DiffScaled = NULL;
-    static int * DiffScaledCum = NULL;
-    static int * DiffScaledC2 = NULL;
-    static int widthSc, heightSc;
-    static int * Fatigue = NULL;
+	static int widthSc, heightSc;
+	static ImgMap_t * DiffScaled = NULL;
+	static ImgMap_t * DiffScaledBf = NULL;
+    static ImgMap_t * Fatigue = NULL;
+	//static ImgMap_t * FatigueBl = NULL;
 	
-	// Allocate working arrays, if necessary.
+	// Allocate working arrays if necessary.
     if (DiffScaled == NULL){
         #define ROOF(x) ((x+scalef-1)/scalef)
         widthSc = ROOF(DiffVal->w);
         heightSc = ROOF(DiffVal->h);
-        DiffScaled = malloc(sizeof(int)*widthSc*heightSc);
-        DiffScaledCum = malloc(sizeof(int)*widthSc*heightSc);       
-        DiffScaledC2 = malloc(sizeof(int)*widthSc*heightSc);
-        Fatigue = malloc(sizeof(int)*widthSc*heightSc);
-        memset(Fatigue, 0, sizeof(int)*widthSc*heightSc);
+		DiffScaled = MakeImgMap(widthSc, heightSc);
+		DiffScaledBf = MakeImgMap(widthSc, heightSc);
+        Fatigue = MakeImgMap(widthSc, heightSc);
+		//FatigueBl = MakeImgMap(widthSc, heightSc);
     }else{
         if (widthSc != ROOF(DiffVal->w) || heightSc != ROOF(DiffVal->h)){
             fprintf(stderr, "image size changed, error!");
@@ -313,16 +311,16 @@ static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold)
     
     // Compute scaled down array of differences.  Destination: DiffScaled[]
     int width = DiffVal->w;
-    memset(DiffScaled, 0, sizeof(int)*widthSc*heightSc);
-    for (row=Region.y1;row<Region.y2;row++){
+    memset(DiffScaled->values, 0, sizeof(int)*widthSc*heightSc);
+    for (int row=Region.y1;row<Region.y2;row++){
         // Compute difference by column using established threshold value
         int * diffrow, *ExRow;
         int * widthScrow;
         diffrow = &DiffVal->values[width*row];
         ExRow = &WeightMap->values[width*row];
 
-        widthScrow = &DiffScaled[widthSc*(row/scalef)];
-        for (col=Region.x1;col<Region.x2;col++){
+        widthScrow = &DiffScaled->values[widthSc*(row/scalef)];
+        for (int col=Region.x1;col<Region.x2;col++){
             int d = diffrow[col] - threshold;
             if (d > 0){
                 widthScrow[col/scalef] += d;
@@ -338,10 +336,7 @@ static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold)
 
     if (Verbosity > 1){
         printf("Scaled difference array (%d x %d)\n", widthSc, heightSc);
-        for (row=0;row<heightSc;row++){
-            for (col=0;col<widthSc;col++) printf("%3d",DiffScaled[row*widthSc+col]/100);
-            printf("\n");
-        }
+		ShowImgMap(DiffScaled, 100);
     }
 
     if (MotionFatigueTc > 0){
@@ -349,12 +344,12 @@ static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold)
 		int FatigueAverage;
         // Compute motion fatigue
         FatigueAverage = 0;
-        for (row=0;row<heightSc;row++){
-            for (col=0;col<widthSc;col++){
+        for (int row=0;row<heightSc;row++){
+            for (int col=0;col<widthSc;col++){
                 int ds, nFat;
-                ds = DiffScaled[row*widthSc+col];
-                nFat = (Fatigue[row*widthSc+col]*(MotionFatigueTc-1) + ds)/MotionFatigueTc; // Expontential decay on it.
-                Fatigue[row*widthSc+col] = nFat;
+                ds = DiffScaled->values[row*widthSc+col];
+                nFat = (Fatigue->values[row*widthSc+col]*(MotionFatigueTc-1) + ds)/MotionFatigueTc; // Expontential decay on it.
+                Fatigue->values[row*widthSc+col] = nFat;
                 FatigueAverage += nFat;
             }
         }
@@ -364,135 +359,67 @@ static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold)
         if (Verbosity > 1 || (FatigueAverage > 50 && SinceFatiguePrint > 60)){
             // Print the fatigure array every minuts if there is stuff in it.
             fprintf(Log, "Fatigue map (%d x %d) sum=%d<small>\n", widthSc, heightSc, FatigueAverage);
-            for (row=0;row<heightSc;row++){
-                for (col=0;col<widthSc;col++){
-                    int v = Fatigue[row*widthSc+col]/50;
-                    //                                 00112233445566778899
-                    static const char LowDigits[20] = " . - = 3 4~5~6~7=8=9";
-                    if (v < 10){
-                        fprintf(Log,"%c%c",LowDigits[v*2],LowDigits[v*2+1]);
-                    }else{
-                        fprintf(Log,"%2d",v <= 99 ? v : 99);
-                    }
-                }
-                fprintf(Log,"\n");
-            }
+			ShowImgMap(Fatigue, 50);
             fprintf(Log, "</small>\n");
             SinceFatiguePrint = 0;
         }
         SinceFatiguePrint++;
     
-
         // Subtract out motion fatigue
-        for (row=0;row<heightSc;row++){
-            for (col=0;col<widthSc;col++){
+        for (int row=0;row<heightSc;row++){
+            for (int col=0;col<widthSc;col++){
                 int ds, nFatM;
-                nFatM = Fatigue[row*widthSc+col];
+                nFatM = Fatigue->values[row*widthSc+col];
                 // Look for largest fatigue also among largest 4 neighbours to use.
                 // Helps address laundry flapping in the wind, sometimes flapping further.
-                if (col > 0         && nFatM < Fatigue[row*widthSc+col-1]) nFatM = Fatigue[row*widthSc+col-1];
-                if (col < widthSc   && nFatM < Fatigue[row*widthSc+col+1]) nFatM = Fatigue[row*widthSc+col+1];
-                if (row > 0         && nFatM < Fatigue[(row-1)*widthSc+col]) nFatM = Fatigue[(row-1)*widthSc+col];
-                if (row <heightSc-1 && nFatM < Fatigue[(row+1)*widthSc+col]) nFatM = Fatigue[(row+1)*widthSc+col];
+                if (col > 0         && nFatM < Fatigue->values[row*widthSc+col-1]) nFatM = Fatigue->values[row*widthSc+col-1];
+                if (col < widthSc   && nFatM < Fatigue->values[row*widthSc+col+1]) nFatM = Fatigue->values[row*widthSc+col+1];
+                if (row > 0         && nFatM < Fatigue->values[(row-1)*widthSc+col]) nFatM = Fatigue->values[(row-1)*widthSc+col];
+                if (row <heightSc-1 && nFatM < Fatigue->values[(row+1)*widthSc+col]) nFatM = Fatigue->values[(row+1)*widthSc+col];
                 
-                ds = DiffScaled[row*widthSc+col];
+                ds = DiffScaled->values[row*widthSc+col];
                 ds -= nFatM*3;
                 if (ds < 0) ds = 0;
-                DiffScaled[row*widthSc+col] = ds;
+                DiffScaled->values[row*widthSc+col] = ds;
             }
         }
     }
 
-	// Now search for the maximum inside a rectangular window.
+	int maxc, maxr, maxval;
 	
-    // Transform array to column sums wind_h above.  DiffScaled[] --> DiffScaledCum[]
-    memset(DiffScaledCum, 0, sizeof(int)*widthSc*heightSc);
-    for (row=0;row<heightSc;row++){
-        int *oldrow, *newrow, *addrow;
-        oldrow = &DiffScaledCum[widthSc*(row-1)];
-        newrow = &DiffScaledCum[widthSc*row];
-        
-        addrow = &DiffScaled[widthSc*row];
-        if (row >= wind_h){
-            int * subtrow = &DiffScaled[widthSc*(row-wind_h)];
-            for (col=0;col<widthSc;col++){
-                newrow[col] = addrow[col]+oldrow[col]-subtrow[col];
+	// Now search for the maximum inside a rectangular window.
+	maxval = BlockFilterImgMap(DiffScaled, DiffScaledBf, wind_w, wind_h, &maxc, &maxr);
+	retval.DiffLevel = maxval/100;
+    retval.x = retval.x * scalef - maxc * scalef / 2;
+    retval.y = retval.y * scalef - maxr * scalef / 2;
+	
+	// Work out where most of the motion was found inside the search window.
+    if (Verbosity) printf("Window contents.  Cols %d-%d Rows %d-%d\n",maxc,maxc+wind_w-1,maxr, maxr+wind_h-1);
+    if (maxval > 0){
+        double xsum, ysum;
+        int sum;
+		int row = maxr;
+		if (row < 0) row = 0;
+		
+        xsum = ysum = sum = 0;
+        for (;row<maxr+wind_h;row++){
+            int col = maxc; 
+            if (col < 0) col = 0;
+            for(;col<maxc+wind_w;col++){
+                int v = DiffScaled->values[row*widthSc+col];
+                xsum += col*v;
+                ysum += row*v;
+                sum += v;
+                //printf("%5d",DiffScaled->values[row*widthSc+col]);
             }
-        }else{
-            if (row == 0){
-                for (col=0;col<widthSc;col++) newrow[col] = addrow[col];
-            }else{
-                for (col=0;col<widthSc;col++){
-                    newrow[col] = addrow[col]+oldrow[col];
-                }
-            }
+            //printf("\n");
         }
-    }
-
-    // Transform array to sum of wind_w to the left.  DiffScaledCum[] --> DiffScaledC2
-    {
-        int maxval, maxr, maxc;
-        maxval = maxr = maxc = 0;
-        // Transform array to sum of n columns from previous.
-        for (row=0;row<heightSc;row++){
-            int *srcrow, *destrow;
-            int s;
-            srcrow = &DiffScaledCum[widthSc*row];
-            destrow = &DiffScaledC2[widthSc*row];
-            s = 0;
-            for (col=0;col<widthSc;col++){
-                s += srcrow[col];
-                if (col >= wind_w) s-= srcrow[col-wind_w];
-                destrow[col] = s;
-                if (s > maxval){
-                    maxval = s;
-                    maxc = col;
-                    maxr = row;
-                }
-            }
-        }
-        if (Verbosity) printf("window max v=%d at col=%d,row=%d\n",maxval/100, maxc, maxr);
-        retval.x = maxc * scalef - wind_w * scalef / 2;
-        retval.y = maxr * scalef - wind_h * scalef / 2;
-        if (retval.x < 0) retval.x = 0;
-        if (retval.y < 0) retval.y = 0;
-        retval.DiffLevel = retval.Motion = maxval / 100;
-
-        row = maxr-wind_h+1;
-        if (row < 0) row = 0;
-        if (Verbosity) printf("Window contents.  Cols %d-%d Rows %d-%d\n",maxc-wind_w+1,maxc,row,maxr);
-        if (maxval > 0){
-            double xsum, ysum;
-            int sum;
-            xsum = ysum = sum = 0;
-            for (;row<=maxr;row++){
-                col = maxc-wind_w+1; 
-                if (col < 0) col = 0;
-                for(;col<=maxc;col++){
-                    int v = DiffScaled[row*widthSc+col];
-                    xsum += col*v;
-                    ysum += row*v;
-                    sum += v;
-                    //printf("%3d",DiffScaled[row*widthSc+col]/100);
-                }
-                //printf("\n");
-            }
-            if (Verbosity) printf("Exact r,c= col=%5.1f, row=%5.1f\n",xsum*1.0/sum, ysum*1.0/sum);
-            retval.x = (int)(xsum*scalef*ScaleDenom/sum)+scalef*ScaleDenom/2;
-            retval.y = (int)(ysum*scalef*ScaleDenom/sum)+scalef*ScaleDenom/2;
-            if (Verbosity) printf("Picture coordinates: x,y = %d,%d\n",retval.x, retval.y);
-        }
+        if (Verbosity) printf("Exact col=%5.1f, row=%5.1f\n",xsum*1.0/sum, ysum*1.0/sum);
+        retval.x = (int)(xsum*scalef*ScaleDenom/sum)+scalef*ScaleDenom/2;
+        retval.y = (int)(ysum*scalef*ScaleDenom/sum)+scalef*ScaleDenom/2;
+        if (Verbosity) printf("Picture coordinates: x,y = %d,%d\n",retval.x, retval.y);
     }
    
-    if (Verbosity > 2){ 
-        // Show the array.
-        printf("Window sums\n");
-        for (row=0;row<heightSc;row++){
-            for (col=0;col<widthSc;col++) printf("%3d",DiffScaledC2[row*widthSc+col]/100);
-            printf("\n");
-        }
-    }
-    
     return retval;
 }
 

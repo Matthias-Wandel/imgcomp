@@ -13,38 +13,8 @@
 #include "imgcomp.h"
 #include "config.h"
 
-int NewestAverageBright;
-
-
-void ShowImgMap(ImgMap_t * map, int divisor)
-{
-	int w = map->w;
-    putchar(' ');
-	for (int c=0;c<map->w;c++) printf("%2d",c%10);
-	printf("\n");
-	for (int r=0;r<map->h;r++){
-		putchar(r%10 == 0 ? '=' : '|');
-		for (int c=0;c<map->w;c++){
-			const char LowDigits[20] = "   - = 3 4~5~6~7=8=9";
-			int v = map->values[r*w+c]/divisor;
-            if (v < 10){
-                fprintf(Log,"%c%c",LowDigits[v*2],LowDigits[v*2+1]);
-            }else{
-                fprintf(Log,"%2d",v <= 99 ? v : 99);
-            }
-		}
-		printf("%c\n",r%10 == 0 ? '=' : '|');
-	}
-}
-
-ImgMap_t * MakeIntMap(int w,int h)
-{
-	ImgMap_t * ImgMap = malloc(sizeof(int)*w*h+sizeof(ImgMap_t));
-	ImgMap->w = w;
-	ImgMap->h = h;
-	return ImgMap;
-}
-
+//#define Log stdout
+//#if 0
 //----------------------------------------------------------------------------------------
 // Show detection weight map array.
 //----------------------------------------------------------------------------------------
@@ -53,12 +23,13 @@ static void ShowWeightMap(ImgMap_t * WeightMap)
     int row, width, height;
     width = WeightMap->w;
     height = WeightMap->h;
-    printf("Weight map:  '-' = ignore, '1' = normal, '#' = 2x weight\n");
-
-    for (row=0;row<height;row+=4){
+    printf("Weight map (%dx%d):  '-' = ignore, '1' = normal, '#' = 2x weight\n",width, height);
+	int skip = width/100;
+	if (skip < 4) skip = 4;
+    for (row=skip/2;row<height;row+=skip){
         int r;
-        printf("   ");
-        for (r=0;r<width;r+=4){
+        printf("  ");
+        for (r=skip/2;r<width;r+=skip){
             switch (WeightMap->values[row*width+r]){
                 case 0: putchar('-');break;
                 case 1: putchar('1');break;
@@ -90,7 +61,10 @@ void FillWeightMap(int width, int height)
     if (Reg.y2 > height) Reg.y2 = height;
     printf("fill %d-%d,%d-%d\n",Reg.x1, Reg.x2, Reg.y1, Reg.y2);
     for (row=Reg.y1;row<Reg.y2;row++){
-        memset(&WeightMap->values[row*width+Reg.x1], 1, Reg.x2-Reg.x1);
+		int * rowP = &WeightMap->values[row*width];
+		for (int col=Reg.x1;col<Reg.x2;col++){
+			rowP[col] = 1;
+		}
     }
 
     for (r=0;r<Regions.NumExcludeReg;r++){
@@ -205,18 +179,98 @@ double AverageBright(MemImage_t * pic, Region_t Region, ImgMap_t* WeightMap)
     return baverage * 0.25 / DetectionPixels; // Multiply by 4 again.
 }
 
+//#endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//----------------------------------------------------------------------------------------
+// Initialize an empty image map
+//----------------------------------------------------------------------------------------
+ImgMap_t * MakeImgMap(int w,int h)
+{
+	ImgMap_t * ImgMap = malloc(sizeof(int)*w*h+sizeof(ImgMap_t));
+	ImgMap->w = w;
+	ImgMap->h = h;
+	return ImgMap;
+}
+
+
+//----------------------------------------------------------------------------------------
+// Show image map
+//----------------------------------------------------------------------------------------
+void ShowImgMap(ImgMap_t * map, int divisor)
+{
+	int w = map->w;
+    putchar(' ');
+	for (int c=0;c<map->w;c++) printf("%2d",c%10);
+	printf("\n");
+	for (int r=0;r<map->h;r++){
+		putchar(r%10 == 0 ? '=' : '|');
+		for (int c=0;c<map->w;c++){
+			const char LowDigits[20] = "   - = 3 4~5~6~7=8=9";
+			int v = map->values[r*w+c]/divisor;
+            if (v < 10){
+                fprintf(Log,"%c%c",LowDigits[v*2],LowDigits[v*2+1]);
+            }else{
+                fprintf(Log,"%2d",v <= 99 ? v : 99);
+            }
+		}
+		printf("%c\n",r%10 == 0 ? '=' : '|');
+	}
+}
+
 
 //----------------------------------------------------------------------------------------
 // Make each element the maximum of it's neighbours (for growing the fatigue map)
 //----------------------------------------------------------------------------------------
-void BloomImgMap(ImgMap_t * src)
+void BloomImgMap(ImgMap_t * src, ImgMap_t * dst)
 {
 	int w = src->w;
 	int h = src->h;
-	
-	// Bloom horizontally
+
+	// Bloom vertically while copying to dst array
 	for (int r=0;r<h;r++){
 		int * row = src->values+src->w*r;
+		int * prevrow, *nextrow;
+		prevrow = src->values+src->w*(r-1);
+		if (r ==0) prevrow = src->values;
+		
+		nextrow = src->values+src->w*(r+1);
+		if (r >= h-1) nextrow = row;
+
+		int * dstrow = dst->values+src->w*r;
+		
+		for (int c=0;c<w;c++){
+			int nv = row[c];
+			if (nv < prevrow[c]) nv = prevrow[c];
+			if (nv < nextrow[c]) nv = nextrow[c];
+			dstrow[c] = nv;
+		}
+	}
+
+	// Bloom horizontally in place
+	for (int r=0;r<h;r++){
+		int * row = dst->values+src->w*r;
 		
 		int pv = 0;
 		int c;
@@ -229,43 +283,27 @@ void BloomImgMap(ImgMap_t * src)
 		}
 		if (row[c] < pv) row[c] = pv;
 	}
-	
-	// Bloom vertically
-	int prevrow[w];
-	memset(prevrow, 0, sizeof(prevrow));
 
-	int * nextrow = src->values;
-	for (int r=0;r<h;r++){
-		int * row = src->values+src->w*r;
-		if (r < h-1) nextrow = src->values+src->w*(r+1);
-		
-		for (int c=0;c<w;c++){
-			int nv = row[c];
-			if (nv < prevrow[c]) nv = prevrow[c];
-			if (nv < nextrow[c]) nv = nextrow[c];
-			prevrow[c] = row[c];
-			row[c] = nv;
-		}
-	}
 }
 
 //----------------------------------------------------------------------------------------
 // Block filter an image.  Modifies in place.
 //----------------------------------------------------------------------------------------
-void BlockFilterIntMap(ImgMap_t * src, int fw, int fh, int * pmaxv, int * pmaxr, int * pmaxc)
+int BlockFilterImgMap(ImgMap_t * src, ImgMap_t * dst, int fw, int fh, int * pmaxc, int * pmaxr)
 {
 	int w = src->w;
 	int h = src->h;
 	if (fw > w || fh > h){
 		fprintf(stderr, "filter too big\n");
-		return;
+		return 0;
 	}
 
-	// Sum horizontally.
+	// Sum horizontally and copy to dst.
 	fw -= 1;
 	for (int r=0;r<h;r++){
 		int sum=0;
 		int * row = &src->values[r*w];
+		int * dstrow = &dst->values[r*w];
 		int c;
 		for (c=0;c<fw;c++){
 			sum += row[c];
@@ -273,13 +311,13 @@ void BlockFilterIntMap(ImgMap_t * src, int fw, int fh, int * pmaxv, int * pmaxr,
 		for (c=0;c<w-fw;c++){
 			int ov = row[c];
 			sum += row[c+fw];
-			row[c] = sum;
+			dstrow[c] = sum;
 			sum -= ov;
 		}
-		for (;c<w;c++) row[c] = 0; // Clear unused columns.
+		for (;c<w;c++) dstrow[c] = 0; // Clear unused columns.
 	}
 
-	int maxr, maxc, maxv; // For maximum search.
+	int maxr, maxc, maxv; // For maximum search while doing columns.
 	maxr = maxc = maxv = 0;
 	
 	// Sum vertically.
@@ -287,14 +325,14 @@ void BlockFilterIntMap(ImgMap_t * src, int fw, int fh, int * pmaxv, int * pmaxr,
 	int sums[w];
 	memset(sums, 0, sizeof(sums));
 	for (int r=0;r<fh;r++){
-		int * row = &src->values[r*w];
+		int * row = &dst->values[r*w];
 		for (int c=0;c<w;c++){
 			sums[c] += row[c];
 		}
 	}
 	for (int r=0;r<h-fh;r++){
-		int * row = &src->values[r*w];
-		int * rowp = &src->values[(r+fh)*w];
+		int * row = &dst->values[r*w];
+		int * rowp = &dst->values[(r+fh)*w];
 		for (int c=0;c<w;c++){
 			int ov = row[c];
 			int sum = sums[c]+rowp[c];
@@ -308,24 +346,25 @@ void BlockFilterIntMap(ImgMap_t * src, int fw, int fh, int * pmaxv, int * pmaxr,
 		}
 	}
 	// Clear out unused rows.
-	memset(&src->values[(h-fh)*w],0,sizeof(src->values[0])*w*fh);
+	memset(&dst->values[(h-fh)*w],0,sizeof(dst->values[0])*w*fh);
 	
 	
 	// Return location of peak
 	printf("max of %d found at %d,%d\n",maxv,maxc,maxr);
-	if (pmaxv) *pmaxv = maxv;
-	if (pmaxr) *pmaxv = maxr;
-	if (pmaxc) *pmaxv = maxc;
+	if (pmaxr) *pmaxr = maxr;
+	if (pmaxc) *pmaxc = maxc;
+	return maxv;
 }
 
 
-/*
 
+/*
 int main()
 {
 	printf("hello\n");
 	
-	ImgMap_t * Test = MakeIntMap(30,15);
+	ImgMap_t * Test = MakeImgMap(30,15);
+	ImgMap_t * TestD = MakeImgMap(30,15);
 	Test->values[Test->w*2+1] = 1;
 	Test->values[Test->w*6+6] = 3;
 	Test->values[Test->w*11+26] = 4;
@@ -334,13 +373,13 @@ int main()
 	Test->values[Test->w*14+29] = 4;
 	ShowImgMap(Test,1);
 
-	BloomImgMap(Test);
+	BloomImgMap(Test, TestD);
 	printf("Bloomed map:\n");
-	ShowImgMap(Test,1);
+	ShowImgMap(TestD,1);
 
-	BlockFilterIntMap(Test, 3,4, NULL, NULL, NULL);
+	BlockFilterImgMap(TestD, 3,4, NULL, NULL, NULL);
 	printf("Block filtered map:\n");
-	ShowImgMap(Test,1);
+	ShowImgMap(TestD,1);
 	
 }
 */
