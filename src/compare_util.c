@@ -221,11 +221,11 @@ ImgMap_t * MakeImgMap(int w,int h)
 void ShowImgMap(ImgMap_t * map, int divisor)
 {
 	int w = map->w;
-    putchar(' ');
-	for (int c=0;c<map->w;c++) printf("%2d",c%10);
-	printf("\n");
+    fprintf(Log," ");
+	for (int c=0;c<map->w;c++) fprintf(Log,"%2d",c%10);
+	fprintf(Log,"\n");
 	for (int r=0;r<map->h;r++){
-		putchar(r%10 == 0 ? '=' : '|');
+		fprintf(Log,"%d",r%10 == 0 ? '=' : '|');
 		for (int c=0;c<map->w;c++){
 			const char LowDigits[20] = "   - = 3 4~5~6~7=8=9";
 			int v = map->values[r*w+c]/divisor;
@@ -235,7 +235,7 @@ void ShowImgMap(ImgMap_t * map, int divisor)
                 fprintf(Log,"%2d",v <= 99 ? v : 99);
             }
 		}
-		printf("%c\n",r%10 == 0 ? '=' : '|');
+		fprintf(Log,"%c\n",r%10 == 0 ? '=' : '|');
 	}
 }
 
