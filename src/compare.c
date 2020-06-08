@@ -290,7 +290,7 @@ static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold)
 	static ImgMap_t * DiffScaled = NULL;
 	static ImgMap_t * DiffScaledBf = NULL;
     static ImgMap_t * Fatigue = NULL;
-	//static ImgMap_t * FatigueBl = NULL;
+	static ImgMap_t * FatigueBl = NULL;
 	
 	// Allocate working arrays if necessary.
     if (DiffScaled == NULL){
@@ -300,7 +300,7 @@ static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold)
 		DiffScaled = MakeImgMap(widthSc, heightSc);
 		DiffScaledBf = MakeImgMap(widthSc, heightSc);
         Fatigue = MakeImgMap(widthSc, heightSc);
-		//FatigueBl = MakeImgMap(widthSc, heightSc);
+		FatigueBl = MakeImgMap(widthSc, heightSc);
     }else{
         if (widthSc != ROOF(DiffVal->w) || heightSc != ROOF(DiffVal->h)){
             fprintf(stderr, "image size changed, error!");
@@ -355,7 +355,7 @@ static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold)
         }
         FatigueAverage = FatigueAverage/(heightSc*widthSc); // Divide by array size to get average.
         
-        // Show fatigue map from time to time.
+        // Print fatigue map to log from time to time.
         if (Verbosity > 1 || (FatigueAverage > 50 && SinceFatiguePrint > 60)){
             // Print the fatigure array every minuts if there is stuff in it.
             fprintf(Log, "Fatigue map (%d x %d) sum=%d<small>\n", widthSc, heightSc, FatigueAverage);
@@ -365,20 +365,15 @@ static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold)
         }
         SinceFatiguePrint++;
     
-        // Subtract out motion fatigue
+		// Subtract out motion fatigue
+		BloomImgMap(Fatigue, FatigueBl); // Use max of cell and eight neighbours for motion fatigue.
+		//BloomImgMap(FatigueBl, FatigueBl2); // Use max of cell and eight neighbours for motion fatigue.
+		
         for (int row=0;row<heightSc;row++){
             for (int col=0;col<widthSc;col++){
-                int ds, nFatM;
-                nFatM = Fatigue->values[row*widthSc+col];
-                // Look for largest fatigue also among largest 4 neighbours to use.
-                // Helps address laundry flapping in the wind, sometimes flapping further.
-                if (col > 0         && nFatM < Fatigue->values[row*widthSc+col-1]) nFatM = Fatigue->values[row*widthSc+col-1];
-                if (col < widthSc   && nFatM < Fatigue->values[row*widthSc+col+1]) nFatM = Fatigue->values[row*widthSc+col+1];
-                if (row > 0         && nFatM < Fatigue->values[(row-1)*widthSc+col]) nFatM = Fatigue->values[(row-1)*widthSc+col];
-                if (row <heightSc-1 && nFatM < Fatigue->values[(row+1)*widthSc+col]) nFatM = Fatigue->values[(row+1)*widthSc+col];
-                
-                ds = DiffScaled->values[row*widthSc+col];
-                ds -= nFatM*3;
+                int ds, FatM;
+                FatM = FatigueBl->values[row*widthSc+col];
+                ds = DiffScaled->values[row*widthSc+col] - FatM*3;
                 if (ds < 0) ds = 0;
                 DiffScaled->values[row*widthSc+col] = ds;
             }

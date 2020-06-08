@@ -350,7 +350,7 @@ int BlockFilterImgMap(ImgMap_t * src, ImgMap_t * dst, int fw, int fh, int * pmax
 	
 	
 	// Return location of peak
-	printf("max of %d found at %d,%d\n",maxv,maxc,maxr);
+	//printf("max of %d found at %d,%d\n",maxv,maxc,maxr);
 	if (pmaxr) *pmaxr = maxr;
 	if (pmaxc) *pmaxc = maxc;
 	return maxv;
