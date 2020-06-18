@@ -63,36 +63,3 @@ From a browser on another computer, go to this URL
     http://192.168.0.106/view.cgi
 
 
------------------------------------------------------------
-Addigional setup notes (to myself)
------------------------------------------------------------
-Setting up samba manually:
-  apt-get install samba
-  Add this to the end of /etc/samba/smb.conf:
-	[pi]
-	comment = picture share
-	valid users = pi
-	path = /home/pi
-	browsable = yes
-	read only = no
-  create samba user with this command:
-	smbpasswd -a pi
-
-Configure auto start and auto cleanup
-  Run crontab -e, put the following at the end of the file
-	47 10,22 * * * /home/pi/imgcomp/free_up_space
-	@reboot imgcomp/imgcomp &
-
-Configure static ip
-    sudo vim /etc/dhcpcd.conf
-
-
-Other useful things to install
-    vim          Text editor I like to use.
-    jhead        Show exif metadata
-    fbi          View images on console.
-    jp2a         Display jpeg as ascii
-    imagemagick  Needed for video mode mode hack.
-    gpac         This installs the untility "mp4box".  Needed for video mode hack.
-    cifs utils.  For mounting windows or samba shares as file systems.
-                 Example: mount -t cifs -o username=pi,password=mine,dir_mode=0777,file_mode=0777 //192.168.0.10/pi p

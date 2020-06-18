@@ -129,15 +129,18 @@ this value is highly dependent on image resolution.  Change magnitudes peak out
 around 500 because of the change magnitude is calculated over a limited size region.
 
 <div class="p">fatigue</div>
-Motion fatigue time constant.  Imgcomp will make areas with repeated motion less
-senstitive to avoid triggering on things moving in the wind such as flags or vegetation.
-This feature is on by default.  Set this to zero to turn off motion fatigue.
+Motion fatigue time constant, default exponential decay averaging with a 30 image
+time-constant.  Imgcomp will make areas with
+repeated motion less senstitive to avoid triggering on things moving in the wind
+such as flags or vegetation.  This feature is on by default.  Set this to zero
+to turn off motion fatigue.
 
 <div class="p">spurious</div>
 Set to '1' for spurious detection on, '0' for spurious detection off.  Default off.
-Spurious detection ignores any changes where the images before and after the image
-are identical.  This ignores single image events, such as an insect flying past
-the lens.  Changes that do not return to the previous image will not be ignored.
+Spurious detection ignores any changes where the images before and after an image
+with a chane in it are identical.  This ignores single image events, such as an
+insect flying past the camera.  Changes that do not return to the previous image
+will not be ignored.
 
 <div class="p">timelapse</div>
 Specifies a time-lapse interval, in seconds.  For example "tl=600" will cause imgcomp

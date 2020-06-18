@@ -32,8 +32,9 @@ it will not trigger in the dark.
 
 <h2>What imgcomp does not do</h2>
 <li>Not for battery powered application.  It uses too much power.
-<li>Not video centric (but has a video mode hack)
-<li>Does not work with USB web cameras (frame rate too low, cameras too unreliable)
+<li>Not video centric (if you want video, use motionpi instead)
+<li>Does not work with USB web cameras (I have not found a sufficiently
+     reliable way to get a series of still frames from webcams)
 <li>Is not for people unfamiliar with using Linux from the command line.
 <p>
 <b>
@@ -45,47 +46,45 @@ for pointers.  Sorry, I do not have time to teach you</b>
 
 <h2>How imgcomp works</h2>
 Imgcomp runs the raspberry pi camera capture program "raspistill" to capture
-still pictures every second, but can go up to 3 frames per second.  Images are
-captured to a ram disk.  Imgcomp then reads the images, and if it detects
-a change from one image to the next, copies the image
-to a more permanent directory in flash, organized by time and date.  The file date of
+still jpeg images every second.  With burst mode (-bm option in raspistill),
+and camera module version 1, up to 4 images can be captured per second.
+Newer camera modules are slower.  Images could potentially come from different
+sources.  I have experimented with using a webcam to capture still images, but
+didn't find a sufficiently reliable still image capture solution to use with webcams.
+My brother uses it with <a href="rtsp_cams.html">images captured from RTSP cameras</a>
+<p>
+Images are captured to a ram disk (to reduce flash card wear).  Imgcomp reads
+the images, and if it detects a change from one image to the next, copies the image
+to flash for safe keeping, organized by time and date.  The file date of
 the original image is used for the time stamp, so organizing is still correct even
 if images are analyzed after the fact.
 <p>
-Imgcomp will occasionally restart rapsistill if the exposure has changed by too
-much because raspistill will not make exposure adjustments during a sequence.
-Raspistill sometimes stalls and stops taking pictures for unknown reasons.
-When imgcomp stops seeing new images, it will  restart raspistill.
+Imgcomp will optionally occasionally restart rapsistill if the exposure has changed by too
+much because if using burst mode with raspistill (for higher frame rates), 
+raspistill will not make exposure adjustments during a sequence.
+Raspistill can also stalls and stops taking pictures for unknown reasons.
+When imgcomp detects this, it will restart raspistill.
 <p>
-Imgcomp tries to differentiate between important and unimportant changes.  Changes
-that are localized to part of the image are more important than changes that
-happen to the whole image.  Slow changes (such as clouds moving in) tend to be ignored.
+Imgcomp tries to differentiate between important and unimportant changes.  Imgcomp
+looks for localized changes in the image from one image to the next.  Imgcomp also
+has the ability to ignore or emphasize specified regions during comparison.
+Imgcomp also has a "motion fatigue" feature that makes it ignore changes
+in parts of an image that are changing a lot over time.  This feature is used to avoid
+triggering too often on things swaying in the wind.
+
+<h2>Obtaining imgcomp</h2>
+You can clone the imgcomp source tree from github using this command
+<p>
+&nbsp; <span class="c">git clone https://github.com/Matthias-Wandel/imgcomp</span><p>
+<p>
 
 <h2>Compiling imgcomp</h2>
+Please see <a href="../setup/setting_up.txt">setting_up.txt</a>
+for how to compile and set up imgcomp.
+<p>
+The setup is broken into two make files for compiling the imgcomp program and the browse
+cgi scripts, and several setup scripts for setting up various components.
 
-It is assumed that you have raspian already installed on your Raspberry Pi.
-<p>
-I do not have a binary distribution for imgcomp.  Before using imgcomp, you will have
-to compile it.  The compiler is already included in the default installation of
-raspian.  If you don't know what compiling a program is, then you will not
-have much luck with other aspects of setting up imgcomp.
-<p>
-You can compile imgcomp by going into the imgcomp directory and typing:<br>
-<div class="c">make</div><br>
-This will compile imgcomp and the required library.
-<p>
-I recommend setting up imgcomp to run as user "pi" in the directory /home/pi/imgcomp<br>
-The program "raspistill" will run as user "pi", but for other accounts requires root
-privileges or messing with group permissions.  So just use the user id 'pi' and
-avoid the hassle.
-<p>
-A test version (no live capture) of imgcomp can also be compiled for Windows
-using the Microsoft Visual C compiler.  If you set up the compiler to be on
-your path, running "make.bat" from the windows command prompt will build the
-windows build.
-
-<h2>Imgcomp setup scripts</h2>
-Please see imgcomp/setup/setup-imgcomp.txt for how to set it up.
 
 
 <h2>How image detection works</h2>
@@ -94,9 +93,9 @@ resized to 1/4 size.  (you can also specify 1/2 or 1/8 scaling, but I have only 
 1/4 myself).  Scaling eliminates pixel noise and makes it less sensitive
 to very subtle shifts in the image.
 <p>
-Next, average brightness is computed for both images and noamalization (scaling) values
-computed for both.  After that, brightness and colour differences are computed for each pixel of the
-image.  A histogram of change size is constructed in memory.
+Next, average brightness is computed for both images and normalization (scaling) values
+computed for both.  After that, brightness and colour differences are computed for each pixel
+of the image.  A histogram of change size is constructed in memory.
 <p>
 It is assumed a typical change only affects one third of the image, so a difference threshold
 is computed from the histogram based on that.  Change magnitudes are computed
@@ -108,12 +107,11 @@ This window is computed from a difference map further reduced by 4x, and the win
 This windowing technique biases detection to clustered changes, which makes it less sensitive
 to distributed changes such as snowflakes, rainfall, or grasses waving in the wind.
 <p>
-Based on the maximum window found, a global "difference" value is calculated.  This threshold
+Based on the maximum window found, an overall "difference" value is calculated.  This threshold
 is compared to the sensitivity setting.  If the change is above the specified sensitivity
 threshold, the difference is considered significant and the image, as well as the one
 preceding it are saved.
 <p>
-<h2>Spurious change ignore</h2>
 Imgcomp occasionally false-triggers if an insect or a bird flies past the camera.
 This typically shows up in just one image frame, whereas changes of interest are usually
 across several frames.  Use the option "spurious=1" in the imgcomp.conf file
