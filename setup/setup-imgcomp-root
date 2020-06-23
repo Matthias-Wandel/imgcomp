@@ -1,0 +1,33 @@
+#! /bin/bash
+# Parts of setup that must be run as root.
+
+if [ "$EUID" -ne 0 ]
+    then echo "Please run this script as root"
+    exit
+fi
+
+# setup ramdisk (this is where we aquire images into before analyzing them, to avoid flash wear)
+if [ -d /ramdisk ]; then
+	echo "    ramdisk mount point already exists"
+else
+	echo "making /ramdisk mount point"
+	sudo mkdir /ramdisk
+fi
+
+if grep -q "/ramdisk" /etc/fstab; then
+	echo "    fstab already contains entry for ramdisk"
+else
+	echo "Adding ramdisk entry to fstab"
+	echo "tmpfs   /ramdisk        tmpfs   nodev,nosuid,size=20M   0       0" | sudo tee -a  /etc/fstab > /dev/null
+	sudo mount /ramdisk
+fi
+
+
+# configure apache2
+echo "copying apache2 configuration file, enabling CGI"
+sudo cp 000-default.conf /etc/apache2/sites-available
+sudo ln -s -f ../mods-available/cgi.load /etc/apache2/mods-enabled/cgi.load
+
+# Restart apache2 to take new configuration
+echo "Restarting apache2"
+sudo service apache2 restart

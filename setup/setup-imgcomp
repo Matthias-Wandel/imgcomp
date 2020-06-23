@@ -1,9 +1,44 @@
 #! /bin/bash
-# This script setups up imgcomp to run at startup
-# It is assumed that setup-imgcomp has already been run.
+# This script setups up imgcomp, but without starting it at boot
+# For it to run at boot, plase run setup-imgcomp-autorun after this script
 # This script assumes imgcomp is in /home/pi/imgcomp
-
 # Make sure the camera is enabled
+
+if [ "$EUID" -eq 0 ]
+    then echo "Please do NOT run this sript as root"
+    exit
+fi
+
+if grep -q "start_x\=1" /boot/config.txt; then
+	echo "    camera module is already enabled"
+else	
+	echo "camera is not enabled."
+    echo "Run raspi-config to enable it under 'Interfacing Options'"
+	exit 1
+fi
+
+
+# Create new web root directory.  These two commands must NOT run as root.
+echo "Make directories for apache2"
+mkdir -p /home/pi/www
+mkdir -p /home/pi/images
+ln -s -f ../images /home/pi/www/pix
+
+# Make sure an imgcomp.conf configuration file exists
+if [ -e ../../imgcomp.conf ] ; then
+	echo "    imcomp.conf file aready in /home/pi"
+else
+	echo "copy imcomp.conf.example to /home/pi/imgcomp.conf"
+	cp -a ../conf-examples/imgcomp.conf.example ~/imgcomp.conf
+fi
+
+# Make sure a browse configuration file exists
+if [ -e ../../browse.conf ] ; then
+	echo "    browse.conf file aready in /home/pi"
+else
+	echo "copy browse.conf.example to /home/pi/www/browse.conf"
+	cp -a ../conf-examples/browse.conf.example /home/pi/www/browse.conf
+fi
 
 if [ ! -f ../imgcomp ]; then
 	echo "Building imgcomp first."
@@ -13,35 +48,18 @@ if [ ! -f ../imgcomp ]; then
     cd setup
 fi
 
-if grep -q "start_x\=1" /boot/config.txt; then
-	echo "    camera module is already enabled"
-else	
-	echo "camera is not enabled."
-    echo "Run raspi-config to it under 'Interfacing Options'"
-	exit 1
+if [ ! -f ../browse/view.cgi ]; then
+	echo "Compiling imcomp/browse"
+	echo ""
+	cd ../browse
+	make
+fi	
+
+if [ ! -d "/ramdisk" ]; then
+	echo 
+	echo "You still need to run sudo setup-imgcomp-sudo"
 fi
 
-# Make sure a configuration file exists
-if [ -e ../../imgcomp.conf ] ; then
-	echo "    imcomp.conf file aready in /home/pi"
-else
-	echo "copy imcomp.conf.example to /home/pi/imgcomp.conf"
-	cp -a ../conf-examples/imgcomp.conf.example ~/imgcomp.conf
-fi
 
-if [ -d /ramdisk ]; then
-	echo "    ramdisk mount point already exists"
-else
-	echo "making /ramdisk mount point"
-	sudo mkdir /ramdisk
-fi
-
-if grep -q "/ramdisk" /etc/fstab; then
-	echo "    fstab already contains entry for ramdisk"
-else
-	echo "Adding ramdisk entry to fstab"
-	echo "tmpfs   /ramdisk        tmpfs   nodev,nosuid,size=20M   0       0" | sudo tee -a  /etc/fstab > /dev/null
-	sudo mount /ramdisk
-fi
 
 

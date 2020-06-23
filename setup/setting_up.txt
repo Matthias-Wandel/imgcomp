@@ -8,14 +8,18 @@ either by git cloning it or by unzipping the archive.
 Make sure you can sudo.  Type:
   sudo whoami
 
-You may be prompted for your password.  It sould print "root" afterwards.
+You may be prompted for your password.  It sould print "root".
 
 Start setting things up:
-  cd imgcomp/setup
+  cd ~/imgcomp/setup
   ./install-packages
+  
 Optionally install additional packages (useful but not necessary)
   ./install-packages-extra
 
+Configure ramdisk and apache2 (this part needs to be run as root)
+  cd ~/imgcomp/setup
+  sudo ./setup-imgcomp-sudo
 
 Configure build imgcomp, configure imgcomp, make ramdisk
   cd ~/imgcomp/setup
@@ -34,18 +38,9 @@ If there is motion, you will see lines that look roughly like this:
 These images will be saved in the ~/images directory.
         
 
-if you want to have imgcomp automatically start at startup
-do the following
-  cd ~/imgcomp/setup
-  ./setup-imgcomp-autorun
-
 -----------------------------------------------------------
 HTML based image viewing:
-Configure apache2 and compile the viewing program.
 -----------------------------------------------------------
-Configure web server and make directories
-  cd ~/imgcomp/setup
-  ./setup-browsing
 
 Determine your Pi's IP address (I assume you already configured
 it to run on your WIFI or plugged it into your LAN)
