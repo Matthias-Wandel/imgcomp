@@ -17,13 +17,14 @@ Start setting things up:
 Optionally install additional packages (useful but not necessary)
   ./install-packages-extra
 
-Configure ramdisk and apache2 (this part needs to be run as root)
-  cd ~/imgcomp/setup
-  sudo ./setup-imgcomp-sudo
-
-Configure build imgcomp, configure imgcomp, make ramdisk
+Build imgcomp and set it up
   cd ~/imgcomp/setup
   ./setup-imgcomp
+
+Run setup script that needs to be run as root (sets up apache2, makes ramdisk)
+  cd ~/imgcomp/setup
+  sudo ./setup-imgcomp-root
+
   
 Now try running imgcomp
   cd ~

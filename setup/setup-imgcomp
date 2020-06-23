@@ -22,7 +22,7 @@ fi
 echo "Make directories for apache2"
 mkdir -p /home/pi/www
 mkdir -p /home/pi/images
-ln -s -f ../images /home/pi/www/pix
+ln -sTf ../images /home/pi/www/pix
 
 # Make sure an imgcomp.conf configuration file exists
 if [ -e ../../imgcomp.conf ] ; then
@@ -33,11 +33,11 @@ else
 fi
 
 # Make sure a browse configuration file exists
-if [ -e ../../browse.conf ] ; then
-	echo "    browse.conf file aready in /home/pi"
+if [ -e ~/www/browse.conf ] ; then
+	echo "    browse.conf file aready in www directory"
 else
 	echo "copy browse.conf.example to /home/pi/www/browse.conf"
-	cp -a ../conf-examples/browse.conf.example /home/pi/www/browse.conf
+	cp -a ../conf-examples/browse.conf.example ~/www/browse.conf
 fi
 
 if [ ! -f ../imgcomp ]; then
@@ -53,10 +53,10 @@ if [ ! -f ../browse/view.cgi ]; then
 	echo ""
 	cd ../browse
 	make
-fi	
+fi
 
 if [ ! -d "/ramdisk" ]; then
-	echo 
+	echo
 	echo "You still need to run sudo setup-imgcomp-sudo"
 fi
 
