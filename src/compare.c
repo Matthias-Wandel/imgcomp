@@ -10,6 +10,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <memory.h>
+#include <time.h>
 #include "imgcomp.h"
 #include "config.h"
 

@@ -8,6 +8,7 @@
 #include <ctype.h>		// to declare isupper(), tolower() 
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #include "imgcomp.h"
 #include "config.h"

@@ -1,42 +1,34 @@
 //----------------------------------------------------------------------------------
-// Module for sending UDP notifcations to stepper program, 
+// Module for sending UDP notifcations to stepper program,
 // for aming heater, fan, or cap shooter at kids and squirrels.
 //----------------------------------------------------------------------------------
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <linux/net.h>
+#include <netdb.h>
+#include <unistd.h>
+#include <memory.h>
+#include <sys/select.h>
+#include <time.h>
+
 #include "imgcomp.h"
-
-#ifdef _WIN32
-    #define WIN32_LEAN_AND_MEAN // To keep windows.h bloat down.    
-    #ifdef OLD_WINSOCK
-        #include <winsock.h>
-    #else
-        #include <winsock2.h>
-    #endif
-    #include <conio.h>
-#else
-    #include <sys/types.h>
-    #include <sys/socket.h>
-    #include <netinet/in.h>
-    #include <arpa/inet.h>
-    #include <linux/net.h>
-    #include <netdb.h>
-    #include <unistd.h>
-    #include <memory.h>
-    typedef unsigned char BYTE;
-    typedef unsigned char UCHAR;
-    typedef unsigned short USHORT;
-    typedef unsigned long ULONG;
-    typedef int SOCKET;
-    typedef int BOOL;
-    #define FALSE 0
-    #define TRUE 1
-    #define SOCKET_ERROR -1
-    #define INVALID_SOCKET -1
-    typedef fd_set FD_SET;
-    typedef struct timeval TIMEVAL;
-#endif
-
+typedef unsigned char BYTE;
+typedef unsigned char UCHAR;
+typedef unsigned short USHORT;
+typedef unsigned long ULONG;
+typedef int SOCKET;
+typedef int BOOL;
+#define FALSE 0
+#define TRUE 1
+#define SOCKET_ERROR -1
+#define INVALID_SOCKET -1
+typedef fd_set FD_SET;
+typedef struct timeval TIMEVAL;
+#define h_addr h_addr_list[0]
 
 
 #define MAGIC_ID 0xf581     // Magic value to identify pings from this program.
@@ -51,7 +43,7 @@ typedef struct {
     int xpos;
     int ypos;
     int IsAdjust;
-	int Motion;
+    int Motion;
 }Udp_t;
 
 //-------------------------------------------------------------------------------------
@@ -69,17 +61,17 @@ void SendUDP(int x, int y, int level, int motion)
     int wrote;
     int datasize;
     Udp_t Buf;
-    
+
     if (!dest.sin_port){
         fprintf(stderr, "UDP not initialized\n");
-		return;
+        return;
     }
-    
+
     memset(&Buf, 0, sizeof(Buf));
 
     Buf.Ident = UDP_MAGIC;
     Buf.Level = level;
-	Buf.Motion = motion;
+    Buf.Motion = motion;
     Buf.xpos = x;
     Buf.ypos = y;
     Buf.IsAdjust = 0;
@@ -149,17 +141,17 @@ int InitUDP(char * HostName)
         dest.sin_family = AF_INET;
     }
 
-    dest.sin_port = htons(PortNum); 
+    dest.sin_port = htons(PortNum);
 
     //-------------------------------------------------------------------
     // Open socket for reception of regular UDP packets.
     {
         struct sockaddr_in local;
 
-    	local.sin_family = AF_INET;
-	    local.sin_addr.s_addr = INADDR_ANY;
+        local.sin_family = AF_INET;
+        local.sin_addr.s_addr = INADDR_ANY;
 
-      	local.sin_port = htons(PortNum+2);
+        local.sin_port = htons(PortNum+2);
         sockUDP = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 
         if (sockUDP == INVALID_SOCKET){
@@ -167,13 +159,13 @@ int InitUDP(char * HostName)
             exit(-1);
         }
 
-    	if (bind(sockUDP,(struct sockaddr*)&local,sizeof(local) ) == SOCKET_ERROR) {
-    	    #ifdef _WIN32
+        if (bind(sockUDP,(struct sockaddr*)&local,sizeof(local) ) == SOCKET_ERROR) {
+            #ifdef _WIN32
                 int err;
                 err = WSAGetLastError();
                 if (err != WSAEADDRINUSE){
-    		        perror("bind() failed with error");
-            		WSACleanup();
+                    perror("bind() failed with error");
+                    WSACleanup();
                     exit(-1);
                 }else{
                     printf("Listen port already in use\n");
@@ -182,7 +174,7 @@ int InitUDP(char * HostName)
                 perror("bind failed");
                 exit(-1);
             #endif
-    	}
+        }
     }
 
     return 0;
