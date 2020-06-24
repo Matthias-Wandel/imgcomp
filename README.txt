@@ -4,7 +4,7 @@ It serves a similar purpose as the software "motioneye", but operates on still f
 instead of video.  This makes for much better image detail, but frame rate is at
 best 4 fps with a v1 camera module (v2 and hq modules are slower)
 
-Images are initially captured to ramdisk to minimize flash ware, then analyzed and
+Images are initially captured to ramdisk to minimize flash wear, then analyzed and
 if significant, saved to flash.
 
 ------------------------------------------------------------------------------
@@ -16,9 +16,11 @@ There is also a "docs" directory with more information
 
 Assumed directory structure:
 ~/imgcomp/...           where imgcomp source files live.
-~/imgcomp.conf          config file, imgcomp should run in this directory (typing imgcomp/imgcomp to run)
+~/imgcomp.conf          configuration file, imgcomp should run in this directory
+						(typing imgcomp/imgcomp to run)
 ~/images/               Root directory for where the images go.
-~/images/200204/        Root for pictures of Feb 4 2020 (one dir for each day, named YYMMDD
+~/images/200204/        Root for pictures of Feb 4 2020 (one dir for each day,
+                        named YYMMDD
 ~/images/200204/13/     Pictures for 1 pm to 2 pm for Feb 4 2020
 ~/images/200204/13/0204-131445 0494.jpg
                         Picture taken Feb 4 2020 at 13:14:45, change level 494
@@ -31,7 +33,7 @@ Assumed directory structure:
 ~/www/wait_change.cgi
 ~/www/showpic.js        Also dropped here on compiling viewing program                        
 ~/www/pix/              links to ../../images (softlink)
-~/www/browse.conf       config file, used for setting local holidays
+~/www/browse.conf       configuration file, used for setting local holidays
 
 Note that imgcomp can be configured for different directory structures,
 but the html browser must use the above directory structure.
@@ -44,9 +46,11 @@ To use imgcomp, you must compile it.
 There are sample configuration files in imgcomp/conf-examples
 Imgcomp uses raspistill to dump files into /ramdisk (which is a ram disk)
 Then reads and compares these files, copies them to ~/saved/.... if they
-contain relevant changes.  In the video mode hack, it looks for video files
-in /ramdisk/vid and uses ffmpeg to extract stills to /ramdisk/tmp
-then uses those files as input.
+contain relevant changes.
+
+In the video mode hack, it looks for video files in /ramdisk/vid and uses
+ffmpeg to extract stills to /ramdisk/tmp then uses those files as input.
+But if you want video, use the motionpi software instead.
 
 Imgcomp uses the EXIF date in the file to figure out when the photos were
 taken (not sure offhand if it will fall back to file date or current
@@ -83,7 +87,8 @@ The main viewing program is "view.cgi", which does most of the work.
 There is also the "tb.cgi" which is used to generate thumbnails on the fly,
 very fast using libjpeg's built in undersampling.
 
-wait_change.cgi is used for realtime to wait for a significant enough change.
+wait_change.cgi is used for realtime.html to wait for a significant enough
+change.  
 showpic.js is the javascript code for flipping through the images.
 
 Local holidays can be set in the browse.conf file in the format YYMMDD.
