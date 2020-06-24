@@ -1,7 +1,16 @@
+Imgcomp makes motion triggered timelapses using a Raspberry Pi and camera module.
 
-Setting up imgcomp
-Please see setup/setting_up.txt for instructions on 
-which scripts to run to set up.
+It serves a similar purpose as the software "motioneye", but operates on still frames
+instead of video.  This makes for much better image detail, but frame rate is at
+best 4 fps with a v1 camera module (v2 and hq modules are slower)
+
+Images are initially captured to ramdisk to minimize flash ware, then analyzed and
+if significant, saved to flash.
+
+------------------------------------------------------------------------------
+
+Please see setup/setting_up.txt for how to set up.
+There is also a "docs" directory with more information
 
 ------------------------------------------------------------------------------
 
@@ -21,7 +30,7 @@ Assumed directory structure:
 ~/www/realtime.html
 ~/www/wait_change.cgi
 ~/www/showpic.js        Also dropped here on compiling viewing program                        
-~/www/pix/              Root of the pictures (a soft link to ~/images)
+~/www/pix/              links to ../../images (softlink)
 ~/www/browse.conf       config file, used for setting local holidays
 
 Note that imgcomp can be configured for different directory structures,
@@ -30,8 +39,8 @@ but the html browser must use the above directory structure.
 ------------------------------------------------------------------------------
 
 IMGCOMP PROGRAM
+
 To use imgcomp, you must compile it.  
-After unpacking it on a Raspberry Pi, type "make" in the imgcomp directory.
 There are sample configuration files in imgcomp/conf-examples
 Imgcomp uses raspistill to dump files into /ramdisk (which is a ram disk)
 Then reads and compares these files, copies them to ~/saved/.... if they
@@ -50,11 +59,6 @@ useful to me.  Also read file "imgcomp/setup/setting_up.txt"
 ------------------------------------------------------------------------------
 
 BROWSING PROGRAM
-To compile the web still image browser, go into imgcomp/browse and type
-"make". The makefile automatically copies the compiled CGI programs into
-the directory "../../www". It sets the "setuid bit" for view.cgi so that
-it runs as user "pi".  Thus when "saving" files to the saved directory,
-Linux file ownership remains consistent.
 
 The browse program assumes images are stored in the www directory under
 "pix", with a directory for each day, therein a directory for each hour.
@@ -84,10 +88,6 @@ showpic.js is the javascript code for flipping through the images.
 
 Local holidays can be set in the browse.conf file in the format YYMMDD.
 There is a sample configuration file in imgcomp/conf-examples.
-
-------------------------------------------------------------------------------
-
-There is also the "docs" directory containing more documents.
 
 ------------------------------------------------------------------------------
 
