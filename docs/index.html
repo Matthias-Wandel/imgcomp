@@ -8,7 +8,7 @@
 </style></head>
 
 <b>See also: <a href="config.html">Imgcomp configuration parameters</a>, &nbsp;
-<a href="http://woodgears.ca/imgcomp/diffmap.html">Imgcomp detection regions</a></b>
+<a href="diffmap.html">Imgcomp detection regions</a></b>
 <p>
 
 <h2>What is imgcomp for?</h2>
@@ -42,7 +42,7 @@ If you aren't comfortable editing configuration files or running a makefile,
 before asking me questions,
 get very familiar with linux.  This might take you a few months of study.
 There is plenty about learning linux on the internet, please don't ask me
-for pointers.  Sorry, I do not have time to teach you</b>
+for pointers.  Sorry, I don't have time to teach you</b>
 
 <h2>How imgcomp works</h2>
 Imgcomp runs the raspberry pi camera capture program "raspistill" to capture
@@ -72,20 +72,15 @@ Imgcomp also has a "motion fatigue" feature that makes it ignore changes
 in parts of an image that are changing a lot over time.  This feature is used to avoid
 triggering too often on things swaying in the wind.
 
-<h2>Obtaining imgcomp</h2>
-You can clone the imgcomp source tree from github using this command
+<h2>Obtaining imgcomp and setting it up</h2>
+You can clone the imgcomp source tree from github onto your raspberry pi using this command
 <p>
 &nbsp; <span class="c">git clone https://github.com/Matthias-Wandel/imgcomp</span><p>
 <p>
 
-<h2>Compiling imgcomp</h2>
-Please see <a href="../setup/setting_up.txt">setting_up.txt</a>
-for how to compile and set up imgcomp.
-<p>
-The setup is broken into two make files for compiling the imgcomp program and the browse
-cgi scripts, and several setup scripts for setting up various components.
-
-
+Please see <a href="../setup/setting_up.txt">imgcomp/setup/setting_up.txt</a>
+for how to compile and set up imgcomp.  The setup consist of several scripts that
+need to be run from the command line.
 
 <h2>How image detection works</h2>
 Imgcomp compares successive images.  Before doing detection, the images are 
@@ -116,6 +111,10 @@ Imgcomp occasionally false-triggers if an insect or a bird flies past the camera
 This typically shows up in just one image frame, whereas changes of interest are usually
 across several frames.  Use the option "spurious=1" in the imgcomp.conf file
 to ignore these spurious changes.
+<p>
+You can also configure the comparison algorithm to ignore certain parts of the image and be
+particularly sensitive to other areas.  For more on that, please see
+<b><a href="diffmap.html">Imgcomp detection regions</a></b>
 
 <hr>
 <b>
@@ -123,4 +122,4 @@ See also:
 <p>
 <a href="rtsp_cams.html">How to use imgcomp with RTSP (ONVIF) network cameras</a><p>
 <a href="config.html">Imgcomp configuration parameters</a><p>
-<a href="http://woodgears.ca/imgcomp/diffmap.html">Imgcomp detection regions</a><p>
+<a href="diffmap.html">Imgcomp detection regions</a><p>

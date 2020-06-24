@@ -25,6 +25,11 @@ Run setup script that needs to be run as root (sets up apache2, makes ramdisk)
   cd ~/imgcomp/setup
   sudo ./setup-imgcomp-root
 
+You also need to make sure your camera module is connected, and enabled.
+To enable your camera module run "sudo raspi-config" and enable the camera module
+under interfacing options.  All camera modules supported by the
+"raspistill" program are supported by imgcomp.
+
   
 Now try running imgcomp
   cd ~

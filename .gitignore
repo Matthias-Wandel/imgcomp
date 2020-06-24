@@ -1,8 +1,6 @@
 *.bak
-*.obj
 *.o
-*.exe
 *.pdb
-*.jpg
-.*.swp
+./*.jpg
+*.swp
 browse/*.cgi

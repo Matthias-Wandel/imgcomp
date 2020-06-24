@@ -1,13 +1,10 @@
 To do next:
-* Figure out stops on pi zero.
-* Make it work for non absolute paths / multiple instances
-* Peers server pointers
-* Make it work with webcams also.
+* Flesh out browser.cfg, use for realtime.
+* Peers server pointers (browser.cfg)
 * use canvas method instead of chracter graphics for actagrams
 
-
 Future features:
-* Calculate separate motion fatigues for luma and chroma
+* Calculate separate motion fatigues for luma and chroma (to better ignore shadows and trees)
 * glitch detection for more than one frame?
 * Option to not save pre and post event images?
 * Image save rate liminting (raise threshold when too many aquired)
