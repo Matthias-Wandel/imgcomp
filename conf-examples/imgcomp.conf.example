@@ -15,13 +15,15 @@ followdir = /ramdisk
 
 # Specify a map of which parts of the image to ignore.
 # Solid blue ares are ignored, solid red is twice as sensitive.
-# any other colour in the image is treated as normal detection area.
+# any other colour is treated as normal detection area.
+# For more on this, pelase see docs/diffmap.html
 #diffmap = "diffmap.jpg"
 
 # Turn on spurious reject (change that reverts to previous after just 1 frame)
 spurious = 1
 
-# Brightness change monitor, off by default.  For use with burst mode (-bm flag)
+# Brightness change monitor, off by default.
+# For use with burst mode (-bm flag in aquire_cmd))
 # in raspistill to restart rapsistill if brightness changed too much, because
 # burst mode does not track exposure levels.
 brmonitor = 0
