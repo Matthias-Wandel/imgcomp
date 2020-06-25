@@ -390,16 +390,17 @@ void MakeHtmlOutput(Dir_t * Dir)
         printf("(%4.1f%%) free<br>\n", (double)(sv.f_bavail*100.0/sv.f_blocks));
     }
     
-    PrintNavLinks(Dir, IsRoot);
-    puts("<br>");
-
     int SubdirImages = 0;
     if (Directories.NumEntries){
         if (!IsSavedDir){
             printf("<b>20%.2s/%.2s/%.2s</b><br>",Dir->HtmlPath,Dir->HtmlPath+2,Dir->HtmlPath+4);
         }
+		PrintNavLinks(Dir, IsRoot);
         SubdirImages = ShowHourlyDirs(Dir->HtmlPath, IsRoot, Directories);
-    }
+    }else{
+		PrintNavLinks(Dir, IsRoot);
+	}
+    puts("<br>");
 
     if (Images.NumEntries){
         ShowThumbnailList(Dir->HtmlPath, IsSavedDir, Images);
