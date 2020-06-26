@@ -108,7 +108,7 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
         if (dir->Next[0]) printf("&nbsp;<a href='#' id='nextdir'>>></a> ",dir->Next);
         printf("\n");
     }
-    printf("<br>Actagram:\n<b><span id='actagram' style=\"font-family: courier, \'courier new\', monospace;\">Actagram here</span></b>\n");
+    printf("<br>\n<b><span id='actagram' style=\"font-family: courier, \'courier new\', monospace;\">Actagram here</span></b>\n");
 
     //printf("</center>dbg:[<span id='dbg'>xxx</span>]\n");
     // check how many characters all the filenames have in common (typically 7)

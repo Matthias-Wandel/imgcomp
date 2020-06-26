@@ -12,21 +12,30 @@ function UpdateActagram(){
     thismin_last = thismin
     flags_last = flagsstr;
 
+    act = "<canvas id='hist' width='1600' height='40' style='border:1px solid #d3d3d3;'></canvas>";
+    document.getElementById("actagram").innerHTML = act;
+
     for (a=0;a<60;a++){
         if (!(b = ActBins[a])){
-            act += "&nbsp;"; continue
+            console.log("skip: ", a);
+            continue;
         }
-        c = '-'
-        if (b>=6)c='='
-        if (b>=18)c='#'
+        if (piclist.length) {
+          min = piclist[ActNums[a]].substring(0,2);
+        }
+
         if (a==thismin){
-            act += "<b style='background-color: #b0b0ff;'>"+c+"</b>"
-        }else{
-            act += "<a href='#"+flagsstr+prefix+piclist[ActNums[a]]+".jpg"
-                + "' onclick='SetIndex("+ActNums[a]+")'>"+c+"</a>"
+            // set selected min
+            // act += "<b style='background-color: #b0b0ff;'>"+c+"</b>"
         }
+
+        var c = document.getElementById('hist');
+        var ctx = c.getContext("2d");
+        ctx.fillStyle = "#adadad";
+        ctx.fillRect(a*10+a*2, 40-b, 10, b);
+        ctx.fillText(min, a*10+a*2, 40-b);
     }
-    document.getElementById("actagram").innerHTML = "00"+act+"60"
+
 }
 NextImgUrl = ""
 flagsstr = ""
@@ -321,6 +330,9 @@ for (a=0;a<piclist.length;a++){
     else ActBins[min] = 1
     if (!ActNums[min] || piclist[a].substring(2,4) < "30") ActNums[min] = a;
 }
+console.log(piclist)
+console.log(ActBins)
+console.log(ActNums)
 
 pic_index=0
 currenthash = "x"
