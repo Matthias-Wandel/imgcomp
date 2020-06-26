@@ -84,32 +84,32 @@ time_t LastPic_mtime;
 //-----------------------------------------------------------------------------------
 static void GeometryConvert(TriggerInfo_t  * Trig)
 {
-	double x,y, magxy, mag_rad;
-	double px, py,ta;
-	double pan,tilt;
+    double x,y, magxy, mag_rad;
+    double px, py,ta;
+    double pan,tilt;
 
-	// Center-referenced coordinates.
-	x = (Trig->x-1920/2)/1920.0;
-	y = -(Trig->y-1440/2)/1920.0;
-	magxy = sqrt(x*x+y*y); // Magnitude from center.
+    // Center-referenced coordinates.
+    x = (Trig->x-1920/2)/1920.0;
+    y = -(Trig->y-1440/2)/1920.0;
+    magxy = sqrt(x*x+y*y); // Magnitude from center.
 
-	// Convert to degrees from center and correct for lens distortion
-	mag_rad = magxy * (109 + magxy*magxy * 21);
-	mag_rad = mag_rad * 3.1415/180; // Convert to radians.
+    // Convert to degrees from center and correct for lens distortion
+    mag_rad = magxy * (109 + magxy*magxy * 21);
+    mag_rad = mag_rad * 3.1415/180; // Convert to radians.
 
-	// Now convert to planar coordinates.
-	ta = tan(mag_rad);
-	px = (ta*x)/magxy; // px and py are in "screen" meters from center
-	py = (ta*y)/magxy;
-	printf("px,py = %5.2f,%5.2f  ",px,py);
+    // Now convert to planar coordinates.
+    ta = tan(mag_rad);
+    px = (ta*x)/magxy; // px and py are in "screen" meters from center
+    py = (ta*y)/magxy;
+    printf("px,py = %5.2f,%5.2f  ",px,py);
 
-	// Now convert planar coordinates to pan angle and elevation, in degrees.
-	pan = atan(px)*180/3.1415;
-	tilt = atan(py/sqrt(1+px*px))*180/3.1415;
+    // Now convert planar coordinates to pan angle and elevation, in degrees.
+    pan = atan(px)*180/3.1415;
+    tilt = atan(py/sqrt(1+px*px))*180/3.1415;
 
-	printf("Pan: %5.1f tilt:%5.1f\n",pan,tilt);
-	Trig->x = (int)(pan*10); // Return it as tenth's of a degree
-	Trig->y = (int)(tilt*10);
+    printf("Pan: %5.1f tilt:%5.1f\n",pan,tilt);
+    Trig->x = (int)(pan*10); // Return it as tenth's of a degree
+    Trig->y = (int)(tilt*10);
 }
 
 
@@ -162,10 +162,10 @@ static int ProcessImage(LastPic_t * New, int DeleteProcessed)
         }
         if (Trig.DiffLevel){
             fprintf(Log,"%4d", Trig.DiffLevel);
-			if (Trig.DiffLevel*5 >= Sensitivity){
-				fprintf(Log," (%4d,%4d)", Trig.x, Trig.y);
-			}
-			SinceMotionMs = 0;
+            if (Trig.DiffLevel*5 >= Sensitivity){
+                fprintf(Log," (%4d,%4d)", Trig.x, Trig.y);
+            }
+            SinceMotionMs = 0;
         }
 
         if (LastPics[0].DiffMag > Sensitivity){
@@ -200,7 +200,7 @@ static int ProcessImage(LastPic_t * New, int DeleteProcessed)
         }
 
         fprintf(Log,"\n");
-		SinceMotionPix += 1;
+        SinceMotionPix += 1;
 
 
         if (Trig.DiffLevel > Sensitivity && UdpDest[0]){
@@ -221,7 +221,7 @@ static int ProcessImage(LastPic_t * New, int DeleteProcessed)
             showx[xs+1] = '#';
             printf("%s %d,%d\n",showx, Trig.x, Trig.y);
 
-			GeometryConvert(&Trig);
+            GeometryConvert(&Trig);
 
             if (UdpDest[0]) SendUDP(Trig.x, Trig.y, Trig.DiffLevel, Trig.Motion);
         }
@@ -230,7 +230,7 @@ static int ProcessImage(LastPic_t * New, int DeleteProcessed)
     }
 
     if (LastPics[2].Image){
-		static int PrintFlag;
+        static int PrintFlag;
         // Third picture now falls out of the window.  Free it and delete it.
 
         if (UdpDest[0] && (SinceMotionMs > 4000 || (SinceMotionMs > 2000 && !BaselinePic.Image))){
@@ -240,13 +240,13 @@ static int ProcessImage(LastPic_t * New, int DeleteProcessed)
                 free(BaselinePic.Image);
             }
             BaselinePic = LastPics[2];
-			if (!PrintFlag){
-				printf("Baselining\n");
-				PrintFlag = 1;
-			}
+            if (!PrintFlag){
+                printf("Baselining\n");
+                PrintFlag = 1;
+            }
         }else{
             free(LastPics[2].Image);
-			if (SinceMotionMs < 1000) PrintFlag = 0;
+            if (SinceMotionMs < 1000) PrintFlag = 0;
         }
     }
 
@@ -318,7 +318,7 @@ static int DoDirectoryFunc(char * Directory, int DeleteProcessed)
             }
             continue;
         }
-		ReadExif = 0; // Only read exif for first image.
+        ReadExif = 0; // Only read exif for first image.
 
         if (ThisName[0] == 's' && ThisName[1] == 'f' && ThisName[2] >= '0' && ThisName[2] <= '9'){
             // Video decomposed files have no meaningful timestamp,
@@ -342,7 +342,7 @@ static int DoDirectoryFunc(char * Directory, int DeleteProcessed)
     FreeDir(FileNames, NumEntries); // Free up the whole directory structure.
     FileNames = NULL;
 
-	SinceMotionMs += 1000;
+    SinceMotionMs += 1000;
 
     return SawMotion;
 }
@@ -364,10 +364,11 @@ int DoDirectory(char * Directory)
     fd = inotify_init();
     if (fd < 0) perror("inotify_init");
 
-    // raspistill first writes under a temporary file name, then renames.  So the IN_CREATE
-    // event is the one to watch for.  But ffmpeg writes the files under the original name,
-    // so IN_CREATE often triggers too early, whereas IN_CLOSE_WRITE does the right thing.
-    wd = inotify_add_watch( fd, Directory, wait_close_write ? IN_CLOSE_WRITE : IN_CREATE);
+    // raspistill first writes under a temporary file name, ending with "~" then renames.
+    // IN_MOVED_TO triggers when the file is renamed to the final file name.
+    // But when using ffmpeg for the RTSP camera hack, ffmpeg writes the files under
+    // the original name, so IN_CLOSE_WRITE is needed for that.
+    wd = inotify_add_watch( fd, Directory, wait_close_write ? IN_CLOSE_WRITE : IN_MOVED_TO);
     if (wd < 0){
         fprintf(Log, "add watch failed\n");
         return 0;
@@ -382,7 +383,6 @@ int DoDirectory(char * Directory)
         // Wait for more files to appear.
         struct pollfd pfd = { fd, POLLIN, 0 };
         int ret = poll(&pfd, 1, 1100);
-        //printf("poll ret = %d\n",ret);
         if (ret < 0) {
             fprintf(Log, "select failed: %s\n", strerror(errno));
             sleep(1);
@@ -481,25 +481,25 @@ int DoDirectoryVideos(char * DirName)
             // Now should have some files in temp dir.
             Saw_motion = DoDirectoryFunc(TempDirName, 1);
             if (Saw_motion){
-				char * DstName;
-				char * Ext;
+                char * DstName;
+                char * Ext;
                 fprintf(Log,"Vid has motion %d\n", Saw_motion);
                 // Make filename, but don't copy the file.
                 DstName = BackupImageFile(VidFileName, Saw_motion,1);
 
-				Ext = strstr(DstName, ".h264");
-				if (Ext) strcpy(Ext, ".mp4"); // Change xtension to .mp4
+                Ext = strstr(DstName, ".h264");
+                if (Ext) strcpy(Ext, ".mp4"); // Change xtension to .mp4
 
-				if (DstName){
-					sprintf(FFCmd,"MP4Box -add %s \"%s\"",VidFileName, DstName);
-					errno = 0;
-					ret = system(FFCmd);
-					if (ret || errno){
-						if (errno) perror("system");
-						fprintf(Log, "Error on command %s\n",FFCmd);
-						continue;
-					}
-				}
+                if (DstName){
+                    sprintf(FFCmd,"MP4Box -add %s \"%s\"",VidFileName, DstName);
+                    errno = 0;
+                    ret = system(FFCmd);
+                    if (ret || errno){
+                        if (errno) perror("system");
+                        fprintf(Log, "Error on command %s\n",FFCmd);
+                        continue;
+                    }
+                }
             }
 
             if (FollowDir){
@@ -556,7 +556,7 @@ int main(int argc, char **argv)
     TimelapseInterval = 0;
     SaveDir[0] = 0;
     strcpy(SaveNames, "%y%m%d/%H/%m%d-%H%M%S");
-	LastPic_mtime = time(NULL); // Log names are based on this time, need before images.
+    LastPic_mtime = time(NULL); // Log names are based on this time, need before images.
 
     // Default configuration file to look for
     char *config_file = "imgcomp.conf";
