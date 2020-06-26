@@ -33,7 +33,7 @@ static Dir_t * CollectDir(char * HtmlPath, int ImagesOnly)
     Dir_t * Dir;
     VarList * Subdirs;
     VarList * Images;
-	char DirName[300];
+    char DirName[300];
 
     Dir = (Dir_t *) malloc(sizeof(Dir_t));
     memset(Dir, 0, sizeof(Dir_t));
@@ -51,50 +51,50 @@ static Dir_t * CollectDir(char * HtmlPath, int ImagesOnly)
         printf("Path string is too long\n");
         exit(0);
     }
-	strcpy(Dir->HtmlPath, HtmlPath);
+    strcpy(Dir->HtmlPath, HtmlPath);
 
-	sprintf(DirName, "pix/%s",HtmlPath);
-	CollectDirectory(DirName, Images, Subdirs, ImagesOnly? ImageExtensions:FileExtensions);
+    sprintf(DirName, "pix/%s",HtmlPath);
+    CollectDirectory(DirName, Images, Subdirs, ImagesOnly? ImageExtensions:FileExtensions);
 
 
-	// Look for previous and next.
-	if (strlen(HtmlPath) > 2){
-		char ThisDir[100];
-		VarList Siblings;
-		unsigned a;
-		int LastSlash = 0;
-		Siblings.NumEntries = Siblings.NumAllocated = 0;
-		Siblings.Entries = NULL;
+    // Look for previous and next.
+    if (strlen(HtmlPath) > 2){
+        char ThisDir[100];
+        VarList Siblings;
+        unsigned a;
+        int LastSlash = 0;
+        Siblings.NumEntries = Siblings.NumAllocated = 0;
+        Siblings.Entries = NULL;
 
-		for (a=0;HtmlPath[a] && a < 99;a++){
-			if (HtmlPath[a-1] == '/' && HtmlPath[a]) LastSlash = a;
-		}
-		memcpy(Dir->Parent, HtmlPath, LastSlash);
-		Dir->Parent[LastSlash-1] = '\0';
-		strcpy(ThisDir, HtmlPath+LastSlash);
-		a = strlen(ThisDir);
-		if (ThisDir[a-1] == '/') ThisDir[a-1] = '\0';
+        for (a=0;HtmlPath[a] && a < 99;a++){
+            if (HtmlPath[a-1] == '/' && HtmlPath[a]) LastSlash = a;
+        }
+        memcpy(Dir->Parent, HtmlPath, LastSlash);
+        Dir->Parent[LastSlash-1] = '\0';
+        strcpy(ThisDir, HtmlPath+LastSlash);
+        a = strlen(ThisDir);
+        if (ThisDir[a-1] == '/') ThisDir[a-1] = '\0';
 
-		sprintf(DirName, "pix/%s",Dir->Parent);
+        sprintf(DirName, "pix/%s",Dir->Parent);
 
-		CollectDirectory(DirName, NULL, &Siblings, NULL);
+        CollectDirectory(DirName, NULL, &Siblings, NULL);
 
-		for (a=0;a<Siblings.NumEntries;a++){
-			char * slash;
-			//printf("%s<br>\n",Siblings.Entries[a].Name);
-			slash = "";
-			if (Dir->Parent[0]) slash = "/";
-			if (strcmp(Siblings.Entries[a].Name, ThisDir) == 0){
-				if (a > 0){
-					snprintf(Dir->Previous, 200, "%.90s%.1s%.90s", Dir->Parent, slash, Siblings.Entries[a-1].Name);
-				}
-				if (a < Siblings.NumEntries-1){
-					snprintf(Dir->Next, 200, "%.90s%.1s%.90s", Dir->Parent, slash, Siblings.Entries[a+1].Name);
-				}
-			}
-		}
+        for (a=0;a<Siblings.NumEntries;a++){
+            char * slash;
+            //printf("%s<br>\n",Siblings.Entries[a].Name);
+            slash = "";
+            if (Dir->Parent[0]) slash = "/";
+            if (strcmp(Siblings.Entries[a].Name, ThisDir) == 0){
+                if (a > 0){
+                    snprintf(Dir->Previous, 200, "%.90s%.1s%.90s", Dir->Parent, slash, Siblings.Entries[a-1].Name);
+                }
+                if (a < Siblings.NumEntries-1){
+                    snprintf(Dir->Next, 200, "%.90s%.1s%.90s", Dir->Parent, slash, Siblings.Entries[a+1].Name);
+                }
+            }
+        }
 
-	}
+    }
     return Dir;
 }
 

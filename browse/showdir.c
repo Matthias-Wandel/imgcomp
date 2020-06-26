@@ -139,19 +139,19 @@ static int ShowHourlyDirs(char * HtmlPath, int IsRoot, VarList Directories)
         printf("<div class='ag'>\n");
         if (isw >= 0) printf("<span class=\"wkend\">");
         printf("<a href=\"view.cgi?%s/%s",HtmlPath, SubdirName);
-		if (SubdImages.NumEntries) printf("/");
+        if (SubdImages.NumEntries) printf("/");
         printf("\">%s:</a>\n",Directories.Entries[b].Name);
         if (isw >= 0) printf("</span>");
 
-		if (SubdImages.NumEntries){
-			printf("<small><small>(<a href=\"view.cgi?%s/%s\">",HtmlPath, SubdirName);
-			printf("%d</a>)</small></small>\n",SubdImages.NumEntries);
-			TotImages += SubdImages.NumEntries;
-		}
-		printf("<br>\n");
+        if (SubdImages.NumEntries){
+            printf("<small><small>(<a href=\"view.cgi?%s/%s\">",HtmlPath, SubdirName);
+            printf("%d</a>)</small></small>\n",SubdImages.NumEntries);
+            TotImages += SubdImages.NumEntries;
+        }
+        printf("<br>\n");
         
         ShowHourActagram(SubdImages, HtmlPath, SubdirName, IsRoot);
-		free(SubdImages.Entries);
+        free(SubdImages.Entries);
 
         printf("</div>\n");
     }
@@ -395,11 +395,11 @@ void MakeHtmlOutput(Dir_t * Dir)
         if (!IsSavedDir){
             printf("<b>20%.2s/%.2s/%.2s</b><br>",Dir->HtmlPath,Dir->HtmlPath+2,Dir->HtmlPath+4);
         }
-		PrintNavLinks(Dir, IsRoot);
+        PrintNavLinks(Dir, IsRoot);
         SubdirImages = ShowHourlyDirs(Dir->HtmlPath, IsRoot, Directories);
     }else{
-		PrintNavLinks(Dir, IsRoot);
-	}
+        PrintNavLinks(Dir, IsRoot);
+    }
     puts("<br>");
 
     if (Images.NumEntries){

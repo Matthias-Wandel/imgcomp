@@ -183,8 +183,8 @@ void ShowActagram(int all, int h24)
                 putchar(nc);
             }
             
-			if (ShowLegend) puts("<br>");
-			ShowLegend = 0;
+            if (ShowLegend) puts("<br>");
+            ShowLegend = 0;
         }
         if (daynum >= DayDirs.NumEntries){
             printf("\n");

@@ -132,18 +132,18 @@ int main()
         if (time(NULL) >= now+5) break; // Wait at most five seconds.
 
         // poll to make sure a change is ready so the following read doesn't
-		// get stuck if the log file isn't being updated.
+        // get stuck if the log file isn't being updated.
         struct pollfd pfd = { infd, POLLIN, 0 };
         int ret = poll(&pfd, 1, 1000);
         if (ret == 0){
-			// no change for one second.
+            // no change for one second.
             continue;
         }
 
         read( infd, buffer, EVENT_BUF_LEN );
 
         // the following hack is necessary because just reading from the end of the file again
-		// doesn't return anything even if the file grew since the last read.
+        // doesn't return anything even if the file grew since the last read.
         fseek(LogFile, 0, SEEK_END);
         long NewSize = ftell(LogFile);
         if (NewSize != FileSize){
@@ -168,11 +168,11 @@ int main()
     }
 
     // After 5 seconds, if nothing written to log file, its an error.
-	// If stuff was written to log file, stop regardless (so javascript returns and image refreshes anyway)
+    // If stuff was written to log file, stop regardless (so javascript returns and image refreshes anyway)
 
     if (GotBytes == 0){
-		// If more than 5 seconds without change, print error messages.
-		// Extract motion level, if it's above some threshold, call it motion (use cofig file?)
+        // If more than 5 seconds without change, print error messages.
+        // Extract motion level, if it's above some threshold, call it motion (use cofig file?)
         printf("Error! log.txt not updating.  Imgcomp not running?\n");
     }
 

@@ -34,7 +34,7 @@ typedef struct {
 struct my_error_mgr {
     struct jpeg_error_mgr pub; // "public" fields
 
-    jmp_buf setjmp_buffer;	// for return to caller
+    jmp_buf setjmp_buffer;  // for return to caller
 };
 typedef struct my_error_mgr * my_error_ptr;
 
@@ -208,7 +208,7 @@ void ScaleBrightness(MemImage_t * MemImage)
         if (medpix <= 0) break;
     }
 
-	//printf("a=%d (sat)    b=%d (med)\n",a,b);
+    //printf("a=%d (sat)    b=%d (med)\n",a,b);
 
     // If image is kind of dark, scale the brightness so that no more than 0.4% of the
     // pixels will saturate.
@@ -255,30 +255,30 @@ int main(int argc, char ** argv)
 
     char * qenv = getenv("QUERY_STRING");
 
-	if (qenv == NULL){
-		printf("No query string\n");
-		exit(0);
-	}
+    if (qenv == NULL){
+        printf("No query string\n");
+        exit(0);
+    }
 
     // Unescape %20 for space.
     char FileName[100] = "pix/";
     int a, b = 4;
 
-	for (a=0;a<100;a++){
+    for (a=0;a<100;a++){
         if (qenv[a] == '\0' || qenv[a] == '$') break;
 
-		if (qenv[a] == '%' && qenv[a+1] == '2' && qenv[a+2] == '0'){
+        if (qenv[a] == '%' && qenv[a+1] == '2' && qenv[a+2] == '0'){
             // Only unescape the %20 to ' ' for safety.
-			FileName[b++] = ' ';
-			a += 2;
-		}else{
+            FileName[b++] = ' ';
+            a += 2;
+        }else{
             if (qenv[a] == '.' && FileName[b-1] == '.'){
                 // ".." in filename not allowed.
                 exit(0);
             }
-			FileName[b++] = qenv[a];
-		}
-	}
+            FileName[b++] = qenv[a];
+        }
+    }
     FileName[b] = '\0';
 
     int ScaleBrightnessOn = 1;

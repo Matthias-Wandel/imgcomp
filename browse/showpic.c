@@ -51,7 +51,7 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
            "  a {text-decoration: none;}\n"
            "  button {-webkit-appearance: none; font-size: 20px; padding-left:9px; padding-right:8px; padding-bottom:3px;background-color:#E8E8E8;border-radius:8px;}\n"
            "  img {-webkit-user-select: none; -webkit-touch-callout: none;}\n"
-		   "</style></head>\n\n");
+           "</style></head>\n\n");
 
     printf("<center>\n");
     
@@ -69,7 +69,7 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
             IndexInto[2] = ImageName[8];
             IndexInto[3] = '\0';
         }
-		printf("<span id='this'>this</span>\n");
+        printf("<span id='this'>this</span>\n");
         printf("<button id='big' onclick=\"ShowBigClick()\">Enlarge</button>\n");
         printf("<button id='bright' onclick=\"ShowBrightClick()\">Brighten</button>\n");
         printf("<button onclick=\"ShowDetailsClick()\">Details</button>\n");
@@ -102,7 +102,7 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
                 pa = a+1;
             }
         }
-		
+        
         printf("&nbsp;");
         if (dir->Previous[0]) printf("<a href='#' id='prevdir'>&lt;&lt;</a>",dir->Previous);
         if (dir->Next[0]) printf("&nbsp;<a href='#' id='nextdir'>>></a> ",dir->Next);
@@ -110,7 +110,7 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
     }
     printf("<br>Actagram:\n<b><span id='actagram' style=\"font-family: courier, \'courier new\', monospace;\">Actagram here</span></b>\n");
 
-	//printf("</center>dbg:[<span id='dbg'>xxx</span>]\n");
+    //printf("</center>dbg:[<span id='dbg'>xxx</span>]\n");
     // check how many characters all the filenames have in common (typically 7)
     int npic = 0;
     char * Prefix = NULL;

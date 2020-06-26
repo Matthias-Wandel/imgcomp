@@ -101,8 +101,8 @@ void CollectDirectory(char * PathName, VarList * Files, VarList * Dirs, char * P
                 for (a=0;;a++){
                     int lp;
                     if (Patterns[a] == NULL){
-						break;
-					}						
+                        break;
+                    }                       
                     lp = strlen(Patterns[a]);
                     if (l > lp){
                         if (ExtCheck(entry->d_name+l-lp, Patterns[a]) == 0){
@@ -116,9 +116,9 @@ void CollectDirectory(char * PathName, VarList * Files, VarList * Dirs, char * P
         }
     }
     closedir(dirpt);
-	
+    
     if (Files) SortList(Files);
-	if (Dirs) SortList(Dirs);
+    if (Dirs) SortList(Dirs);
 }
 #else
 //----------------------------------------------------------------------------------
@@ -182,8 +182,8 @@ time_t CollectDirectory(char * PathName, VarList * Files, VarList * Dirs, char *
         if (_findnext(find_handle, &finddata) != 0) break;
     }
     _findclose(find_handle);
-	
-	if (Files) SortList(Files);
-	if (Dirs) SortList(Dirs);
+    
+    if (Files) SortList(Files);
+    if (Dirs) SortList(Dirs);
 }
 #endif

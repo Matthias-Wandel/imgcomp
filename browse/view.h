@@ -20,10 +20,10 @@ typedef struct {
 //-------------------------------------------------------------------
 // Structure for a subdirectory.  Sort of like an I-node for the directory.
 typedef struct {
-    char	HtmlPath[200]; // Path to what is pointed to.
-	char    Parent[200];
-	char    Previous[200];
-	char    Next[200];
+    char    HtmlPath[200]; // Path to what is pointed to.
+    char    Parent[200];
+    char    Previous[200];
+    char    Next[200];
     VarList   Dirs;   // List of subdirectories.
     VarList   Images; // List of Image files in this directory.
 }Dir_t;
