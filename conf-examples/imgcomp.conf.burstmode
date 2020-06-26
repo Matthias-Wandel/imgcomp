@@ -26,7 +26,7 @@ spurious = 1
 
 # Brightness change monitor, off by default.  For use with burst mode (-bm flag)
 # in raspistill to restart rapsistill if brightness changed too much, because
-# burst mode does not track exposure levels.
+# burst mode does not make exposure adjustments.
 brmonitor = 1
 
 # Where to save interesting images to
@@ -38,12 +38,12 @@ savedir = images
 savenames = %y%m%d/%H/%m%d-%H%M%S
 
 # How many seconds between images kept regardless of motion.
-timelapse = 600
+timelapse = 1800
 
 # Sensitivity.  50 would be quite senstive.  400 is relatively insensitive.
-sensitivity = 100
+sensitivity = 300
 
 # Log to file instead of console, and where to copy logs to.
 # Logging needs to be on and use /ramdisk/log.txt for realtime view mode to work.
-#logtofile = /ramdisk/log.txt
-#movelognames = images/%y%m%d/%H/Log.html
+logtofile = /ramdisk/log.txt
+movelognames = images/%y%m%d/%H/Log.html

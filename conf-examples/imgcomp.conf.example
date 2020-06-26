@@ -37,12 +37,12 @@ savedir = images
 savenames = %y%m%d/%H/%m%d-%H%M%S
 
 # How many seconds between images kept regardless of motion.
-timelapse = 600
+timelapse = 1800
 
-# Sensitivity.  50 would be quite senstive.  400 is relatively insensitive.
-sensitivity = 100
+# Sensitivity.  50 would be quite senstive.  1000 is relatively insensitive.
+sensitivity = 300
 
 # Log to file instead of console, and where to copy logs to.
 # Logging needs to be on and use /ramdisk/log.txt for realtime view mode to work.
-#logtofile = /ramdisk/log.txt
-#movelognames = images/%y%m%d/%H/Log.html
+logtofile = /ramdisk/log.txt
+movelognames = images/%y%m%d/%H/Log.html
