@@ -28,7 +28,6 @@ function UpdateActagram(){
     }
     document.getElementById("actagram").innerHTML = "00"+act+"60"
 }
-
 NextImgUrl = ""
 flagsstr = ""
 SaveResp = ""
@@ -50,15 +49,15 @@ function UpdatePix(){
         if (flagsstr != "") flagsstr = flagsstr +","
         var nch = "#"+flagsstr+prefix+piclist[pic_index]+".jpg"
         if (nch != currenthash){
-            if (nch.substring(0,4) == currenthash.substring(0,4)){
+            if (nch.substring(0,5) == currenthash.substring(0,5) || currenthash == ""){
                 // If only image# changed, don't fill up the browser history.
                 history.replaceState({}, imgname, nch)
             }else{
                 location.hash = nch
             }
             currenthash = nch
+            document.title = imgname
         }
-        document.title = imgname
         var n = prefix+piclist[pic_index];
         document.getElementById("this").innerHTML = n.substring(5,7)+":"+n.substring(7,9)+":"+n.substring(9,11)
     }
