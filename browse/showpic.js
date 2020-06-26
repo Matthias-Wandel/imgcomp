@@ -49,8 +49,15 @@ function UpdatePix(){
         if (ShowBigOn) flagsstr = flagsstr + "e";
         if (flagsstr != "") flagsstr = flagsstr +","
         var nch = "#"+flagsstr+prefix+piclist[pic_index]+".jpg"
-        if (nch != currenthash) location.hash = currenthash = nch
-            
+        if (nch != currenthash){
+            if (nch.substring(0,4) == currenthash.substring(0,4)){
+                // If only image# changed, don't fill up the browser history.
+                history.replaceState({}, imgname, nch)
+            }else{
+                location.hash = nch
+            }
+            currenthash = nch
+        }
         document.title = imgname
         var n = prefix+piclist[pic_index];
         document.getElementById("this").innerHTML = n.substring(5,7)+":"+n.substring(7,9)+":"+n.substring(9,11)
@@ -156,7 +163,7 @@ TouchDebounce = false; // Touch and mouse events arrive out of order on iPad, so
 
 function PicMouse(picX,picY,IsDown)
 {
-	DbgAdd("pm("+IsDown+")")
+    DbgAdd("pm("+IsDown+")")
     picX -= vc.offsetLeft
     picY -= vc.offsetTop
     //dbg.innerHTML = "Mouse "+picX+", "+picY+" Down="+IsDown;
@@ -214,7 +221,7 @@ function SavePicClick(){
     xhttp.onreadystatechange=function(){
         if (this.readyState==4 && this.status==200){
             SaveResp=xhttp.responseText.trim()
-			var fi = SaveResp.indexOf('Fail:')
+            var fi = SaveResp.indexOf('Fail:')
             if(fi>=0) SaveResp="<span style='color: rgb(255,0,0);'>"+SaveResp.substring(fi+5)+"</span>"
             document.getElementById("save").innerHTML=SaveResp
         }
@@ -256,7 +263,7 @@ function SizeImage()
         return;
     }
     maxw = 950; maxh = 650
-	//maxw = 600; maxh = 350
+    //maxw = 600; maxh = 350
     
     ShwW = maxw
     if (ShwW > window.innerWidth-15) ShwW = window.innerWidth-15;
@@ -286,7 +293,7 @@ function picMouseDown(e) { DbgAdd("picMD");PicMouse(e.clientX,e.clientY,1); }
 function picMouseMove(e) { DbgAdd("picMM");PicMouse(e.clientX,e.clientY,MouseIsDown); }
 function picDrag(e){
     if ((e.clientY-vc.offsetTop) < ShwH*.2) return true; // Allow dragging image out of brwser near top.
-	DbgAdd("picDrag")
+    DbgAdd("picDrag")
     PicMouse(e.clientX,e.clientY,1);
     return false;
 }
@@ -361,6 +368,6 @@ function ReadHash(){
 window.onhashchange = ReadHash
 ReadHash();
 function DbgAdd(msg){
-//	dbg = (dbg+" "+msg)
-//	document.getElementById("dbg").innerHTML = dbg
+//  dbg = (dbg+" "+msg)
+//  document.getElementById("dbg").innerHTML = dbg
 }
