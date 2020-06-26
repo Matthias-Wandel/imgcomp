@@ -323,6 +323,11 @@ int main(int argc, char ** argv)
         return 0;
     }
 
+    if (memcmp(QueryString, "actagram", 8) == 0){
+        // Disable mod-gzip for actagram view because it's slow
+		// to compute.  So people can see the page load slowly.
+        printf("Content-encoding: none\n");
+    }
     printf("Content-Type: text/html\n\n"); // html header
 
     HolidaysLength = read_holiday_config();
