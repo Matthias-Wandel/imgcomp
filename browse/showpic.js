@@ -12,16 +12,24 @@ function UpdateActagram(){
     thismin_last = thismin
     flags_last = flagsstr;
 
-    act = "<canvas id='hist' width='1600' height='40' style='border:1px solid #d3d3d3;'></canvas>";
+    var height = 60;
+    var margin = 20;
+    act = "<canvas id='hist' width='900' height="+(height+margin)+" style='border:1px solid #d3d3d3; margin-top: 5px;'></canvas>";
     document.getElementById("actagram").innerHTML = act;
+    var c = document.getElementById('hist');
+    var ctx = c.getContext("2d");
+    ctx.fillStyle = "black";
+    var minuteLabelY = height+(margin-5);
+    ctx.fillText("Minute:", 5, minuteLabelY);
 
     for (a=0;a<60;a++){
         if (!(b = ActBins[a])){
             console.log("skip: ", a);
             continue;
         }
+        var minute
         if (piclist.length) {
-          min = piclist[ActNums[a]].substring(0,2);
+          minute = piclist[ActNums[a]].substring(0,2);
         }
 
         if (a==thismin){
@@ -31,9 +39,19 @@ function UpdateActagram(){
 
         var c = document.getElementById('hist');
         var ctx = c.getContext("2d");
-        ctx.fillStyle = "#adadad";
-        ctx.fillRect(a*10+a*2, 40-b, 10, b);
-        ctx.fillText(min, a*10+a*2, 40-b);
+        ctx.fillStyle = "black";
+
+        // index * (10px histogram width) + (2px offset for histogram spacing) + (40px minute label offset)
+        var histWidth = 10;
+        var histX = a*histWidth+a*2+40;
+
+        var scale = 1/maximum;
+        var newB = scale*b;
+        console.log(newB);
+        var histY = height-(newB*height);
+        ctx.fillRect(histX, histY, histWidth, newB*height);
+        ctx.fillText(minute, histX, minuteLabelY);
+        ctx.fillText(b, histX, histY-1);
     }
 
 }
@@ -322,6 +340,7 @@ vc.ontouchend = picTouchEnd
 vc.ontouchmove = picTouchMove
 
 // Fill bins for actagram (a sort of motion time histogram)
+var maximum = 0;
 ActBins = []
 ActNums = []
 for (a=0;a<piclist.length;a++){
@@ -329,10 +348,12 @@ for (a=0;a<piclist.length;a++){
     if (ActBins[min]) ActBins[min]++
     else ActBins[min] = 1
     if (!ActNums[min] || piclist[a].substring(2,4) < "30") ActNums[min] = a;
+    if (maximum <= ActBins[min]) maximum = ActBins[min];
 }
-console.log(piclist)
-console.log(ActBins)
-console.log(ActNums)
+console.log({piclist})
+console.log({ActBins})
+console.log({ActNums})
+console.log(maximum)
 
 pic_index=0
 currenthash = "x"
