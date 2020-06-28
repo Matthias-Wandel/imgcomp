@@ -3,8 +3,14 @@
 
 thismin_last = -1
 flags_last = "x"
+height = 60;
+margin = 30;
+histWidth = 15;
+histSpaceOffset = 1;
+marginOffset = 5;
 function UpdateActagram(){
-// Update the actagram text character display below the nav links.    
+    console.log('UpdateActagram');
+    // Update the actagram text character display below the nav links.
     act = ""
     var thismin
     if (piclist.length) thismin = parseInt(piclist[pic_index].substring(0,2))
@@ -12,19 +18,15 @@ function UpdateActagram(){
     thismin_last = thismin
     flags_last = flagsstr;
 
-    var height = 60;
-    var margin = 20;
-    act = "<canvas id='hist' width='900' height="+(height+margin)+" style='border:1px solid #d3d3d3; margin-top: 5px;'></canvas>";
-    document.getElementById("actagram").innerHTML = act;
-    var c = document.getElementById('hist');
-    var ctx = c.getContext("2d");
+    var canvas = document.getElementById('hist');
+    var ctx = canvas.getContext("2d");
+    // clear canvas so we don't draw on top of it each time
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = "black";
-    var minuteLabelY = height+(margin-5);
-    ctx.fillText("Minute:", 5, minuteLabelY);
+    var minuteLabelY = height+(margin-marginOffset);
 
     for (a=0;a<60;a++){
         if (!(b = ActBins[a])){
-            console.log("skip: ", a);
             continue;
         }
         var minute
@@ -33,28 +35,66 @@ function UpdateActagram(){
         }
 
         if (a==thismin){
-            // set selected min
-            // act += "<b style='background-color: #b0b0ff;'>"+c+"</b>"
+            //TODO: set selected min
         }
 
-        var c = document.getElementById('hist');
-        var ctx = c.getContext("2d");
-        ctx.fillStyle = "black";
+        // (index * histogram width) + (index * px offset for histogram spacing) + (px margin offset)
+        var histX = a*histWidth+a*histSpaceOffset+marginOffset;
 
-        // index * (10px histogram width) + (2px offset for histogram spacing) + (40px minute label offset)
-        var histWidth = 10;
-        var histX = a*histWidth+a*2+40;
-
-        var scale = 1/maximum;
-        var newB = scale*b;
-        console.log(newB);
-        var histY = height-(newB*height);
-        ctx.fillRect(histX, histY, histWidth, newB*height);
-        ctx.fillText(minute, histX, minuteLabelY);
-        ctx.fillText(b, histX, histY-1);
+        var scaledB = (1/maximum)*b; // scale to fit inside canvas
+        var histY = height-(scaledB*height)+(margin-20);
+				var rectHeight = scaledB*height;
+        ctx.fillRect(histX, histY, histWidth, rectHeight); // draw histogram
+        ctx.fillText(minute, histX, minuteLabelY); // draw minute labels
+        ctx.fillText(b, histX, histY-1); // draw bin count label, 1px higher for spacing
     }
 
 }
+var isCursorIn = false;
+var canv = document.getElementById('hist');
+canv.addEventListener("mousemove", function(event) {
+    canv = document.getElementById('hist');
+    var x = event.pageX - canv.offsetLeft,
+        y = event.pageY - canv.offsetTop;
+
+    for (a=0;a<60;a++){
+        if (!(b = ActBins[a]) && !isCursorIn){
+            continue;
+        }
+        var histX = a*histWidth+a*histSpaceOffset+marginOffset;
+
+        if (x > histX && x < histX + histWidth) {
+            document.body.style.cursor = "pointer";
+            isCursorIn = true;
+        } else if (x === histX-1 || x === histX + histWidth+1) {
+            document.body.style.cursor = "";
+            isCursorIn = false;
+        }
+    }
+}, false);
+
+canv.addEventListener('click', function(event) {
+    canv = document.getElementById('hist');
+    var x = event.pageX - canv.offsetLeft,
+        y = event.pageY - canv.offsetTop;
+
+    for (a=0;a<60;a++){
+        if (!(b = ActBins[a])){
+            continue;
+        }
+        var minute
+        if (piclist.length) {
+          minute = parseInt(piclist[ActNums[a]].substring(0,2));
+        }
+
+        var histX = a*histWidth+a*histSpaceOffset+marginOffset;
+
+        if (x > histX && x < histX + histWidth) {
+            window.location = "#"+flagsstr+prefix+piclist[ActNums[a]]+".jpg"
+        }
+    }
+}, false);
+
 NextImgUrl = ""
 flagsstr = ""
 SaveResp = ""
@@ -340,20 +380,17 @@ vc.ontouchend = picTouchEnd
 vc.ontouchmove = picTouchMove
 
 // Fill bins for actagram (a sort of motion time histogram)
-var maximum = 0;
 ActBins = []
 ActNums = []
+// maximun used to scale histogram within canvas height
+var maximum = 0;
 for (a=0;a<piclist.length;a++){
     min = parseInt(piclist[a].substring(0,2))
     if (ActBins[min]) ActBins[min]++
     else ActBins[min] = 1
     if (!ActNums[min] || piclist[a].substring(2,4) < "30") ActNums[min] = a;
-    if (maximum <= ActBins[min]) maximum = ActBins[min];
+    if (maximum < ActBins[min]) maximum = ActBins[min];
 }
-console.log({piclist})
-console.log({ActBins})
-console.log({ActNums})
-console.log(maximum)
 
 pic_index=0
 currenthash = "x"
