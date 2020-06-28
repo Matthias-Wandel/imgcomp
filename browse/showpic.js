@@ -3,13 +3,14 @@
 
 thismin_last = -1
 flags_last = "x"
-height = 60;
-margin = 30;
-histWidth = 15;
-histSpaceOffset = 1;
-marginOffset = 5;
+HIST_WIDTH = 15;
+HIST_SPACE_OFFSET = 1;
+MARGIN_OFFSET = 5;
+// if CANVAS_HEIGHT or CANVAS_MARGIN are changed, then change the
+// height property for the `canvas` element in showpic.c accordingly
+CANVAS_HEIGHT = 60;
+CANVAS_MARGIN = 30;
 function UpdateActagram(){
-    console.log('UpdateActagram');
     // Update the actagram text character display below the nav links.
     act = ""
     var thismin
@@ -22,8 +23,7 @@ function UpdateActagram(){
     var ctx = canvas.getContext("2d");
     // clear canvas so we don't draw on top of it each time
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = "black";
-    var minuteLabelY = height+(margin-marginOffset);
+    var minuteLabelY = CANVAS_HEIGHT+(CANVAS_MARGIN-MARGIN_OFFSET);
 
     for (a=0;a<60;a++){
         if (!(b = ActBins[a])){
@@ -39,14 +39,16 @@ function UpdateActagram(){
         }
 
         // (index * histogram width) + (index * px offset for histogram spacing) + (px margin offset)
-        var histX = a*histWidth+a*histSpaceOffset+marginOffset;
+        var histX = a*HIST_WIDTH+a*HIST_SPACE_OFFSET+MARGIN_OFFSET;
 
-        var scaledB = (1/maximum)*b; // scale to fit inside canvas
-        var histY = height-(scaledB*height)+(margin-20);
-				var rectHeight = scaledB*height;
-        ctx.fillRect(histX, histY, histWidth, rectHeight); // draw histogram
-        ctx.fillText(minute, histX, minuteLabelY); // draw minute labels
+        var scaledB = (1/MAXIMUM_BIN)*b; // scale to fit inside canvas
+        var histY = CANVAS_HEIGHT-(scaledB*CANVAS_HEIGHT)+(CANVAS_MARGIN-20);
+				var rectHeight = scaledB*CANVAS_HEIGHT;
+
+        ctx.fillStyle = a == thismin ? "black" : "gray";
+        ctx.fillRect(histX, histY, HIST_WIDTH, rectHeight); // draw histogram
         ctx.fillText(b, histX, histY-1); // draw bin count label, 1px higher for spacing
+        ctx.fillText(minute, histX, minuteLabelY); // draw minute labels
     }
 
 }
@@ -61,12 +63,12 @@ canv.addEventListener("mousemove", function(event) {
         if (!(b = ActBins[a]) && !isCursorIn){
             continue;
         }
-        var histX = a*histWidth+a*histSpaceOffset+marginOffset;
+        var histX = a*HIST_WIDTH+a*HIST_SPACE_OFFSET+MARGIN_OFFSET;
 
-        if (x > histX && x < histX + histWidth) {
+        if (x > histX && x < histX + HIST_WIDTH) {
             document.body.style.cursor = "pointer";
             isCursorIn = true;
-        } else if (x === histX-1 || x === histX + histWidth+1) {
+        } else if (x === histX-1 || x === histX + HIST_WIDTH+1) {
             document.body.style.cursor = "";
             isCursorIn = false;
         }
@@ -87,9 +89,9 @@ canv.addEventListener('click', function(event) {
           minute = parseInt(piclist[ActNums[a]].substring(0,2));
         }
 
-        var histX = a*histWidth+a*histSpaceOffset+marginOffset;
+        var histX = a*HIST_WIDTH+a*HIST_SPACE_OFFSET+MARGIN_OFFSET;
 
-        if (x > histX && x < histX + histWidth) {
+        if (x > histX && x < histX + HIST_WIDTH) {
             window.location = "#"+flagsstr+prefix+piclist[ActNums[a]]+".jpg"
         }
     }
@@ -383,13 +385,13 @@ vc.ontouchmove = picTouchMove
 ActBins = []
 ActNums = []
 // maximun used to scale histogram within canvas height
-var maximum = 0;
+var MAXIMUM_BIN = 0;
 for (a=0;a<piclist.length;a++){
     min = parseInt(piclist[a].substring(0,2))
     if (ActBins[min]) ActBins[min]++
     else ActBins[min] = 1
     if (!ActNums[min] || piclist[a].substring(2,4) < "30") ActNums[min] = a;
-    if (maximum < ActBins[min]) maximum = ActBins[min];
+    if (MAXIMUM_BIN < ActBins[min]) MAXIMUM_BIN = ActBins[min];
 }
 
 pic_index=0
