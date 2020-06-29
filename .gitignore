@@ -4,3 +4,7 @@
 ./*.jpg
 *.swp
 browse/*.cgi
+
+# ctags used for code navigation
+browse/tags
+src/tags
