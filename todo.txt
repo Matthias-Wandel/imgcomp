@@ -1,11 +1,15 @@
 To do next:
-* Flesh out browser.cfg, use for realtime.
-* Peers server pointers (browser.cfg)
-* use canvas method instead of chracter graphics for actagrams
+* Flesh out browser.cfg, use for realtime:
+    * Links to other (pweer) cameras for same time
+    * Big actagram start and stop times configurable
+    * Default brighten on/off setting
+    * Thumbnail scale configurable
+* showpic.js - mouse hover over temporarily flip to image.
+
 
 Future features:
 * Calculate separate motion fatigues for luma and chroma (to better ignore shadows and trees)
-* glitch detection for more than one frame?
+* glitch detection for more than one frame (ignore events that last more than 1 frame)
 * Option to not save pre and post event images?
 * Image save rate liminting (raise threshold when too many aquired)
 
