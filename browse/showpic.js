@@ -14,14 +14,12 @@ canv.addEventListener('click', function(event) {
     var thisbin = Math.floor(x / per_hist_bar)
     if (ActNums[thisbin]) SetIndex(ActNums[thisbin])
 }, false);
-CANVAS_WIDTH = 960
-CANVAS_HEIGHT = canv.height;
-BARS_HEIGHT = 50
+BARS_HEIGHT = canv.height-10;
 HIST_BINS = 240
 
 thisbin_last = -1
 flags_last = "x"
-per_hist_bar = CANVAS_WIDTH/HIST_BINS
+per_hist_bar = canv.width/HIST_BINS
 
 function UpdateActagram(){
     // Update the actagram text character display below the nav links.
@@ -44,7 +42,7 @@ function UpdateActagram(){
         thisbin = thissec*HIST_BINS/3600
 
         ctx.fillStyle = "#9090ff"
-        ctx.fillRect((thisbin-0.5)*per_hist_bar, 0, per_hist_bar-0.5, CANVAS_HEIGHT);
+        ctx.fillRect((thisbin-0.5)*per_hist_bar, 0, per_hist_bar-0.5, canvas.height);
 
         thisbin = Math.floor(thisbin)
     }
