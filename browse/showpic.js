@@ -12,9 +12,15 @@ canv.addEventListener('click', function(event) {
     canv = document.getElementById('hist');
     var x = event.pageX - canv.offsetLeft;
     var thisbin = Math.floor(x / per_hist_bar)
-    if (ActNums[thisbin]) SetIndex(ActNums[thisbin])
+    if (ActNums[thisbin]){
+        SetIndex(ActNums[thisbin])
+    }else if (thisbin>0 && ActNums[thisbin-1]){
+        SetIndex(ActNums[thisbin-1])
+    }else if (thisbin<HIST_BINS-1 && ActNums[thisbin+1]){
+        SetIndex(ActNums[thisbin+1])
+    }
 }, false);
-BARS_HEIGHT = canv.height-10;
+BARS_HEIGHT = canv.height-5;
 HIST_BINS = 240
 
 thisbin_last = -1
@@ -349,14 +355,17 @@ vc.ontouchmove = picTouchMove
 ActBins = []
 ActNums = []
 
-var max_bin = 8;// maximun used to scale histogram within canvas height
+var max_bin = 6;// maximun used to scale histogram within canvas height
 for (a=0;a<piclist.length;a++){
     var sec = parseInt(piclist[a].substring(0,2))*60 + parseInt(piclist[a].substring(2,4))
-    var bin = Math.floor(sec*HIST_BINS/3600)
+    var binfl = sec*HIST_BINS/3600
+    var bin = Math.floor(binfl)
+    var frac = binfl-bin
+    bin = Math.floor(bin)
     if (ActBins[bin]) ActBins[bin]++
     else ActBins[bin] = 1
 
-    if (!ActNums[bin]) ActNums[bin] = a;
+    if (frac < 0.6) ActNums[bin] = a;
     if (max_bin < ActBins[bin]) max_bin = ActBins[bin];
 }
 
