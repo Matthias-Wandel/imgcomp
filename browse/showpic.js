@@ -24,13 +24,22 @@ BARS_HEIGHT = canv.height-5;
 HIST_BINS = 240
 
 thisbin_last = -1
-flags_last = "x"
 per_hist_bar = canv.width/HIST_BINS
 
 function UpdateActagram(){
     // Update the actagram text character display below the nav links.
     var canvas = document.getElementById('hist');
     var ctx = canvas.getContext("2d");
+    var thisbin
+
+    if (piclist.length){
+        var thissec = parseInt(piclist[pic_index].substring(0,2))*60 + parseInt(piclist[pic_index].substring(2,4))
+        thisbin = Math.floor(thissec*HIST_BINS/3600)
+    }
+
+    if (thisbin == thisbin_last) return;
+    thisbin_last = thisbin
+    
     // clear canvas so we don't draw on top of it each time
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -41,21 +50,8 @@ function UpdateActagram(){
         ctx.fillRect(histX, 0, canvas.width/6, canvas.height);
     }
 
-    var thisbin
-
-    if (piclist.length){
-        var thissec = parseInt(piclist[pic_index].substring(0,2))*60 + parseInt(piclist[pic_index].substring(2,4))
-        thisbin = thissec*HIST_BINS/3600
-
-        ctx.fillStyle = "#9090ff"
-        ctx.fillRect((thisbin-0.5)*per_hist_bar, 0, per_hist_bar-0.5, canvas.height);
-
-        thisbin = Math.floor(thisbin)
-    }
-
-    //if (thisbin == thisbin_last && flags_last == flagsstr) return;
-    thisbin_last = thisbin
-    flags_last = flagsstr
+    ctx.fillStyle = "#a0a0ff"
+    ctx.fillRect((thisbin-0.5)*per_hist_bar, 0, per_hist_bar*2-0.5, canvas.height);
 
     for (a=0;a<HIST_BINS;a++){
         b = ActBins[a];
