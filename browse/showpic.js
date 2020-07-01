@@ -365,7 +365,7 @@ for (a=0;a<piclist.length;a++){
     if (ActBins[bin]) ActBins[bin]++
     else ActBins[bin] = 1
 
-    if (frac < 0.6) ActNums[bin] = a;
+    if (frac < 0.6 || !ActNums[bin]) ActNums[bin] = a;
     if (max_bin < ActBins[bin]) max_bin = ActBins[bin];
 }
 
