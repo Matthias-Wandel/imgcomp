@@ -12,6 +12,8 @@
 #include <errno.h>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <sys/types.h>
+#include <signal.h>
 
 #include "imgcomp.h"
 #include "jhead.h"
@@ -22,6 +24,7 @@ static int blink_led_pid = 0;
 int relaunch_timeout = 6;
 int give_up_timeout = 18;
 
+int kill(pid_t pid, int sig);
 //-----------------------------------------------------------------------------------
 // Parse command line and launch.
 //-----------------------------------------------------------------------------------

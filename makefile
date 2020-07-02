@@ -8,7 +8,7 @@ SRC=src
 # with debug:
 #CFLAGS:= $(CFLAGS) -O3 -Wall -g
 
-CFLAGS:= $(CFLAGS) -std=c11 -O3 -Wall -D_POSIX_C_SOURCE
+CFLAGS:= $(CFLAGS) -std=c99 -O3 -Wall
 all: objdir imgcomp
 
 objdir:
