@@ -132,14 +132,23 @@ static int parse_parameter (const char * tag, const char * value)
         // inside a config file.
     }else if (keymatch(tag, "postmotion", 10)) {
         if (sscanf(value, "%d", &PostMotionKeep) != 1) return -1;
+    }else if (keymatch(tag, "premotion", 9)) {
+        if (sscanf(value, "%d", &PreMotionKeep) != 1) return -1;
+        if (PreMotionKeep != 0 && PreMotionKeep != 1){
+            fprintf(stderr, "PreMotionKeep may only be 0 or 1\n");
+        }
     }else if (keymatch(tag, "brmonitor", 5)) {
         if (sscanf(value, "%d", &BrightnessChangeRestart) != 1) return -1;        
     }else if (keymatch(tag, "relaunch_timeout", 16)) {
         if (sscanf(value, "%d", &relaunch_timeout) != 1) return -1;        
     }else if (keymatch(tag, "give_up_timeout", 15)) {
-        if (sscanf(value, "%d", &give_up_timeout) != 1) return -1;        
-    }else if (keymatch(tag, "fatigue", 7)) {
-        if (sscanf(value, "%d", &MotionFatigueTc) != 1) return -1;        
+        if (sscanf(value, "%d", &give_up_timeout) != 1) return -1;
+    }else if (strcmp(tag, "fatigue") == 0 || keymatch(tag, "fatigue_tc", 10)) {
+        if (sscanf(value, "%d", &MotionFatigueTc) != 1) return -1;
+    }else if (keymatch(tag, "fatigue_gain_percent", 20)) {
+        if (sscanf(value, "%d", &FatigueGainPercent) != 1) return -1;
+    }else if (keymatch(tag, "fatigue_skip_count", 18)) {
+        if (sscanf(value, "%d", &FatigueSkipCount) != 1) return -1;
     } else if (keymatch(tag, "scale", 5)) {
         // Scale the output image by a fraction 1/N.
         if (sscanf(value, "%d", &ScaleDenom) != 1) return -1;
