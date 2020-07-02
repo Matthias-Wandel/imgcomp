@@ -1,8 +1,0 @@
-#! /bin/bash
-if grep -q "ARMv7 Processor rev 5 (v7l)" /proc/cpuinfo; then
-	echo "#define RASPBERRY_PI 2" 
-else
-	echo "#define RASPBERRY_PI 1"
-fi
-
-

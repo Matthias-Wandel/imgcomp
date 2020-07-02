@@ -1,4 +1,4 @@
-CC=gcc -std=c99 -DVIEWCGI
+CC=gcc -std=c99 -Wall -DVIEWCGI
 
 LINKER=link
 LINKCON = /nologo
