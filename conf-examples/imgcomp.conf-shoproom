@@ -20,7 +20,8 @@ followdir = /ramdisk
 # Turn on spurious reject
 spurious = 1
 
-brmonitor = 0
+# Override motion fatigue every 10 frames.
+fatigue_skip_count = 10
 
 # Where to save interesting images to
 savedir = images
@@ -31,7 +32,7 @@ savedir = images
 savenames = %y%m%d/%H/%m%d-%H%M%S
 
 # How many seconds between images kept regardless of motion for timelapses.
-timelapse = 600
+timelapse = 1200
 
 # Sensitivity.  50 would be quite senstive.  400 is relatively insensitive.
 sensitivity = 200

@@ -36,7 +36,7 @@ int wait_close_write = 0;
 int BrightnessChangeRestart = 0;
 int MotionFatigueTc = 30;
 
-int FatigueSkipCount = 10; // Change to default zero.
+int FatigueSkipCount = 0;
 int FatigueSkipCountdown = 0;
 int FatigueGainPercent = 100;
 
@@ -124,8 +124,6 @@ static void GeometryConvert(TriggerInfo_t  * Trig)
 //-----------------------------------------------------------------------------------
 static int ProcessImage(LastPic_t * New, int DeleteProcessed)
 {
-    static int PixSinceDiff;
-
     LastPics[2] = LastPics[1];
     LastPics[1] = LastPics[0];
 
@@ -149,19 +147,15 @@ static int ProcessImage(LastPic_t * New, int DeleteProcessed)
         Trig.DiffLevel = Trig.x = Trig.y = 0;
 
         int SkipFatigue = 0;
-        if (++FatigueSkipCountdown >= FatigueSkipCount){
+        if (FatigueSkipCount && ++FatigueSkipCountdown >= FatigueSkipCount){
             FatigueSkipCountdown = 0;
             SkipFatigue = 1;
         }
 
-        if (LastPics[2].Image){
+        if (LastPics[1].Image){
             Trig = ComparePix(LastPics[1].Image, LastPics[0].Image, 1, SkipFatigue, NULL);
         }
 
-        if (Trig.DiffLevel >= Sensitivity && PixSinceDiff > 5 && Raspistill_restarted){
-            fprintf(Log,"Ignoring diff caused by raspistill restart\n");
-            Trig.DiffLevel = 0;
-        }
         LastPics[0].DiffMag = Trig.DiffLevel;
         LastPics[0].IsSkipFatigue = SkipFatigue;
 
@@ -209,17 +203,18 @@ static int ProcessImage(LastPic_t * New, int DeleteProcessed)
         
         if (SaveDir[0]){
             int KeepImage = 0;
-            if (LastPics[2].IsTimelapse) {KeepImage = 1; printf(" time"); }
-            if (LastPics[2].IsMotion) {KeepImage = 1; printf(" mot"); }
-            if (LastPics[1].IsMotion && PreMotionKeep) {KeepImage = 1; printf(" pre");}
-            if (SinceMotionPix < PostMotionKeep) {KeepImage = 1; printf(" post");}
+            if (LastPics[2].IsTimelapse) KeepImage = 1;
+            if (LastPics[1].IsMotion && PreMotionKeep) KeepImage |= 2;
+            if (LastPics[2].IsMotion) KeepImage |= 4;
+            if (SinceMotionPix <= PostMotionKeep) KeepImage |= 8;
             
             if (KeepImage){
+                //printf(" (%s %d)",LastPics[2].Name, KeepImage);
                 BackupImageFile(LastPics[2].Name, LastPics[2].DiffMag, 0);
             }
         }
         
-        if (LastPics[1].IsMotion) SinceMotionPix = 0;
+        if (LastPics[2].IsMotion) SinceMotionPix = 0;
 
         fprintf(Log,"\n");
         SinceMotionPix += 1;
