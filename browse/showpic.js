@@ -352,6 +352,7 @@ window.addEventListener("keydown", function (event) {
     return; // Do nothing if the event was already processed
   }
 
+
   switch (event.key) {
     case " ":
       PlayButtonClick();
@@ -361,6 +362,12 @@ window.addEventListener("keydown", function (event) {
       break;
     case "e":
       ShowBigClick();
+      break;
+    case "n":
+      if (NextDir) window.location = "view.cgi?"+NextDir+"/#"+flagsstr
+      break;
+    case "p":
+      if (PrevDir) window.location = "view.cgi?"+PrevDir+"/#"+flagsstr
       break;
     case "s":
       SavePicClick();
