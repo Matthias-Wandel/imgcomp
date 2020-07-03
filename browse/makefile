@@ -9,8 +9,8 @@ OBJ = obj
 
 OBJECTS_BROWSE = $(OBJ)/view.o \
 	$(OBJ)/showdir.o    \
-    $(OBJ)/actagram.o    \
-	$(OBJ)/showimage.o showpic.o \
+	$(OBJ)/actagram.o    \
+	$(OBJ)/showimage.o $(OBJ)/showpic.o \
 	$(OBJ)/collectdir.o  \
 	$(OBJ)/utility.o
     
