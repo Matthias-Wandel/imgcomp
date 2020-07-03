@@ -39,7 +39,7 @@ function UpdateActagram(){
 
     if (thisbin == thisbin_last) return;
     thisbin_last = thisbin
-    
+
     // clear canvas so we don't draw on top of it each time
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -346,6 +346,32 @@ vc.onmousemove = picMouseMove
 vc.ontouchstart = picTouchStart
 vc.ontouchend = picTouchEnd
 vc.ontouchmove = picTouchMove
+
+window.addEventListener("keydown", function (event) {
+  if (event.defaultPrevented) {
+    return; // Do nothing if the event was already processed
+  }
+
+  switch (event.key) {
+    case " ":
+      PlayButtonClick();
+      break;
+    case "b":
+      ShowBrightClick();
+      break;
+    case "e":
+      ShowBigClick();
+      break;
+    case "s":
+      SavePicClick();
+      break;
+    default:
+      return; // Quit when this doesn't handle the key event.
+  }
+
+  // Cancel the default action to avoid it being handled twice
+  event.preventDefault();
+}, true);
 
 // Fill bins for actagram (a sort of motion time histogram)
 ActBins = []
