@@ -30,10 +30,15 @@ int FollowDir = 0;
 int ScaleDenom;
 int SpuriousReject = 0;
 int PostMotionKeep = 0;
+int PreMotionKeep = 0;
 int wait_close_write = 0;
 
-int BrightnessChangeRestart = 1;
+int BrightnessChangeRestart = 0;
 int MotionFatigueTc = 30;
+
+int FatigueSkipCount = 0;
+int FatigueSkipCountdown = 0;
+int FatigueGainPercent = 100;
 
 char DiffMapFileName[200];
 Regions_t Regions;
@@ -70,6 +75,7 @@ typedef struct {
     int DiffMag;
     int IsTimelapse;
     int IsMotion;
+    int IsSkipFatigue;
 }LastPic_t;
 
 static LastPic_t LastPics[3];
@@ -118,8 +124,6 @@ static void GeometryConvert(TriggerInfo_t  * Trig)
 //-----------------------------------------------------------------------------------
 static int ProcessImage(LastPic_t * New, int DeleteProcessed)
 {
-    static int PixSinceDiff;
-
     LastPics[2] = LastPics[1];
     LastPics[1] = LastPics[0];
 
@@ -142,15 +146,18 @@ static int ProcessImage(LastPic_t * New, int DeleteProcessed)
         // compare with previous picture.
         Trig.DiffLevel = Trig.x = Trig.y = 0;
 
-        if (LastPics[2].Image){
-            Trig = ComparePix(LastPics[1].Image, LastPics[0].Image, NULL);
+        int SkipFatigue = 0;
+        if (FatigueSkipCount && ++FatigueSkipCountdown >= FatigueSkipCount){
+            FatigueSkipCountdown = 0;
+            SkipFatigue = 1;
         }
 
-        if (Trig.DiffLevel >= Sensitivity && PixSinceDiff > 5 && Raspistill_restarted){
-            fprintf(Log,"Ignoring diff caused by raspistill restart\n");
-            Trig.DiffLevel = 0;
+        if (LastPics[1].Image){
+            Trig = ComparePix(LastPics[1].Image, LastPics[0].Image, 1, SkipFatigue, NULL);
         }
+
         LastPics[0].DiffMag = Trig.DiffLevel;
+        LastPics[0].IsSkipFatigue = SkipFatigue;
 
         if (FollowDir){
             // When real-time following, the timestamp is more useful than the file name
@@ -174,30 +181,40 @@ static int ProcessImage(LastPic_t * New, int DeleteProcessed)
 
         if (SpuriousReject && LastPics[2].Image &&
             LastPics[0].IsMotion && LastPics[1].IsMotion
-            && LastPics[2].DiffMag < (Sensitivity>>1)){
+            && LastPics[2].DiffMag < Sensitivity/2){
             // Compare to picture before last picture.
-            Trig = ComparePix(LastPics[2].Image, LastPics[0].Image, NULL);
+            Trig = ComparePix(LastPics[2].Image, LastPics[0].Image, 0, 1, NULL);
 
             //printf("Diff with pix before last: %d\n",Trig.DiffLevel);
             if (Trig.DiffLevel < Sensitivity){
                 // An event that was just one frame.  We assume this was something
-                // spurious, like an insect or a rain drop
+                // spurious, like an insect or a rain drop or a camera glitch.
                 printf(" (spurious %d, ignore)", Trig.DiffLevel);
                 LastPics[0].IsMotion = 0;
                 LastPics[1].IsMotion = 0;
             }
         }
-        if (LastPics[0].IsMotion) fprintf(Log," (motion)");
+        if (LastPics[0].IsMotion){
+            fprintf(Log," (motion)");
+            if (LastPics[0].IsSkipFatigue) fprintf(Log, " (sf)");
+        }
         if (LastPics[0].IsTimelapse) fprintf(Log," (time)");
 
-        if (LastPics[1].IsMotion) SinceMotionPix = 0;
-
-        if (SinceMotionPix <= PostMotionKeep+1 || LastPics[2].IsTimelapse){
-            // If it's motion, pre-motion, or timelapse, save it.
-            if (SaveDir[0]){
+        
+        if (SaveDir[0]){
+            int KeepImage = 0;
+            if (LastPics[2].IsTimelapse) KeepImage = 1;
+            if (LastPics[1].IsMotion && PreMotionKeep) KeepImage |= 2;
+            if (LastPics[2].IsMotion) KeepImage |= 4;
+            if (SinceMotionPix <= PostMotionKeep) KeepImage |= 8;
+            
+            if (KeepImage){
+                //printf(" (%s %d)",LastPics[2].Name, KeepImage);
                 BackupImageFile(LastPics[2].Name, LastPics[2].DiffMag, 0);
             }
         }
+        
+        if (LastPics[2].IsMotion) SinceMotionPix = 0;
 
         fprintf(Log,"\n");
         SinceMotionPix += 1;
@@ -540,7 +557,7 @@ int main(int argc, char **argv)
 
     Log = stdout;
 
-    printf("Imgcomp version 0.9 (Nov 2018) by Matthias Wandel\n\n");
+    printf("Imgcomp version 0.95 (Jun 2020) by Matthias Wandel\n\n");
 
     progname = argv[0];
 
@@ -650,7 +667,7 @@ int main(int argc, char **argv)
         pic2 = LoadJPEG(argv[file_index+1], ScaleDenom, 0, 0);
         if (pic1 && pic2){
             Verbosity = 2;
-            ComparePix(pic1, pic2, "diff.ppm");
+            ComparePix(pic1, pic2, 0, 0,"diff.ppm");
         }
         free(pic1);
         free(pic2);

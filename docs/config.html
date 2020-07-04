@@ -123,17 +123,34 @@ be placed in 190720/11/0720-115058.  This name will be appended with a space and
 diff magnitude value of three digits.  In addition, if more than one image is
 saved in the same second, the space in the name will be replaced with a, b, or c, etc.
 
+<div class="p">premotion</div>
+Number of images preceeding motion to save.  Can only be 0 or 1.  Default 0.
+
+<div class="p">postmotion</div>
+Number of extra images to keep beyond one with motion.  Default 0.
+
 <div class="p">sensitivity</div>
 Indicates how sensitive the program is.  I typically use values around 100.  However,
 this value is highly dependent on image resolution.  Change magnitudes peak out
 around 500 because of the change magnitude is calculated over a limited size region.
 
-<div class="p">fatigue</div>
+<div class="p">fatigue_tc</div>
 Motion fatigue time constant, default exponential decay averaging with a 30 image
 time-constant.  Imgcomp will make areas with
 repeated motion less senstitive to avoid triggering on things moving in the wind
 such as flags or vegetation.  This feature is on by default.  Set this to zero
 to turn off motion fatigue.
+
+<div class="p">fatigue_percent</div>
+Gain factor for motion fatigue strength.  Default 100.  Setting it
+to 70 would cause motion fatigue effect to only be 70% as strong as by default.
+
+<div class="p">fatigue_skip</div>
+Skip applying motion fatigue every n frames.  I use this for timelapses in my workshop.
+Motion fatigue will start to kick in if I am doing repetitive tasks in one location,
+which is useful for saving disk space.  but I still want <i>some</i> images of repeated
+motion to get saved, so I set this value to 10 to not subtract motion fatigue
+for every tenth frame.  Default 0 (off)
 
 <div class="p">spurious</div>
 Set to '1' for spurious detection on, '0' for spurious detection off.  Default off.

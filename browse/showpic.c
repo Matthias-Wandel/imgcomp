@@ -30,9 +30,6 @@
 //----------------------------------------------------------------------------------
 void MakeViewPage(char * ImageName, Dir_t * dir)
 {
-    int DirIndex;
-    int FoundMatch;
-    int From,To;
     int IsSavedDir = 0;
     char * HtmlDir;
     VarList Images;
@@ -61,14 +58,6 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
 
     // Output HTML code for the buttons below the row of navigation links
     {
-        char IndexInto[8];
-        IndexInto[0] = 0;
-        if (strlen(ImageName) >= 10){
-            IndexInto[0] = '#';
-            IndexInto[1] = ImageName[7];
-            IndexInto[2] = ImageName[8];
-            IndexInto[3] = '\0';
-        }
         printf("<span id='this'>this</span>\n");
         printf("<button id='big' onclick=\"ShowBigClick()\">Enlarge</button>\n");
         printf("<button id='bright' onclick=\"ShowBrightClick()\">Brighten</button>\n");
@@ -104,8 +93,8 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
         }
         
         printf("&nbsp;");
-        if (dir->Previous[0]) printf("<a href='#' id='prevdir'>&lt;&lt;</a>",dir->Previous);
-        if (dir->Next[0]) printf("&nbsp;<a href='#' id='nextdir'>>></a> ",dir->Next);
+        if (dir->Previous[0]) printf("<a href='#' id='prevdir'>&lt;&lt;</a>");
+        if (dir->Next[0]) printf("&nbsp;<a href='#' id='nextdir'>>></a> ");
         printf("\n");
     }
     printf("<br>\n<canvas id='hist' width='960' height='35' "

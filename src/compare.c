@@ -19,14 +19,15 @@ int NewestAverageBright;
 static ImgMap_t * DiffVal = NULL;
 ImgMap_t * WeightMap = NULL;
 
-static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold);
+static TriggerInfo_t AnalyzeDifferences(Region_t Region, int threshold, int UpdateFatigue, int SubtractFatigue);
 
 
 //----------------------------------------------------------------------------------------
 // Compare two images in memory
 // Pic1 is previous pic, pic2 is latest pic.
 //----------------------------------------------------------------------------------------
-TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, char * DebugImgName)
+TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, 
+    int UpdateFatigue, int SkipFatigue, char * DebugImgName)
 {
     int width, height, bPerRow;
     int row, col;
@@ -241,13 +242,13 @@ TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, char * DebugImgNa
         }
     }
 
+    TriggerInfo_t Trigger;
+    int threshold;
     {
-        // Try to gauge the noise level of the difference maps using the built histogram.
+        // Gauge the difference noise level of the difference maps using the built histogram.
 		// assuming two thirds of the image has not changed
         int cumsum = 0;
-        int threshold;
         int twothirds = DetectionPixels*2/3;
-        TriggerInfo_t Trigger;
         
         for (a=0;a<256;a++){
             if (cumsum >= twothirds) break;
@@ -264,19 +265,20 @@ TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, char * DebugImgNa
 		}else{
 			if (Verbosity) printf("2/3 of image is below %d diff.  Using %d threshold\n",a, threshold);
 		}
-
-		// Search for a window with the largest difference in it
-        Trigger = SearchDiffMaxWindow(MainReg, threshold);
-        return Trigger;
     }
+
+    // Apply motion fatigure and search for a window with the largest difference in it
+    Trigger = AnalyzeDifferences(MainReg, threshold, UpdateFatigue, SkipFatigue);
+    return Trigger;
 }
 
 //----------------------------------------------------------------------------------------
-// Search for an N x N window with the maximum differences in it.
-// This for rejecting spurious differences outdoors where grass and leaves can cause a
-// lot of weak spurious motion over large areas.
+// Compute and apply motion fatigue then  Search for an N x N window
+// with the maximum differences in it.
+// This for rejecting spurious differences outdoors where we dont want grass and leaves
+// moving in the wind (covering large parts of the image) to trigger motion events.
 //----------------------------------------------------------------------------------------
-static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold)
+static TriggerInfo_t AnalyzeDifferences(Region_t Region, int threshold, int UpdateFatigue, int SkipFatigue)
 {
     TriggerInfo_t retval;
             
@@ -341,42 +343,51 @@ static TriggerInfo_t SearchDiffMaxWindow(Region_t Region, int threshold)
     }
 
     if (MotionFatigueTc > 0){
-        static int SinceFatiguePrint = 0;
-		int FatigueAverage;
-        // Compute motion fatigue
-        FatigueAverage = 0;
-        for (int row=0;row<heightSc;row++){
-            for (int col=0;col<widthSc;col++){
-                int ds, nFat;
-                ds = DiffScaled->values[row*widthSc+col];
-                nFat = (Fatigue->values[row*widthSc+col]*(MotionFatigueTc-1) + ds)/MotionFatigueTc; // Expontential decay on it.
-                Fatigue->values[row*widthSc+col] = nFat;
-                FatigueAverage += nFat;
-            }
+        if (SkipFatigue == 0){
+            // Make a bloomed copy of the fatigue map *before* applying current image fatigue.
+            // Blooming the map is using the max of the cell and it's eight neighbours for each cell.
+            BloomImgMap(Fatigue, FatigueBl); 
+            // Possibly bloom the fatigue map a bit more (may or may not want that)
+            //BloomImgMap(FatigueBl, FatigueBl2); // Use max of cell and eight neighbours for motion fatigue.
         }
-        FatigueAverage = FatigueAverage/(heightSc*widthSc); // Divide by array size to get average.
         
-        // Print fatigue map to log from time to time.
-        if (Verbosity > 1 || (FatigueAverage > 50 && SinceFatiguePrint > 60)){
-            // Print the fatigure array every minuts if there is stuff in it.
-            fprintf(Log, "Fatigue map (%d x %d) sum=%d<small>\n", widthSc, heightSc, FatigueAverage);
-			ShowImgMap(Fatigue, 50);
-            fprintf(Log, "</small>\n");
-            SinceFatiguePrint = 0;
+        if (UpdateFatigue){
+            static int SinceFatiguePrint = 0;
+            int FatigueAverage;
+            // Compute motion fatigue
+            FatigueAverage = 0;
+            for (int row=0;row<heightSc;row++){
+                for (int col=0;col<widthSc;col++){
+                    int ds, nFat;
+                    ds = DiffScaled->values[row*widthSc+col];
+                    nFat = (Fatigue->values[row*widthSc+col]*(MotionFatigueTc-1) + ds)/MotionFatigueTc; // Expontential decay on it.
+                    Fatigue->values[row*widthSc+col] = nFat;
+                    FatigueAverage += nFat;
+                }
+            }
+            FatigueAverage = FatigueAverage/(heightSc*widthSc); // Divide by array size to get average.
+
+            // Print fatigue map to log from time to time.
+            if (Verbosity > 1 || (FatigueAverage > 50 && SinceFatiguePrint > 60)){
+                // Print the fatigure array every minuts if there is stuff in it.
+                fprintf(Log, "Fatigue map (%d x %d) sum=%d<small>\n", widthSc, heightSc, FatigueAverage);
+                ShowImgMap(Fatigue, 50);
+                fprintf(Log, "</small>\n");
+                SinceFatiguePrint = 0;
+            }
+            SinceFatiguePrint++;
         }
-        SinceFatiguePrint++;
-    
-		// Subtract out motion fatigue
-		BloomImgMap(Fatigue, FatigueBl); // Use max of cell and eight neighbours for motion fatigue.
-		//BloomImgMap(FatigueBl, FatigueBl2); // Use max of cell and eight neighbours for motion fatigue.
-		
-        for (int row=0;row<heightSc;row++){
-            for (int col=0;col<widthSc;col++){
-                int ds, FatM;
-                FatM = FatigueBl->values[row*widthSc+col];
-                ds = DiffScaled->values[row*widthSc+col] - FatM*3;
-                if (ds < 0) ds = 0;
-                DiffScaled->values[row*widthSc+col] = ds;
+
+        if (SkipFatigue == 0){
+            // Subtract out motion fatigue
+            int fatmult = FatigueGainPercent * 3 * 256 / 100;
+            for (int row=0;row<heightSc;row++){
+                for (int col=0;col<widthSc;col++){
+                    int FatSub = (FatigueBl->values[row*widthSc+col] * fatmult) >> 8;
+                    int ds = DiffScaled->values[row*widthSc+col] - FatSub;
+                    if (ds < 0) ds = 0;
+                    DiffScaled->values[row*widthSc+col] = ds;
+                }
             }
         }
     }

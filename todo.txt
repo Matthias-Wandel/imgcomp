@@ -1,16 +1,15 @@
 To do next:
 * Flesh out browser.cfg, use for realtime:
-    * Links to other (pweer) cameras for same time
+    * Redo how holidays are stored
     * Big actagram start and stop times configurable
-    * Default brighten on/off setting
+    * Links to other (pweer) cameras for same time
+    * Default brighten on/off setting, use original or scaled by default
     * Thumbnail scale configurable
 * showpic.js - mouse hover over temporarily flip to image.
-
-
-Future features:
+* canvas method based actagrams for actagram and day views, similar to hour view one.
+* realtime.html: Show log as it comes in line by line.
 * Calculate separate motion fatigues for luma and chroma (to better ignore shadows and trees)
 * glitch detection for more than one frame (ignore events that last more than 1 frame)
-* Option to not save pre and post event images?
 * Image save rate liminting (raise threshold when too many aquired)
 
 

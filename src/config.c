@@ -5,7 +5,7 @@
 // Imgcomp is licensed under GPL v2 (see README.txt)
 //-----------------------------------------------------------------------------------
 #include <stdio.h>
-#include <ctype.h>		// to declare isupper(), tolower() 
+#include <ctype.h>      // to declare isupper(), tolower() 
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -23,34 +23,39 @@ void usage (void)// complain about bad command line
 
     fprintf(stderr, 
      "Switches (names may be abbreviated):\n"
-     " -configfile file     Override default imgcomp.conf file name\n"
-     " -scale   N           Scale before detection by 1/N.  Default 1/4\n"
-     " -region  x1-x2,y1-y2 Specify region of interest\n"
-     " -exclude x1-x2,y1-y2 Exclude from area of interest\n"
-     " -diffmap <filename>  A file to use as diff map\n"
-     " -dodir   <srcdir>    Compare images in dir, in order\n"
-     " -followdir <srcdir>  Do dir and monitor for new images\n"
-     " -savedir <saveto>    Where to save images with changes\n"
-     " -savenames <scheme>  Output naming scheme.  Uses strftime\n"
-     " -tempdir <dir>       Where to put temp images for video mode\n"
-     " -sensitivity N       Set sensitivity.  Lower=more sensitive\n"
-     " -blink_cmd <command> Run this command when motion detected\n"
-     "                      (used to blink the camera LED)\n"
-     " -tl N                Save image every N seconds regardless\n"
-     " -spurious            Ignore any change that returns to\n"
-     "                      previous image in the next frame\n"
-     " -brmonitor           Restart raspistill on brightness\n"
-     "                      changes (default on)\n"
-     " -fatigue             Motion fatigue time constant, 0=0ff\n"
-     " -verbose or -debug   Emit more verbose output\n"
-     " -logtofile           Log to file instead of stdout\n"
+     " -configfile file      Override default imgcomp.conf file name\n"
+     " -scale   N            Scale before detection by 1/N.  Default 1/4\n"
+     " -region  x1-x2,y1-y2  Specify region of interest\n"
+     " -exclude x1-x2,y1-y2  Exclude from area of interest\n"
+     " -diffmap <filename>   A file to use as diff map\n"
+     " -dodir   <srcdir>     Compare images in dir, in order\n"
+     " -followdir <srcdir>   Do dir and monitor for new images\n"
+     " -savedir <saveto>     Where to save images with changes\n"
+     " -savenames <scheme>   Output naming scheme.  Uses strftime\n"
+     " -premotion <n>        0 or 1.  Keep up to 1 image before motion\n"
+     " -postmotion <n>       Keep n frames after motion was detected\n"
+     " -tempdir <dir>        Where to put temp images for video mode hack\n"
+     " -sensitivity N        Set sensitivity.  Lower=more sensitive\n"
+     " -blink_cmd <command>  Run this command when motion detected\n"
+     "                       (used to blink the camera LED)\n"
+     " -tl N                 Save image every N seconds regardless\n"
+     " -spurious             Ignore any change that returns to\n"
+     "                       previous image in the next frame\n"
+     " -brmonitor            Restart raspistill on brightness\n"
+     "                       changes (default on)\n"
+     " -fatigue_tc           Motion fatigue time constant, 0=no motion fatigue\n"
+     " -fatigue_percent <n>  Gain factor (default 100) for motion fatigue strength\n"
+     " -fatigue_skip <n>     Skip applying motion fatigue every n frames\n"
+     " -verbose or -debug    Emit more verbose output\n"
+     " -logtofile            Log to file instead of stdout\n"
      " -movelognames <schme> Rotate log files, scheme works just like\n"
-     "                      it does for savenames\n"
-     " -sendudp <ipaddr>    Send UDP packets for motion detection\n"
-     " -wait_close_write 1  Wait for IN_CLOSE_WRITE rather than IN_CREATE\n"
-     " -relaunch_timeout    Timeout (in seconds) before giving up on capture command and relaunching\n"
-     " -give_up_timeout     Timeout (in seconds) before giving up completely and attempting to reboot\n"
-     "                      (set to zero to disable)\n"
+     "                       it does for savenames\n"
+     " -sendudp <ipaddr>     Send UDP packets for motion detection\n"
+     " -wait_close_write 1   Wait for IN_CLOSE_WRITE rather than IN_CREATE\n"
+     " -relaunch_timeout     Timeout (in seconds) before giving up on capture\n"
+     "                       command and relaunching\n"
+     " -give_up_timeout      Timeout (in seconds) before giving up completely and\n"
+     "                       attempting to reboot (set to zero to disable)\n"
      );
    
     exit(-1);
@@ -66,10 +71,10 @@ static int keymatch (const char * arg, const char * keyword, int minchars)
     int ca, ck, nmatched = 0;
 
     while ((ca = *arg++) != '\0') {
-        if ((ck = *keyword++) == '\0') return 0;  // arg longer than keyword, no good */
-        if (isupper(ca))  ca = tolower(ca);	 // force arg to lcase (assume ck is already)
-        if (ca != ck)  return 0;             // no good 
-        nmatched++;			                 // count matched characters 
+        if ((ck = *keyword++) == '\0') return 0;// arg longer than keyword, no good
+        if (isupper(ca))  ca = tolower(ca);     // force arg to lcase (assume ck is already)
+        if (ca != ck) return 0;                 // no good
+        nmatched++;                             // count matched characters
     }
     // reached end of argument; fail if it's too short for unique abbrev 
     if (nmatched < minchars) return 0;
@@ -116,30 +121,40 @@ static int parse_parameter (const char * tag, const char * value)
         // Enable debug printouts.  Specify more than once for more detail.
         Verbosity += 1;
         return 1;
-	}
-	if (!value){
+    }
+    if (!value){
         fprintf(stderr, "Parameter '%s' needs to be followed by a value\n",tag);
         return -1;
-	}
+    }
 
     if (keymatch(tag, "spurious", 4)) {
         SpuriousReject = value[0]-'0';
-		if ((SpuriousReject != 0 && SpuriousReject != 1) || value[1] != 0){
-			fprintf(stderr, "Spurious value can only be 0 or 1\n");
-		}
+        if ((SpuriousReject != 0 && SpuriousReject != 1) || value[1] != 0){
+            fprintf(stderr, "Spurious value can only be 0 or 1\n");
+        }
     }else if (keymatch(tag, "configfile", 10)) {
         // do nothing; this arg was already interpreted earlier.  Also this is meaningless
         // inside a config file.
     }else if (keymatch(tag, "postmotion", 10)) {
         if (sscanf(value, "%d", &PostMotionKeep) != 1) return -1;
+    }else if (keymatch(tag, "premotion", 9)) {
+        if (sscanf(value, "%d", &PreMotionKeep) != 1) return -1;
+        if (PreMotionKeep != 0 && PreMotionKeep != 1){
+            fprintf(stderr, "preMotion may only be 0 or 1\n");
+            return -1;
+        }
     }else if (keymatch(tag, "brmonitor", 5)) {
         if (sscanf(value, "%d", &BrightnessChangeRestart) != 1) return -1;        
     }else if (keymatch(tag, "relaunch_timeout", 16)) {
         if (sscanf(value, "%d", &relaunch_timeout) != 1) return -1;        
     }else if (keymatch(tag, "give_up_timeout", 15)) {
-        if (sscanf(value, "%d", &give_up_timeout) != 1) return -1;        
-    }else if (keymatch(tag, "fatigue", 7)) {
-        if (sscanf(value, "%d", &MotionFatigueTc) != 1) return -1;        
+        if (sscanf(value, "%d", &give_up_timeout) != 1) return -1;
+    }else if (strcmp(tag, "fatigue") == 0 || keymatch(tag, "fatigue_tc", 10)) {
+        if (sscanf(value, "%d", &MotionFatigueTc) != 1) return -1;
+    }else if (keymatch(tag, "fatigue_percent", 11)) {
+        if (sscanf(value, "%d", &FatigueGainPercent) != 1) return -1;
+    }else if (keymatch(tag, "fatigue_skip", 10)) {
+        if (sscanf(value, "%d", &FatigueSkipCount) != 1) return -1;
     } else if (keymatch(tag, "scale", 5)) {
         // Scale the output image by a fraction 1/N.
         if (sscanf(value, "%d", &ScaleDenom) != 1) return -1;
@@ -200,8 +215,7 @@ static int parse_parameter (const char * tag, const char * value)
     } else if (keymatch(tag, "dodir", 5)) {
         // Scale the output image by a fraction M/N. */
         strncpy(DoDirName, value, sizeof(DoDirName)-1);
-		FollowDir = 0;
-		
+        FollowDir = 0;
     } else if (keymatch(tag, "followdir", 6)) {
         strncpy(DoDirName,value, sizeof(DoDirName)-1);
         FollowDir = 1;
@@ -217,7 +231,7 @@ static int parse_parameter (const char * tag, const char * value)
         if (sscanf(value, "%d", &wait_close_write) != 1) return -1;
     }else{
         fprintf(stderr,"argument %s not understood\n",tag);
-        return -1;	   // bogus switch
+        return -1;     // bogus switch
         bad_value:
         fprintf(stderr, "Value of %s=%s\n not understood\n",tag,value);
         return -1;

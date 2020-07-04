@@ -5,10 +5,13 @@ extern char SaveNames[200];
 extern int FollowDir;
 extern int ScaleDenom;
 extern int SpuriousReject;
+extern int PreMotionKeep;
 extern int PostMotionKeep;
 
 extern int BrightnessChangeRestart;
 extern int MotionFatigueTc;
+extern int FatigueGainPercent;
+extern int FatigueSkipCount;
 
 extern char DiffMapFileName[200];
 extern Regions_t Regions;

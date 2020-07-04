@@ -226,7 +226,7 @@ void ShowImgMap(ImgMap_t * map, int divisor)
 	for (int c=0;c<map->w;c++) fprintf(Log,"%2d",c%10);
 	fprintf(Log,"\n");
 	for (int r=0;r<map->h;r++){
-		fprintf(Log,"%d",r%10 == 0 ? '=' : '|');
+		fprintf(Log,"%c",r%10 == 0 ? '=' : '|');
 		for (int c=0;c<map->w;c++){
 			const char LowDigits[20] = "   - = 3 4~5~6~7=8=9";
 			int v = map->values[r*w+c]/divisor;

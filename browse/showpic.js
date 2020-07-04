@@ -39,7 +39,7 @@ function UpdateActagram(){
 
     if (thisbin == thisbin_last) return;
     thisbin_last = thisbin
-    
+
     // clear canvas so we don't draw on top of it each time
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -67,40 +67,44 @@ NextImgUrl = ""
 flagsstr = ""
 SaveResp = ""
 function UpdatePix(){
-    if (piclist.length){
-        var imgname = subdir+prefix+piclist[pic_index]+".jpg"
-        var url = pixpath+imgname;
-        flagsstr = ""
-        if (AdjustBright){
-            flagsstr = "b";
-            url = "tb.cgi?"+imgname+(ShowBigOn?"$1":"$2")
-        }
-        if (!document.getElementById("view").complete){
-            NextImgUrl = url;
-        }else{
-            document.getElementById("view").src = url
-        }
-        if (ShowBigOn) flagsstr = flagsstr + "e";
-        if (flagsstr != "") flagsstr = flagsstr +","
-        var nch = "#"+flagsstr+prefix+piclist[pic_index]+".jpg"
-        if (nch != currenthash){
-            if (nch.substring(0,5) == currenthash.substring(0,5) || currenthash == ""){
-                // If only image# changed, don't fill up the browser history.
-                history.replaceState({}, imgname, nch)
-            }else{
-                location.hash = nch
-            }
-            currenthash = nch
-            document.title = imgname
-        }
-        var n = prefix+piclist[pic_index];
-        document.getElementById("this").innerHTML = n.substring(5,7)+":"+n.substring(7,9)+":"+n.substring(9,11)
+    if (!piclist.length) return;
+    var n = prefix+piclist[pic_index];
+    document.getElementById("this").innerHTML = n.substring(5,7)+":"+n.substring(7,9)+":"+n.substring(9,11)
+    var imgname = subdir+n+".jpg"
+    var url = pixpath+imgname;
+    flagsstr = ""
+    if (AdjustBright){
+        flagsstr = "b";
+        url = "tb.cgi?"+imgname+(ShowBigOn?"$1":"$2")
     }
+    if (!document.getElementById("view").complete){
+        NextImgUrl = url;
+    }else{
+        document.getElementById("view").src = url
+    }
+    if (ShowBigOn) flagsstr = flagsstr + "e";
+    if (flagsstr != "") flagsstr = flagsstr +","
+    var nch = "#"+flagsstr+prefix+piclist[pic_index]+".jpg"
 
     UpdateActagram()
     if (SaveResp){
         document.getElementById("save").innerHTML = "Save"
         SaveResp = ""
+    }
+
+    if (nch != currenthash){
+        currenthash = nch
+        if (nch.substring(0,5) == currenthash.substring(0,5) || currenthash == ""){
+            // If only image# changed, don't fill up the browser history.
+            // But... when scrubbing thru a lot of images on iPad, history.replacestate ends up
+            // failing, so I moved it late in the processing so it doesn't cause other stuff to fail.
+            // I should make it only call on pictouchend (or mouse up) 
+            // to not overwhelm history.replacestate mechaism.
+            history.replaceState({}, imgname, nch)
+        }else{
+            location.hash = nch
+            document.title = imgname
+        }
     }
 }
 
@@ -346,6 +350,39 @@ vc.onmousemove = picMouseMove
 vc.ontouchstart = picTouchStart
 vc.ontouchend = picTouchEnd
 vc.ontouchmove = picTouchMove
+
+window.addEventListener("keydown", function (event) {
+  if (event.defaultPrevented) {
+    return; // Do nothing if the event was already processed
+  }
+
+
+  switch (event.key) {
+    case " ":
+      PlayButtonClick();
+      break;
+    case "b":
+      ShowBrightClick();
+      break;
+    case "e":
+      ShowBigClick();
+      break;
+    case "n":
+      if (NextDir) window.location = "view.cgi?"+NextDir+"/#"+flagsstr
+      break;
+    case "p":
+      if (PrevDir) window.location = "view.cgi?"+PrevDir+"/#"+flagsstr
+      break;
+    case "s":
+      SavePicClick();
+      break;
+    default:
+      return; // Quit when this doesn't handle the key event.
+  }
+
+  // Cancel the default action to avoid it being handled twice
+  event.preventDefault();
+}, true);
 
 // Fill bins for actagram (a sort of motion time histogram)
 ActBins = []
