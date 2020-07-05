@@ -8,10 +8,6 @@ a {
     text-decoration: none;
 }
 
-a:hover {
-    color: #ffffff;
-}
-
 .histo {
     height: 40px;
     width: 330px;
