@@ -97,7 +97,7 @@ static void ShowHourActagram(VarList SubdImages, char * HtmlPath, char * SubdirN
             char * Name = SubdImages.Entries[BinImage[a]].Name;
             printf("<li>\n<a href=\"view.cgi?%s/%s/#%s\"",HtmlPath, SubdirName, Name);
             printf(" onmouseover=\"mmo('%s/%s')\">",SubdirName, Name);
-            printf("<span class=\"height\" style=\"height: %f%%;\">(%d)</span></a>\n</li>\n", 100.00*Bins[a]/SubdImages.NumEntries, Bins[a]);
+            printf("<span class=\"height\" style=\"height: %f%%;\">(%d)</span></a>\n</li>\n", Bins[a]/6.0*38, Bins[a]);
         }else{
 	    printf("<li></li>\n");
         }
@@ -128,7 +128,6 @@ static int ShowHourlyDirs(char * HtmlPath, int IsRoot, VarList Directories)
         VarList SubdImages;
         char SubdirPath[220];
         memset(&SubdImages, 0, sizeof(VarList));
-
         snprintf(SubdirPath,210,"pix/%s/%s",HtmlPath, SubdirName);
         CollectDirectory(SubdirPath, &SubdImages, NULL, ImageExtensions);
 
