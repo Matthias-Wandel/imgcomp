@@ -81,7 +81,7 @@ static void ShowHourActagram(VarList SubdImages, char * HtmlPath, char * SubdirN
         int e = strlen(Name);
         if (e < 5 || memcmp(Name+e-4,".jpg",4)) continue; // Not an image.
         NumImages += 1;
- 
+
         Second = (Name[7]-'0')*600 + (Name[8]-'0') * 60
                 +(Name[9]-'0')*10  + (Name[10]-'0');
         binno = Second*NumBins/3600;
@@ -90,24 +90,19 @@ static void ShowHourActagram(VarList SubdImages, char * HtmlPath, char * SubdirN
             BinImage[binno] = a-Bins[binno]/2;
         }
     }
- 
-    printf("<span class='a'>");
+
+    printf("<ul class='histo'>\n");
     for (int a=0;a<NumBins;a++){
         if (Bins[a]){
-            char nc = '-';
-            if (Bins[a] >= 1) nc = '.';
-            if (Bins[a] >= 8) nc = '1';
-            if (Bins[a] >= 25) nc = '2';
-            if (Bins[a] >= 60) nc = '#';
             char * Name = SubdImages.Entries[BinImage[a]].Name;
-            printf("<a href=\"view.cgi?%s/%s/#%s\"",HtmlPath, SubdirName, Name);
-            printf(" onmouseover=\"mmo('%s/%s')\"",SubdirName, Name);
-            printf(">%c</a\n>", nc);
+            printf("<li>\n<a href=\"view.cgi?%s/%s/#%s\"",HtmlPath, SubdirName, Name);
+            printf(" onmouseover=\"mmo('%s/%s')\">",SubdirName, Name);
+            printf("<span class=\"height\" style=\"height: %f%%;\">(%d)</span></a>\n</li>\n", Bins[a]/6.0*38, Bins[a]);
         }else{
-            printf("&nbsp;");
+	    printf("<li></li>\n");
         }
     }
-    printf("</span>\n");
+    printf("</ul>\n");
 }
 
 //----------------------------------------------------------------------------------
@@ -116,7 +111,7 @@ static void ShowHourActagram(VarList SubdImages, char * HtmlPath, char * SubdirN
 static int ShowHourlyDirs(char * HtmlPath, int IsRoot, VarList Directories)
 {
     int TotImages = 0;
-    
+
     int prevwkd = 6, thiswkd=6;
     for (int b=0;b<Directories.NumEntries;b++){
         char * SubdirName = Directories.Entries[b].Name;
@@ -335,6 +330,7 @@ void MakeHtmlOutput(Dir_t * Dir)
     // Header of file.
     printf("<html>\n<title>%s</title>\n",Dir->HtmlPath);
     printf("<head><meta charset=\"utf-8\"/>\n");
+    printf("<link rel=\"stylesheet\" type=\"text/css\" href=\"styledir.css\">\n");
 
     // Find first image to determine aspect ratio for CSS
     int ThumbnailHeight = 100;
@@ -356,7 +352,6 @@ void MakeHtmlOutput(Dir_t * Dir)
         "  p {margin-bottom: 0px}\n"
         "  span.a {font-family: courier; font-weight: bold; font-size: 14px;}\n"
         "  span.wkend {background-color: #E8E8E8}\n"
-        "  a {text-decoration: none;}\n"
         "  div.ag { float:left; border-left: 1px solid black; margin-bottom:10px; min-width:130px;}\n"
         "  div.pix { float:left; width:321px; height:%dpx;}\n", ThumbnailHeight+45);
     printf("  div.pix img { width: 320; height: %d;", ThumbnailHeight);

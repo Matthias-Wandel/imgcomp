@@ -1,0 +1,49 @@
+* {
+    margin: 0;
+    padding: 0;
+    list-style-type: none;
+}
+
+a {
+    text-decoration: none;
+}
+
+.histo {
+    overflow: hidden;
+    height: 40px;
+    width: 180px;
+}
+
+.histo li {
+    height: 38px;
+    position: relative;
+    float: left;
+    width: 5px;
+    margin: 0 0.5px;
+}
+
+.histo li a {
+    display: block;
+    height: 100%;
+}
+
+.histo li a .height {
+    display: block;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 0;
+    width: 100%;
+    background: #aaaaaa;
+
+    /*https://en.wikipedia.org/wiki/CSS_image_replacement#Implementations*/
+    text-indent: -9999px;
+}
+
+.histo li:hover {
+    background: #efefef;
+}
+
+.histo li a:hover .height {
+    background: #2d7bb2;
+}
