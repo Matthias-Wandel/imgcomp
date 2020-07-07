@@ -61,18 +61,13 @@ static void PrintNavLinks(Dir_t * Dir, int IsRoot)
 //----------------------------------------------------------------------------------
 // Show an actagram for one hour.
 //----------------------------------------------------------------------------------
-static void ShowHourActagram(VarList SubdImages, char * HtmlPath, char * SubdirName, int IsRoot)
+static void ShowHourActagram(VarList SubdImages, char * HtmlPath, char * SubdirName)
 {
-
     // Build an actagram for the hour.
     const int MaxBins = 30; // Bins per hour.
     int Bins[MaxBins];
     int BinImage[MaxBins];
     int NumBins = MaxBins;
-    if (IsRoot){
-        // Less space for actagram in root dir so 7 days fit across (and the actagram is probably blank)
-        NumBins = 15; 
-    }
     int NumImages = 0;
     memset(&Bins, 0, sizeof(Bins));
     for (int a=0;a<SubdImages.NumEntries;a++){
@@ -144,8 +139,10 @@ static int ShowHourlyDirs(char * HtmlPath, int IsRoot, VarList Directories)
             TotImages += SubdImages.NumEntries;
         }
         printf("<br>\n");
-        
-        ShowHourActagram(SubdImages, HtmlPath, SubdirName, IsRoot);
+
+        if (!IsRoot) {
+            ShowHourActagram(SubdImages, HtmlPath, SubdirName);
+        }
         free(SubdImages.Entries);
 
         printf("</div>\n");
