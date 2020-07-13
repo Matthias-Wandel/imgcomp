@@ -64,7 +64,7 @@ static void PrintNavLinks(Dir_t * Dir, int IsRoot)
 static void ShowHourActagram(VarList SubdImages, char * HtmlPath, char * SubdirName)
 {
     // Build an actagram for the hour.
-    const int MaxBins = 30; // Bins per hour.
+    const int MaxBins = 60; // Bins per hour.
     int Bins[MaxBins];
     int BinImage[MaxBins];
     int NumBins = MaxBins;
@@ -350,8 +350,8 @@ void MakeHtmlOutput(Dir_t * Dir)
         "  span.a {font-family: courier; font-weight: bold; font-size: 14px;}\n"
         "  span.wkend {background-color: #E8E8E8}\n"
         "  div.ag { float:left; border-left: 1px solid black; margin-bottom:10px; min-width:130px;}\n"
-        "  div.pix { float:left; width:321px; height:%dpx;}\n", ThumbnailHeight+45);
-    printf("  div.pix img { width: 320; height: %d;", ThumbnailHeight);
+        "  div.pix { float:left; width:641px; height:%dpx;}\n", ThumbnailHeight+45);
+    printf("  div.pix img { width: 640; height: %d;", ThumbnailHeight);
     printf(" margin-bottom:2px; display: block; background-color: #c0c0c0;}\n"
         "</style></head>\n");
 

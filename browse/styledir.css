@@ -11,14 +11,14 @@ a {
 .histo {
     overflow: hidden;
     height: 40px;
-    width: 180px;
+    width: 300px;
 }
 
 .histo li {
     height: 38px;
     position: relative;
     float: left;
-    width: 5px;
+    width: 4px;
     margin: 0 0.5px;
 }
 
