@@ -92,7 +92,7 @@ static void ShowHourActagram(VarList SubdImages, char * HtmlPath, char * SubdirN
             char * Name = SubdImages.Entries[BinImage[a]].Name;
             printf("<li>\n<a href=\"view.cgi?%s/%s/#%s\"",HtmlPath, SubdirName, Name);
             printf(" onmouseover=\"mmo('%s/%s')\">",SubdirName, Name);
-            printf("<span class=\"height\" style=\"height: %f%%;\">(%d)</span></a>\n</li>\n", Bins[a]/6.0*38, Bins[a]);
+            printf("<span class=\"height\" style=\"height: %d%%;\">(%d)</span></a>\n</li>\n", Bins[a]*28/6, Bins[a]);
         }else{
 	    printf("<li></li>\n");
         }
@@ -410,9 +410,9 @@ void MakeHtmlOutput(Dir_t * Dir)
     // Javascript
         printf("<script>\n" // Script to resize the image to the right aspect ratio
            "function sizeit(){\n"
-           "  var h = 300\n"
+           "  var h = 350\n"
            "  var w = h/el.naturalHeight*el.naturalWidth;\n"
-           "  if (w > 850){ w=850;h=w/el.naturalWidth*el.naturalHeight;}\n"
+           "  if (w > 1024){ w=850;h=w/el.naturalWidth*el.naturalHeight;}\n"
            "  el.width=w;el.height=h;\n"
            "}\n");
            
