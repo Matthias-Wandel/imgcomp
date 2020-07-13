@@ -107,7 +107,7 @@ pathname = args.pathname
 if pathname and pathname[len(pathname)-1] != '/':
     pathname += '/*.jpg'
 else:
-    pathname = "*.jpg"
+    pathname += "*.jpg"
 
 images = glob.glob(pathname)
 print ("Number of images:",len(images))
