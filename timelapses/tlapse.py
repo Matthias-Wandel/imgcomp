@@ -112,8 +112,6 @@ else:
 images = glob.glob(pathname)
 print ("Number of images:",len(images))
 images = sorted(images)
-a = 0
-
 imglist = open("imglist.txt","w")
 
 prevsecond = 0
@@ -140,14 +138,10 @@ for i in images:
         if gap > 120 and os.path.isfile("black.jpg"):
             # Assume I left the shop, show black.
             WriteEntry("black.jpg", 0.3)
-    else:
-        prevsecond = second
-
 
     prevsecond = second
     prevname = i
 
-    a += 1
 
 if prevname != "": WriteEntry(prevname, timeunit*2)
 
