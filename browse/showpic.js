@@ -93,7 +93,6 @@ function UpdatePix(){
     }
 
     if (nch != currenthash){
-        currenthash = nch
         if (nch.substring(0,5) == currenthash.substring(0,5) || currenthash == ""){
             // If only image# changed, don't fill up the browser history.
             // But... when scrubbing thru a lot of images on iPad, history.replacestate ends up
@@ -105,6 +104,7 @@ function UpdatePix(){
             location.hash = nch
             document.title = imgname
         }
+        currenthash = nch
     }
 }
 
