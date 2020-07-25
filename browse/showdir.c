@@ -86,17 +86,24 @@ static void ShowHourActagram(VarList SubdImages, char * HtmlPath, char * SubdirN
         }
     }
 
+    int hrefOpen = 0;
     printf("<ul class='histo'>\n");
     for (int a=0;a<NumBins;a++){
         if (Bins[a]){
+            if (hrefOpen) printf("</a>");
             char * Name = SubdImages.Entries[BinImage[a]].Name;
             printf("<li>\n<a href=\"view.cgi?%s/%s/#%s\"",HtmlPath, SubdirName, Name);
             printf(" onmouseover=\"mmo('%s/%s')\">",SubdirName, Name);
-            printf("<span class=\"height\" style=\"height: %d%%;\">(%d)</span></a>\n</li>\n", (Bins[a]*28+5)/6, Bins[a]);
+            printf("<span class=\"height\" style=\"height: %d%%;\">(%d)</span>\n</li>\n", (Bins[a]*28+5)/6, Bins[a]);
+            hrefOpen = 1;
         }else{
-            printf("<li></li>\n");
+            printf("<li></li>");
+            if (hrefOpen) printf("</a>");
+            hrefOpen = 0;
+            printf("\n");
         }
     }
+    if (hrefOpen) printf("</a>");
     printf("</ul>\n");
 }
 
