@@ -92,9 +92,9 @@ static void ShowHourActagram(VarList SubdImages, char * HtmlPath, char * SubdirN
             char * Name = SubdImages.Entries[BinImage[a]].Name;
             printf("<li>\n<a href=\"view.cgi?%s/%s/#%s\"",HtmlPath, SubdirName, Name);
             printf(" onmouseover=\"mmo('%s/%s')\">",SubdirName, Name);
-            printf("<span class=\"height\" style=\"height: %d%%;\">(%d)</span></a>\n</li>\n", Bins[a]*28/6, Bins[a]);
+            printf("<span class=\"height\" style=\"height: %d%%;\">(%d)</span></a>\n</li>\n", (Bins[a]*28+5)/6, Bins[a]);
         }else{
-	    printf("<li></li>\n");
+            printf("<li></li>\n");
         }
     }
     printf("</ul>\n");
