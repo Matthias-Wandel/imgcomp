@@ -3,7 +3,7 @@ CC=gcc -std=c99 -Wall -DVIEWCGI
 LINKER=link
 LINKCON = /nologo
 
-all:objdir view.cgi wait_change.cgi tb.cgi ../../www/realtime.html ../../www/favicon.ico ../../www/showpic.js
+all:objdir view.cgi wait_change.cgi tb.cgi ../../www/realtime.html ../../www/favicon.ico ../../www/showpic.js ../../www/styledir.css
 
 OBJ = obj
 
@@ -47,3 +47,6 @@ wait_change.cgi:	$(OBJ)/wait_change.o
 
 ../../www/showpic.js: showpic.js
 	cp showpic.js ../../www
+
+../../www/styledir.css: styledir.css
+	cp styledir.css ../../www
