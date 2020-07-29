@@ -66,7 +66,7 @@ fi
 
 if [ ! -d "/ramdisk" ]; then
 	echo
-	echo "You still need to run sudo setup-imgcomp-sudo"
+	echo "You still need to run sudo ./setup-imgcomp-root"
 fi
 
 
