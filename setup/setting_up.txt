@@ -8,7 +8,7 @@ either by git cloning it or by unzipping the archive.
 Make sure you can sudo.  Type:
   sudo whoami
 
-You may be prompted for your password.  It sould print "root".
+You may be prompted for your password.  It should print "root".
 
 Start setting things up:
   cd ~/imgcomp/setup
