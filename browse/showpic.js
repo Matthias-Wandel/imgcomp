@@ -237,7 +237,9 @@ function PicMouse(picX,picY,IsDown)
             if (ref_index >= 0){
                 // Drag scrolling is active.
                 var relmove = (picX-xref)/ShwW;
-                var targindex = Math.round(ref_index+relmove*piclist.length);
+                var luse = piclist.length < 40 ? 40 : piclist.length
+                if (luse > 400) luse = 400
+                var targindex = Math.round(ref_index+relmove*luse);
                 if (targindex < 0) targindex = 0
                 if (targindex >= piclist.length) targindex = piclist.length-1
                 pic_index = targindex
