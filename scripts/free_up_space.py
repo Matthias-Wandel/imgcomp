@@ -16,7 +16,7 @@ total_blocks=xx.f_blocks*xx.f_bsize/1024
 avail_blocks=xx.f_bavail*xx.f_bsize/1024
 percent_avail = avail_blocks/total_blocks*100
 
-print(timestr+" %%%d (%3.1fG) free."%(percent_avail, avail_blocks/1024/1024), end='')
+print(timestr+" %d%% (%3.1fG) free."%(percent_avail, avail_blocks/1024/1024), end='')
 
 # If disk usage < 80%, do nothing.
 if percent_avail > 20:
@@ -47,7 +47,7 @@ if wipedir:
     xx=os.statvfs('/')
     avail_after=xx.f_bavail*xx.f_bsize/1024
     now2 = time()
-    print(" %4.2fG freedm t=%d"%((avail_after-avail_blocks)/1024/1024, (now2-now)))
+    print(" %4.2fG freed: t=%d"%((avail_after-avail_blocks)/1024/1024, (now2-now)))
     
 else:
     print ("No dir to delete");
