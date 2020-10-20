@@ -3,7 +3,7 @@
 
 # The command to start aquiring
 # Tell rapistill to aquire a 1600x1200 image every second
-aquire_cmd = raspistill -q 10 -n -th none -p 1000,0,600,450 -w 1600 -h 1200 -o /ramdisk/out%05d.jpg -t 0 -tl 1000
+aquire_cmd = raspistill -q 10 -ex antishake -n -th none -p 1000,0,600,450 -w 1600 -h 1200 -o /ramdisk/out%05d.jpg -t 0 -tl 1000
 
 # Directory to get images from as they are aquired
 # (raspistill aquire_cmd must also indicate to put images there)

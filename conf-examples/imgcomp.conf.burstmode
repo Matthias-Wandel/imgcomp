@@ -6,7 +6,7 @@
 # Tell rapistill to aquire a 1600x1200 images as fast as it can (-tl 0) in burst mode (-bm)
 # This captures about 4.8 fps on a V1 camera module (5 megapixel sensor).  V2 camera modules (8mp)
 # are considerably slower due to the higher pixel count.
-aquire_cmd = raspistill -q 10 -n -bm -th none -p 1000,0,600,450 -w 1600 -h 1200 -o /ramdisk/out%05d.jpg -t 0 -tl 0
+aquire_cmd = raspistill -q 10 -ex antishake -n -bm -th none -p 1000,0,600,450 -w 1600 -h 1200 -o /ramdisk/out%05d.jpg -t 0 -tl 0
 
 # Directory to get images from as they are aquired
 # (raspistill aquire_cmd must also indicate to put images there)

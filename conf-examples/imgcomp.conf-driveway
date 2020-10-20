@@ -1,5 +1,5 @@
 # The command to start aquiring
-aquire_cmd = raspistill -q 10 -ev +4 -n -th none -n -w 1440 -h 1080 -o /ramdisk/out%05d.jpg -t 0 -tl 1000";
+aquire_cmd = raspistill -q 10 -ev +4 -ex antishake -n -th none -n -w 1440 -h 1080 -o /ramdisk/out%05d.jpg -t 0 -tl 1000";
 
 # Directory to get images from as they are aquired
 # (aquire_cmd must also indicate to put images there)

@@ -2,7 +2,7 @@
 # Please see docs/config.html for more details on cofiguring Imgcomp
 
 # The command to start aquiring
-aquire_cmd = raspistill -q 10 -n -th none -n -w 1920 -h 1080 -o /ramdisk/out%05d.jpg -t 0 -tl 0";
+aquire_cmd = raspistill -q 10 -ex antishake -n -th none -n -w 1920 -h 1080 -o /ramdisk/out%05d.jpg -t 0 -tl 0";
 
 # Directory to get images from as they are aquired
 # (aquire_cmd must also indicate to put images there)
