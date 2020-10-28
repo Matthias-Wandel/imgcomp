@@ -216,6 +216,8 @@ function PicMouse(picX,picY,IsDown)
     DbgAdd("pm("+IsDown+")")
     picX -= vc.offsetLeft
     picY -= vc.offsetTop
+	
+	if (picY < ShwH*.2) return; // Top 20% of image used for dragging image out, no other action
     //dbg.innerHTML = "Mouse "+picX+", "+picY+" Down="+IsDown;
     if (IsDown){
         var leftright = 0;
@@ -344,7 +346,7 @@ vc.onload = picLoaded
 function picMouseDown(e) { DbgAdd("picMD");PicMouse(e.clientX,e.clientY,1); }
 function picMouseMove(e) { DbgAdd("picMM");PicMouse(e.clientX,e.clientY,MouseIsDown); }
 function picDrag(e){
-    if ((e.clientY-vc.offsetTop) < ShwH*.2) return true; // Allow dragging image out of brwser near top.
+    if ((e.clientY-vc.offsetTop) < ShwH*.2) return true; // Allow dragging image out of browser near top.
     DbgAdd("picDrag")
     PicMouse(e.clientX,e.clientY,1);
     return false;
