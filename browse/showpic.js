@@ -217,7 +217,7 @@ function PicMouse(picX,picY,IsDown)
     picX -= vc.offsetLeft
     picY -= vc.offsetTop
 	
-	if (picY < ShwH*.2) return; // Top 20% of image used for dragging image out, no other action
+	if (picY < ShwH*.2 && IsDown) return; // Top 20% of image used for dragging image out, no other action
     //dbg.innerHTML = "Mouse "+picX+", "+picY+" Down="+IsDown;
     if (IsDown){
         var leftright = 0;
