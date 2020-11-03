@@ -56,7 +56,7 @@ function UpdateActagram(){
     // draw 10 minute scale stripe background as first layer
     for (a=0;a<60;a+=10){
         ctx.fillStyle = a % 20 == 0 ? "#ffffff" : "#ebebeb";
-        var histX = a ? a*HIST_BINS/60*per_hist_bar : 0;
+        var histX = a*HIST_BINS/60*per_hist_bar
         ctx.fillRect(histX, 0, canv.width/6, canv.height);
     }
 
@@ -410,7 +410,6 @@ for (a=0;a<piclist.length;a++){
     var binfl = sec*HIST_BINS/3600
     var bin = Math.floor(binfl)
     var frac = binfl-bin
-    bin = Math.floor(bin)
     if (ActBins[bin]) ActBins[bin]++
     else ActBins[bin] = 1
 
