@@ -191,7 +191,10 @@ pargs = pargs + [
 p = Popen(pargs, stdin=PIPE)
 
 textsize = 40
-font = ImageFont.truetype(r'C:\Users\System-Pc\Desktop\arial.ttf', textsize)
+if sys.platform == "linux":
+    font = ImageFont.truetype("/usr/share/fonts/truetype/freefont/FreeSansBold.ttf", textsize)
+else:
+    font = ImageFont.truetype(r'C:\Users\System-Pc\Desktop\arial.ttf', textsize)
 
 if not args.no_timestamp:
     for i in range(frames):
