@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+ #!/usr/bin/python3
 # Script to make timelapses from directories of images from imgcomp.
 # Shows time below image, plus animated "actagram" view.
 #
@@ -17,15 +17,20 @@ parser = argparse.ArgumentParser(
     allow_abbrev=True,
 )
 parser.add_argument(
-    '-o','--outputfile',
+    '-o','--outfile',
     required=False,
     help='Output file name.',
 )
 
 parser.add_argument(
+    '-nd', '--no-dupframes',
+    required=False, default=False,action='store_true',
+    help='Disable duplicating frame after time gap',
+)
+
+parser.add_argument(
     '-n', '--no-timestamp',
-    required=False, default=False,
-    action='store_true',
+    required=False, default=False,action='store_true',
     help='Flag to disable timestamps and actagram in timelapse output video.',
 )
 
@@ -33,16 +38,20 @@ parser.add_argument('dirs', metavar='dirs', type=str, nargs='+',
                     help='Directories to read')
 
 args = parser.parse_args()
-print (args)
+#print (args)
 
-if args.outputfile:
-    outname = args.outputfile
+no_dupframes = args.no_dupframes
+
+if args.outfile:
+    outname = args.outfile
 else:
     # Come up with a reasonable output name.
     outname = "timelapse"
     if len(args.dirs) == 1: outname = args.dirs[0]
     
     if outname[1] == ":": outname = outname[2:]
+    if outname == "": outname = "timelapse"
+
     outname = outname.replace("\\","_").replace("/","_")
     if outname[0] == "_": outname = outname[1:]
     if outname == "": outname = "timelapse"
@@ -55,13 +64,13 @@ print (args.dirs)
 images = []
 for pn in args.dirs:
     if pn.find("*") == -1 and pn.find("?") == -1:
-        if pn[-1] != '/':
+        if pn[-1] != '/' and pn[-1] != ":":
             pn += '/*.jpg'
         else:
             pn += "*.jpg"
 
-    print("get",pn)
     dir_images = glob.glob(pn)
+    print("Dir:",pn,"has",len(dir_images),"images")
     dir_images = sorted(dir_images)
     images = images + dir_images
 
@@ -78,13 +87,12 @@ with open("imglist.txt","w") as imglist:
     imglist2 = []
 
     def WriteEntry(filename, imgframes, second):
-        global vidtime, lastsubtotime, frames, timestamps
+        global frames, timestamps
         for i in range (imgframes):
             imglist.write("file '"+filename+"'\n")
             timestamps.append(os.path.basename(filename)[0:11])
             frameseconds.append(second)
             frames += 1
-
 
     nr = re.compile(r"""(\d\d\d\d)-(\d\d)(\d\d)(\d\d)""", re.ASCII)
     prevsecond = -100
@@ -98,26 +106,24 @@ with open("imglist.txt","w") as imglist:
             continue
 
         second = int(m.group(2))*3600+int(m.group(3))*60+int(m.group(4))
+
+        nf = 1 if second-prevsecond <= 10 or no_dupframes else 2
+        prevsecond = second
             
         seconds.append(second)
         imglist2.append(i)
-
-        gap = second-prevsecond
-
-        nf = 1
-        if gap > 10: nf = 2
-
         WriteEntry(i,nf, second)
-
-        prevsecond = second
 
     images = imglist2 # Replace list with one with unused files removed.
 
 print ("Number of images:",len(images))
 size = Image.open(images[0]).size
 size2 = Image.open(images[-1]).size
+
 if size != size2:
-    print("Size changes from ",size, "to", size2)
+    print("Size changes from %dx%d to %dx%d" % (size+size2))
+    if size2[0] > size[0]: size=size2
+
 imgwidth,imgheight = size
 
 print("Image size: ",size)
@@ -170,19 +176,18 @@ def MakeActagram():
     #Actagram.show()
     return Actagram
 
-Actagram = MakeActagram()
+pargs = ['ffmpeg', '-y', '-hide_banner']
 
-pargs = ['ffmpeg', '-y', '-hide_banner',
-     # Parameters for timelapse images
-     '-f', 'concat', '-safe', '0', '-r', str(framerate), '-i', 'imglist.txt']
+# Parameters for timelapse images
+pargs = pargs + ['-f', 'concat', '-safe', '0', '-r', str(framerate), '-i', 'imglist.txt']
 
 if not args.no_timestamp:
     pargs = pargs + [
      # Parameters for actagram
      '-f', 'image2pipe', '-vcodec', 'mjpeg', '-r', str(framerate), '-i', '-',
 
-     # How to combine them
-     '-filter_complex', 'vstack']
+     # How to combine them.  Apply scaling in case I reconfigured image size during the hour.
+     '-filter_complex', '[0:v]scale=%d:%d[t]'%size + ';[t][1]vstack'  ]
 
 pargs = pargs + [
      # Output prameters
@@ -190,13 +195,15 @@ pargs = pargs + [
 
 p = Popen(pargs, stdin=PIPE)
 
-textsize = 40
-if sys.platform == "linux":
-    font = ImageFont.truetype("/usr/share/fonts/truetype/freefont/FreeSansBold.ttf", textsize)
-else:
-    font = ImageFont.truetype(r'C:\Users\System-Pc\Desktop\arial.ttf', textsize)
-
 if not args.no_timestamp:
+    Actagram = MakeActagram()
+
+    textsize = 40
+    if sys.platform == "linux":
+        font = ImageFont.truetype("/usr/share/fonts/truetype/freefont/FreeSansBold.ttf", textsize)
+    else:
+        font = ImageFont.truetype(r'C:\Users\System-Pc\Desktop\arial.ttf', textsize)
+
     for i in range(frames):
         im = Actagram.copy()
         draw = ImageDraw.Draw(im)
@@ -212,4 +219,5 @@ p.stdin.close()
 p.wait()
 
 #Still to do:
-# Test if images are not all same size
+# Specify output frame rate
+# Specify image quality
