@@ -1,4 +1,4 @@
- #!/usr/bin/python3
+#!/usr/bin/python3
 # Script to make timelapses from directories of images from imgcomp.
 # Shows time below image, plus animated "actagram" view.
 #
@@ -191,7 +191,7 @@ if not args.no_timestamp:
 
 pargs = pargs + [
      # Output prameters
-     '-vcodec', 'mpeg4', '-qscale', '10', '-r', str(framerate), outname]
+     '-vcodec', 'mpeg4', '-qscale', '7', '-r', str(framerate), outname]
 
 p = Popen(pargs, stdin=PIPE)
 
