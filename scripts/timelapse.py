@@ -23,6 +23,12 @@ parser.add_argument(
 )
 
 parser.add_argument(
+    '-a','--actfile',
+    required=False,
+    help='Save actagram to PNG file.',
+)
+
+parser.add_argument(
     '-nd', '--no-dupframes',
     required=False, default=False,action='store_true',
     help='Disable duplicating frame after time gap',
@@ -82,7 +88,8 @@ frameseconds = [] # one entry per output frame
 seconds = [] # one entry per image
 
 # Make image list to specify input frames for the timelapse part.
-with open("imglist.txt","w") as imglist:
+imglist_name = "imglist"+str(os.getpid())+".txt"
+with open(imglist_name,"w") as imglist:
     prevname = ""
     imglist2 = []
 
@@ -131,18 +138,13 @@ print("Output frames = ",frames)
 
 firstsec = int(seconds[0] /3600)*3600
 hours = int((seconds[-1]+3600-1-firstsec)/3600)
+if hours == 0: hours = 1
 print (hours)
 
 # Parameters for histogram bagraph.
 HIST_BINS = 240*hours
 SEC_PER_BIN = 3600/240
 ActBins = [0] * HIST_BINS
-hist_left = 300
-hist_width = imgwidth-hist_left
-per_hist_bar = hist_width/HIST_BINS
-actagram_top=5
-actagram_height=60
-actagram_bot = actagram_top+actagram_height
 
 max_bin = 6;# maximun used to scale histogram within canvas height, if < 6 use 6.
 for sec in seconds:
@@ -150,11 +152,23 @@ for sec in seconds:
     if bin < HIST_BINS:
         n = ActBins[bin] + 1
         ActBins[bin] = n
-    if max_bin < n: max_bin = n;
+        if max_bin < n: max_bin = n;
 
-def MakeActagram():
-    Actagram = Image.new("RGB", (imgwidth, actagram_top+actagram_height), (0,0,0))
+def MakeActagram(width, height, left):
+    global actagram_top, actagram_bot, per_hist_bar, hist_left
+    hist_left = left
+    hist_width = width-hist_left
+    per_hist_bar = hist_width/HIST_BINS
+    actagram_top=5
+    if height < 50: actagram_top = 0
+    actagram_height=height-actagram_top
+    actagram_bot = actagram_top+actagram_height
+    bar_width = int((per_hist_bar*.7)+.5)
+
+    #Actagram = Image.new("RGB", (imgwidth, actagram_top+actagram_height), (0,0,0))
+    Actagram = Image.new("RGB", (width, height), (0,0,0))
     imgdraw = ImageDraw.Draw(Actagram)
+
 
     # draw 10 minute scale stripe background as background layer.
     for a in range (0,HIST_BINS,int(1200/SEC_PER_BIN)):
@@ -171,15 +185,21 @@ def MakeActagram():
         rectHeight = b/max_bin*actagram_height;
         
         histX = a*per_hist_bar+hist_left
-        imgdraw.rectangle([(histX,actagram_bot),(histX + per_hist_bar-2,actagram_bot-rectHeight)], fill="#a0a0a0")
+        imgdraw.rectangle([(histX,actagram_bot),(histX + bar_width,actagram_bot-rectHeight)], fill="#a0a0a0")
 
     #Actagram.show()
     return Actagram
 
+
+if args.actfile:
+    Actagram = MakeActagram(240,30,0)
+    Actagram.save( args.actfile, 'png')
+    
+
 pargs = ['ffmpeg', '-y', '-hide_banner']
 
 # Parameters for timelapse images
-pargs = pargs + ['-f', 'concat', '-safe', '0', '-r', str(framerate), '-i', 'imglist.txt']
+pargs = pargs + ['-f', 'concat', '-safe', '0', '-r', str(framerate), '-i', imglist_name]
 
 if not args.no_timestamp:
     pargs = pargs + [
@@ -191,12 +211,12 @@ if not args.no_timestamp:
 
 pargs = pargs + [
      # Output prameters
-     '-vcodec', 'mpeg4', '-qscale', '7', '-r', str(framerate), outname]
+     '-vcodec', 'mpeg4', '-qscale', '6', '-r', str(framerate), outname]
 
 p = Popen(pargs, stdin=PIPE)
 
 if not args.no_timestamp:
-    Actagram = MakeActagram()
+    Actagram = MakeActagram(imgwidth, 65, 300)
 
     textsize = 40
     if sys.platform == "linux":
@@ -207,7 +227,7 @@ if not args.no_timestamp:
     for i in range(frames):
         im = Actagram.copy()
         draw = ImageDraw.Draw(im)
-        draw.text((0,(actagram_height-textsize)/2+actagram_top), timestamps[i], font = font, align ="left")
+        draw.text((0,(actagram_bot+actagram_top-textsize)/2), timestamps[i], font = font, align ="left")
 
         second = frameseconds[i]
         imx = (second-firstsec)/SEC_PER_BIN*per_hist_bar+hist_left
@@ -217,6 +237,8 @@ if not args.no_timestamp:
         
 p.stdin.close()
 p.wait()
+
+os.remove(imglist_name)
 
 #Still to do:
 # Specify output frame rate
