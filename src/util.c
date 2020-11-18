@@ -43,6 +43,7 @@
 
 #include "imgcomp.h"
 
+static int BackupImageCount = 0;
 //-----------------------------------------------------------------------------------
 // Concatenate dir name and file name.  Not thread safe!
 //-----------------------------------------------------------------------------------
@@ -282,6 +283,7 @@ char * BackupImageFile(char * Name, int DiffMag, int DoNotCopy)
         EnsurePathExists(DstPath, 1);
         if (!DoNotCopy) CopyFile(Name, DstPath);
     }
+    BackupImageCount ++;
     return DstPath;
 }
 
@@ -372,13 +374,19 @@ void LogFileMaintain(int ForceLogSaveReboot)
 		}
         if (strcmp(ThisLogTo, NewLogTo)){
             if (Log != NULL){
-                printf("Log rotate %s --> %s\n", ThisLogTo, NewLogTo);
-                fprintf(Log,"Log rotate %s --> %s\n", ThisLogTo, NewLogTo);
-                EnsurePathExists(ThisLogTo, 1);
-                fclose(Log);
-                Log = NULL;
-                CopyFile(LogToFile, ThisLogTo);
-                unlink(LogToFile);
+                if (BackupImageCount){
+                    printf("Log rotate %s --> %s\n", ThisLogTo, NewLogTo);
+                    fprintf(Log,"Log rotate %s --> %s\n", ThisLogTo, NewLogTo);
+                    EnsurePathExists(ThisLogTo, 1);
+                    fclose(Log);
+                    Log = NULL;
+                    CopyFile(LogToFile, ThisLogTo);
+                    unlink(LogToFile);
+                    BackupImageCount = 0;
+                }else{
+                    fprintf(Log,"Skip log rotate to %s (no images were saved in dir)\n", NewLogTo);
+                    strncpy(ThisLogTo, NewLogTo, PATH_MAX);
+                }
             }
         }
     }
