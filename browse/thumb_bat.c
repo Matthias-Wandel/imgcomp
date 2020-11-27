@@ -172,13 +172,11 @@ void SaveJPEG(FILE * outfile, MemImage_t * MemImage)
 
 
 //----------------------------------------------------------------------------------
-//  Cale brightness for really dark images
+//  Scale brightness for really dark images
 //----------------------------------------------------------------------------------
 void ScaleBrightness(MemImage_t * MemImage)
 {
-    int row, a, b, c, width;
-    int satpix;
-    int medpix;
+    int row, c, width;
     int Histogram[256];
 
     memset(Histogram, 0, sizeof(Histogram));
@@ -197,14 +195,15 @@ void ScaleBrightness(MemImage_t * MemImage)
     //for (a=0;a<256;a++) printf("%3d %d  <br>\n",a,Histogram[a]);
 
     // figure out what threshold value has no more than 0.4% of pixels above.
-    satpix = (width * MemImage->height / 4) >> 6; // Allowable pixels near saturation
-    medpix = (width * MemImage->height / 4) >> 2; // Don't make the image overall too bright.
-    for (a=255;a>=0;a--){
-        satpix -= Histogram[a];
+    int satpix = (width * MemImage->height / 4) >> 6; // Allowable pixels near saturation
+    int medpix = (width * MemImage->height / 4) >> 2; // Don't make the image overall too bright.
+    int sat, med;
+    for (sat=255;sat>=0;sat--){
+        satpix -= Histogram[sat];
         if (satpix <= 0) break;
     }
-    for (b=255;b>=0;b--){
-        medpix -= Histogram[b];
+    for (med=255;med>=0;med--){
+        medpix -= Histogram[med];
         if (medpix <= 0) break;
     }
 
@@ -212,12 +211,12 @@ void ScaleBrightness(MemImage_t * MemImage)
 
     // If image is kind of dark, scale the brightness so that no more than 0.4% of the
     // pixels will saturate.
-    if (a < 220){
+    if (sat < 220){
         int Mult=256*10,Mult2=256*10;
-        if (a) Mult = 256*240/a;
-        if (b) Mult2 = 256*220/b;
+        if (sat) Mult = 256*250/sat;
+        if (med) Mult2 = 256*240/med;
         if (Mult2 < Mult) Mult = Mult2;
-        if (Mult > 265*10) Mult = 256*10; // Don't boost by more than 10x.
+        if (Mult > 265*10) Mult = 256*16; // Don't boost by more than 16x.
 
         for (row=0;row<MemImage->height;row++){
             unsigned char * RowPointer;
