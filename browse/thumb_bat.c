@@ -177,33 +177,35 @@ void SaveJPEG(FILE * outfile, MemImage_t * MemImage)
 void ScaleBrightness(MemImage_t * MemImage)
 {
     int row, c, width;
-    int Histogram[256];
-
-    memset(Histogram, 0, sizeof(Histogram));
+    int BrHistogram[256] = {0};
 
     width = MemImage->width;
     for (row=0;row<MemImage->height;row+=2){
         unsigned char * RowPointer;
         RowPointer = MemImage->pixels+row*width*3;
         for (c=0;c<MemImage->width*3;c+=6){
-            Histogram[RowPointer[c]] += 1;
-            Histogram[RowPointer[c+1]] += 1;
-            Histogram[RowPointer[c+2]] += 1;
+            BrHistogram[RowPointer[c]] += 2;   // Red
+            BrHistogram[RowPointer[c+1]] += 3; // Green
+            BrHistogram[RowPointer[c+2]] += 1; // Blue
         }
     }
 
-    //for (a=0;a<256;a++) printf("%3d %d  <br>\n",a,Histogram[a]);
+    //for (a=0;a<256;a++) printf("%3d %d  <br>\n",a,BrHistogram[a]);
+
+    // Times six because each pixel adds 6, divide by 4 because we only
+    // look at every other pixel horizontally and vertically.
+    int NumPix = 6 * width * MemImage->height / 4;
 
     // figure out what threshold value has no more than 0.4% of pixels above.
-    int satpix = (width * MemImage->height / 4) >> 6; // Allowable pixels near saturation
-    int medpix = (width * MemImage->height / 4) >> 2; // Don't make the image overall too bright.
+    int satpix = NumPix / 60; // Allowable pixels near saturation
+    int medpix = NumPix / 4;  // Don't make the image overall too bright.
     int sat, med;
     for (sat=255;sat>=0;sat--){
-        satpix -= Histogram[sat];
+        satpix -= BrHistogram[sat];
         if (satpix <= 0) break;
     }
     for (med=255;med>=0;med--){
-        medpix -= Histogram[med];
+        medpix -= BrHistogram[med];
         if (medpix <= 0) break;
     }
 
@@ -211,12 +213,15 @@ void ScaleBrightness(MemImage_t * MemImage)
 
     // If image is kind of dark, scale the brightness so that no more than 0.4% of the
     // pixels will saturate.
+
     if (sat < 220){
-        int Mult=256*10,Mult2=256*10;
-        if (sat) Mult = 256*250/sat;
-        if (med) Mult2 = 256*240/med;
-        if (Mult2 < Mult) Mult = Mult2;
-        if (Mult > 265*10) Mult = 256*16; // Don't boost by more than 16x.
+        double Mult1=10,Mult2=10;
+        if (sat) Mult1 = 250.0/sat;
+        if (med) Mult2 = 240.0/med;
+        if (Mult2 < Mult1) Mult1 = Mult2;
+        if (Mult1 > 32) Mult1 = 32; // Max adjustment.
+
+        int Mult = Mult1*256; // Multiply pixels using integer math.
 
         for (row=0;row<MemImage->height;row++){
             unsigned char * RowPointer;
