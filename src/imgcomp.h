@@ -62,6 +62,9 @@ extern int VidMode; // Video mode flag
 extern char VidDecomposeCmd[200];
 
 // compare_util.c functions
+double CalcExposureAdjust(MemImage_t * pic);
+
+// compare_util.c functions
 void FillWeightMap(int width, int height);
 void ProcessDiffMap(MemImage_t * MapPic);
 double AverageBright(MemImage_t * pic, Region_t Region, ImgMap_t* WeightMap);
