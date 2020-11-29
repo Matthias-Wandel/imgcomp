@@ -12,6 +12,35 @@
 #include "imgcomp.h"
 #include "config.h"
 
+
+
+
+static double ISOtimesExp = 25.6;   // Inverse measure of available light level.
+
+static double ISOoverExTime = 4000; // Configured ISO & exposure time relationship.
+                                    // Change this value to change iso/
+
+//----------------------------------------------------------------------------------------
+// Compute shutter speed and ISO values to pass to raspistill.
+//----------------------------------------------------------------------------------------
+static void ComputeExpValues()
+{
+    double ExTime = 1/sqrt(ISOoverExTime/ISOtimesExp);
+    
+    // Apply shutter speed limits.
+    if (ExTime < 0.0001) ExTime = 0.0001;
+    if (ExTime > 0.5) ExTime = 0.5;
+    
+    double ISO = ISOtimesExp / ExTime;
+    if (ISO > 1000) ISO = 1000;
+    if (ISO < 25) ISO = 25; 
+    
+    printf("ISO/t = %6.0f",ISOoverExTime);
+    printf("  t=%6.3f  ISO=%d\n",ExTime, (int)ISO);
+    
+    printf("Argument: -ss %d  -ISO %d\n",(int)(ExTime*1000000), (int)ISO);
+}
+
 //----------------------------------------------------------------------------------------
  // Calculate desired exposure adjustment with respect to given image.
 //----------------------------------------------------------------------------------------
@@ -47,7 +76,7 @@ double CalcExposureAdjust(MemImage_t * pic)
     }
     NumPix *= 6;
 
-    {
+    if(0){
         // Show histogram bargraph
         int maxv = 0;
         for (int a=0;a<256;a+=2){
@@ -105,8 +134,14 @@ double CalcExposureAdjust(MemImage_t * pic)
     printf("Pixel value multiplier: %f\n",ExposureMult);
     
     double LightMult = pow(ExposureMult, 2.2); // Adjust for assumed gamma of 2.2
+    // LightMult indicates how much more the light should have been,
+    // or how much to multiply exposure time or ISO or combination of both by.
     
     printf("f-stop adjustment: %5.2f\n",log(LightMult)/log(2));
+    
+    ISOtimesExp *= LightMult;
+    
+    ComputeExpValues();
     return LightMult;
 }
 
