@@ -54,12 +54,11 @@ int TimelapseInterval;
 char raspistill_cmd[200];
 char blink_cmd[200];
 char UdpDest[30];
-
-//-----------------------------------------
-// Tightening gap experiment hack
-int GateDelay;
 static int SinceMotionPix = 1000;
 static int SinceMotionMs = 0;
+
+//-----------------------------------------
+// imgcomp exposure management variables
 
 //-----------------------------------------
 // Video mode hack
@@ -350,6 +349,14 @@ static int DoDirectoryFunc(char * Directory, int DeleteProcessed)
             NewPic.mtime = (unsigned)statbuf.st_mtime;
         }
         LastPic_mtime = NewPic.mtime;
+        
+        printf("a=%d num=%d\n",a,NumEntries);
+        if (a == NumEntries-1 && NumEntries < 5){
+            // Latest image of not too many.
+            // Also make sure picture age is less than a second.
+            // Check exposure before comparison, because we may want to restart raspistill ASAP.
+            CalcExposureAdjust(NewPic.Image);
+        }
 
         SawMotion += ProcessImage(&NewPic, DeleteProcessed);
 
@@ -663,8 +670,10 @@ int main(int argc, char **argv)
 
         printf("load %s\n",argv[file_index]);
         pic1 = LoadJPEG(argv[file_index], ScaleDenom, 0, 0);
+        
         printf("\nload %s\n",argv[file_index+1]);
         pic2 = LoadJPEG(argv[file_index+1], ScaleDenom, 0, 0);
+        
         if (pic1 && pic2){
             Verbosity = 2;
             ComparePix(pic1, pic2, 0, 0,"diff.ppm");
@@ -676,14 +685,15 @@ int main(int argc, char **argv)
         MemImage_t * pic;
 
         for (a=file_index;a<argc;a++){
-
             printf("input file %s\n",argv[a]);
+            
             // Load file into memory.
-
             pic = LoadJPEG(argv[a], 4, 0, 0);
-            if (pic) WritePpmFile("out.ppm",pic);
+            
+            CalcExposureAdjust(pic);
         }
     }
     return 0;
 }
+
 

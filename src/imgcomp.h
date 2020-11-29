@@ -54,15 +54,15 @@ extern Regions_t Regions;
 ImgMap_t * WeightMap;
 
 extern time_t LastPic_mtime;
-extern int GateDelay; // In frames, how long no motion before inching gate closed.
-
 
 // Vidoe segment mode:
 extern int VidMode; // Video mode flag
 extern char VidDecomposeCmd[200];
 
-// compare_util.c functions
-double CalcExposureAdjust(MemImage_t * pic);
+// exposure.c functions
+char * GetRaspistillExpParms();
+int CalcExposureAdjust(MemImage_t * pic);
+
 
 // compare_util.c functions
 void FillWeightMap(int width, int height);
@@ -73,7 +73,6 @@ ImgMap_t * MakeImgMap(int w,int h);
 void ShowImgMap(ImgMap_t * map, int divisor);
 void BloomImgMap(ImgMap_t * src, ImgMap_t * dst);
 int BlockFilterImgMap(ImgMap_t * src, ImgMap_t * dst, int fw, int fh, int * pmaxc, int * pmaxr);
-
 
 // compare.c function
 TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, int UpdateFatigue, int SkipFatigue, char * DebugImgName);

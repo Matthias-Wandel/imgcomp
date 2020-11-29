@@ -12,18 +12,15 @@
 #include "imgcomp.h"
 #include "config.h"
 
-
-
-
-static double ISOtimesExp = 25.6;   // Inverse measure of available light level.
+static double ISOtimesExp = 5;   // Inverse measure of available light level.
 
 static double ISOoverExTime = 4000; // Configured ISO & exposure time relationship.
                                     // Change this value to change iso/
 
 //----------------------------------------------------------------------------------------
-// Compute shutter speed and ISO values to pass to raspistill.
+// Compute shutter speed and ISO values and argument string to pass to raspistill.
 //----------------------------------------------------------------------------------------
-static void ComputeExpValues()
+char * GetRaspistillExpParms()
 {
     double ExTime = 1/sqrt(ISOoverExTime/ISOtimesExp);
     
@@ -35,16 +32,20 @@ static void ComputeExpValues()
     if (ISO > 1000) ISO = 1000;
     if (ISO < 25) ISO = 25; 
     
-    printf("ISO/t = %6.0f",ISOoverExTime);
+    printf("ISO*Exp = %6.0f",ISOtimesExp);
     printf("  t=%6.3f  ISO=%d\n",ExTime, (int)ISO);
     
-    printf("Argument: -ss %d  -ISO %d\n",(int)(ExTime*1000000), (int)ISO);
+    static char RaspiParms[50];
+    snprintf(RaspiParms, 50, "-ss %d -ISO %d",(int)(ExTime*1000000), (int)ISO);
+    
+    printf("Raspiparms: '%s'\n",RaspiParms);
+    return RaspiParms;
 }
 
 //----------------------------------------------------------------------------------------
  // Calculate desired exposure adjustment with respect to given image.
 //----------------------------------------------------------------------------------------
-double CalcExposureAdjust(MemImage_t * pic)
+int CalcExposureAdjust(MemImage_t * pic)
 {
     printf("Calc brightness\n");
     
@@ -139,9 +140,23 @@ double CalcExposureAdjust(MemImage_t * pic)
     
     printf("f-stop adjustment: %5.2f\n",log(LightMult)/log(2));
     
-    ISOtimesExp *= LightMult;
     
-    ComputeExpValues();
-    return LightMult;
+    if (LightMult > 1.25 || LightMult < 0.8){
+        ISOtimesExp *= LightMult;
+        GetRaspistillExpParms();
+        return 1;
+        // And cause raspistill restart.
+    }
+    
+    GetRaspistillExpParms();
+    return 0;
 }
 
+
+
+// Todo next:
+// Cause raspistill to restart
+// On launching raspistill, call GetRaspistillExpParms() and append to command.
+// Make sure image is not too old when doing relaunch.
+// Make all this only if option is turned on.
+// How does this interact with brmonitor option?  Should replace it.

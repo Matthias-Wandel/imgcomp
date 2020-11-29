@@ -197,8 +197,6 @@ static int parse_parameter (const char * tag, const char * value)
         strncpy(MoveLogNames,value, sizeof(SaveDir)-1);
     } else if (keymatch(tag, "region", 3)) {
         if (!ParseRegion(&Regions.DetectReg, value)) goto bad_value;
-    } else if (keymatch(tag, "gatedelay", 9)) {
-        if (sscanf(value, "%d", &GateDelay) != 1) return -1;
     } else if (keymatch(tag, "exclude", 4)) {
         if (Regions.NumExcludeReg >= MAX_EXCLUDE_REGIONS){
             fprintf(stderr, "too many exclude regions");
