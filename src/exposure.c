@@ -164,8 +164,6 @@ int CalcExposureAdjust(MemImage_t * pic)
 
 
 // Todo next:
-// Cause raspistill to restart
-// On launching raspistill, call GetRaspistillExpParms() and append to command.
-// Make sure image is not too old when doing relaunch.
 // Make all this only if option is turned on.
-// How does this interact with brmonitor option?  Should replace it.
+// If exposure management enabled, check that aquire command doesn't contain -o option
+// Get rid of old brmonitor option

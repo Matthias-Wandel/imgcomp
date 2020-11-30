@@ -16,10 +16,13 @@
 #include <signal.h>
 
 #include "imgcomp.h"
+#include "config.h"
 #include "jhead.h"
 
 static int raspistill_pid = 0;
 static int blink_led_pid = 0;
+
+static char OutNameSeq = 'a';
 
 int relaunch_timeout = 6;
 int give_up_timeout = 18;
@@ -101,22 +104,26 @@ int relaunch_raspistill(void)
         perror("Reason");
         return -1;
     }
+    
+    char * cmd = raspistill_cmd;
+    if (1) { // Exposure managemnt by imgcomp
+        static char cmd_appended[300];
+        strncpy(cmd_appended, raspistill_cmd, 200);
+        strcat(cmd_appended, GetRaspistillExpParms());
+        int l = strlen(cmd_appended);
+        sprintf(cmd_appended+l," -o %s/out%c%%5d.jpg",DoDirName, OutNameSeq++);
+        if (OutNameSeq >= 'z') OutNameSeq = 'a';
+        printf("New cmd string: %s\n",cmd_appended);
+        cmd = cmd_appended;
+    }
 
     if(pid == 0){ 
         // Child takes this branch.
-
-        if (1) { // Exposure managemnt by imgcomp
-            static char cmd_appended[250];
-            strncpy(cmd_appended, raspistill_cmd, 200);
-            strcat(cmd_appended, GetRaspistillExpParms());
-            printf("New cmd string: %s\n",cmd_appended);
-            do_launch_program(cmd_appended);
-        }else{
-            do_launch_program(raspistill_cmd);
-        }
+        do_launch_program(cmd);
     }else{
         raspistill_pid = pid;
     }
+    
     return 0;
 }
 
@@ -128,7 +135,6 @@ static int MsSinceLaunch = 0;
 static int InitialBrSum;
 static int InitialNumBr;
 static int NumTotalImages;
-static double RunningAverageBright;
 
 int manage_raspistill(int NewImages)
 {
@@ -138,11 +144,6 @@ int manage_raspistill(int NewImages)
     if (NewImages > 0){
         MsSinceImage = 0;
 		NumTotalImages += NewImages;
-        if (MsSinceLaunch <= 2000 && BrightnessChangeRestart){
-            fprintf(Log,"Exp:%5.1fms Iso:%d  Bright:%d  av=%5.2f\n",
-                ImageInfo.ExposureTime*1000, ImageInfo.ISOequivalent, 
-                NewestAverageBright, RunningAverageBright);
-        }
     }else{
         if (MsSinceImage >= 3000){
             time_t now = time(NULL);
