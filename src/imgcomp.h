@@ -83,6 +83,7 @@ MemImage_t * LoadJPEG(char* FileName, int scale_denom, int discard_colors, int P
 void WritePpmFile(char * FileName, MemImage_t *MemImage);
 
 // start_raspistill functions
+int relaunch_raspistill(void);
 int manage_raspistill(int HaveNewImages);
 extern char raspistill_cmd[200];
 extern char blink_cmd[200];

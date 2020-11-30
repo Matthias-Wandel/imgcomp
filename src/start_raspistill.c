@@ -68,9 +68,9 @@ static void do_launch_program(char * cmd_string)
 }
 
 //-----------------------------------------------------------------------------------
-// Parse command line and launch.
+// Launch or re-launch raspistill.
 //-----------------------------------------------------------------------------------
-static int launch_raspistill(void)
+int relaunch_raspistill(void)
 {
     pid_t pid;
 
@@ -104,7 +104,16 @@ static int launch_raspistill(void)
 
     if(pid == 0){ 
         // Child takes this branch.
-        do_launch_program(raspistill_cmd);
+
+        if (1) { // Exposure managemnt by imgcomp
+            static char cmd_appended[250];
+            strncpy(cmd_appended, raspistill_cmd, 200);
+            strcat(cmd_appended, GetRaspistillExpParms());
+            printf("New cmd string: %s\n",cmd_appended);
+            do_launch_program(cmd_appended);
+        }else{
+            do_launch_program(raspistill_cmd);
+        }
     }else{
         raspistill_pid = pid;
     }
@@ -116,7 +125,6 @@ static int launch_raspistill(void)
 //-----------------------------------------------------------------------------------
 static int MsSinceImage = 0;
 static int MsSinceLaunch = 0;
-static int InitialAverageBright;
 static int InitialBrSum;
 static int InitialNumBr;
 static int NumTotalImages;
@@ -175,46 +183,10 @@ int manage_raspistill(int NewImages)
 			}
 		}
     }
-
-    if (BrightnessChangeRestart){
-        // If brightness of image changes a lot, restart raspistill, because
-        // raspistill doesn't normally do running exposure adjustments.
-        
-        if (MsSinceLaunch > 3000 && InitialNumBr < 4 && NewImages){
-            fprintf(Log,"Brightness average in: %d\n",NewestAverageBright);
-            InitialBrSum += NewestAverageBright;
-            InitialNumBr += 1;
-            // Save average brightness and reset averaging.
-            if (InitialNumBr == 4){
-                InitialAverageBright = (InitialBrSum+2) / 4;
-                if (InitialAverageBright == 0) InitialAverageBright = 1; // Avoid division by zero.
-                RunningAverageBright = InitialAverageBright;
-                fprintf(Log,"Initial brightness average = %d\n",InitialAverageBright);
-            }
-        }
-
-        // 20 second time constant brightness averaging.
-        RunningAverageBright = RunningAverageBright * 0.95 + NewestAverageBright * 0.05;
-
-        // If brightness changes by more than 20%, relaunch, but only if its not too dark.
-        if (MsSinceLaunch > 10000 && (RunningAverageBright > 25 || InitialAverageBright > 25)){
-            double Ratio;
-            Ratio = RunningAverageBright / InitialAverageBright;
-            if (Ratio < 1) Ratio = 1/Ratio;
-            if (Ratio > 1.2){
-                fprintf(Log,"Brightness change by 20%%  (is %d was %d)  Force restart\n",
-				       (int)RunningAverageBright,(int)InitialAverageBright);
-                goto force_restart;
-            }
-        }
-        // Smarter things to do later:
-        // If image too bright and shutter speed is not fastest, launch raspistill
-        // if image is too dark and shutter speed is not 1/8, launch raspistill.
-    }
     return 0;
     
 force_restart:
-    launch_raspistill();
+    relaunch_raspistill();
     MsSinceLaunch = 0;
     InitialBrSum = InitialNumBr = 0;
     return 1;

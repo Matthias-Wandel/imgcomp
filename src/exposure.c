@@ -11,11 +11,11 @@
 #include <math.h>
 #include "imgcomp.h"
 #include "config.h"
+#include "jhead.h"
 
 static double ISOtimesExp = 5;   // Inverse measure of available light level.
 
 static double ISOoverExTime = 4000; // Configured ISO & exposure time relationship.
-                                    // Change this value to change iso/
 
 //----------------------------------------------------------------------------------------
 // Compute shutter speed and ISO values and argument string to pass to raspistill.
@@ -36,7 +36,7 @@ char * GetRaspistillExpParms()
     printf("  t=%6.3f  ISO=%d\n",ExTime, (int)ISO);
     
     static char RaspiParms[50];
-    snprintf(RaspiParms, 50, "-ss %d -ISO %d",(int)(ExTime*1000000), (int)ISO);
+    snprintf(RaspiParms, 50, " -ss %d -ISO %d",(int)(ExTime*1000000), (int)ISO);
     
     printf("Raspiparms: '%s'\n",RaspiParms);
     return RaspiParms;
@@ -139,7 +139,14 @@ int CalcExposureAdjust(MemImage_t * pic)
     // or how much to multiply exposure time or ISO or combination of both by.
     
     printf("f-stop adjustment: %5.2f\n",log(LightMult)/log(2));
+
+
+    double ImgIsoTimesExp = ImageInfo.ExposureTime * ImageInfo.ISOequivalent;
+    printf("From image: Exposure t=%6.4f",ImageInfo.ExposureTime);
+    printf(" ISO=%d   ISO*Exp=%f\n",ImageInfo.ISOequivalent, ImgIsoTimesExp);
     
+    ISOtimesExp = ImgIsoTimesExp;
+
     
     if (LightMult > 1.25 || LightMult < 0.8){
         ISOtimesExp *= LightMult;
@@ -148,7 +155,7 @@ int CalcExposureAdjust(MemImage_t * pic)
         // And cause raspistill restart.
     }
     
-    GetRaspistillExpParms();
+    //GetRaspistillExpParms();
     return 0;
 }
 

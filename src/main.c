@@ -58,9 +58,6 @@ static int SinceMotionPix = 1000;
 static int SinceMotionMs = 0;
 
 //-----------------------------------------
-// imgcomp exposure management variables
-
-//-----------------------------------------
 // Video mode hack
 int VidMode; // Video mode flag
 char VidDecomposeCmd[200];
@@ -70,7 +67,7 @@ typedef struct {
     MemImage_t *Image;
     char Name[500];
     int nind; // Name part index.
-    unsigned  mtime;
+    time_t mtime;
     int DiffMag;
     int IsTimelapse;
     int IsMotion;
@@ -281,7 +278,6 @@ static int DoDirectoryFunc(char * Directory, int DeleteProcessed)
     DirEntry_t * FileNames;
     int NumEntries;
     int a;
-    int ReadExif;
     int SawMotion;
 
     SawMotion = 0;
@@ -290,7 +286,6 @@ static int DoDirectoryFunc(char * Directory, int DeleteProcessed)
     if (FileNames == NULL) return 0;
     if (NumEntries == 0) return 0;
 
-    ReadExif = 1;
     NumProcessed = 0;
     for (a=0;a<NumEntries;a++){
         // Don't redo old pictures that we have looked at, but
@@ -324,7 +319,7 @@ static int DoDirectoryFunc(char * Directory, int DeleteProcessed)
         strcpy(NewPic.Name, CatPath(Directory, ThisName));
         NewPic.nind = strlen(Directory)+1;
 
-        NewPic.Image = LoadJPEG(NewPic.Name, ScaleDenom, 0, ReadExif);
+        NewPic.Image = LoadJPEG(NewPic.Name, ScaleDenom, 0, 1);
         if (NewPic.Image == NULL){
             fprintf(Log, "Failed to load %s\n",NewPic.Name);
             if (DeleteProcessed){
@@ -334,7 +329,6 @@ static int DoDirectoryFunc(char * Directory, int DeleteProcessed)
             }
             continue;
         }
-        ReadExif = 0; // Only read exif for first image.
 
         if (ThisName[0] == 's' && ThisName[1] == 'f' && ThisName[2] >= '0' && ThisName[2] <= '9'){
             // Video decomposed files have no meaningful timestamp,
@@ -349,17 +343,20 @@ static int DoDirectoryFunc(char * Directory, int DeleteProcessed)
             NewPic.mtime = (unsigned)statbuf.st_mtime;
         }
         LastPic_mtime = NewPic.mtime;
+        time_t now;
+        time(&now);
         
-        printf("a=%d num=%d\n",a,NumEntries);
-        if (a == NumEntries-1 && NumEntries < 5){
-            // Latest image of not too many.
-            // Also make sure picture age is less than a second.
+        if (FollowDir && a == NumEntries-1 && now-NewPic.mtime <= 1){
+            // Latest image of batch.
             // Check exposure before comparison, because we may want to restart raspistill ASAP.
-            CalcExposureAdjust(NewPic.Image);
+            int d = CalcExposureAdjust(NewPic.Image);
+            if (d){
+                printf("Restart raspistill for exposure adjust\n");
+                relaunch_raspistill();
+            }
         }
 
         SawMotion += ProcessImage(&NewPic, DeleteProcessed);
-
         NumProcessed += 1;
     }
 
@@ -688,7 +685,7 @@ int main(int argc, char **argv)
             printf("input file %s\n",argv[a]);
             
             // Load file into memory.
-            pic = LoadJPEG(argv[a], 4, 0, 0);
+            pic = LoadJPEG(argv[a], 4, 0, 1);
             
             CalcExposureAdjust(pic);
         }
