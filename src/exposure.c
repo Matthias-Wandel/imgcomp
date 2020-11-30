@@ -77,7 +77,7 @@ int CalcExposureAdjust(MemImage_t * pic)
     }
     NumPix *= 6;
 
-    if(0){
+    if(1){
         // Show histogram bargraph
         int maxv = 0;
         for (int a=0;a<256;a+=2){
@@ -108,27 +108,29 @@ int CalcExposureAdjust(MemImage_t * pic)
         if (medpix <= 0) break;
     }
     
+    printf("sat = %d  med=%d\n",sat,med);
     if (sat < 220){
         double Mult=10,Mult2=10;
-        if (sat) Mult = 250.0/sat;
-        if (med) Mult2 = 240.0/med;
+        if (sat) Mult = 240.0/sat;
+        if (med) Mult2 = 220.0/med;
         if (Mult2 < Mult) Mult = Mult2;
         if (Mult > 32) Mult = 32; // Max adjustment.
         
         ExposureMult = Mult;
     }else{
-        // Consider last 4 values saturaged (because of jpeg compression noise)
-        int SatPix = BrHistogram[255] + BrHistogram[254]
-                   + BrHistogram[253] + BrHistogram[252];
-                   
+        // Consider 246 and over to be saturated.  That's how the v1 camera behaves.
+        int SatPix = 0;
+        for (int a=246;a<256;a++){
+            SatPix += BrHistogram[a];
+        }
+
         double SatFrac = (double)SatPix/NumPix;
-        //printf("Saturated fraction: %f\n",SatFrac);
+        printf("Saturated fraction: %f\n",SatFrac);
         if (SatFrac > 0.04) ExposureMult = 0.8;
         if (SatFrac > 0.08) ExposureMult = 0.7;
         if (SatFrac > 0.16) ExposureMult = 0.6;
         if (SatFrac > 0.25) ExposureMult = 0.5;
-        if (SatFrac > 0.40) ExposureMult = 0.4;
-        if (SatFrac > 0.50) ExposureMult = 0.3;
+        if (SatFrac > 0.50) ExposureMult = 0.4;
         
     }
     
