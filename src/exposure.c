@@ -195,30 +195,27 @@ int CalcExposureAdjust(MemImage_t * pic)
 
 
 // Todo next:
-// Make all this only if option is turned on.
-// If exposure management enabled, check that aquire command doesn't contain -o option
-// Get rid of old brmonitor option
-// Detection of last jpg in do directory breaks if other files present in /ramdisk.
 // Use weight map for exposure calculation
 // Limits to ISO range and shutter speed?
+// Make more parameters configurable
+// Make exposure stuff print less (maybe print brightness once a minute unless it changed)
 
 // imgcomp.conf aquire command line:
 //    aquire_cmd = raspistill -q 10 -n -th none -w 1600 -h 1200 -bm -t 0 -tl 1000
 
+// Camera models indicated in Exif header.  All regardless of lens or manufacturer.
+// v1 5mp:  RP_ov5647
+// v2 8mp:  RP_ov5647
+// hq 12mp: RP_imx477
 
-// Camera models:
-// Workshop fisheye: RP_ov5647
-// Frontdoor: RP_ov5647
-// Driveway: RP_imx219
-// Backyard: RP_imx219
-// Driveway tele, garage_wb RP_imx477
-
-//V1 camera module ISO: 100-800,  Rounds to 100, 125, 160...
-//V2 camera module ISO:  64-800 (can specify outside this range but it makes no difference)
-//HQ camera mdoule ISO:  40-1200 (I think)
+// Usable ISO ranges:
+// V1 camera module ISO: 100-800,  Rounds to 100, 125, 160...
+// V2 camera module ISO:  64-800 (can specify outside this range but it makes no difference)
+// HQ camera mdoule ISO:  40-1200 (I think)
 
 // configurable parameters:
-// ISO range
-// Shutter speed range
-// Saturation value?
-// ISOoverextime
+//   ISO range
+//   Shutter speed range
+//   Image saturated pixel value
+//   ISOoverextime
+//   Brightness targets?
