@@ -33,7 +33,7 @@ int PostMotionKeep = 0;
 int PreMotionKeep = 0;
 int wait_close_write = 0;
 
-int BrightnessChangeRestart = 0;
+int ExposureManagementOn = 0;
 int MotionFatigueTc = 30;
 
 int FatigueSkipCount = 0;
@@ -287,15 +287,29 @@ static int DoDirectoryFunc(char * Directory, int DeleteProcessed)
     if (NumEntries == 0) return 0;
 
     NumProcessed = 0;
+    int end = 0;
     for (a=0;a<NumEntries;a++){
         // Don't redo old pictures that we have looked at, but
         // not yet deleted because we may still need them.
         if (strcmp(LastPics[0].Name+LastPics[0].nind, FileNames[a].FileName) == 0
            || strcmp(LastPics[1].Name+LastPics[1].nind, FileNames[a].FileName) == 0){
             // Zero out file name to indicate skip this one.
-            FileNames[a].FileName[0] = 0;
+            goto skip;
         }
+        int l = strlen(FileNames[a].FileName);
+        if (l < 5) goto skip;
+        if (strcmp(FileNames[a].FileName+l-4, ".jpg") != 0 && 
+            strcmp(FileNames[a].FileName+l-5, ".jpeg") != 0){
+            goto skip;
+        }
+
+        end=a+1;
+        continue;
+    skip:
+        // Zero out filename to skip it.
+        FileNames[a].FileName[0] = 0;
     }
+    NumEntries = end;
 
 
     for (a=0;a<NumEntries;a++){
@@ -346,7 +360,7 @@ static int DoDirectoryFunc(char * Directory, int DeleteProcessed)
         time_t now;
         time(&now);
         
-        if (FollowDir && a == NumEntries-1 && now-NewPic.mtime <= 1){
+        if (ExposureManagementOn && FollowDir && a == NumEntries-1 && now-NewPic.mtime <= 1){
             // Latest image of batch.
             // Check exposure before comparison, because we may want to restart raspistill ASAP.
             int d = CalcExposureAdjust(NewPic.Image);

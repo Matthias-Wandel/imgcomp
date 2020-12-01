@@ -97,16 +97,26 @@ int relaunch_raspistill(void)
 
     fprintf(Log,"Launching raspistill program\n");
 
-    char * cmd = raspistill_cmd;
-    if (1) { // Exposure managemnt by imgcomp
-        static char cmd_appended[300];
-        strncpy(cmd_appended, raspistill_cmd, 200);
+    int DashOOption = (strstr(raspistill_cmd, " -o ") != NULL);
+
+    static char cmd_appended[300];
+    strncpy(cmd_appended, raspistill_cmd, 200);
+
+    if (ExposureManagementOn) { // Exposure managemnt by imgcomp
         strcat(cmd_appended, GetRaspistillExpParms());
+        if (DashOOption){
+            fprintf(stderr, "Must not specify -o option with -exm option\n");
+            exit(-1);
+        }
+    }
+
+    if (!DashOOption){
+        // No output specified with raspistill command  Add the option,
+        // with a different prefix each time so numbers don't overlap.
         int l = strlen(cmd_appended);
         sprintf(cmd_appended+l," -o %s/out%c%%05d.jpg",DoDirName, OutNameSeq++);
         if (OutNameSeq >= 'z') OutNameSeq = 'a';
-        printf("New cmd string: %s\n",cmd_appended);
-        cmd = cmd_appended;
+        printf("Run program: %s\n",cmd_appended);
     }
 
     pid = fork();
@@ -118,13 +128,13 @@ int relaunch_raspistill(void)
         return -1;
     }
 
-    if(pid == 0){ 
+    if(pid == 0){
         // Child takes this branch.
-        do_launch_program(cmd);
+        do_launch_program(cmd_appended);
     }else{
         raspistill_pid = pid;
     }
-    
+
     return 0;
 }
 
@@ -186,7 +196,7 @@ int manage_raspistill(int NewImages)
 		}
     }
     return 0;
-    
+
 force_restart:
     relaunch_raspistill();
     MsSinceLaunch = 0;
@@ -232,7 +242,7 @@ void run_blink_program()
         return;
     }
 
-    if(pid == 0){ 
+    if(pid == 0){
         // Child takes this branch.
         do_launch_program(blink_cmd);
     }else{

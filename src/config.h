@@ -8,7 +8,7 @@ extern int SpuriousReject;
 extern int PreMotionKeep;
 extern int PostMotionKeep;
 
-extern int BrightnessChangeRestart;
+extern int ExposureManagementOn;
 extern int MotionFatigueTc;
 extern int FatigueGainPercent;
 extern int FatigueSkipCount;

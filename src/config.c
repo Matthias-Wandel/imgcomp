@@ -41,8 +41,8 @@ void usage (void)// complain about bad command line
      " -tl N                 Save image every N seconds regardless\n"
      " -spurious             Ignore any change that returns to\n"
      "                       previous image in the next frame\n"
-     " -brmonitor            Restart raspistill on brightness\n"
-     "                       changes (default on)\n"
+     " -exmanage             Imgcomp exposure management, restarts raspistill\n"
+     "                       when light levels change (default off)\n"
      " -fatigue_tc           Motion fatigue time constant, 0=no motion fatigue\n"
      " -fatigue_percent <n>  Gain factor (default 100) for motion fatigue strength\n"
      " -fatigue_skip <n>     Skip applying motion fatigue every n frames\n"
@@ -143,8 +143,11 @@ static int parse_parameter (const char * tag, const char * value)
             fprintf(stderr, "preMotion may only be 0 or 1\n");
             return -1;
         }
-    }else if (keymatch(tag, "brmonitor", 5)) {
-        if (sscanf(value, "%d", &BrightnessChangeRestart) != 1) return -1;        
+    }else if (keymatch(tag, "brmonitor", 4)) {
+        // exposure monnitor works a lot like how brmonitor used to work.
+        if (sscanf(value, "%d", &ExposureManagementOn) != 1) return -1;
+    }else if (keymatch(tag, "exmanage", 5)) {
+        if (sscanf(value, "%d", &ExposureManagementOn) != 1) return -1;
     }else if (keymatch(tag, "relaunch_timeout", 16)) {
         if (sscanf(value, "%d", &relaunch_timeout) != 1) return -1;        
     }else if (keymatch(tag, "give_up_timeout", 15)) {
