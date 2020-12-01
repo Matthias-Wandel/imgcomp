@@ -27,18 +27,19 @@ char * GetRaspistillExpParms()
     // Apply shutter speed limits.
     if (ExTime < 0.0001) ExTime = 0.0001;
     if (ExTime > 0.5) ExTime = 0.5;
-    
+
     double ISO = ISOtimesExp / ExTime;
     if (ISO > 1000) ISO = 1000;
     if (ISO < 25) ISO = 25; 
     
-    printf("ISO*Exp = %6.0f",ISOtimesExp);
-    printf("  t=%6.3f  ISO=%d\n",ExTime, (int)ISO);
+
+    printf("New t=%6.3f  ISO=%d",ExTime, (int)ISO);
+    printf("   ISO*Exp=%6.0f\n",ISOtimesExp);
     
     static char RaspiParms[50];
     snprintf(RaspiParms, 50, " -ss %d -ISO %d",(int)(ExTime*1000000), (int)ISO);
     
-    printf("Raspiparms: '%s'\n",RaspiParms);
+    //printf("Raspiparms: '%s'\n",RaspiParms);
     return RaspiParms;
 }
 
@@ -55,7 +56,6 @@ int CalcExposureAdjust(MemImage_t * pic)
 
 
     int BrHistogram[256] = {0}; // Brightness histogram, for red green and blue channels.
-    //memset(BrHistogram, 0, sizeof(BrHistogram));
     int NumPix = 0;
     
     
@@ -77,7 +77,7 @@ int CalcExposureAdjust(MemImage_t * pic)
     }
     NumPix *= 6;
 
-    if(1){
+    if(0){
         // Show histogram bargraph
         int maxv = 0;
         for (int a=0;a<256;a+=2){
@@ -90,6 +90,7 @@ int CalcExposureAdjust(MemImage_t * pic)
             printf("%3d %6d %6d ",a,BrHistogram[a], BrHistogram[a+1]);
             static char * Bargraph = "#########################################################################";
             printf("%.*s\n", (50*twobin+maxv/2)/maxv, Bargraph);
+            //if (a > 10 && a < 220) a += 2;
         }
     }
 
@@ -111,26 +112,35 @@ int CalcExposureAdjust(MemImage_t * pic)
     printf("sat = %d  med=%d\n",sat,med);
     if (sat < 220){
         double Mult=10,Mult2=10;
-        if (sat) Mult = 240.0/sat;
-        if (med) Mult2 = 220.0/med;
+        if (sat) Mult = 230.0/sat;
+        if (med) Mult2 = 210.0/med;
         if (Mult2 < Mult) Mult = Mult2;
         if (Mult > 32) Mult = 32; // Max adjustment.
         
         ExposureMult = Mult;
     }else{
-        // Consider 246 and over to be saturated.  That's how the v1 camera behaves.
+        // Depending on pi camera module, saturation level is different.
+        // 5 megapixel module saturates around 245, not 255.
+        // Newer modules saturate at 255, like they should.
         int SatPix = 0;
-        for (int a=246;a<256;a++){
-            SatPix += BrHistogram[a];
+        int sat = 253;
+        if (memcmp(ImageInfo.CameraModel, "RP_ov5647",10) == 0){
+            // Depending on pi camera module, saturation level is different.
+            // 5 megapixel module saturates around 245, not 255.
+            // Newer modules pixel values saturate closer to 255
+            sat = 244;
+        }
+        for (;sat<256;sat++){
+            SatPix += BrHistogram[sat];
         }
 
         double SatFrac = (double)SatPix/NumPix;
         printf("Saturated fraction: %f\n",SatFrac);
-        if (SatFrac > 0.04) ExposureMult = 0.8;
-        if (SatFrac > 0.08) ExposureMult = 0.7;
-        if (SatFrac > 0.16) ExposureMult = 0.6;
-        if (SatFrac > 0.25) ExposureMult = 0.5;
-        if (SatFrac > 0.50) ExposureMult = 0.4;
+        if (SatFrac > 0.03) ExposureMult = 0.8;
+        if (SatFrac > 0.06) ExposureMult = 0.7;
+        if (SatFrac > 0.12) ExposureMult = 0.6;
+        if (SatFrac > 0.20) ExposureMult = 0.5;
+        if (SatFrac > 0.40) ExposureMult = 0.4;
         
     }
     
@@ -144,20 +154,18 @@ int CalcExposureAdjust(MemImage_t * pic)
 
 
     double ImgIsoTimesExp = ImageInfo.ExposureTime * ImageInfo.ISOequivalent;
-    printf("From image: Exposure t=%6.4f",ImageInfo.ExposureTime);
+    printf("From jpeg: t=%6.4fs",ImageInfo.ExposureTime);
     printf(" ISO=%d   ISO*Exp=%f\n",ImageInfo.ISOequivalent, ImgIsoTimesExp);
     
     ISOtimesExp = ImgIsoTimesExp;
 
     
-    if (LightMult > 1.25 || LightMult < 0.8){
+    if (LightMult >= 1.25 || LightMult <= 0.8){
         ISOtimesExp *= LightMult;
         GetRaspistillExpParms();
-        return 1;
+        return 1; // And cause raspistill restart.
         // And cause raspistill restart.
     }
-    
-    //GetRaspistillExpParms();
     return 0;
 }
 
@@ -167,3 +175,15 @@ int CalcExposureAdjust(MemImage_t * pic)
 // Make all this only if option is turned on.
 // If exposure management enabled, check that aquire command doesn't contain -o option
 // Get rid of old brmonitor option
+// Detection of last jpg in do directory breaks if other files present in /ramdisk.
+
+// imgcomp.conf aquire command line:
+//    aquire_cmd = raspistill -q 10 -n -th none -w 1600 -h 1200 -bm -t 0 -tl 1000
+
+
+// Camera models:
+// Workshop fisheye: RP_ov5647
+// Frontdoor: RP_ov5647
+// Driveway: RP_imx219
+// Backyard: RP_imx219
+// Driveway tele, garage_wb RP_imx477

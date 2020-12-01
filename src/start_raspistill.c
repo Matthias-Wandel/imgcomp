@@ -96,6 +96,19 @@ int relaunch_raspistill(void)
     }
 
     fprintf(Log,"Launching raspistill program\n");
+
+    char * cmd = raspistill_cmd;
+    if (1) { // Exposure managemnt by imgcomp
+        static char cmd_appended[300];
+        strncpy(cmd_appended, raspistill_cmd, 200);
+        strcat(cmd_appended, GetRaspistillExpParms());
+        int l = strlen(cmd_appended);
+        sprintf(cmd_appended+l," -o %s/out%c%%05d.jpg",DoDirName, OutNameSeq++);
+        if (OutNameSeq >= 'z') OutNameSeq = 'a';
+        printf("New cmd string: %s\n",cmd_appended);
+        cmd = cmd_appended;
+    }
+
     pid = fork();
     if (pid == -1){
         // Failed to fork.
@@ -103,18 +116,6 @@ int relaunch_raspistill(void)
         fprintf(stderr,"Failed to fork off child process\n");
         perror("Reason");
         return -1;
-    }
-    
-    char * cmd = raspistill_cmd;
-    if (1) { // Exposure managemnt by imgcomp
-        static char cmd_appended[300];
-        strncpy(cmd_appended, raspistill_cmd, 200);
-        strcat(cmd_appended, GetRaspistillExpParms());
-        int l = strlen(cmd_appended);
-        sprintf(cmd_appended+l," -o %s/out%c%%5d.jpg",DoDirName, OutNameSeq++);
-        if (OutNameSeq >= 'z') OutNameSeq = 'a';
-        printf("New cmd string: %s\n",cmd_appended);
-        cmd = cmd_appended;
     }
 
     if(pid == 0){ 
