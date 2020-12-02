@@ -15,7 +15,6 @@
 
 static double ISOtimesExp = 5;   // Inverse measure of available light level.
 
-
 typedef struct {
     int ISOmin, ISOmax; // ISO limits for camera module.
     float Tmin, Tmax;   // Exposure time limits.
@@ -55,9 +54,9 @@ char * GetRaspistillExpParms()
     }
     // Set Tmin and max if not configured.
     if (ex.Tmin <= 0.0001)  ex.Tmin = 0.0001;
-    if (ex.Tmax == 0) ex.Tmax = 0.1;
+    if (ex.Tmax == 0) ex.Tmax = 0.25;
     if (ex.Tmax <= 0.001)  ex.Tmax = 0.001;
-    if (ex.ISOoverExTime < 100) ex.ISOoverExTime = 4000;
+    if (ex.ISOoverExTime < 100) ex.ISOoverExTime = 8000;
 
 
 
@@ -198,13 +197,20 @@ int CalcExposureAdjust(MemImage_t * pic)
     
     // LightMult indicates how much more the light should have been,
     // or how much to multiply exposure time or ISO or combination of both by.
-    fprintf(Log, "Brightness: >3%%:%d  >25%%:%d  Sat%%=%3.1f  Ex adjust %4.2f\n",sat,med, SatFrac*100, LightMult);
+    static int ShowPeriodic = 10;
+    if (++ShowPeriodic >= 20){
+        fprintf(Log, "Brightness: >3%%:%d  >25%%:%d  Sat%%=%3.1f  Ex adjust %4.2f\n",sat,med, SatFrac*100, LightMult);
+        ShowPeriodic = 0;
+    }
 
     double ImgIsoTimesExp = ImageInfo.ExposureTime * ImageInfo.ISOequivalent;
 
-    if ((LightMult >= 1.25 && ExMaxLimitHit == 0) 
-        || (LightMult <= 0.8 && ExMinLimitHit == 0)){
+    if ((LightMult >= 1.20 && ExMaxLimitHit == 0) 
+        || (LightMult <= 0.85 && ExMinLimitHit == 0)){
         // If adjustment is called for, *and* we aren't at the limit.
+        fprintf(Log, "Brightness: >3%%:%d  >25%%:%d  Sat%%=%3.1f  Ex adjust %4.2f\n",sat,med, SatFrac*100, LightMult);
+        ShowPeriodic = 0;
+        
         printf("Adjust exposure.  Was: t=%6.4fs",ImageInfo.ExposureTime);
         printf(" ISO=%d   ISO*Exp=%f\n",ImageInfo.ISOequivalent, ImgIsoTimesExp);
 
@@ -214,8 +220,6 @@ int CalcExposureAdjust(MemImage_t * pic)
     }
     return 0;
 }
-
-
 
 // Todo next:
 // Use weight map for exposure calculation
