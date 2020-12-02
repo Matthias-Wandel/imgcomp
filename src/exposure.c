@@ -56,7 +56,7 @@ char * GetRaspistillExpParms()
     if (ex.Tmin <= 0.0001)  ex.Tmin = 0.0001;
     if (ex.Tmax == 0) ex.Tmax = 0.25;
     if (ex.Tmax <= 0.001)  ex.Tmax = 0.001;
-    if (ex.ISOoverExTime < 100) ex.ISOoverExTime = 8000;
+    if (ex.ISOoverExTime < 100) ex.ISOoverExTime = 16000;
 
 
 
@@ -211,8 +211,8 @@ int CalcExposureAdjust(MemImage_t * pic)
         fprintf(Log, "Brightness: >3%%:%d  >25%%:%d  Sat%%=%3.1f  Ex adjust %4.2f\n",sat,med, SatFrac*100, LightMult);
         ShowPeriodic = 0;
         
-        printf("Adjust exposure.  Was: t=%6.4fs",ImageInfo.ExposureTime);
-        printf(" ISO=%d   ISO*Exp=%f\n",ImageInfo.ISOequivalent, ImgIsoTimesExp);
+        fprintf(Log,"Adjust exposure.  Was: t=%6.4fs",ImageInfo.ExposureTime);
+        fprintf(Log," ISO=%d   ISO*Exp=%f\n",ImageInfo.ISOequivalent, ImgIsoTimesExp);
 
         ISOtimesExp = ImgIsoTimesExp * LightMult;
         GetRaspistillExpParms();
@@ -224,7 +224,8 @@ int CalcExposureAdjust(MemImage_t * pic)
 // Todo next:
 // Use weight map for exposure calculation
 // Make more parameters configurable
-// Make exposure stuff print less (maybe print brightness once a minute unless it changed)
+// Configurable exposure compensation
+// Fix use of statbuf.st_mtime in main.c (not in unix time units)
 
 // imgcomp.conf aquire command line:
 //    aquire_cmd = raspistill -q 10 -n -th none -w 1600 -h 1200 -bm -t 0 -tl 1000
