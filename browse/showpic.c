@@ -94,7 +94,12 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
         
         printf("&nbsp;");
         if (dir->Previous[0]) printf("<a href='#' id='prevdir'>&lt;&lt;</a>");
-        if (dir->Next[0]) printf("&nbsp;<a href='#' id='nextdir'>>></a> ");
+        if (dir->Next[0]){
+            printf("&nbsp;<a href='#' id='nextdir'>>></a>");
+        }else{
+            // Maybe only show link to realtime.html if looking at the current day?
+            printf("&nbsp;<a href='realtime.html'>Rt</a>");
+        }
         printf("\n");
     }
     printf("<br>\n<canvas id='hist' width='960' height='35' "
