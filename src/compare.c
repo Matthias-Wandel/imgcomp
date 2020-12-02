@@ -49,8 +49,9 @@ TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2,
 
     if (pic1->width != pic2->width || pic1->height != pic2->height 
         || pic1->components != pic2->components){
-        fprintf(stderr, "pic size mismatch!  %dx%d vs %dx%d\n",pic1->width, pic1->height, pic2->width, pic2->height);
-        return RetVal;
+        fprintf(stderr, "pic size mismatch (maybe clear ramdisk?)\n  %dx%d vs %dx%d\n",pic1->width, pic1->height, pic2->width, pic2->height);
+        exit(-1);
+        //return RetVal;
     }
     width = pic1->width;
     height = pic1->height;

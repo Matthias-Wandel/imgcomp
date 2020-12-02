@@ -15,16 +15,28 @@
 
 static double ISOtimesExp = 5;   // Inverse measure of available light level.
 
-static double ISOoverExTime = 4000; // Configured ISO & exposure time relationship.
 
-static int ISOmin = 0, ISOmax = 0;
+typedef struct {
+    int ISOmin, ISOmax; // ISO limits for camera module.
+    float Tmin, Tmax;   // Exposure time limits.
+
+    int SatVal;         // Saturated pixel value (some cameras saturate before 255)
+    int ISOoverExTime;  // Target ISO/exposure time.  Larger values prioritize
+                        // fast shutter speed at expenso of grainy photos.
+}exconfig_t;
+
+exconfig_t ex;
+
+static int ExMaxLimitHit = 0;   // Already at maximum allowed exposure (ISO and exposure time maxed)
+static int ExMinLimitHit = 0;   // Already at minimum allowed exposure (ISO and exposure time minimized)
+
 //----------------------------------------------------------------------------------------
 // Compute shutter speed and ISO values and argument string to pass to raspistill.
 //----------------------------------------------------------------------------------------
 char * GetRaspistillExpParms()
 {
     // if ISO min/max are not configured manually, set the according to camera module.
-    if (ISOmin == 0 || ISOmax == 0){
+    if (ex.ISOmin == 0 || ex.ISOmax == 0){
         int min, max;
         if (memcmp(ImageInfo.CameraModel, "RP_ov5647",10) == 0){
             //V1 (5 mp) camera module
@@ -38,31 +50,44 @@ char * GetRaspistillExpParms()
             // HQ (12 mp) camera module.
             min = 40; max = 1250;
         }
-        if (ISOmin == 0) ISOmin = min;
-        if (ISOmax == 0) ISOmax = max;
+        if (ex.ISOmin == 0) ex.ISOmin = min;
+        if (ex.ISOmax == 0) ex.ISOmax = max;
     }
+    // Set Tmin and max if not configured.
+    if (ex.Tmin <= 0.0001)  ex.Tmin = 0.0001;
+    if (ex.Tmax == 0) ex.Tmax = 0.1;
+    if (ex.Tmax <= 0.001)  ex.Tmax = 0.001;
+    if (ex.ISOoverExTime < 100) ex.ISOoverExTime = 4000;
 
-    double ExTime = 1/sqrt(ISOoverExTime/ISOtimesExp);
 
-    if (ExTime < 0.001) ExTime = 0.001;
-    if (ExTime > 0.5) ExTime = 0.5;
+
+    double ExTime = 1/sqrt(ex.ISOoverExTime/ISOtimesExp);
+
+    if (ExTime < ex.Tmin) ExTime = ex.Tmin;
+    if (ExTime > ex.Tmax) ExTime = ex.Tmax;
     double ISO = ISOtimesExp / ExTime;
 
     // Apply limits to ISO.
-    if (ISO > ISOmax) ISO = ISOmax;
-    if (ISO < ISOmin) ISO = ISOmin;
+    if (ISO > ex.ISOmax) ISO = ex.ISOmax;
+    if (ISO < ex.ISOmin) ISO = ex.ISOmin;
 
     // Re-compute exposure time, in case we hit ISO rails.
     ExTime = ISOtimesExp / ISO;
 
     // Re-apply limits to exposure time.
-    if (ExTime < 0.001) ExTime = 0.001;
-    if (ExTime > 0.5) ExTime = 0.5;
+    ExMaxLimitHit = ExMinLimitHit = 0;
+    if (ExTime < ex.Tmin) {
+        ExTime = ex.Tmin;
+        ExMinLimitHit = 1;// too much light.  Kind of unlikely.
+        fprintf(Log,"Exposure at min ISO and time.\n");
+    }
+    if (ExTime > ex.Tmax) {
+        ExTime = ex.Tmax;
+        ExMaxLimitHit = 1;// Dark image, but further exposure increase not possible.
+        fprintf(Log,"Exposure at max ISO and time\n"); 
+    }
 
-
-
-    printf("New t=%5.3f  ISO=%d",ExTime, (int)ISO);
-    printf("   ISO*Exp=%4.0f\n",ISOtimesExp);
+    fprintf(Log,"New t=%5.3f  ISO=%d   ISO*Exp=%4.0f\n",ExTime, (int)ISO,ISOtimesExp);
 
     static char RaspiParms[50];
     snprintf(RaspiParms, 50, " -ss %d -ISO %d",(int)(ExTime*1000000), (int)ISO);
@@ -80,10 +105,8 @@ int CalcExposureAdjust(MemImage_t * pic)
     if (Region.y2 > pic->height) Region.y2 = pic->height;
     if (Region.x2 > pic->width) Region.x2 = pic->width;
 
-
     int BrHistogram[256] = {0}; // Brightness histogram, for red green and blue channels.
     int NumPix = 0;
-
 
     int rowbytes = pic->width*3;
     for (int row=Region.y1;row<Region.y2;row++){
@@ -110,12 +133,12 @@ int CalcExposureAdjust(MemImage_t * pic)
             int twobin = BrHistogram[a]+BrHistogram[a+1];
             if (twobin > maxv) maxv = twobin;
         }
-        printf("Histogram.  maxv = %d\n",maxv);
+        fprintf(Log,"Histogram.  maxv = %d\n",maxv);
         for (int a=0;a<256;a+=2){
             int twobin = BrHistogram[a]+BrHistogram[a+1];
-            printf("%3d %6d %6d ",a,BrHistogram[a], BrHistogram[a+1]);
+            fprintf(Log,"%3d %6d %6d ",a,BrHistogram[a], BrHistogram[a+1]);
             static char * Bargraph = "#########################################################################";
-            printf("%.*s\n", (50*twobin+maxv/2)/maxv, Bargraph);
+            fprintf(Log,"%.*s\n", (50*twobin+maxv/2)/maxv, Bargraph);
         }
     }
 
@@ -125,6 +148,7 @@ int CalcExposureAdjust(MemImage_t * pic)
     int satpix = NumPix / 32; // Allowable pixels near saturation
     int medpix = NumPix / 4;  // Don't make the image overall too bright.
     int sat, med;
+    int SatVal;
     for (sat=255;sat>=0;sat--){
         satpix -= BrHistogram[sat];
         if (satpix <= 0) break;
@@ -135,59 +159,58 @@ int CalcExposureAdjust(MemImage_t * pic)
     }
     double SatFrac;
     {
-        int SatPix = 0;
-        int sat = 253;
-        if (memcmp(ImageInfo.CameraModel, "RP_ov5647",10) == 0){
-            // 5 megapixel module saturates around pixel value of 245, not 255.
-            // Newer modules pixel values saturate closer to 255
-            sat = 244;
+        if (ex.SatVal){
+            SatVal = ex.SatVal;
+        }else{
+            SatVal = 253;
+            if (memcmp(ImageInfo.CameraModel, "RP_ov5647",10) == 0){
+                // 5 megapixel module saturates around pixel value of 245, not 255.
+                // Newer modules pixel values saturate closer to 255
+                SatVal = 244;
+            }
         }
-        for (;sat<256;sat++){
-            SatPix += BrHistogram[sat];
+        int SatPix = 0;
+        for (int a=SatVal;a<256;a++){
+            SatPix += BrHistogram[a];
         }
         SatFrac = (double)SatPix/NumPix;
     }
 
-    printf("Brightness: >3%%:%d  >25%%:%d  Sat%%=%3.1f\n",sat,med, SatFrac*100);
-    if (sat < 220){
-        // Adjust exposure upwards becauase very few pixels are near
-        // maximum values, so there's exposure headroom.
-        double Mult=10,Mult2=10;
-        if (sat) Mult = 230.0/sat;
-        if (med) Mult2 = 210.0/med;
-        if (Mult2 < Mult) Mult = Mult2;
-        if (Mult > 32) Mult = 32; // Do't try to adjust more than this!
+    // Adjust exposure upwards becauase very few pixels are near
+    // maximum values, so there's exposure headroom.
+    double Mult=10,Mult2=10;
+    if (sat) Mult = 0.9*SatVal/sat;
+    if (med) Mult2 = 0.82*SatVal/med;
+    if (Mult2 < Mult) Mult = Mult2;
+    if (Mult > 32) Mult = 32; // Do't try to adjust more than this!
+    ExposureMult = Mult;
 
-        ExposureMult = Mult;
-    }else{
-        // Adjsut exposure downward because too many pixels
-        // have saturated.  It's impossible to calculate how far down
-        // we really need to adjust cause it's saturating, so just guess.
-        if (SatFrac > 0.03) ExposureMult = 0.8;
-        if (SatFrac > 0.06) ExposureMult = 0.7;
-        if (SatFrac > 0.12) ExposureMult = 0.6;
-        if (SatFrac > 0.20) ExposureMult = 0.5;
-        if (SatFrac > 0.40) ExposureMult = 0.4;
-    }
+    // Adjsut exposure downward because too many pixels
+    // have saturated.  It's impossible to calculate how far down
+    // we really need to adjust cause it's saturating, so just guess.
+    if (SatFrac > 0.03) ExposureMult = 0.8;
+    if (SatFrac > 0.06) ExposureMult = 0.7;
+    if (SatFrac > 0.12) ExposureMult = 0.6;
+    if (SatFrac > 0.20) ExposureMult = 0.5;
+    if (SatFrac > 0.40) ExposureMult = 0.4;
 
     double LightMult = pow(ExposureMult, 2.2); // Adjust for assumed camera gamma of 2.2
     
     // LightMult indicates how much more the light should have been,
     // or how much to multiply exposure time or ISO or combination of both by.
-    printf("Pix mult: %4.2f  f-stop adjust: %5.2f\n",ExposureMult, log(LightMult)/log(2));
+    fprintf(Log, "Brightness: >3%%:%d  >25%%:%d  Sat%%=%3.1f  Ex adjust %4.2f\n",sat,med, SatFrac*100, LightMult);
 
     double ImgIsoTimesExp = ImageInfo.ExposureTime * ImageInfo.ISOequivalent;
 
-    ISOtimesExp = ImgIsoTimesExp;
-
-    if (LightMult >= 1.25 || LightMult <= 0.8){
+    if ((LightMult >= 1.25 && ExMaxLimitHit == 0) 
+        || (LightMult <= 0.8 && ExMinLimitHit == 0)){
+        // If adjustment is called for, *and* we aren't at the limit.
         printf("Adjust exposure.  Was: t=%6.4fs",ImageInfo.ExposureTime);
         printf(" ISO=%d   ISO*Exp=%f\n",ImageInfo.ISOequivalent, ImgIsoTimesExp);
 
-        ISOtimesExp *= LightMult;
+        ISOtimesExp = ImgIsoTimesExp * LightMult;
         GetRaspistillExpParms();
-        return 1; // And cause raspistill restart.
-        // And cause raspistill restart.
+        return 1; // And signal raspistill needs restarting.
     }
     return 0;
 }
@@ -196,7 +219,6 @@ int CalcExposureAdjust(MemImage_t * pic)
 
 // Todo next:
 // Use weight map for exposure calculation
-// Limits to ISO range and shutter speed?
 // Make more parameters configurable
 // Make exposure stuff print less (maybe print brightness once a minute unless it changed)
 

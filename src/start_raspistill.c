@@ -116,7 +116,7 @@ int relaunch_raspistill(void)
         int l = strlen(cmd_appended);
         sprintf(cmd_appended+l," -o %s/out%c%%05d.jpg",DoDirName, OutNameSeq++);
         if (OutNameSeq >= 'z') OutNameSeq = 'a';
-        printf("Run program: %s\n",cmd_appended);
+        //fprintf(Log,"Run program: %s\n",cmd_appended);
     }
 
     pid = fork();
