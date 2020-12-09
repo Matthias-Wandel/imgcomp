@@ -39,15 +39,15 @@ char * GetRaspistillExpParms()
         int min, max;
         if (memcmp(ImageInfo.CameraModel, "RP_ov5647",10) == 0){
             //V1 (5 mp) camera module
-            min = 100; max = 800;
+            min = 100; max = 1200;
         }
         if (memcmp(ImageInfo.CameraModel, "RP_imx219",10) == 0){
             // V2 (8 mp) camera module.
-            min = 50; max = 800;
+            min = 50; max = 1200;
         }
         if (memcmp(ImageInfo.CameraModel, "RP_imx477",10) == 0){
             // HQ (12 mp) camera module.
-            min = 40; max = 1250;
+            min = 40; max = 2400;
         }
         if (ex.ISOmin == 0) ex.ISOmin = min;
         if (ex.ISOmax == 0) ex.ISOmax = max;
