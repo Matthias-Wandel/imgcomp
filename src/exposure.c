@@ -106,23 +106,26 @@ int CalcExposureAdjust(MemImage_t * pic)
 
     int BrHistogram[256] = {0}; // Brightness histogram, for red green and blue channels.
     int NumPix = 0;
+    int width = pic->width;
 
     int rowbytes = pic->width*3;
     for (int row=Region.y1;row<Region.y2;row++){
         unsigned char *p1;
         p1 = pic->pixels+rowbytes*row;
-        //px = &WeightMap->values[pic->width*row];
+        int * ExRow = NULL;
+        if (WeightMap) ExRow = &WeightMap->values[width*row];
         for (int col=Region.x1;col<Region.x2;col++){
-            //if (px[col]){
+            if (ExRow && ExRow[col]){
                 // Apply the colors to the histogram separately (saturating one is saturated enough)
                 BrHistogram[p1[0]] += 2; // Red,   1/3 weight
                 BrHistogram[p1[2]] += 3; // Green, 1/2 weight
                 BrHistogram[p1[0]] += 1; // Blue,  1/6 weight
                 NumPix += 1;
-            //}
+            }
             p1 += 3;
         }
     }
+
     NumPix *= 6;
 
     if(0){
@@ -222,7 +225,6 @@ int CalcExposureAdjust(MemImage_t * pic)
 }
 
 // Todo next:
-// Use weight map for exposure calculation
 // Make more parameters configurable
 // Configurable exposure compensation
 // Fix use of statbuf.st_mtime in main.c (not in unix time units)
