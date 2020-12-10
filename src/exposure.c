@@ -131,7 +131,7 @@ int CalcExposureAdjust(MemImage_t * pic)
         fprintf(Log,"Brighness histogram\n");
         for (int a=0;a<256;a+=2){
             if (a == 26){
-                printf("...........\n");// Skip middle part of histogram, not that interesting.
+                fprintf(Log,"...........\n");// Skip middle part of histogram, not that interesting.
                 a = 210;
             }
             int twobin = BrHistogram[a]+BrHistogram[a+1];
