@@ -1,6 +1,6 @@
 //----------------------------------------------------------------------------
 // imgcomp structures and function prototypes
-// Matthias Wandel 2015-2018
+// Matthias Wandel 2015-2020
 //
 // Imgcomp is licensed under GPL v2 (see README.txt)
 //----------------------------------------------------------------------------
@@ -34,6 +34,17 @@ typedef struct {
     int w, h;
     int values[0];
 }ImgMap_t;
+
+typedef struct {
+    int ISOmin, ISOmax; // Limits of ISO values to pass to raspistill
+    float Tmin, Tmax;   // Limits of exposure time (in seconds) to pass to raspistill
+
+    int SatVal;         // Saturated pixel value (some cameras saturate before 255)
+    int ISOoverExTime;  // Target ISO/exposure time.  Larger values prioritize
+                        // fast shutter speed at expenso of grainy photos.
+}exconfig_t;
+
+extern exconfig_t ex;
 
 
 MemImage_t MemImage;

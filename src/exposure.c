@@ -13,16 +13,7 @@
 #include "config.h"
 #include "jhead.h"
 
-static double ISOtimesExp = 0.2;   // Inverse measure of available light level.
-
-typedef struct {
-    int ISOmin, ISOmax; // ISO limits for camera module.
-    float Tmin, Tmax;   // Exposure time limits.
-
-    int SatVal;         // Saturated pixel value (some cameras saturate before 255)
-    int ISOoverExTime;  // Target ISO/exposure time.  Larger values prioritize
-                        // fast shutter speed at expenso of grainy photos.
-}exconfig_t;
+static double ISOtimesExp = 0.2;  // Inverse measure of available light level, initial value.
 
 exconfig_t ex;
 
@@ -56,7 +47,7 @@ char * GetRaspistillExpParms()
     if (ex.Tmin <= 0.0001)  ex.Tmin = 0.0001;
     if (ex.Tmax == 0) ex.Tmax = 0.25;
     if (ex.Tmax <= 0.001)  ex.Tmax = 0.001;
-    if (ex.ISOoverExTime < 100) ex.ISOoverExTime = 16000;
+    if (ex.ISOoverExTime == 0) ex.ISOoverExTime = 16000;
 
 
 
@@ -250,10 +241,6 @@ int CalcExposureAdjust(MemImage_t * pic)
 }
 
 // Todo next:
-// Make more parameters configurable
-// Configurable exposure compensation
-// Fix use of statbuf.st_mtime in main.c (not in unix time units)
-
 // imgcomp.conf aquire command line:
 //    aquire_cmd = raspistill -q 10 -n -th none -w 1600 -h 1200 -bm -t 0 -tl 1000
 
@@ -262,14 +249,3 @@ int CalcExposureAdjust(MemImage_t * pic)
 // v2 8mp:  RP_ov5647
 // hq 12mp: RP_imx477
 
-// Usable ISO ranges:
-// V1 camera module ISO: 100-800,  Rounds to 100, 125, 160...
-// V2 camera module ISO:  64-800 (can specify outside this range but it makes no difference)
-// HQ camera mdoule ISO:  40-1200 (I think)
-
-// configurable parameters:
-//   ISO range
-//   Shutter speed range
-//   Image saturated pixel value
-//   ISOoverextime
-//   Brightness targets?

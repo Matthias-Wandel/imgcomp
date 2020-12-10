@@ -35,14 +35,32 @@ void usage (void)// complain about bad command line
      " -premotion <n>        0 or 1.  Keep up to 1 image before motion\n"
      " -postmotion <n>       Keep n frames after motion was detected\n"
      " -tempdir <dir>        Where to put temp images for video mode hack\n"
-     " -sensitivity N        Set sensitivity.  Lower=more sensitive\n"
+     " -sensitivity N        Set motion sensitivity. Lower=more sensitive\n"
      " -blink_cmd <command>  Run this command when motion detected\n"
      "                       (used to blink the camera LED)\n"
      " -tl N                 Save image every N seconds regardless\n"
      " -spurious             Ignore any change that returns to\n"
      "                       previous image in the next frame\n"
-     " -exmanage             Imgcomp exposure management, restarts raspistill\n"
-     "                       when light levels change (default off)\n"
+     
+     " -aquire_cmd <command> Raspistill command line and options.\n"
+     "                       -o option will be appended to this\n"
+     " -exmanage <1>         When set to 1, imgcomp takes over camera exposure\n"
+     "                       settings based on analyzing image and restarts\n"
+     "                       raspistill with new settings when light levels change\n"
+     "                       When not specified, raspistill does auto exposure\n"
+     " -iso <min>-<max>      With -exmanage 1, Limits of ISO settings to use with\n"
+     "                       raspistill.  Must be 25-6400\n"
+     " -exposure <min>-<max> With -exmanage 1, Limits to shutter speeds (in seconds)\n"
+     "                       to use with raspistill.  0.001-2\n"
+     " -isooverextime <val>  with -exmanage 1, sets the ISO/shutter speed curve\n"
+     "                       Unless limits are hit, imgcomp will aim for ISO divided\n"
+     "                       by exposure time to be this value.  Default 16000\n"
+     "                       Larger means shorter shutter speeds, smaller means lower\n"
+     "                       ISO (less grainy) but slower shutter, more motion blur\n"
+     " -pixxat <val>         with -exmanage 1, Jpeg pixel value at which image\n"
+     "                       saturates because camera modules v1 and v2 saturate\n"
+     "                       before hitting 255.  Defaults to value appropriate for\n"
+     "                       camera module detected\n"
      " -fatigue_tc           Motion fatigue time constant, 0=no motion fatigue\n"
      " -fatigue_percent <n>  Gain factor (default 100) for motion fatigue strength\n"
      " -fatigue_skip <n>     Skip applying motion fatigue every n frames\n"
@@ -53,7 +71,7 @@ void usage (void)// complain about bad command line
      " -sendudp <ipaddr>     Send UDP packets for motion detection\n"
      " -wait_close_write 1   Wait for IN_CLOSE_WRITE rather than IN_CREATE\n"
      " -relaunch_timeout     Timeout (in seconds) before giving up on capture\n"
-     "                       command and relaunching\n"
+     "                       command (raspistill) and re-launching\n"
      " -give_up_timeout      Timeout (in seconds) before giving up completely and\n"
      "                       attempting to reboot (set to zero to disable)\n"
      );
@@ -168,16 +186,46 @@ static int parse_parameter (const char * tag, const char * value)
         // Scale the output image by a fraction M/N.
         if (sscanf(value, "%d", (int *)&TimelapseInterval) != 1) return -1;
     } else if (keymatch(tag, "aquire_cmd", 4)) {
-        // Set output file name.
+        // Set the command for raspistill command.
         strncpy(raspistill_cmd, value, sizeof(raspistill_cmd)-1);
+    } else if (keymatch(tag, "iso", 3)) {
+        int n = sscanf(value, "%d-%d", &ex.ISOmin, &ex.ISOmax);
+        if (n != 1 && n != 2) return -1;
+        if (n == 1) ex.ISOmax = ex.ISOmin;
+        if (ex.ISOmin > ex.ISOmax || ex.ISOmax > 6400 || ex.ISOmin < 10){
+            fprintf(stderr, "Bad ISO range.  Must be 10 - 6400\n");
+            return -1;
+        }
+    } else if (keymatch(tag, "exposure", 3)) {
+        int n = sscanf(value, "%f-%f", &ex.Tmin, &ex.Tmax);
+        if (n != 1 && n != 2) return -1;
+        if (n == 1) ex.Tmax = ex.Tmin;
+        if (ex.Tmin > ex.Tmax || ex.Tmax > 10 || ex.Tmin < 0.00009){
+            fprintf(stderr, "Bad exposure time values.  Must be 0.0001 - 10 (seconds)\n");
+            return -1;
+        }
+    } else if (keymatch(tag, "pixsat", 7)) {
+        if (sscanf(value, "%d", &ex.SatVal) != 1) return -1;
+        if (ex.SatVal < 50 || ex.SatVal > 255){
+            fprintf(stderr, "Pixel saturation must be between in range of 50-255\n");
+            return -1;
+        }
+    } else if (keymatch(tag, "isooverextime", 5)) {
+        if (sscanf(value, "%d", &ex.ISOoverExTime) != 1) return -1;
+        if (ex.ISOoverExTime < 1000 || ex.ISOoverExTime > 50000){
+            fprintf(stderr, "ISO/Exposure is out of range (100-50000)\n");
+            return -1;
+        }
+        
     } else if (keymatch(tag, "blink_cmd", 5)) {
-        // Set output file name.
+        // Obsolete blink LED feature.
         strncpy(blink_cmd, value, sizeof(blink_cmd)-1);
     } else if (keymatch(tag, "savedir", 4)) {
-        // Set output file name.
+        // Set where output goes
         strncpy(SaveDir,value, sizeof(SaveDir)-1);
     } else if (keymatch(tag, "savenames", 5)) {
-        // Set output file name.
+        // Set file / directory naming scheme.  Do not chagne from default
+        // if you want the HTML browsing system to still work.
         strncpy(SaveNames,value, sizeof(SaveNames)-1);
         {
             int a,b;
@@ -193,10 +241,10 @@ static int parse_parameter (const char * tag, const char * value)
         }
 
     } else if (keymatch(tag, "logtofile", 8)) {
-        // Log to a file instead of stdout
+        // Log to a file instead of stdout.  Must log to /ramdisk/log.txt for realtime view to work.
         strncpy(LogToFile,value, sizeof(SaveDir)-1);
     } else if (keymatch(tag, "movelognames", 12)) {
-        // Log to a file instead of stdout
+        // Where to backup logs to.
         strncpy(MoveLogNames,value, sizeof(SaveDir)-1);
     } else if (keymatch(tag, "region", 3)) {
         if (!ParseRegion(&Regions.DetectReg, value)) goto bad_value;
@@ -231,7 +279,7 @@ static int parse_parameter (const char * tag, const char * value)
     } else if (keymatch(tag, "wait_close_write", 16)) {
         if (sscanf(value, "%d", &wait_close_write) != 1) return -1;
     }else{
-        fprintf(stderr,"argument %s not understood\n",tag);
+        fprintf(stderr,"argument '%s' not understood\n",tag);
         return -1;     // bogus switch
         bad_value:
         fprintf(stderr, "Value of %s=%s\n not understood\n",tag,value);
