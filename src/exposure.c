@@ -30,7 +30,7 @@ char * GetRaspistillExpParms()
         int min, max;
         if (memcmp(ImageInfo.CameraModel, "RP_ov5647",10) == 0){
             //V1 (5 mp) camera module
-            min = 100; max = 1200;
+            min = 100; max = 800;
         }
         if (memcmp(ImageInfo.CameraModel, "RP_imx219",10) == 0){
             // V2 (8 mp) camera module.
@@ -118,8 +118,8 @@ int CalcExposureAdjust(MemImage_t * pic)
     }
     NumPix *= 6;
 
-    static int ShowPeriodic = 15;
-    if (++ShowPeriodic >= 30) ShowPeriodic = 0;
+    static int ShowPeriodic = 45;
+    if (++ShowPeriodic >= 60) ShowPeriodic = 0;
 
     if (ShowPeriodic == 0){
         // Show histogram bargraph
@@ -128,8 +128,12 @@ int CalcExposureAdjust(MemImage_t * pic)
             int twobin = BrHistogram[a]+BrHistogram[a+1];
             if (twobin > maxv) maxv = twobin;
         }
-        fprintf(Log,"Histogram.  maxv = %d\n",maxv);
+        fprintf(Log,"Brighness histogram\n");
         for (int a=0;a<256;a+=2){
+            if (a == 26){
+                printf("...........\n");// Skip middle part of histogram, not that interesting.
+                a = 210;
+            }
             int twobin = BrHistogram[a]+BrHistogram[a+1];
             fprintf(Log,"%3d %6d %6d ",a,BrHistogram[a], BrHistogram[a+1]);
             static char * Bargraph = "#########################################################################";
@@ -152,24 +156,25 @@ int CalcExposureAdjust(MemImage_t * pic)
         medpix -= BrHistogram[med];
         if (medpix <= 0) break;
     }
+
+
     double SatFrac;
-    {
-        if (ex.SatVal){
-            SatVal = ex.SatVal;
-        }else{
-            SatVal = 253;
-            if (memcmp(ImageInfo.CameraModel, "RP_ov5647",10) == 0){
-                // 5 megapixel module saturates around pixel value of 245, not 255.
-                // Newer modules pixel values saturate closer to 255
-                SatVal = 244;
-            }
+    if (ex.SatVal){
+        SatVal = ex.SatVal;
+    }else{
+        SatVal = 253;
+        if (memcmp(ImageInfo.CameraModel, "RP_ov5647",10) == 0){
+            // 5 megapixel module saturates around pixel value of 245, not 255.
+            // Newer modules pixel values saturate closer to 255
+            SatVal = 240;
         }
-        int SatPix = 0;
-        for (int a=SatVal;a<256;a++){
-            SatPix += BrHistogram[a];
-        }
-        SatFrac = (double)SatPix/NumPix;
     }
+    int SatPix = 0;
+    for (int a=SatVal;a<256;a++){
+        SatPix += BrHistogram[a];
+    }
+    SatFrac = (double)SatPix/NumPix;
+
 
     // Adjust exposure upwards becauase very few pixels are near
     // maximum values, so there's exposure headroom.
@@ -194,13 +199,12 @@ int CalcExposureAdjust(MemImage_t * pic)
     // LightMult indicates how much more the light should have been,
     // or how much to multiply exposure time or ISO or combination of both by.
 
+    double ImgIsoTimesExp = ImageInfo.ExposureTime * ImageInfo.ISOequivalent;
+    
     if (ShowPeriodic == 0){
-        fprintf(Log, "Brightness: 3%%>%d  25%%>%d  Sat%%=%3.1f  Ex adjust %4.2f\n",sat,med, SatFrac*100, LightMult);
+        fprintf(Log, "Brightness: 3%%>%d  25%%>%d  Sat%%=%3.1f  Iso*Ex=%4.1f Adjust *%4.2f\n",sat,med, SatFrac*100, ImgIsoTimesExp, LightMult);
         ShowPeriodic = 0;
     }
-
-    double ImgIsoTimesExp = ImageInfo.ExposureTime * ImageInfo.ISOequivalent;
-
 
     // Compute a measure of how steady the light is.  If it's really steady,
     // ten lower the threshold for making exposure adjustments.
@@ -222,7 +226,7 @@ int CalcExposureAdjust(MemImage_t * pic)
     if ((LightMult >= ExposureThresholdRatio && ExMaxLimitHit == 0)
         || (LightMult <= 1/ExposureThresholdRatio && ExMinLimitHit == 0)){
         // If adjustment is called for, *and* we haven't hit an exposure limit:
-        fprintf(Log, "Brightness: 1.5%%>%d  5%%>%d  Sat%%=%3.1f  Ex adjust %4.2f\n",sat,med, SatFrac*100, LightMult);
+        fprintf(Log, "Brightness: 1.5%%>%d  5%%>%d  Sat%%=%3.1f Adjust *%4.2f\n",sat,med, SatFrac*100, LightMult);
         ShowPeriodic = 0;
 
         fprintf(Log,"Adjust exposure.  Was: t=%6.4fs",ImageInfo.ExposureTime);
@@ -240,12 +244,4 @@ int CalcExposureAdjust(MemImage_t * pic)
     return 0;
 }
 
-// Todo next:
-// imgcomp.conf aquire command line:
-//    aquire_cmd = raspistill -q 10 -n -th none -w 1600 -h 1200 -bm -t 0 -tl 1000
-
-// Camera models indicated in Exif header.  All regardless of lens or manufacturer.
-// v1 5mp:  RP_ov5647
-// v2 8mp:  RP_ov5647
-// hq 12mp: RP_imx477
 
