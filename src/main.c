@@ -365,7 +365,7 @@ static int DoDirectoryFunc(char * Directory, int DeleteProcessed)
             // Check exposure before comparison, because we may want to restart raspistill ASAP.
             int d = CalcExposureAdjust(NewPic.Image);
             if (d){
-                printf("Restart raspistill for exposure adjust\n");
+                //fprintf(Log,"Restart raspistill for exposure adjust\n");
                 relaunch_raspistill();
             }
         }
