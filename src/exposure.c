@@ -13,7 +13,7 @@
 #include "config.h"
 #include "jhead.h"
 
-static double ISOtimesExp = 5;   // Inverse measure of available light level.
+static double ISOtimesExp = 0.2;   // Inverse measure of available light level.
 
 typedef struct {
     int ISOmin, ISOmax; // ISO limits for camera module.
@@ -83,10 +83,10 @@ char * GetRaspistillExpParms()
     if (ExTime > ex.Tmax) {
         ExTime = ex.Tmax;
         ExMaxLimitHit = 1;// Dark image, but further exposure increase not possible.
-        fprintf(Log,"Exposure at max ISO and time\n"); 
+        fprintf(Log,"Exposure at max ISO and time\n");
     }
 
-    fprintf(Log,"New t=%5.3f  ISO=%d   ISO*Exp=%4.0f\n",ExTime, (int)ISO,ISOtimesExp);
+    fprintf(Log,"New exposure: t=%5.3f ISO=%d ISO*Exp=%4.0f\n",ExTime, (int)ISO,ISOtimesExp);
 
     static char RaspiParms[50];
     snprintf(RaspiParms, 50, " -ss %d -ISO %d",(int)(ExTime*1000000), (int)ISO);
@@ -125,10 +125,12 @@ int CalcExposureAdjust(MemImage_t * pic)
             p1 += 3;
         }
     }
-
     NumPix *= 6;
 
-    if(0){
+    static int ShowPeriodic = 15;
+    if (++ShowPeriodic >= 30) ShowPeriodic = 0;
+
+    if (ShowPeriodic == 0){
         // Show histogram bargraph
         int maxv = 0;
         for (int a=0;a<256;a+=2){
@@ -147,8 +149,8 @@ int CalcExposureAdjust(MemImage_t * pic)
     double ExposureMult = 1.0;
 
     // figure out what threshold value has no more than 0.4% of pixels above.
-    int satpix = NumPix / 32; // Allowable pixels near saturation
-    int medpix = NumPix / 4;  // Don't make the image overall too bright.
+    int satpix = NumPix / 64;  // Allowable pixels near saturation
+    int medpix = NumPix / 20;  // Don't make the image overall too bright.
     int sat, med;
     int SatVal;
     for (sat=255;sat>=0;sat--){
@@ -181,8 +183,8 @@ int CalcExposureAdjust(MemImage_t * pic)
     // Adjust exposure upwards becauase very few pixels are near
     // maximum values, so there's exposure headroom.
     double Mult=10,Mult2=10;
-    if (sat) Mult = 0.9*SatVal/sat;
-    if (med) Mult2 = 0.82*SatVal/med;
+    if (sat) Mult = 0.96*SatVal/sat;
+    if (med) Mult2 = 0.93*SatVal/med;
     if (Mult2 < Mult) Mult = Mult2;
     if (Mult > 32) Mult = 32; // Do't try to adjust more than this!
     ExposureMult = Mult;
@@ -196,29 +198,52 @@ int CalcExposureAdjust(MemImage_t * pic)
     if (SatFrac > 0.20) ExposureMult = 0.5;
     if (SatFrac > 0.40) ExposureMult = 0.4;
 
-    double LightMult = pow(ExposureMult, 2.2); // Adjust for assumed camera gamma of 2.2
-    
+    double LightMult = pow(ExposureMult, 2.2); // assume camer gamma is 2.2 for light level calculation
+
     // LightMult indicates how much more the light should have been,
     // or how much to multiply exposure time or ISO or combination of both by.
-    static int ShowPeriodic = 10;
-    if (++ShowPeriodic >= 20){
-        fprintf(Log, "Brightness: >3%%:%d  >25%%:%d  Sat%%=%3.1f  Ex adjust %4.2f\n",sat,med, SatFrac*100, LightMult);
+
+    if (ShowPeriodic == 0){
+        fprintf(Log, "Brightness: 3%%>%d  25%%>%d  Sat%%=%3.1f  Ex adjust %4.2f\n",sat,med, SatFrac*100, LightMult);
         ShowPeriodic = 0;
     }
 
     double ImgIsoTimesExp = ImageInfo.ExposureTime * ImageInfo.ISOequivalent;
 
-    if ((LightMult >= 1.20 && ExMaxLimitHit == 0) 
-        || (LightMult <= 0.85 && ExMinLimitHit == 0)){
-        // If adjustment is called for, *and* we aren't at the limit.
-        fprintf(Log, "Brightness: >3%%:%d  >25%%:%d  Sat%%=%3.1f  Ex adjust %4.2f\n",sat,med, SatFrac*100, LightMult);
+
+    // Compute a measure of how steady the light is.  If it's really steady,
+    // ten lower the threshold for making exposure adjustments.
+    static double LightMult_ra = 1;
+    static double LightMultVariance_ra = 1;
+    const double newweight = 0.05;
+    LightMult_ra = LightMult_ra*(1-newweight)+LightMult*newweight;
+    double diff  = LightMult-LightMult_ra;
+    LightMultVariance_ra = LightMultVariance_ra*(1-newweight) + diff*diff*newweight;
+    if (ShowPeriodic == 0) fprintf(Log, "Mult:%5.2f mra:%5.2f stdev:%5.2f\n",LightMult, LightMult_ra, sqrt(LightMultVariance_ra));
+
+    double ExposureThresholdRatio = 1.2;
+    if (LightMultVariance_ra < (0.2*0.2)){
+        // Light has been very steady for a while, so be willing to make fine adjustments to exposure.
+        ExposureThresholdRatio = 1.06;
+        //printf("fine ");
+    }
+
+    if ((LightMult >= ExposureThresholdRatio && ExMaxLimitHit == 0)
+        || (LightMult <= 1/ExposureThresholdRatio && ExMinLimitHit == 0)){
+        // If adjustment is called for, *and* we haven't hit an exposure limit:
+        fprintf(Log, "Brightness: 1.5%%>%d  5%%>%d  Sat%%=%3.1f  Ex adjust %4.2f\n",sat,med, SatFrac*100, LightMult);
         ShowPeriodic = 0;
-        
+
         fprintf(Log,"Adjust exposure.  Was: t=%6.4fs",ImageInfo.ExposureTime);
         fprintf(Log," ISO=%d   ISO*Exp=%f\n",ImageInfo.ISOequivalent, ImgIsoTimesExp);
 
         ISOtimesExp = ImgIsoTimesExp * LightMult;
         GetRaspistillExpParms();
+
+        // Reset exposure adjust running averages (avoid fine adjust too soon)
+        LightMult_ra = 1;
+        LightMultVariance_ra = 1;
+
         return 1; // And signal raspistill needs restarting.
     }
     return 0;
