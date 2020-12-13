@@ -59,13 +59,20 @@ It also allows better compromising between grainy images and less motion blur.
 <div class="p">iso &ltmin>-&ltmax></div>
 With -exmanage 1, Limits of ISO settings to use with raspistill.  Must be 25-6400
  <div class="p">exposure &ltmin>-&ltmax></div>
-With -exmanage 1, Limits to shutter speeds (in seconds) to use with raspistill.  0.001-2
+With -exmanage 1, Limits to shutter speeds (in seconds) to use with raspistill.  0.0001-0.25
+Length is limited to 0.25 because raspistill becomes unstable with long shutter
+speeds in timelapse mode.
 
 <div class="p">isooverextime</div>
 with -exmanage 1, sets the ISO/shutter speed curve Unless ISO or exposure time
 limits are hit.  imgcomp will aim for ISO divided by exposure time to be this value.
 Default 16000.  Larger means shorter shutter speeds, smaller means lower
-ISO (less grainy) but slower shutter, more motion blur
+ISO (less grainy) but slower shutter, more motion blur.
+<p>
+At 16000, it will pick ISO 160 with 0.01s exposure time.<br>
+With the same light level:<br>
+At 64000, it will pick ISO 320 with 0.005s exposure time. (more grainy but less motion blur)<p>
+
 
 <div class="p">pixxat &ltval></div>
 with -exmanage 1, Jpeg pixel value at which image saturates because camera

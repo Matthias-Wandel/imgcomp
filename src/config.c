@@ -51,7 +51,7 @@ void usage (void)// complain about bad command line
      " -iso <min>-<max>      With -exmanage 1, Limits of ISO settings to use with\n"
      "                       raspistill.  Must be 25-6400\n"
      " -exposure <min>-<max> With -exmanage 1, Limits to shutter speeds (in seconds)\n"
-     "                       to use with raspistill.  0.001-2\n"
+     "                       to use with raspistill.  0.0001-0.25\n"
      " -isooverextime <val>  with -exmanage 1, sets the ISO/shutter speed curve\n"
      "                       Unless limits are hit, imgcomp will aim for ISO divided\n"
      "                       by exposure time to be this value.  Default 16000\n"
