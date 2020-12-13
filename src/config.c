@@ -200,7 +200,9 @@ static int parse_parameter (const char * tag, const char * value)
         int n = sscanf(value, "%f-%f", &ex.Tmin, &ex.Tmax);
         if (n != 1 && n != 2) return -1;
         if (n == 1) ex.Tmax = ex.Tmin;
-        if (ex.Tmin > ex.Tmax || ex.Tmax > 10 || ex.Tmin < 0.00009){
+        if (ex.Tmin > ex.Tmax || ex.Tmax > 0.25 || ex.Tmin < 0.00009){
+            // Timelapses mode with more than 1/4 second exposure time tends to mess up
+            // raspistill, some combinations hard locking up the whole Pi.
             fprintf(stderr, "Bad exposure time values.  Must be 0.0001 - 10 (seconds)\n");
             return -1;
         }
