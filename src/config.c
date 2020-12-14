@@ -36,8 +36,10 @@ void usage (void)// complain about bad command line
      " -postmotion <n>       Keep n frames after motion was detected\n"
      " -tempdir <dir>        Where to put temp images for video mode hack\n"
      " -sensitivity N        Set motion sensitivity. Lower=more sensitive\n"
-     " -blink_cmd <command>  Run this command when motion detected\n"
-     "                       (used to blink the camera LED)\n"
+
+     " -motionrun <cmd>      Run this command when motion detected\n"
+     " -motionendrun <cmd>   Run this command after no motion for 30 seconds\n"
+     
      " -tl N                 Save image every N seconds regardless\n"
      " -spurious             Ignore any change that returns to\n"
      "                       previous image in the next frame\n"
@@ -219,9 +221,11 @@ static int parse_parameter (const char * tag, const char * value)
             return -1;
         }
         
-    } else if (keymatch(tag, "blink_cmd", 5)) {
-        // Obsolete blink LED feature.
-        strncpy(blink_cmd, value, sizeof(blink_cmd)-1);
+    } else if (keymatch(tag, "motionrun", 7)) {
+        strncpy(motion_run, value, sizeof(motion_run)-1);
+    } else if (keymatch(tag, "motionendrun", 7)) {
+        strncpy(motion_end_run, value, sizeof(motion_end_run)-1);
+        
     } else if (keymatch(tag, "savedir", 4)) {
         // Set where output goes
         strncpy(SaveDir,value, sizeof(SaveDir)-1);

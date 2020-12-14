@@ -20,7 +20,6 @@
 #include "jhead.h"
 
 static int raspistill_pid = 0;
-static int blink_led_pid = 0;
 
 static char OutNameSeq = 'a';
 
@@ -31,7 +30,7 @@ int kill(pid_t pid, int sig);
 //-----------------------------------------------------------------------------------
 // Parse command line and launch.
 //-----------------------------------------------------------------------------------
-static void do_launch_program(char * cmd_string)
+static pid_t do_launch_program(char * cmd_string)
 {
     char * Arguments[51];
     int narg;
@@ -61,13 +60,23 @@ static void do_launch_program(char * cmd_string)
     //for (a=0;a<narg;a++){
     //    printf("'%s'\n",Arguments[a]);
     //}
-    execvp(Arguments[0], Arguments);
+    
+    int pid = fork();
+    if (pid == -1){
+        // Failed to fork.
+        fprintf(Log,"Failed to fork off child process\n");
+        return -1;
+    }
 
-    // execvp only returns if there is an error.
-
-    fprintf(Log,"Failed to execute: %s\n",Arguments[0]);
-    perror("Reason");
-    exit(errno);
+    if(pid == 0){
+        // Child takes this branch.
+        execvp(Arguments[0], Arguments);
+        fprintf(Log,"Failed to execute: %s\n",Arguments[0]);
+        perror("Reason");
+        exit(errno);
+        return -1;
+    }
+    return pid;
 }
 
 //-----------------------------------------------------------------------------------
@@ -75,8 +84,6 @@ static void do_launch_program(char * cmd_string)
 //-----------------------------------------------------------------------------------
 int relaunch_raspistill(void)
 {
-    pid_t pid;
-
     // Kill raspistill if it's already running.
     if (raspistill_pid){
         kill(raspistill_pid,SIGKILL);
@@ -119,23 +126,67 @@ int relaunch_raspistill(void)
         //fprintf(Log,"Run program: %s\n",cmd_appended);
     }
 
-    pid = fork();
-    if (pid == -1){
-        // Failed to fork.
-        fprintf(Log,"Failed to fork off child process\n");
-        fprintf(stderr,"Failed to fork off child process\n");
-        perror("Reason");
-        return -1;
-    }
-
-    if(pid == 0){
-        // Child takes this branch.
-        do_launch_program(cmd_appended);
-    }else{
-        raspistill_pid = pid;
-    }
-
+    raspistill_pid = do_launch_program(cmd_appended);
     return 0;
+}
+
+//-----------------------------------------------------------------------------------
+// Launch external commands on motion (for turning the lights on)
+//-----------------------------------------------------------------------------------
+void DoMotionRun(int SawMotion)
+{
+    int NowSec = (int) time(NULL);
+    
+    static int LastMotion = 0;
+    static int LightOn;
+    static pid_t child_pid = 0;
+    char CmdCopy[200];
+
+    //printf("DoMotionRun %d  ",SawMotion);    
+
+    if (child_pid > 0){
+        // Check if child has exited.
+        pid_t r = waitpid(child_pid, NULL, WNOHANG);
+        if (r == child_pid){
+            child_pid = 0;
+            //fprintf(Log,"Motionrun Child exited\n");
+        }else{
+            fprintf(Log,"Child still running  r=%d\n",r);
+        }
+    }
+
+    if (SawMotion){
+        LastMotion = NowSec;
+        if (!LightOn){
+            if (motion_run[0]){
+                if (child_pid <= 0){
+                    fprintf(Log, "Turn light ON\n");
+                    strncpy(CmdCopy, motion_run, 200);
+                    child_pid = do_launch_program(CmdCopy);
+                    LightOn = 1;
+                }else{
+                    fprintf(Log,"Turn lights ON (wait child exit first)\n");
+                }
+            }else{
+                LightOn = 1;
+            }
+        }
+    }else{
+        if (LightOn && (NowSec-LastMotion) > 5/*30*/){
+            if (motion_end_run[0]){
+                if (child_pid <= 0){
+                    fprintf(Log, "Turn light OFF\n");
+                    strncpy(CmdCopy, motion_end_run, 200);
+                    child_pid = do_launch_program(CmdCopy);
+                    LightOn = 0;
+                }else{
+                    fprintf(Log,"Turn lgiht OFF (wait for child exit first)\n");
+                }
+            }else{
+                LightOn = 0;
+            }
+        }
+    }
 }
 
 //-----------------------------------------------------------------------------------
@@ -150,14 +201,16 @@ static int NumTotalImages;
 int manage_raspistill(int NewImages)
 {
     int timeout;
+    time_t now = time(NULL);
+
     MsSinceImage += 1000;
     MsSinceLaunch += 1000;
+
     if (NewImages > 0){
         MsSinceImage = 0;
 		NumTotalImages += NewImages;
     }else{
         if (MsSinceImage >= 3000){
-            time_t now = time(NULL);
 			fprintf(Log,"No new images, %d (at %d:%d)\n",MsSinceImage, (int)(now%3600/60), (int)(now%60));
 		}
     }
@@ -203,51 +256,3 @@ force_restart:
     InitialBrSum = InitialNumBr = 0;
     return 1;
 }
-
-
-//-----------------------------------------------------------------------------------
-// Run a program to blink the LED.
-// Hitting the I/O lines requires root priviledges, so let's just spawn a program
-// to do a single LED blink.
-//-----------------------------------------------------------------------------------
-void run_blink_program()
-{
-#ifdef _WIN32
-  return; }
-#else
-    pid_t pid;
-
-    if (blink_cmd[0] == 0){
-        // No blink command configured.
-        return;
-    }
-
-    if (blink_led_pid){
-        // Avoid accumulating zombie child processes.
-        // Blink process should be done by now.
-        int exit_code = 0;
-        int a;
-        a = wait(&exit_code);
-        printf("Child exit code %d (wait returned %d)\n",exit_code,a);
-        blink_led_pid = 0;
-    }
-
-
-    printf("Run blink program\n");
-    pid = fork();
-    if (pid == -1){
-        // Failed to fork.
-        fprintf(stderr,"Failed to fork off child process\n");
-        perror("Reason");
-        return;
-    }
-
-    if(pid == 0){
-        // Child takes this branch.
-        do_launch_program(blink_cmd);
-    }else{
-        blink_led_pid = pid;
-    }
-    return;
-}
-#endif

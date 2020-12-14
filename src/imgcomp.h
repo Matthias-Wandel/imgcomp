@@ -96,9 +96,10 @@ void WritePpmFile(char * FileName, MemImage_t *MemImage);
 // start_raspistill functions
 int relaunch_raspistill(void);
 int manage_raspistill(int HaveNewImages);
+void DoMotionRun(int SawMotion);
 extern char raspistill_cmd[200];
-extern char blink_cmd[200];
-void run_blink_program(void);
+extern char motion_run[200];
+extern char motion_end_run[200];
 
 // util.c functions
 char * CatPath(char *Dir, char * FileName);
