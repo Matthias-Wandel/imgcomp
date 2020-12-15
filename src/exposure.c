@@ -47,7 +47,7 @@ char * GetRaspistillExpParms()
     if (ex.Tmin <= 0.0001)  ex.Tmin = 0.0001;
     if (ex.Tmax == 0) ex.Tmax = 0.25;
     if (ex.Tmax <= 0.001)  ex.Tmax = 0.001;
-    if (ex.ISOoverExTime == 0) ex.ISOoverExTime = 16000;
+    if (ex.ISOoverExTime == 0) ex.ISOoverExTime = 32000;
 
 
 
@@ -109,8 +109,8 @@ int CalcExposureAdjust(MemImage_t * pic)
             if (ExRow && ExRow[col]){
                 // Apply the colors to the histogram separately (saturating one is saturated enough)
                 BrHistogram[p1[0]] += 2; // Red,   1/3 weight
-                BrHistogram[p1[2]] += 3; // Green, 1/2 weight
-                BrHistogram[p1[0]] += 1; // Blue,  1/6 weight
+                BrHistogram[p1[1]] += 3; // Green, 1/2 weight
+                BrHistogram[p1[2]] += 1; // Blue,  1/6 weight
                 NumPix += 1;
             }
             p1 += 3;
