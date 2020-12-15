@@ -52,7 +52,10 @@ int Sensitivity;
 int Raspistill_restarted;
 int TimelapseInterval;
 char raspistill_cmd[200];
-char blink_cmd[200];
+
+char motion_run[200];
+char motion_end_run[200];
+
 char UdpDest[30];
 static int SinceMotionPix = 1000;
 static int SinceMotionMs = 0;
@@ -411,6 +414,8 @@ int DoDirectory(char * Directory)
 
     for (;;){
         a = DoDirectoryFunc(Directory, FollowDir);
+        DoMotionRun(a);
+
         int b = manage_raspistill(NumProcessed);
         if (b) Raspistill_restarted = 1;
         if (LogToFile[0] != '\0') LogFileMaintain(0);
