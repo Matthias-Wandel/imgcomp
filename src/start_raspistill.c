@@ -130,6 +130,7 @@ int relaunch_raspistill(void)
     return 0;
 }
 
+static int SinceLightChange = 0;
 //-----------------------------------------------------------------------------------
 // Launch external commands on motion (for turning the lights on)
 //-----------------------------------------------------------------------------------
@@ -142,20 +143,21 @@ void DoMotionRun(int SawMotion)
     static pid_t child_pid = 0;
     char CmdCopy[200];
 
-    //printf("DoMotionRun %d  ",SawMotion);    
+    //fprintf(Log, "DoMotionRun %d %d \n",SawMotion, SinceLightChange);    
 
     if (child_pid > 0){
         // Check if child has exited.
         pid_t r = waitpid(child_pid, NULL, WNOHANG);
-        if (r == child_pid){
+        if (r == child_pid || r == -1){
             child_pid = 0;
-            //fprintf(Log,"Motionrun Child exited\n");
+            fprintf(Log,"Motionrun Child exited %d\n",r);
         }else{
             fprintf(Log,"Child still running  r=%d\n",r);
         }
     }
 
-    if (SawMotion){
+    // Ignore "motion" events for a few seconds if we hit the light switch.
+    if (SinceLightChange++ > 2 && SawMotion){
         LastMotion = NowSec;
         if (!LightOn){
             if (motion_run[0]){
@@ -163,6 +165,7 @@ void DoMotionRun(int SawMotion)
                     fprintf(Log, "Turn light ON\n");
                     strncpy(CmdCopy, motion_run, 200);
                     child_pid = do_launch_program(CmdCopy);
+                    SinceLightChange = 0;
                     LightOn = 1;
                 }else{
                     fprintf(Log,"Turn lights ON (wait child exit first)\n");
@@ -172,12 +175,13 @@ void DoMotionRun(int SawMotion)
             }
         }
     }else{
-        if (LightOn && (NowSec-LastMotion) > 5/*30*/){
+        if (LightOn && (NowSec-LastMotion) > 60){
             if (motion_end_run[0]){
                 if (child_pid <= 0){
                     fprintf(Log, "Turn light OFF\n");
                     strncpy(CmdCopy, motion_end_run, 200);
                     child_pid = do_launch_program(CmdCopy);
+                    SinceLightChange = 0;
                     LightOn = 0;
                 }else{
                     fprintf(Log,"Turn lgiht OFF (wait for child exit first)\n");
@@ -254,5 +258,6 @@ force_restart:
     relaunch_raspistill();
     MsSinceLaunch = 0;
     InitialBrSum = InitialNumBr = 0;
+    SinceLightChange = 0;
     return 1;
 }
