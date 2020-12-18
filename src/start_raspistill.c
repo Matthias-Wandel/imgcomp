@@ -156,8 +156,9 @@ void DoMotionRun(int SawMotion)
         }
     }
 
-    // Ignore "motion" events for a few seconds if we hit the light switch.
-    if (SinceLightChange++ > 2 && SawMotion){
+    // Ignore "motion" events for a few seconds after we hit the light switch.
+    SinceLightChange += 1;
+    if (SinceLightChange > 5 && SawMotion){
         LastMotion = NowSec;
         if (!LightOn){
             if (motion_run[0]){
