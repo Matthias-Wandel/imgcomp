@@ -77,7 +77,7 @@ char * GetRaspistillExpParms()
         fprintf(Log,"Exposure at max ISO and time\n");
     }
 
-    fprintf(Log,"New exposure: t=%5.3f ISO=%d ISO*Exp=%4.0f\n",ExTime, (int)ISO,ISOtimesExp);
+    fprintf(Log,"New exposure: t=%0.5f ISO=%d ISO*Exp=%5.0f\n",ExTime, (int)ISO,ISOtimesExp);
 
     static char RaspiParms[50];
     snprintf(RaspiParms, 50, " -ss %d -ISO %d",(int)(ExTime*1000000), (int)ISO);
@@ -124,6 +124,7 @@ int CalcExposureAdjust(MemImage_t * pic)
     if (ShowPeriodic == 0){
         // Show histogram bargraph
         int maxv = 0;
+        int skz = 1;
         for (int a=0;a<256;a+=2){
             int twobin = BrHistogram[a]+BrHistogram[a+1];
             if (twobin > maxv) maxv = twobin;
@@ -133,8 +134,11 @@ int CalcExposureAdjust(MemImage_t * pic)
             if (a == 26){
                 fprintf(Log,"...........\n");// Skip middle part of histogram, not that interesting.
                 a = 210;
+                skz = 1;
             }
             int twobin = BrHistogram[a]+BrHistogram[a+1];
+            if (twobin == 0 && skz) continue;
+            skz = 0;
             fprintf(Log,"%3d %6d %6d ",a,BrHistogram[a], BrHistogram[a+1]);
             static char * Bargraph = "#########################################################################";
             fprintf(Log,"%.*s\n", (50*twobin+maxv/2)/maxv, Bargraph);
@@ -229,8 +233,8 @@ int CalcExposureAdjust(MemImage_t * pic)
         fprintf(Log, "Brightness: 1.5%%>%d  5%%>%d  Sat%%=%3.1f Adjust *%4.2f\n",sat,med, SatFrac*100, LightMult);
         ShowPeriodic = 0;
 
-        fprintf(Log,"Adjust exposure.  Was: t=%6.4fs",ImageInfo.ExposureTime);
-        fprintf(Log," ISO=%d   ISO*Exp=%f\n",ImageInfo.ISOequivalent, ImgIsoTimesExp);
+        fprintf(Log,"Adjust exposure.  Was: t=%0.5f",ImageInfo.ExposureTime);
+        fprintf(Log," ISO=%d   ISO*Exp=%.0f\n",ImageInfo.ISOequivalent, ImgIsoTimesExp);
 
         ISOtimesExp = ImgIsoTimesExp * LightMult;
         GetRaspistillExpParms();
