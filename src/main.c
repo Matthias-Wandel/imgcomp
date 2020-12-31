@@ -199,20 +199,20 @@ static int ProcessImage(LastPic_t * New, int DeleteProcessed)
         }
         if (LastPics[0].IsTimelapse) fprintf(Log," (time)");
 
-        
+
         if (SaveDir[0]){
             int KeepImage = 0;
             if (LastPics[2].IsTimelapse) KeepImage = 1;
             if (LastPics[1].IsMotion && PreMotionKeep) KeepImage |= 2;
             if (LastPics[2].IsMotion) KeepImage |= 4;
             if (SinceMotionPix <= PostMotionKeep) KeepImage |= 8;
-            
+
             if (KeepImage){
                 //printf(" (%s %d)",LastPics[2].Name, KeepImage);
                 BackupImageFile(LastPics[2].Name, LastPics[2].DiffMag, 0);
             }
         }
-        
+
         if (LastPics[2].IsMotion) SinceMotionPix = 0;
 
         fprintf(Log,"\n");
@@ -290,51 +290,52 @@ static int DoDirectoryFunc(char * Directory, int DeleteProcessed)
     if (NumEntries == 0) return 0;
 
     NumProcessed = 0;
-    int end = 0;
-    for (a=0;a<NumEntries;a++){
-        // Don't redo old pictures that we have looked at, but
-        // not yet deleted because we may still need them.
-        if (strcmp(LastPics[0].Name+LastPics[0].nind, FileNames[a].FileName) == 0
-           || strcmp(LastPics[1].Name+LastPics[1].nind, FileNames[a].FileName) == 0){
-            // Zero out file name to indicate skip this one.
-            goto skip;
-        }
-        int l = strlen(FileNames[a].FileName);
-        if (l < 5) goto skip;
-        if (strcmp(FileNames[a].FileName+l-4, ".jpg") != 0 && 
-            strcmp(FileNames[a].FileName+l-5, ".jpeg") != 0){
-            goto skip;
-        }
-
-        end=a+1;
-        continue;
-    skip:
-        // Zero out filename to skip it.
-        FileNames[a].FileName[0] = 0;
-    }
-    NumEntries = end;
-
 
     for (a=0;a<NumEntries;a++){
         LastPic_t NewPic;
         char * ThisName;
         int l;
+        time_t now = time(NULL);
 
-        // Check that name ends in ".jpg", ".jpeg", or ".JPG", etc...
+        // Check that name ends in ".jpg", ".jpeg"
         ThisName = FileNames[a].FileName;
         if (ThisName[0] == 0) continue; // We already did this one.
 
         l = strlen(ThisName);
         if (l < 5) continue;
-        if (ThisName[l-1] != 'g' && ThisName[l-1] != 'G') continue;
-        if (ThisName[l-2] == 'e' || ThisName[l-2] == 'E') l-= 1;
-        if (ThisName[l-2] != 'p' && ThisName[l-2] != 'P') continue;
-        if (ThisName[l-3] != 'j' && ThisName[l-3] != 'J') continue;
-        if (ThisName[l-4] != '.') continue;
-        //printf("use: %s\n",ThisName);
+
+        if (strcmp(FileNames[a].FileName+l-4, ".jpg") != 0 &&
+                strcmp(ThisName+l-5, ".jpeg") != 0){
+
+
+            if (strcmp(ThisName+l-5, ".jpg~") == 0){
+                // Imgcomp may leave files ending with '~' around if it was killed
+                // at the wrong time.  Detect and remove these files.
+                struct stat statbuf;
+                char * cpn = CatPath(Directory, ThisName);
+                if (stat(cpn, &statbuf) == -1) {
+                    perror(ThisName);
+                    continue;
+                }
+                if (now-statbuf.st_mtime > 5){
+                    fprintf(Log, "rm temp file: %s\n",cpn);
+                    unlink(cpn);
+                }
+            }
+            continue;
+        }
 
         strcpy(NewPic.Name, CatPath(Directory, ThisName));
         NewPic.nind = strlen(Directory)+1;
+
+        if (strcmp(LastPics[0].Name+LastPics[0].nind, ThisName) == 0
+             || strcmp(LastPics[1].Name+LastPics[1].nind, ThisName) == 0){
+            // Already did this one.
+            continue;
+        }
+
+        //printf("use: %s\n",ThisName);
+
 
         NewPic.Image = LoadJPEG(NewPic.Name, ScaleDenom, 0, 1);
         if (NewPic.Image == NULL){
@@ -360,9 +361,7 @@ static int DoDirectoryFunc(char * Directory, int DeleteProcessed)
             NewPic.mtime = (unsigned)statbuf.st_mtime;
         }
         LastPic_mtime = NewPic.mtime;
-        time_t now;
-        time(&now);
-        
+
         if (ExposureManagementOn && FollowDir && a == NumEntries-1 && now-NewPic.mtime <= 1){
             // Latest image of batch.
             // Check exposure before comparison, because we may want to restart raspistill ASAP.
@@ -686,10 +685,10 @@ int main(int argc, char **argv)
 
         printf("load %s\n",argv[file_index]);
         pic1 = LoadJPEG(argv[file_index], ScaleDenom, 0, 0);
-        
+
         printf("\nload %s\n",argv[file_index+1]);
         pic2 = LoadJPEG(argv[file_index+1], ScaleDenom, 0, 0);
-        
+
         if (pic1 && pic2){
             Verbosity = 2;
             ComparePix(pic1, pic2, 0, 0,"diff.ppm");
@@ -702,10 +701,10 @@ int main(int argc, char **argv)
 
         for (a=file_index;a<argc;a++){
             printf("input file %s\n",argv[a]);
-            
+
             // Load file into memory.
             pic = LoadJPEG(argv[a], 4, 0, 1);
-            
+
             CalcExposureAdjust(pic);
         }
     }
