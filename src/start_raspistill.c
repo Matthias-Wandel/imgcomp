@@ -161,10 +161,10 @@ void DoMotionRun(int SawMotion)
     if (SinceLightChange > 5 && SawMotion){
         LastMotion = NowSec;
         if (!LightOn){
-            if (motion_run[0]){
+            if (lighton_run[0]){
                 if (child_pid <= 0){
                     fprintf(Log, "Turn light ON\n");
-                    strncpy(CmdCopy, motion_run, 200);
+                    strncpy(CmdCopy, lighton_run, 200);
                     child_pid = do_launch_program(CmdCopy);
                     SinceLightChange = 0;
                     LightOn = 1;
@@ -176,11 +176,11 @@ void DoMotionRun(int SawMotion)
             }
         }
     }else{
-        if (LightOn && (NowSec-LastMotion) > 60){
-            if (motion_end_run[0]){
+        if (LightOn && (NowSec-LastMotion) > 90){
+            if (lightoff_run[0]){
                 if (child_pid <= 0){
                     fprintf(Log, "Turn light OFF\n");
-                    strncpy(CmdCopy, motion_end_run, 200);
+                    strncpy(CmdCopy, lightoff_run, 200);
                     child_pid = do_launch_program(CmdCopy);
                     SinceLightChange = 0;
                     LightOn = 0;

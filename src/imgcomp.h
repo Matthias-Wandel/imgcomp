@@ -98,8 +98,8 @@ int relaunch_raspistill(void);
 int manage_raspistill(int HaveNewImages);
 void DoMotionRun(int SawMotion);
 extern char raspistill_cmd[200];
-extern char motion_run[200];
-extern char motion_end_run[200];
+extern char lighton_run[200];
+extern char lightoff_run[200];
 
 // util.c functions
 char * CatPath(char *Dir, char * FileName);

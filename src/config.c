@@ -37,9 +37,12 @@ void usage (void)// complain about bad command line
      " -tempdir <dir>        Where to put temp images for video mode hack\n"
      " -sensitivity N        Set motion sensitivity. Lower=more sensitive\n"
 
-     " -motionrun <cmd>      Run this command when motion detected\n"
-     " -motionendrun <cmd>   Run this command after no motion for 30 seconds\n"
-     
+     " -lighton_run <cmd>    Run this command when motion detected to run external\n"
+     "                       command to turn on the lights\n"
+     " -lightoff_run <cmd>   Run this command after period of no motion\n"
+     " -lightoffdelay min[-max] How long after motion to turn lights off\n"
+     "                       Specify range (such as 20-60) to allow variable\n"
+     "                       intervals based on recent activity levels\n"
      " -tl N                 Save image every N seconds regardless\n"
      " -spurious             Ignore any change that returns to\n"
      "                       previous image in the next frame\n"
@@ -221,10 +224,10 @@ static int parse_parameter (const char * tag, const char * value)
             return -1;
         }
         
-    } else if (keymatch(tag, "motionrun", 7)) {
-        strncpy(motion_run, value, sizeof(motion_run)-1);
-    } else if (keymatch(tag, "motionendrun", 7)) {
-        strncpy(motion_end_run, value, sizeof(motion_end_run)-1);
+    } else if (keymatch(tag, "lighton_run", 11)) {
+        strncpy(lighton_run, value, sizeof(lighton_run)-1);
+    } else if (keymatch(tag, "lightoff_run", 13)) {
+        strncpy(lightoff_run, value, sizeof(lightoff_run)-1);
         
     } else if (keymatch(tag, "savedir", 4)) {
         // Set where output goes

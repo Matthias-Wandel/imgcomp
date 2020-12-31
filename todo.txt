@@ -1,4 +1,16 @@
 To do next:
+
+Lights:
+    Some expontenial decay recent action, to adjust timeout.  Sepcify a range of timeouts in config.
+        Short timeout on just one transition
+        Extended timeout if lots of action
+    Option to not trigger lighs on single motion?  Option to not switch lights if light levels also changed.
+    
+
+Remove jpg~ files if they are a few seconds old.
+
+
+Browsing program:
 * Flesh out browser.cfg, use for realtime:
     * Redo how holidays are stored
     * Big actagram start and stop times configurable
@@ -8,8 +20,13 @@ To do next:
 * showpic.js - mouse hover over temporarily flip to image.
 * canvas method based actagrams for actagram and day views, similar to hour view one.
 * realtime.html: Show log as it comes in line by line.
+
+Imgcomp program:
+* Exposure center region mostly
+* Document light on off feature
+* Docs section on exposure manage feature
+* Include TP-link python script
 * Calculate separate motion fatigues for luma and chroma (to better ignore shadows and trees)
 * glitch detection for more than one frame (ignore events that last more than 1 frame)
 * Image save rate liminting (raise threshold when too many aquired)
-
 

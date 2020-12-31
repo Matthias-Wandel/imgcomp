@@ -53,8 +53,8 @@ int Raspistill_restarted;
 int TimelapseInterval;
 char raspistill_cmd[200];
 
-char motion_run[200];
-char motion_end_run[200];
+char lighton_run[200];
+char lightoff_run[200];
 
 char UdpDest[30];
 static int SinceMotionPix = 1000;
