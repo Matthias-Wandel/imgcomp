@@ -226,9 +226,12 @@ static int parse_parameter (const char * tag, const char * value)
         
     } else if (keymatch(tag, "lighton_run", 11)) {
         strncpy(lighton_run, value, sizeof(lighton_run)-1);
-    } else if (keymatch(tag, "lightoff_run", 13)) {
+    } else if (keymatch(tag, "lightoff_run", 12)) {
         strncpy(lightoff_run, value, sizeof(lightoff_run)-1);
-        
+    } else if (keymatch(tag, "lightoffdelay", 13)) {
+        int n = sscanf(value, "%d-%d", &lightoff_min, &lightoff_max);
+        if (n != 1 && n != 2) return -1;
+        if (n == 1) lightoff_max = lightoff_min;
     } else if (keymatch(tag, "savedir", 4)) {
         // Set where output goes
         strncpy(SaveDir,value, sizeof(SaveDir)-1);

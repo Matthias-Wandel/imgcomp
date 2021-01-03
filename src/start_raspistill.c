@@ -131,6 +131,7 @@ int relaunch_raspistill(void)
 }
 
 static int SinceLightChange = 0;
+static int MotionAccumulate = 0;
 //-----------------------------------------------------------------------------------
 // Launch external commands on motion (for turning the lights on)
 //-----------------------------------------------------------------------------------
@@ -158,7 +159,16 @@ void DoMotionRun(int SawMotion)
 
     // Ignore "motion" events for a few seconds after we hit the light switch.
     SinceLightChange += 1;
-    if (SinceLightChange > 5 && SawMotion){
+    if (SawMotion || NowSec-LastMotion <= 2){
+        MotionAccumulate += 5;
+        if (MotionAccumulate > 1000) MotionAccumulate = 1000;
+    }else{
+        MotionAccumulate -= 1;
+        if (MotionAccumulate < 0) MotionAccumulate = 0;
+    }
+//printf("Ma = %4d\n",MotionAccumulate);    
+        
+    if (SinceLightChange > 4 && SawMotion){
         LastMotion = NowSec;
         if (!LightOn){
             if (lighton_run[0]){
@@ -175,11 +185,18 @@ void DoMotionRun(int SawMotion)
                 LightOn = 1;
             }
         }
-    }else{
-        if (LightOn && (NowSec-LastMotion) > 90){
+    }else if (LightOn){
+        // Compute how long the light should be left on.
+        int mm = MotionAccumulate; if (mm > 500) mm = 500;
+        mm -= 30; if (mm < 0) mm = 0;
+        
+        int timeout = lightoff_min + (lightoff_max-lightoff_min)*mm/500;
+//printf("Ma=%4d  timeout=%d (%d-%d)\n",MotionAccumulate, timeout, lightoff_min,lightoff_max);
+        
+        if ((NowSec-LastMotion) > timeout){
             if (lightoff_run[0]){
                 if (child_pid <= 0){
-                    fprintf(Log, "Turn light OFF\n");
+                    fprintf(Log, "Turn light OFF (%d sec timeout)\n",timeout);
                     strncpy(CmdCopy, lightoff_run, 200);
                     child_pid = do_launch_program(CmdCopy);
                     SinceLightChange = 0;

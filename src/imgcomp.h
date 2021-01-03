@@ -100,6 +100,8 @@ void DoMotionRun(int SawMotion);
 extern char raspistill_cmd[200];
 extern char lighton_run[200];
 extern char lightoff_run[200];
+extern int lightoff_min;
+extern int lightoff_max;
 
 // util.c functions
 char * CatPath(char *Dir, char * FileName);

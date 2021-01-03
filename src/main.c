@@ -55,6 +55,9 @@ char raspistill_cmd[200];
 
 char lighton_run[200];
 char lightoff_run[200];
+int lightoff_min = 10;
+int lightoff_max = 60;
+
 
 char UdpDest[30];
 static int SinceMotionPix = 1000;
