@@ -102,21 +102,26 @@ int relaunch_raspistill(void)
     static char cmd_appended[300];
     strncpy(cmd_appended, raspistill_cmd, 200);
 
-    if (ExposureManagementOn) { // Exposure managemnt by imgcomp
-        strcat(cmd_appended, GetRaspistillExpParms());
-        if (DashOOption){
-            fprintf(stderr, "Must not specify -o option with -exm option\n");
-            exit(-1);
+    if (strncmp(cmd_appended, "raspistill", 10) == 0) { // check if the aquire cmd is actually a raspistill cmd
+        if (ExposureManagementOn) { // Exposure managemnt by imgcomp
+            strcat(cmd_appended, GetRaspistillExpParms());
+            if (DashOOption){
+                fprintf(stderr, "Must not specify -o option with -exm option\n");
+                exit(-1);
+            }
+        }
+
+        if (!DashOOption){
+            // No output specified with raspistill command  Add the option,
+            // with a different prefix each time so numbers don't overlap.
+            int l = strlen(cmd_appended);
+            sprintf(cmd_appended+l," -o %s/out%c%%05d.jpg",DoDirName, OutNameSeq++);
+            if (OutNameSeq >= 'z') OutNameSeq = 'a';
+            //fprintf(Log,"Run program: %s\n",cmd_appended);
         }
     }
-
-    if (!DashOOption){
-        // No output specified with raspistill command  Add the option,
-        // with a different prefix each time so numbers don't overlap.
-        int l = strlen(cmd_appended);
-        sprintf(cmd_appended+l," -o %s/out%c%%05d.jpg",DoDirName, OutNameSeq++);
-        if (OutNameSeq >= 'z') OutNameSeq = 'a';
-        //fprintf(Log,"Run program: %s\n",cmd_appended);
+    else {
+        fprintf(stderr, "aquire_cmd was not raspistill, not setting output or exposure settings\n");
     }
 
     pid = fork();
@@ -136,6 +141,7 @@ int relaunch_raspistill(void)
     }
 
     return 0;
+    
 }
 
 //-----------------------------------------------------------------------------------
