@@ -312,8 +312,8 @@ static int DoDirectoryFunc(char * Directory, int DeleteProcessed)
 
 
             if (strcmp(ThisName+l-5, ".jpg~") == 0){
-                // Imgcomp may leave files ending with '~' around if it was killed
-                // at the wrong time.  Detect and remove these files.
+                // Raspistill may leave files ending with '~' around if it was killed
+                // at just the right time.  Remove these files.
                 struct stat statbuf;
                 char * cpn = CatPath(Directory, ThisName);
                 if (stat(cpn, &statbuf) == -1) {
