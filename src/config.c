@@ -32,6 +32,9 @@ void usage (void)// complain about bad command line
      " -followdir <srcdir>   Do dir and monitor for new images\n"
      " -savedir <saveto>     Where to save images with changes\n"
      " -savenames <scheme>   Output naming scheme.  Uses strftime\n"
+     " -copyjpgcmd <cmd>     Optional command to apply when copying jpeg image\n"
+     "                       to keep.  &i and &o will be in and out file names.\n"
+     "                       Useful to run jpegtran to make images files smaller\n"
      " -premotion <n>        0 or 1.  Keep up to 1 image before motion\n"
      " -postmotion <n>       Keep n frames after motion was detected\n"
      " -tempdir <dir>        Where to put temp images for video mode hack\n"
@@ -251,10 +254,14 @@ static int parse_parameter (const char * tag, const char * value)
                 }
             }
         }
+    } else if (keymatch(tag, "copyjpgcmd", 5)) {
+        // Set the optional copyjpgcmd value, which can be used to process images to keep
+        // to make them losselssly 5% smaller with jpegtran, provided your on raspberry pi2 or faster.
+        strncpy(CopyJpgCmd, value, sizeof(CopyJpgCmd)-1);
 
     } else if (keymatch(tag, "logtofile", 8)) {
         // Log to a file instead of stdout.  Must log to /ramdisk/log.txt for realtime view to work.
-        strncpy(LogToFile,value, sizeof(SaveDir)-1);
+        strncpy(LogToFile, value, sizeof(SaveDir)-1);
     } else if (keymatch(tag, "movelognames", 12)) {
         // Where to backup logs to.
         strncpy(MoveLogNames,value, sizeof(SaveDir)-1);

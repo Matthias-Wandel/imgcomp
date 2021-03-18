@@ -25,7 +25,8 @@ char * progname;  // program name for error messages
 char DoDirName[200];
 char SaveDir[200];
 char SaveNames[200];
-char TempDirName[200];
+char CopyJpgCmd[200];
+
 int FollowDir = 0;
 int ScaleDenom;
 int SpuriousReject = 0;
@@ -57,17 +58,17 @@ char lighton_run[200];
 char lightoff_run[200];
 int lightoff_min = 10;
 int lightoff_max = 60;
-
-
 char UdpDest[30];
-static int SinceMotionPix = 1000;
-static int SinceMotionMs = 0;
 
 //-----------------------------------------
-// Video mode hack
+// Video mode hack specific configuration
 int VidMode; // Video mode flag
 char VidDecomposeCmd[200];
+char TempDirName[200]; 
+//-----------------------------------------
 
+static int SinceMotionPix = 1000;
+static int SinceMotionMs = 0;
 
 typedef struct {
     MemImage_t *Image;
@@ -582,8 +583,10 @@ int main(int argc, char **argv)
 
     Log = stdout;
 
-    printf("Imgcomp version 0.95 (Jun 2020) by Matthias Wandel\n\n");
-
+    printf("Imgcomp version 0.97 (Mar 2021) by Matthias Wandel\n\n");
+ 
+ extern int CopyJpegFileCmd(char * src, char * dest);
+ 
     progname = argv[0];
 
     // Reset to default parameters.
@@ -667,8 +670,6 @@ int main(int argc, char **argv)
     if (FollowDir) EnsurePathExists(DoDirName,0);
     if (TempDirName[0]) EnsurePathExists(TempDirName,0);
 
-
-
     if (DoDirName[0] && file_index == argc){
         // if dodir is specified in config file, but files are specified
         // on the command line, do the files instead.
@@ -682,7 +683,7 @@ int main(int argc, char **argv)
             DoDirectoryVideos(DoDirName);
         }
     }
-
+ 
     if (argc-file_index == 2){
         MemImage_t *pic1, *pic2;
 

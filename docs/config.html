@@ -148,6 +148,19 @@ be placed in 190720/11/0720-115058.  This name will be appended with a space and
 diff magnitude value of three digits.  In addition, if more than one image is
 saved in the same second, the space in the name will be replaced with a, b, or c, etc.
 
+<div class="p">copyjpgcmd</div>
+Optional command to apply when copying jpeg image to keep.  Without this parameter,
+imgcomp will just copy the file.  This parameter can be set to use the
+jpegtran command to losslessly make the files from raspistill 5% smaller by setting<p>
+&nbsp; &nbsp; <span class="c">copyjpgcmd = jpegtran -progressive -outfile "&o" "&i"</span><p>
+However, Raspberry pi 1 and zeor are not fast enough to convert to progressive,
+but on those, you can still use lesser optimization:<p>
+&nbsp; &nbsp; <span class="c">copyjpgcmd = jpegtran -optimize -outfile "&o" "&i"</span><br>
+<p>
+Note that <span class="c">&i</span> and <span class="c">&o</span>
+will be replaced with the input and output file names.
+
+
 <div class="p">premotion</div>
 Number of images preceeding motion to save.  Can only be 0 or 1.  Default 0.
 

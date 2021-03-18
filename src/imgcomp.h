@@ -60,6 +60,7 @@ extern int BrightnessChangeRestart;
 
 extern char SaveDir[200];
 extern char SaveNames[200];
+extern char CopyJpgCmd[200];
 
 extern Regions_t Regions;
 ImgMap_t * WeightMap;
@@ -117,7 +118,6 @@ typedef struct {
 DirEntry_t * GetSortedDir(char * Directory, int * NumFiles);
 void FreeDir(DirEntry_t * FileNames, int NumEntries);
 char * BackupImageFile(char * Name, int DiffMag, int DoNotCopy);
-int CopyFile(char * src, char * dest);
 void LogFileMaintain(int ForceLotSave);
 
 

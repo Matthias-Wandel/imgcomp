@@ -4,5 +4,10 @@
 # libjpeg is required to compile imgcomp and the browsing program.
 sudo apt-get install -y libjpeg-dev
 
+# This gets the 'jpegtran' command, useful for losslessly making
+# the images 5% smaller as we go
+sudo apt-get install -y libjpeg-progs
+
+
 # Apache is required for the web based browsing program
 sudo apt-get install -y apache2

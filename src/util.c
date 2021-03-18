@@ -15,6 +15,7 @@
 #include <dirent.h>
 #include <unistd.h>
 #include <utime.h>
+#include <errno.h>
 #ifndef PATH_MAX
     #define PATH_MAX 1024
 #endif
@@ -22,6 +23,9 @@
 #include "imgcomp.h"
 
 static int BackupImageCount = 0;
+static int CopyFile(char * src, char * dest);
+static void CopyJpgFileCmd(char * src, char * dest);
+
 //-----------------------------------------------------------------------------------
 // Concatenate dir name and file name.  Not thread safe!
 //-----------------------------------------------------------------------------------
@@ -221,6 +225,7 @@ static void DestNameFromTime(char * DestPath, const char * KeepPixDir, time_t Pi
 
 //-----------------------------------------------------------------------------------
 // Back up a photo or video file that is of interest or applies to tiemelapse.
+// Or, if "DoNotCopy" is set, just make sure the directory exists.
 //-----------------------------------------------------------------------------------
 char * BackupImageFile(char * Name, int DiffMag, int DoNotCopy)
 {
@@ -259,7 +264,15 @@ char * BackupImageFile(char * Name, int DiffMag, int DoNotCopy)
         sprintf(NameSuffix, "%c%04d%s",SuffixChar, DiffMag, extension);
         DestNameFromTime(DstPath, SaveDir, mtime, NameSuffix);
         EnsurePathExists(DstPath, 1);
-        if (!DoNotCopy) CopyFile(Name, DstPath);
+        if (!DoNotCopy){
+            if (CopyJpgCmd[0]){
+                // Apply a command, such as jpegtran to copy the file
+                CopyJpgFileCmd(Name, DstPath);
+            }else{
+                // Just copy it from inside the program.
+                CopyFile(Name, DstPath);
+            }
+        }
     }
     BackupImageCount ++;
     return DstPath;
@@ -267,9 +280,9 @@ char * BackupImageFile(char * Name, int DiffMag, int DoNotCopy)
 
 
 //-----------------------------------------------------------------------------------
-// Copy a file.
+// Copy a file from within the program.
 //-----------------------------------------------------------------------------------
-int CopyFile(char * src, char * dest)
+static int CopyFile(char * src, char * dest)
 {
     int inputFd, outputFd, openFlags;
     int filePerms;
@@ -325,6 +338,42 @@ int CopyFile(char * src, char * dest)
     }
     return 0;
 }
+
+//-----------------------------------------------------------------------------------
+// Copy file by shell command, so that jpegtran can be used to optimize the file.
+//-----------------------------------------------------------------------------------
+static void CopyJpgFileCmd(char * src, char * dest)
+{
+    // Build the exec string.  &i and &o in the exec string get replaced by input and output files.
+    char ExecString[PATH_MAX*2];
+    int e = 0;
+    for (int a=0;;a++){
+        if (e >= sizeof(ExecString)){
+            fprintf(stderr, "Copy command too long\n");
+            exit(-1);
+        }
+
+        if (CopyJpgCmd[a] == '&' && (CopyJpgCmd[a+1] == 'i' || CopyJpgCmd[a+1] == 'o')){
+            strncpy(ExecString+e, CopyJpgCmd[a+1] == 'i' ? src : dest, sizeof(ExecString)-e-1);
+            a += 1;
+            e = strlen(ExecString);
+            continue;
+        }
+        ExecString[e++] = CopyJpgCmd[a];
+        if (CopyJpgCmd[a] == 0) break;
+    }
+
+    //printf("Cmd:%s\n",ExecString);
+
+    errno = 0;
+    int err = system(ExecString);
+
+    if (err || errno){
+        if (errno) perror("system");
+        fprintf(Log, "jpeg copy command failed (%d)\n",err);
+    }
+}
+
 
 //-----------------------------------------------------------------------------------
 // Open and / or rotate logfiles

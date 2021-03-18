@@ -1,15 +1,5 @@
 To do next:
 
-Lights:
-    Some expontenial decay recent action, to adjust timeout.  Sepcify a range of timeouts in config.
-        Short timeout on just one transition
-        Extended timeout if lots of action
-    Option to not trigger lighs on single motion?  Option to not switch lights if light levels also changed.
-    
-
-Remove jpg~ files if they are a few seconds old.
-
-
 Browsing program:
 * Flesh out browser.cfg, use for realtime:
     * Redo how holidays are stored
