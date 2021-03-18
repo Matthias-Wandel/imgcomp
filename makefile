@@ -24,7 +24,7 @@ $(OBJ)/%.o:$(SRC)/%.c $(SRC)/imgcomp.h
 	${CC} $(CFLAGS) -c $< -o $@
 
 imgcomp: $(objs)
-	${CC} -lm -o imgcomp $(objs) -ljpeg
+	${CC} -o imgcomp $(objs) -ljpeg -lm
 
 clean:
 	rm -f $(objs) imgcomp

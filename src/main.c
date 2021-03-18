@@ -121,7 +121,7 @@ static int ProcessImage(LastPic_t * New, int DeleteProcessed)
             // When real-time following, the timestamp is more useful than the file name
             char TimeString[10];
             strftime(TimeString, 10, "%H%M%S ", localtime(&LastPic_mtime));
-            fprintf(Log,TimeString);
+            fputs(TimeString,Log);
         }else{
             fprintf(Log,"%s: ",LastPics[0].Name+LastPics[0].nind);
         }
@@ -268,8 +268,8 @@ static int DoDirectoryFunc(char * Directory, int DeleteProcessed)
 
 
             if (strcmp(ThisName+l-5, ".jpg~") == 0){
-                // Imgcomp may leave files ending with '~' around if it was killed
-                // at the wrong time.  Detect and remove these files.
+                // Raspistill may leave files ending with '~' around if it was killed
+                // at just the right time.  Remove these files.
                 struct stat statbuf;
                 char * cpn = CatPath(Directory, ThisName);
                 if (stat(cpn, &statbuf) == -1) {
