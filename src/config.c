@@ -13,6 +13,50 @@
 #include "imgcomp.h"
 #include "config.h"
 
+// Configuration variables.
+char * progname;  // program name for error messages
+char DoDirName[200];
+char SaveDir[200];
+char SaveNames[200];
+char CopyJpgCmd[200];
+
+int FollowDir = 0;
+int ScaleDenom;
+int SpuriousReject = 0;
+int PostMotionKeep = 0;
+int PreMotionKeep = 0;
+int wait_close_write = 0;
+
+int ExposureManagementOn = 0;
+int MotionFatigueTc = 30;
+
+int FatigueSkipCount = 0;
+int FatigueGainPercent = 100;
+
+char DiffMapFileName[200];
+Regions_t Regions;
+
+int Verbosity = 0;
+char LogToFile[200];
+char MoveLogNames[200];
+FILE * Log;
+
+int Sensitivity;
+int Raspistill_restarted;
+int TimelapseInterval;
+char raspistill_cmd[200];
+
+char lighton_run[200];
+char lightoff_run[200];
+int lightoff_min = 10;
+int lightoff_max = 60;
+char UdpDest[30];
+
+//-----------------------------------------
+// Video mode hack specific configuration
+int VidMode; // Video mode flag
+char VidDecomposeCmd[200];
+char TempDirName[200]; 
 //-----------------------------------------------------------------------------------
 // Indicate command line usage.
 //-----------------------------------------------------------------------------------
