@@ -166,7 +166,7 @@ void DoMotionRun(int SawMotion)
         MotionAccumulate -= 1;
         if (MotionAccumulate < 0) MotionAccumulate = 0;
     }
-//printf("Ma = %4d\n",MotionAccumulate);    
+    //printf("Ma = %4d\n",MotionAccumulate);    
         
     if (SinceLightChange > 4 && SawMotion){
         LastMotion = NowSec;
@@ -191,7 +191,7 @@ void DoMotionRun(int SawMotion)
         mm -= 30; if (mm < 0) mm = 0;
         
         int timeout = lightoff_min + (lightoff_max-lightoff_min)*mm/500;
-//printf("Ma=%4d  timeout=%d (%d-%d)\n",MotionAccumulate, timeout, lightoff_min,lightoff_max);
+        //printf("Ma=%4d  timeout=%d (%d-%d)\n",MotionAccumulate, timeout, lightoff_min,lightoff_max);
         
         if ((NowSec-LastMotion) > timeout){
             if (lightoff_run[0]){
