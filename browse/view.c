@@ -154,7 +154,15 @@ void DoJpegView(char * ImagePath)
     free(dir);
 
     printf("<p>Date, time: %s<br>\n",ImageInfo.DateTime);
-    printf("Image size: %d x %d<br>\n",ImageInfo.Width, ImageInfo.Height);
+    printf("Image size: %d x %d",ImageInfo.Width, ImageInfo.Height);
+    if (ImageInfo.Process != 0xc0){
+        if (ImageInfo.Process == 0xc2){
+            printf(" (Progressive)");
+        }else{
+            printf(" (Process=%02x",ImageInfo.Process);
+        }
+    }
+    printf("<br>\n");
 
     if (ImageInfo.ExposureTime || ImageInfo.ISOequivalent || ImageInfo.ApertureFNumber){
         printf("Exposure: ");

@@ -51,12 +51,12 @@ static void process_SOFn (const uchar * Data, int marker)
     num_components = Data[7];
 
     if (num_components == 3){
-        //ImageInfo.IsColor = 1;
+        ImageInfo.IsColor = 1;
     }else{
-        //ImageInfo.IsColor = 0;
+        ImageInfo.IsColor = 0;
     }
 
-    //ImageInfo.Process = marker;
+    ImageInfo.Process = marker;
 
     if (ShowTags){
         printf("JPEG image is %uw * %uh, %d color components, %d bits per sample\n",

@@ -67,6 +67,8 @@ typedef struct {
     char  DateTime     [20];
     unsigned Height, Width;
     int   Orientation;
+    int   IsColor;
+    int   Process;    
     int   FlashUsed;
     float FocalLength;
     float ExposureTime;
