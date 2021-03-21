@@ -15,7 +15,8 @@ OBJECTS_BROWSE = $(OBJ)/view.o \
 	$(OBJ)/utility.o
     
 OBJECTS_SHARED = $(OBJ)/jpgfile.o \
-	$(OBJ)/exif.o
+	$(OBJ)/exif.o \
+	$(OBJ)/jpgqguess.o
 
 $(OBJ)/%.o:../src/%.c ../src/jhead.h
 	${CC} -O3 -Wall -c $< -o $@

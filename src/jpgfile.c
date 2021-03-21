@@ -143,6 +143,13 @@ static int FindExifInFile (FILE * infile)
                     have_exif = 1;
                 }
                 break;
+
+#ifdef VIEWCGI // We only care to guess jpg quality fiew view.cgi program.
+            case M_DQT:
+                // Use for jpeg quality guessing
+                process_DQT(Data, itemlen);
+                break;
+#endif
             case M_SOF0: 
             case M_SOF1: 
             case M_SOF2: 

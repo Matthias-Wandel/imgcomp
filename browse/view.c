@@ -162,7 +162,7 @@ void DoJpegView(char * ImagePath)
             printf(" (Process=%02x",ImageInfo.Process);
         }
     }
-    printf("<br>\n");
+    printf(" Quality=%d<br>\n", ImageInfo.QualityGuess);
 
     if (ImageInfo.ExposureTime || ImageInfo.ISOequivalent || ImageInfo.ApertureFNumber){
         printf("Exposure: ");

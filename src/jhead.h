@@ -89,6 +89,8 @@ typedef struct {
     float yResolution;
     int   ResolutionUnit;
 
+    int  QualityGuess;
+
 //    unsigned ThumbnailOffset;          // Exif offset to thumbnail
 //    unsigned ThumbnailSize;            // Size of thumbnail.
 //    unsigned LargestExifOffset;        // Last exif data referenced (to check if thumbnail is at end)
@@ -123,6 +125,9 @@ unsigned Get32u(void * Long);
 int Get32s(void * Long);
 void Put32u(void * Value, unsigned PutValue);
 void create_EXIF(void);
+
+// Prototypes from jpgqguess.c
+void process_DQT (const uchar * Data, int length);
 
 //--------------------------------------------------------------------------
 // Exif format descriptor stuff
