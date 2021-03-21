@@ -101,11 +101,9 @@ static Dir_t * CollectDir(char * HtmlPath, int ImagesOnly)
 //----------------------------------------------------------------------------------
 // Read exif header of an image to get aspect ratio and other info.
 //----------------------------------------------------------------------------------
-float ReadExifHeader(char * ImagePath, int * width, int * height)
+float ReadExifHeader(char * FileName, int * width, int * height)
 {
-    char FileName[320];
     FILE * file;
-    sprintf(FileName, "pix/%s",ImagePath);
     if((file = fopen(FileName, "rb")) != NULL) {
         ReadExifPart(file);
     }else{
@@ -145,7 +143,9 @@ void DoJpegView(char * ImagePath)
     HtmlPath[lastslash] = '\0';
     dir = CollectDir(HtmlPath, 1);
 
-    ReadExifHeader(ImagePath, NULL, NULL);
+    char FileName[320];
+    sprintf(FileName, "pix/%s",ImagePath);
+    ReadExifHeader(FileName, NULL, NULL);
 
     MakeImageHtmlOutput(HtmlFile, dir, (float)ImageInfo.Width / ImageInfo.Height);
         
@@ -188,13 +188,12 @@ void DoJpegView(char * ImagePath)
     
     
     struct stat buf;
-    char FileName[320];
-    sprintf(FileName, "pix/%s",ImagePath);
     stat(FileName, &buf);
-    printf("File size: %d bytes<br>\nLocation: %s<br>\n",(int)buf.st_size, ImagePath);
-    
-    printf("\n");
-    
+    char datestr[36];
+    strftime(datestr, 36, "%Y:%m:%d %H:%M:%S", localtime(&buf.st_mtime));
+
+    printf("File size: %d bytes<br>File time: %s<br>\n", (int)buf.st_size, datestr);
+    printf("Location: %s<br>\n", ImagePath);
 }
 
 //----------------------------------------------------------------------------------
