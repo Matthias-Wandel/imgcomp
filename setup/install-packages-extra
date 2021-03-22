@@ -2,6 +2,7 @@
 # These are not required.
 sudo apt-get install -y vim
 sudo apt-get install -y jhead
+sudo apt-get install -y libjpeg-progs
 sudo apt-get install -y fbi
 sudo apt-get install -y jp2a
 sudo apt-get install -y apcalc
