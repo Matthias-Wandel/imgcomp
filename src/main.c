@@ -540,8 +540,6 @@ int main(int argc, char **argv)
 
     printf("Imgcomp version 0.97 (Mar 2021) by Matthias Wandel\n\n");
  
- extern int CopyJpegFileCmd(char * src, char * dest);
- 
     progname = argv[0];
 
     // Reset to default parameters.
