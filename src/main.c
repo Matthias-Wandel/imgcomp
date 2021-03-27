@@ -133,7 +133,7 @@ static int ProcessImage(LastPic_t * New, int DeleteProcessed)
             SinceMotionMs = 0;
         }
 
-        if (LastPics[0].DiffMag > Sensitivity){
+        if (LastPics[0].DiffMag >= Sensitivity){
             LastPics[0].IsMotion = 1;
         }
 
@@ -178,7 +178,7 @@ static int ProcessImage(LastPic_t * New, int DeleteProcessed)
         SinceMotionPix += 1;
 
 
-        if (Trig.DiffLevel > Sensitivity && UdpDest[0]){
+        if (Trig.DiffLevel >= Sensitivity && UdpDest[0]){
             // For my cap shooter experiment.  Not useful for anything else.
             char showx[1001];
             int xs, a;
