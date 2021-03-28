@@ -343,7 +343,7 @@ void MakeHtmlOutput(Dir_t * Dir)
         int e = strlen(Name);
         if (e < 5 || memcmp(Name+e-4,".jpg",4)) continue; // Not an image.
         char HtmlPath[500];
-        sprintf(HtmlPath, "%s/%s", Dir->HtmlPath, Images.Entries[a].Name);
+        sprintf(HtmlPath, "pix/%s/%s", Dir->HtmlPath, Images.Entries[a].Name);
         float AspectRatio = ReadExifHeader(HtmlPath, NULL, NULL);
         ThumbnailHeight = (int)(320/AspectRatio);
         break;
