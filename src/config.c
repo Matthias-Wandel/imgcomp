@@ -109,7 +109,7 @@ void usage (void)// complain about bad command line
      "                       by exposure time to be this value.  Default 16000\n"
      "                       Larger means shorter shutter speeds, smaller means lower\n"
      "                       ISO (less grainy) but slower shutter, more motion blur\n"
-     " -pixxat <val>         with -exmanage 1, Jpeg pixel value at which image\n"
+     " -pixsat <val>         with -exmanage 1, Jpeg pixel value at which image\n"
      "                       saturates because camera modules v1 and v2 saturate\n"
      "                       before hitting 255.  Defaults to value appropriate for\n"
      "                       camera module detected\n"
@@ -258,7 +258,7 @@ static int parse_parameter (const char * tag, const char * value)
             fprintf(stderr, "Bad exposure time values.  Must be 0.0001 - 10 (seconds)\n");
             return -1;
         }
-    } else if (keymatch(tag, "pixsat", 7)) {
+    } else if (keymatch(tag, "pixsat", 6)) {
         if (sscanf(value, "%d", &ex.SatVal) != 1) return -1;
         if (ex.SatVal < 50 || ex.SatVal > 255){
             fprintf(stderr, "Pixel saturation must be between in range of 50-255\n");
