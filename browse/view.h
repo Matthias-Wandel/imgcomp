@@ -33,6 +33,7 @@ extern int Holidays[200];
 extern int HolidaysLength;
 
 extern char * ImageExtensions[];
+extern int NameIsImage(char * Name);
 int IsWeekendString(char * DirString);
 int read_holiday_config();
 

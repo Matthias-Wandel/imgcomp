@@ -20,8 +20,8 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-static char * FileExtensions[] = {"jpg","jpeg","txt","html","mp4",NULL};
-       char * ImageExtensions[] = {"jpg","jpeg",NULL};
+static char * FileExtensions[] = {"jpg","jpeg","txt","html","mp4","webp",NULL};
+       char * ImageExtensions[] = {"jpg","jpeg","webp",NULL};
 int Holidays[200];
 int HolidaysLength;
 
@@ -317,7 +317,7 @@ int main(int argc, char ** argv)
     int a;
     char * QueryString;
     char HtmlPath[300];
-    int lp, d;
+    int d;
     QueryString = getenv("QUERY_STRING");
 
     if (!QueryString || QueryString[0] == '\0'){
@@ -371,11 +371,7 @@ int main(int argc, char ** argv)
     //printf("QUERY_STRING=%s<br>\n",QueryString);
     //printf("HTML path = %s<br>\n",HtmlPath);
 
-    lp = 0;
-    for (a=0;HtmlPath[a];a++){
-        if (HtmlPath[a] == '.') lp = a;
-    }
-    if (lp && (a-lp == 4 || a-lp == 5) && HtmlPath[lp+1] == 'j' && HtmlPath[a-1] == 'g'){
+    if (NameIsImage(HtmlPath)){
         // Path ends with .jpg
         DoJpegView(HtmlPath);
 

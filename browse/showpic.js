@@ -81,7 +81,7 @@ function UpdatePix(){
     index = pic_mouseindex >= 0 ? pic_mouseindex : pic_index
     var n = prefix+piclist[index]
     document.getElementById("this").innerHTML = n.substring(5,7)+":"+n.substring(7,9)+":"+n.substring(9,11)
-    var imgname = subdir+n+".jpg"
+    var imgname = subdir+n
     var url = pixpath+imgname;
     flagsstr = ""
     if (AdjustBright){
@@ -95,7 +95,7 @@ function UpdatePix(){
     }
     if (ShowBigOn) flagsstr = flagsstr + "e";
     if (flagsstr != "") flagsstr = flagsstr +","
-    var nch = "#"+flagsstr+prefix+piclist[index]+".jpg"
+    var nch = "#"+flagsstr+prefix+piclist[index]
 
     UpdateActagram()
     if (SaveResp){
@@ -270,7 +270,7 @@ function PicMouse(picX,picY,IsDown)
 
 function SavePicClick(){
     // Instruct back end to copy picture to the "Saved" directory.
-    var SaveUrl = "view.cgi?~"+subdir+prefix+piclist[pic_index]+".jpg"
+    var SaveUrl = "view.cgi?~"+subdir+prefix+piclist[pic_index]
     var xhttp = new XMLHttpRequest()
     xhttp.onreadystatechange=function(){
         if (this.readyState==4 && this.status==200){
@@ -302,7 +302,7 @@ function ShowBrightClick(){
 
 function ShowDetailsClick(){
     var nu = window.location.toString()
-    nu = nu.substring(0,nu.indexOf("#"))+prefix+piclist[pic_index]+".jpg"
+    nu = nu.substring(0,nu.indexOf("#"))+prefix+piclist[pic_index]
     window.location = nu
 }
 
@@ -444,7 +444,7 @@ function ReadHash(){
 
         // Figure out index in picture list based on URL after '#'
         var m = pct.substring(prefix.length+1)
-        if (m.substring(m.length-4) == ".jpg") m = m.substring(0,m.length-4)
+        //if (m.substring(m.length-4) == ".jpg") m = m.substring(0,m.length-4)
         for (pic_index=0;pic_index<piclist.length-1;pic_index++){
             if (piclist[pic_index] >= m) break;
         }

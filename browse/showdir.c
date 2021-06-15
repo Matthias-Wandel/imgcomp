@@ -23,6 +23,25 @@
 #include "view.h"
 
 //----------------------------------------------------------------------------------
+// Check extension of file name to determine if it's an image
+//----------------------------------------------------------------------------------
+int NameIsImage(char * Name)
+{
+    int e = strlen(Name);
+    if (e < 5) return 0; // Too short.
+
+    char * ext = Name+e-4;
+    if (*ext == '.') ext += 1; // allow 4 and 3 letter extensions.
+
+    for (int n=0;ImageExtensions[n];n++){
+        if (!strcmp(ImageExtensions[n], ext)){
+            return n+1; // Returns positive value for image type.
+        }
+    }
+    return 0;
+}
+
+//----------------------------------------------------------------------------------
 // Nav linkgs for top and bottom of page.
 //----------------------------------------------------------------------------------
 static void PrintNavLinks(Dir_t * Dir, int IsRoot)
@@ -49,7 +68,7 @@ static void PrintNavLinks(Dir_t * Dir, int IsRoot)
         }else{
             sprintf(SavedDir, "pix/saved/%.4s",Dir->HtmlPath);
         }
-        
+
         if (stat(SavedDir, &sb) == 0 && S_ISDIR(sb.st_mode)){
             printf("<a href=\"view.cgi?%s\">[Saved]</a>\n",SavedDir+4);
         }
@@ -73,8 +92,12 @@ static void ShowHourActagram(VarList SubdImages, char * HtmlPath, char * SubdirN
     for (int a=0;a<SubdImages.NumEntries;a++){
         int Second, binno;
         char * Name = SubdImages.Entries[a].Name;
-        int e = strlen(Name);
-        if (e < 5 || memcmp(Name+e-4,".jpg",4)) continue; // Not an image.
+
+        if (!NameIsImage(Name)){
+            printf(" !im:%s ",Name);
+            continue;
+        }
+       
         NumImages += 1;
 
         Second = (Name[7]-'0')*600 + (Name[8]-'0') * 60
@@ -173,8 +196,7 @@ static void ShowThumbnailList(char * HtmlPath, int IsSavedDir, VarList Images)
     DateStr[0] = 0;
     for (int a=0;a<Images.NumEntries;a++){
         char * Name = Images.Entries[a].Name;
-        int e = strlen(Name);
-        if (e < 5 || memcmp(Name+e-4,".jpg",4)) continue; // Not an image.
+        if (!NameIsImage(Name)) continue;
         NumImages += 1;
     
         if (AllSameDate){
@@ -263,8 +285,7 @@ static void ShowThumbnailList(char * HtmlPath, int IsSavedDir, VarList Images)
     
         for (int a=0;a<num;a++){
             char * Name = Images.Entries[a+start].Name;
-            int e = strlen(Name);
-            if (e >= 5 && memcmp(Name+e-4,".jpg",4) == 0){// It's a jpeg file.
+            if (NameIsImage(Name)){
                 int Minute;
                 if (SkipNum == 0) printf("<div class=\"pix\">\n");
     
@@ -340,10 +361,9 @@ void MakeHtmlOutput(Dir_t * Dir)
     int ThumbnailHeight = 100;
     for (int a=0;a<Images.NumEntries;a++){
         char * Name = Images.Entries[a].Name;
-        int e = strlen(Name);
-        if (e < 5 || memcmp(Name+e-4,".jpg",4)) continue; // Not an image.
+        if (!NameIsImage(Name)) continue;
         char HtmlPath[500];
-        sprintf(HtmlPath, "pix/%s/%s", Dir->HtmlPath, Images.Entries[a].Name);
+        sprintf(HtmlPath, "pix/%s/%s", Dir->HtmlPath, Name);
         float AspectRatio = ReadExifHeader(HtmlPath, NULL, NULL);
         ThumbnailHeight = (int)(320/AspectRatio);
         break;

@@ -110,29 +110,6 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
     int npic = 0;
     char * Prefix = NULL;
     int prefixlen = 0;
-    for (int a=0;a<(int)Images.NumEntries;a++){
-        char * Name = Images.Entries[a].Name;
-        int e = strlen(Name);
-        if (e < 5 || memcmp(Name+e-4,".jpg",4)) continue;
-
-        if (Prefix == NULL){
-            Prefix = Name;
-            prefixlen = strlen(Name)-4;
-            if (prefixlen > 7) prefixlen = 7; // prefix length must not be more than 7!
-            continue;
-        }
-
-        if (memcmp(Prefix, Name, prefixlen)){
-            for (int b=0;b<prefixlen;b++){
-                if (Name[b] != Prefix[b]){
-                    prefixlen = b;
-                    break;
-                }
-            }
-        }
-        if (prefixlen == 0) break;
-    }
-    prefixlen = prefixlen >= 7 ? 7 : 0;
 
     printf("\n<script type=\"text/javascript\">\n");
     printf("pixpath=\"pix/\"\n");
@@ -142,20 +119,20 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
 
     // Output list of images in the hour that we can flip through.
     int HasLog = 0;
+
     for (int a=0;a<(int)Images.NumEntries;a++){
         char * Name = Images.Entries[a].Name;
+        if (strcmp(Name, "Log.html") == 0) HasLog = 1;
+        if (!NameIsImage(Name)) continue;
+
         int e = strlen(Name);
-        if (e < 5 || memcmp(Name+e-4,".jpg",4)){
-            if (strcmp(Name, "Log.html") == 0) HasLog = 1;
-            continue;
-        }
         e -= 4;
 
         if (npic){
             putchar(',');
             if (npic % 5 == 0) putchar('\n');
         }
-        printf("\"%.*s\"",e-prefixlen,Name+prefixlen);
+        printf("\"%s\"",Name+prefixlen);
         npic++;
     }
     
