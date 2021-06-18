@@ -111,6 +111,26 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
     char * Prefix = NULL;
     int prefixlen = 0;
 
+    for (int a=0;a<(int)Images.NumEntries;a++){
+        char * Name = Images.Entries[a].Name;
+        if (!NameIsImage(Name)) continue;
+
+        if (Prefix == NULL){
+            Prefix = Name;
+            prefixlen = 7;
+            continue;
+        }
+
+        for (int b=0;b<prefixlen;b++){
+            if (Name[b] != Prefix[b] || Name[b] == 0){
+                prefixlen = b;
+                break;
+            }
+        }
+    }
+    prefixlen = prefixlen >= 7 ? 7 : 0;
+
+
     printf("\n<script type=\"text/javascript\">\n");
     printf("pixpath=\"pix/\"\n");
     printf("subdir=\"%s\"\n",dir->HtmlPath);
