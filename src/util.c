@@ -354,7 +354,23 @@ static void CopyJpgFileCmd(char * src, char * dest)
         }
 
         if (CopyJpgCmd[a] == '&' && (CopyJpgCmd[a+1] == 'i' || CopyJpgCmd[a+1] == 'o')){
-            strncpy(ExecString+e, CopyJpgCmd[a+1] == 'i' ? src : dest, sizeof(ExecString)-e-1);
+            if (CopyJpgCmd[a+1] == 'o'){
+                if (CopyJpgCmd[a+2] == '.'){
+                    // If it's specified "&o.", that means cut off the old extension.
+                    // That way, we can specify a copyjpgcmd in imgcomp.conf to convert
+                    // to a different image format.  Example using imagemagick convert:
+                    //   copyjpgcmd = convert -quality 60 "&i" "&o.webp"
+                    int extension = 0;
+                    for (int b=0;dest[b];b++){
+                        if (dest[b] == '.') extension = b;
+                    }
+                    if (extension) dest[extension] = '\0';
+                }
+                strncpy(ExecString+e, dest, sizeof(ExecString)-e-1);
+            }else{
+                strncpy(ExecString+e, src, sizeof(ExecString)-e-1);
+            }
+
             a += 1;
             e = strlen(ExecString);
             continue;
