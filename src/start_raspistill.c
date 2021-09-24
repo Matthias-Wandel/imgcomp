@@ -149,7 +149,7 @@ void DoMotionRun(int SawMotion)
     static pid_t child_pid = 0;
     char CmdCopy[200];
 
-    //fprintf(Log, "DoMotionRun %d %d \n",SawMotion, SinceLightChange);    
+    //fprintf(Log, "DoMotionRun %d %d %d\n",SawMotion, SinceLightChange, NowSec-LastMotion);
 
     if (child_pid > 0){
         // Check if child has exited.
@@ -174,8 +174,10 @@ void DoMotionRun(int SawMotion)
     //printf("Ma = %4d\n",MotionAccumulate);    
         
     if (SinceLightChange > 4 && SawMotion){
-        LastMotion = NowSec;
-        if (!LightOn){
+		//if (!LightOn && NowSec - LastMotion > 2) fprintf(Log, "delayed light on\n");
+        if (!LightOn && NowSec - LastMotion <= 2){
+			// Want two motion events close together to avoid false triggers
+			// which can happen on lighting changes or camera artifacts.
             if (lighton_run[0]){
                 if (child_pid <= 0){
                     fprintf(Log, "Turn light ON\n");
@@ -190,6 +192,7 @@ void DoMotionRun(int SawMotion)
                 LightOn = 1;
             }
         }
+        LastMotion = NowSec;
     }else if (LightOn){
         // Compute how long the light should be left on.
         int mm = MotionAccumulate; if (mm > 500) mm = 500;
@@ -235,11 +238,11 @@ int manage_raspistill(int NewImages)
 
     if (NewImages > 0){
         MsSinceImage = 0;
-		NumTotalImages += NewImages;
+        NumTotalImages += NewImages;
     }else{
         if (MsSinceImage >= 3000){
-			fprintf(Log,"No new images, %d (at %d:%d)\n",MsSinceImage, (int)(now%3600/60), (int)(now%60));
-		}
+            fprintf(Log,"No new images, %d (at %d:%d)\n",MsSinceImage, (int)(now%3600/60), (int)(now%60));
+        }
     }
 
     if (raspistill_pid == 0){
@@ -252,28 +255,28 @@ int manage_raspistill(int NewImages)
     if (MsSinceImage > timeout){
         // Not getting any images for 5 seconds or vide ofiles for 10.
         // Probably something went wrong with raspistill or raspivid.
-		if (MsSinceLaunch > timeout){
-			if (give_up_timeout && MsSinceImage > give_up_timeout * 1000){
-				if (NumTotalImages >= 5){
-					fprintf(Log,"Relaunch raspistill didn't fix.  Reboot!.  (%d sec since image)\n",MsSinceImage/1000);
-					// force rotation of log.
-					LogFileMaintain(1);
-					MsSinceImage = 0; // dummy for now.
-					printf("Reboot now\n");
-					system("reboot");
-					exit(0);
-				}else{
-					// Less than 5 images.  Probably left over from last run.
-					fprintf(Log,"Raspistill never worked! Give up. %d sec\n",MsSinceImage/1000);
-					LogFileMaintain(1);
-					// A reboot wouldn't fix this!
-					exit(0);
-				}
-			}else{
-				fprintf(Log,"No images for %d sec.  Relaunch raspistill/vid\n",MsSinceImage/1000);
-				goto force_restart;
-			}
-		}
+        if (MsSinceLaunch > timeout){
+            if (give_up_timeout && MsSinceImage > give_up_timeout * 1000){
+                if (NumTotalImages >= 5){
+                    fprintf(Log,"Relaunch raspistill didn't fix.  Reboot!.  (%d sec since image)\n",MsSinceImage/1000);
+                    // force rotation of log.
+                    LogFileMaintain(1);
+                    MsSinceImage = 0; // dummy for now.
+                    printf("Reboot now\n");
+                    system("reboot");
+                    exit(0);
+                }else{
+                    // Less than 5 images.  Probably left over from last run.
+                    fprintf(Log,"Raspistill never worked! Give up. %d sec\n",MsSinceImage/1000);
+                    LogFileMaintain(1);
+                    // A reboot wouldn't fix this!
+                    exit(0);
+                }
+            }else{
+                fprintf(Log,"No images for %d sec.  Relaunch raspistill/vid\n",MsSinceImage/1000);
+                goto force_restart;
+            }
+        }
     }
     return 0;
 
