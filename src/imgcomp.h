@@ -47,7 +47,7 @@ typedef struct {
 extern exconfig_t ex;
 
 
-MemImage_t MemImage;
+extern MemImage_t MemImage;
 extern int NewestAverageBright;
 extern int MsPerCycle; // HOw often to check for new images.
 extern int Verbosity;
@@ -63,7 +63,7 @@ extern char SaveNames[200];
 extern char CopyJpgCmd[200];
 
 extern Regions_t Regions;
-ImgMap_t * WeightMap;
+extern ImgMap_t * WeightMap;
 
 extern time_t LastPic_mtime;
 
