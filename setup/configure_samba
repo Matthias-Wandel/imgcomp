@@ -7,10 +7,15 @@
 #
 #   net use x: \\192.168.0.106\pi /user:pi mine
 
+if [ "$EUID" -ne 0 ]
+    then echo "Must run this as root"
+    exit
+fi
+
 echo "[pi]" >> /etc/samba/smb.conf
 echo "path = /home/pi" >> /etc/samba/smb.conf
 echo "valid users = pi" >> /etc/samba/smb.conf
 echo "browsable = yes" >> /etc/samba/smb.conf
 echo "read only = no" >> /etc/samba/smb.conf
-printf "mine\nmine" | sudo smbpasswd -s -a pi
+printf "mine\nmine" | smbpasswd -s -a pi
 service smbd restart
