@@ -38,12 +38,11 @@ typedef struct timeval TIMEVAL;
 //-------------------------------------------------------------------------------------
 // Structure for a test UDP packet.
 typedef struct {
-    int Ident;
-    int Level;
-    int xpos;
-    int ypos;
-    int IsAdjust;
-    int Motion;
+    short Ident;
+    short Level; // How strong was the signal
+    short xpos;  // 0-1000 X coordinate
+    short ypos;  // 0-1000 Y coordinate
+    short IsMotion; // Did it trigger saving an image
 }Udp_t;
 
 //-------------------------------------------------------------------------------------
@@ -71,10 +70,9 @@ void SendUDP(int x, int y, int level, int motion)
 
     Buf.Ident = UDP_MAGIC;
     Buf.Level = level;
-    Buf.Motion = motion;
     Buf.xpos = x;
     Buf.ypos = y;
-    Buf.IsAdjust = 0;
+    Buf.IsMotion = motion;
 
     datasize = sizeof(Udp_t);
 

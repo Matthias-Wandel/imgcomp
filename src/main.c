@@ -43,37 +43,17 @@ time_t LastPic_mtime;
 int FatigueSkipCountdown = 0;
 
 //-----------------------------------------------------------------------------------
-// Convert picture coordinates from 120 degree fishey lens
-// to pan and tilt angles for cap shooter.
+// Convert picture coordinates to relative (0-1000) on image.
 //-----------------------------------------------------------------------------------
 static void GeometryConvert(TriggerInfo_t  * Trig)
 {
-    double x,y, magxy, mag_rad;
-    double px, py,ta;
-    double pan,tilt;
+    double x,y;
 
-    // Center-referenced coordinates.
-    x = (Trig->x-1920/2)/1920.0;
-    y = -(Trig->y-1440/2)/1920.0;
-    magxy = sqrt(x*x+y*y); // Magnitude from center.
+    x = ((float)Trig->x/(LastPics[0].Image->width*ScaleDenom));
+    y = ((float)Trig->y/(LastPics[0].Image->height*ScaleDenom));
 
-    // Convert to degrees from center and correct for lens distortion
-    mag_rad = magxy * (109 + magxy*magxy * 21);
-    mag_rad = mag_rad * 3.1415/180; // Convert to radians.
-
-    // Now convert to planar coordinates.
-    ta = tan(mag_rad);
-    px = (ta*x)/magxy; // px and py are in "screen" meters from center
-    py = (ta*y)/magxy;
-    printf("px,py = %5.2f,%5.2f  ",px,py);
-
-    // Now convert planar coordinates to pan angle and elevation, in degrees.
-    pan = atan(px)*180/3.1415;
-    tilt = atan(py/sqrt(1+px*px))*180/3.1415;
-
-    printf("Pan: %5.1f tilt:%5.1f\n",pan,tilt);
-    Trig->x = (int)(pan*10); // Return it as tenth's of a degree
-    Trig->y = (int)(tilt*10);
+    Trig->x = (int)((x-0.5)*1000);
+    Trig->y = (int)((0.5-y)*1000);
 }
 
 
@@ -180,25 +160,25 @@ static int ProcessImage(LastPic_t * New, int DeleteProcessed)
 
         if (Trig.DiffLevel >= Sensitivity && UdpDest[0]){
             // For my cap shooter experiment.  Not useful for anything else.
-            char showx[1001];
-            int xs, a;
-            const int colwidth=120;
+            int a;
+            
+            GeometryConvert(&Trig);
 
-            for (a=0;a<colwidth;a++){
+            const int colwidth=120;
+            char showx[200];
+            for (a=0;a<colwidth+3;a++){
                 showx[a] = '.';
             }
-            showx[colwidth] = '\0';
-            xs = (Trig.x*colwidth)/(1920);
+            showx[colwidth+3] = '\0';
+            int xs = ((Trig.x+500)*colwidth)/(1000);
             if (xs < 0) xs = 0;
-            if (xs > colwidth-3) xs = colwidth-3;
+            if (xs > colwidth) xs = colwidth;
 
             showx[xs] = '#';
             showx[xs+1] = '#';
             printf("%s %d,%d\n",showx, Trig.x, Trig.y);
 
-            GeometryConvert(&Trig);
-
-            if (UdpDest[0]) SendUDP(Trig.x, Trig.y, Trig.DiffLevel, Trig.Motion);
+            SendUDP(Trig.x, Trig.y, Trig.DiffLevel, Trig.Motion);
         }
 
         Raspistill_restarted = 0;

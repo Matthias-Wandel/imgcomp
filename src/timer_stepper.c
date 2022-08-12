@@ -39,26 +39,17 @@
     typedef struct timeval TIMEVAL;
 #endif
 
-
-#define ICMP_ECHO 8
-#define ICMP_ECHOREPLY 0
-
-#define ICMP_MIN 8 // minimum 8 byte icmp packet (just header)
-
-#define MAGIC_ID 0xf581     // Magic value to identify pings from this program.
-
 #define MAGIC_PORTNUM 7777   // Magic port number for UDP pings (this is the port Joe picked for his app)
-
 #define UDP_MAGIC 0x46c1
 
 //-------------------------------------------------------------------------------------
 // Structure for a test UDP packet.
 typedef struct {
-    int Ident;
-    int Level;
-    int xpos;
-    int ypos;
-    int IsAdjust;
+    short Ident;
+    short Level;
+    short xpos;
+    short ypos;
+    short IsAdjust;
 }Udp_t;
 
 //-------------------------------------------------------------------------------------
@@ -140,8 +131,7 @@ int main(int argc, char **argv)
     unsigned short PortNum = MAGIC_PORTNUM;
     char * HostName = NULL;
     char String[500];
-ReadTimer();
-return 0;
+
     memset(String, 0, sizeof(String));
 
     if (argc > 1){
@@ -300,7 +290,7 @@ int CheckUdp(int * NewPos, int * IsDelta)
                 Udp = (Udp_t *) recvbuf;
                 
                 printf("UDP from %s ", inet_ntoa(from.sin_addr));
-                printf("x=%d  y=%d  %s\n", Udp->xpos, Udp->ypos, Udp->IsAdjust ? "Adj":"");
+                printf("x=%d  y=%d  Level=%d\n", Udp->xpos, Udp->ypos, Udp->Level);
                 *NewPos = Udp->xpos;
                 *IsDelta = Udp->IsAdjust;
             }   
@@ -417,6 +407,7 @@ void RunStepping(void)
     int CurrentSpeed, LastSpeed;
 
     // Set up gpi pointer for direct register access
+	/*
 	setup_io();
 
     INP_GPIO(21); // must use INP_GPIO before we can use OUT_GPIO
@@ -430,7 +421,8 @@ void RunStepping(void)
     GPIO_CLR = STEP_CLK | STEP_ENA;
     GPIO_SET = STEP_ENA;
     GPIO_CLR = STEP_CLK;
-
+    */
+	
     PosRequested = 0;
     CurrentSpeed = LastSpeed = 0;
     CurrentPos = 600; // Just to have some initial work.
@@ -451,6 +443,7 @@ void RunStepping(void)
                 CurrentPos -= PosRecvd;
             }
         }
+		/*
         GPIO_CLR = STEP_CLK;
         
         ToTarget = PosRequested - CurrentPos;
@@ -517,6 +510,7 @@ void RunStepping(void)
         //if (ToTarget == 0 && CurrentSpeed == 0) exit(0);
         
         LastSpeed = CurrentSpeed;
+		*/
     }
 }
 char OutString[100];
