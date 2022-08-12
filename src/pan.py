@@ -65,88 +65,112 @@ def cleanAndExit():
 steppos = 0
 
 #===========================================================================================
-# Find aspistill process
-#===========================================================================================
-def get_raspistill_pid():
-    proc = subprocess.Popen(["pidof","raspistill"], stdout=subprocess.PIPE)
-    lines = proc.stdout.readlines()
-    if len(lines) != 1:
-        print("Could not find raspistill process");
-        sys.exit(-1)
-    pid = int(lines[0])
-    return pid
-
-
-#===========================================================================================
 # Stuff for receiging motion indication via UDP
 #===========================================================================================
 def Open_Socket():
     global rxSocket
     portNum = 7777
     rxSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) #UDP
-                             
+
     # Bind to any available address on port *portNum*
     rxSocket.bind(("",portNum))
-    
+
     # Prevent the socket from blocking until it receives all the data it wants
     # Note: Instead of blocking, it will throw a socket.error exception if it doesn't get any data
-    rxSocket.setblocking(0) 
+    rxSocket.setblocking(0)
 
     print ("RX socket opened on UDP port ", portNum)
 
 def Process_UDP():
-    data,addr = rxSocket.recvfrom(1024) 
-    
+    data,addr = rxSocket.recvfrom(1024)
+
     # First 2 bytes is ident, check that.
     if data[0] != 0xc1 or data[1] != 0x46:
         print("UDP Wrong ID from", addr)
         return 10000,10000
-    
+
     # Next 2 bytes is level, ignore.
-    
+
     # Next 2 bytes is X
     x = data[4] + data[5]*0x100
     if x >= 32768: x = x - 65536 # Sign extend
-    
+
     # Next 2 bytes is Y
     y = data[6] + data[7]*0x100
     if y >= 32768: y = y - 65536 # sign extend
-    
-    print("UDP from:",addr[0], "x,y=",x,y, "T=",time.perf_counter())
+
+    print("UDP from:",addr[0], "x,y=",x,y)# "T=",time.perf_counter())
     return x,y
 
 init_stepper()
 
 # Reset motor position by bainging against the stop.
-move_to_deg(-180)
-move_to_deg(-94)
-steppos = 0
+move_to_deg(180)
+move_to_deg(94)
+steppos = 0 # this is now the zero position.
 
-raspistill_pid = get_raspistill_pid()
+
+
 
 Open_Socket()
 
-while 1:    
+
+MotionBins = [0]*5
+BinDegs = [-50,-25,0,25,50]
+BinAimed = 2
+MotionBins[BinAimed] = 200
+
+print(MotionBins)
+
+while 1:
     ready = select.select([rxSocket], [], [], 2)
 
     if ready[0]:
-        Process_UDP()
+        x,y = Process_UDP()
+        if x < -250:
+            BinAdd = BinAimed - 1
+        elif x > 250:
+            BinAdd = BinAimed + 1
+        else:
+            BinAdd = BinAimed
+
+        if BinAdd >= 0 and BinAdd < len(MotionBins):
+            MotionBins[BinAdd] += 100
+
     else:
-        print("nothing.  t=",time.perf_counter())
-        os.kill(raspistill_pid, signal.SIGUSR1) # Tell raspistill to take shapshot
-        
+        print("time...")#nothing.  t=",time.perf_counter())
+
+    for x in range(0, len(MotionBins)):
+        # decay the motion bins.
+        MotionBins[x] = int(MotionBins[x] * 0.8) # Store integer, easier to read
+
+    print("   ",MotionBins)
+
+    max = 0
+    maxp = -1
+    for x in range(0, len(MotionBins)):
+        if MotionBins[x]  > max:
+            max = MotionBins[x]
+            maxp = x
+
+    if max < 25:
+        # No significant motion for a while.  Return to center.
+        print("Pan back to center")
+        BinAimed = 2
+        move_to_deg(BinDegs[BinAimed])
+        # Also signal to imgcomp.
+
+    elif maxp != BinAimed and max > 200 and max > MotionBins[BinAimed]*1.2:
+        print("Pan to ",maxp)
+        BinAimed = maxp
+        move_to_deg(BinDegs[BinAimed])
+        # Also signal to imgcomp.
+
 
 # Notes:
-# * Using signals to tell raspistill when to take a picture so that we don't pan while taking a picture.
 #
-# * Should still signal to imgcomp that the camera as ben panned (ignore an image, reset fatigue map)
-#   If I do this, that makes avoiding photos during panning redundant cause I can just throw one out.
-#
-# * if I start raspistill from this script, then becomes a problem if raspistill is restarted, or not?
-#     name raspistill is hard coded in C program in a few places.
-# 
 #  So...  Start pan.py script from crontab.  Don't try to trigger or raspistill from pan.py
-#         But DO signal to imgcomp when the camera has been panned.  
+#         But DO signal to imgcomp when the camera has been panned.
 #         But how to signal that?  Touch a file in /ramdisk, cause
 #         imgcomp reads the whole directory every second already (in DoDirectoryFunc)
 
