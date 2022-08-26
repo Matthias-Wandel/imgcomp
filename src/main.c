@@ -40,6 +40,8 @@ static LastPic_t BaselinePic;
 
 time_t LastPic_mtime;
 
+static int AngleAdjusted = 0;
+
 int FatigueSkipCountdown = 0;
 
 //-----------------------------------------------------------------------------------
@@ -161,7 +163,7 @@ static int ProcessImage(LastPic_t * New, int DeleteProcessed)
         if (Trig.DiffLevel >= Sensitivity && UdpDest[0]){
             // For my cap shooter experiment.  Not useful for anything else.
             int a;
-            
+
             GeometryConvert(&Trig);
 
             const int colwidth=120;
@@ -240,6 +242,13 @@ static int DoDirectoryFunc(char * Directory, int DeleteProcessed)
         ThisName = FileNames[a].FileName;
         if (ThisName[0] == 0) continue; // We already did this one.
 
+        if (strcmp(ThisName, "angle") == 0){
+			// For my hack of panning the camera with a stepper motor.
+            printf("Panned, ignore next image\n");
+            unlink (CatPath(Directory, "angle"));
+            AngleAdjusted = 1;
+        }
+
         l = strlen(ThisName);
         if (l < 5) continue;
 
@@ -267,14 +276,22 @@ static int DoDirectoryFunc(char * Directory, int DeleteProcessed)
         strcpy(NewPic.Name, CatPath(Directory, ThisName));
         NewPic.nind = strlen(Directory)+1;
 
+
         if (strcmp(LastPics[0].Name+LastPics[0].nind, ThisName) == 0
              || strcmp(LastPics[1].Name+LastPics[1].nind, ThisName) == 0){
             // Already did this one.
             continue;
         }
 
-        //printf("use: %s\n",ThisName);
+        if (AngleAdjusted && DeleteProcessed){
+            printf("Discard latest image (panning)\n");
+            unlink(NewPic.Name);
+            FileNames[a].FileName[0] = 0;
+            AngleAdjusted -= 1;
+            continue;
+        }
 
+        //printf("use: %s\n",ThisName);
 
         NewPic.Image = LoadJPEG(NewPic.Name, ScaleDenom, 0, 1);
         if (NewPic.Image == NULL){
@@ -519,7 +536,7 @@ int main(int argc, char **argv)
     Log = stdout;
 
     printf("Imgcomp version 0.97 (Mar 2021) by Matthias Wandel\n\n");
- 
+
     progname = argv[0];
 
     // Reset to default parameters.
@@ -616,7 +633,7 @@ int main(int argc, char **argv)
             DoDirectoryVideos(DoDirName);
         }
     }
- 
+
     if (argc-file_index == 2){
         MemImage_t *pic1, *pic2;
 

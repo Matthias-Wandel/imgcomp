@@ -30,15 +30,18 @@ def init_stepper():
 
 def move_stepper(steps):
     global g_enable, g_dir, g_clk
+    if steps == 0: return
 
-    delay = 2 # miliseconds
+    open("/ramdisk/angle", 'a').close() # Tell imgcomp that angle was adjusted
+
+    delay = 0.6 # miliseconds
     GPIO.output(g_enable, 0) # enable
 
     if steps < 0:
         steps = -steps
-        GPIO.output(g_dir, 0)
-    else:
         GPIO.output(g_dir, 1)
+    else:
+        GPIO.output(g_dir, 0)
 
     time.sleep(0.01)
 
@@ -46,13 +49,18 @@ def move_stepper(steps):
         GPIO.output(g_clk,1)
         duse = delay/2000;
         fromend = min(x*.3, steps-x)
-        if fromend < 30: duse = duse * 1.3
-        if fromend < 15: duse = duse * 1.3
+        if fromend < 50: duse = duse * 1.3
+        if fromend < 25: duse = duse * 1.3
         GPIO.output(g_clk,0)
         time.sleep(duse)
 
+    time.sleep(0.01)
+    open("/ramdisk/panned", 'a').close() # In case panning took a long time, set flag again.
+    GPIO.output(g_enable, 1) # disable
+
+
 def move_to_deg(deg):
-    steps_per_deg = 800.0/365
+    steps_per_deg = 400.0*8/365
     global steppos;
     newstep = int(deg * steps_per_deg)
     move_stepper(newstep-steppos)
@@ -104,13 +112,15 @@ def Process_UDP():
 
 init_stepper()
 
+print("Homing camera angle")
 # Reset motor position by bainging against the stop.
+move_to_deg(360)
 move_to_deg(180)
-move_to_deg(94)
 steppos = 0 # this is now the zero position.
 
+print("Open socket")
 
-
+#move_to_deg(135) # This aims it at entrance to basement.
 
 Open_Socket()
 
@@ -120,10 +130,10 @@ BinDegs = [-50,-25,0,25,50]
 BinAimed = 2
 MotionBins[BinAimed] = 200
 
-print(MotionBins)
+#print(MotionBins)
 
 while 1:
-    ready = select.select([rxSocket], [], [], 2)
+    ready = select.select([rxSocket], [], [], 4)
 
     if ready[0]:
         x,y = Process_UDP()
@@ -137,8 +147,8 @@ while 1:
         if BinAdd >= 0 and BinAdd < len(MotionBins):
             MotionBins[BinAdd] += 100
 
-    else:
-        print("time...")#nothing.  t=",time.perf_counter())
+    #else:
+        #print("time...")#nothing.  t=",time.perf_counter())
 
     for x in range(0, len(MotionBins)):
         # decay the motion bins.
@@ -153,7 +163,7 @@ while 1:
             max = MotionBins[x]
             maxp = x
 
-    if max < 25:
+    if max < 25 and BinAimed != 2:
         # No significant motion for a while.  Return to center.
         print("Pan back to center")
         BinAimed = 2
@@ -168,9 +178,10 @@ while 1:
 
 
 # Notes:
+# To do next: Start pan script from crontab.
+# Get signals from main basement camera, suggest to turn to 0 degrees.
+# Move to 135 degrees if there has been no motion for a long time (montitor other side)
+# If motion was off to one side and no further motion, give that one extra score after a delay.
 #
-#  So...  Start pan.py script from crontab.  Don't try to trigger or raspistill from pan.py
-#         But DO signal to imgcomp when the camera has been panned.
-#         But how to signal that?  Touch a file in /ramdisk, cause
-#         imgcomp reads the whole directory every second already (in DoDirectoryFunc)
+# Does it make sense to have bins for all the way around?  Also slow down how often we pan.
 
