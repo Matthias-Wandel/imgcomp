@@ -36,7 +36,6 @@ typedef struct {
 
 static LastPic_t LastPics[3];
 static time_t NextTimelapsePix;
-static LastPic_t BaselinePic;
 
 time_t LastPic_mtime;
 
@@ -190,21 +189,8 @@ static int ProcessImage(LastPic_t * New, int DeleteProcessed)
         static int PrintFlag;
         // Third picture now falls out of the window.  Free it and delete it.
 
-        if (UdpDest[0] && (SinceMotionMs > 4000 || (SinceMotionMs > 2000 && !BaselinePic.Image))){
-            // If it's been 30 seconds since we saw motion, save this image
-            // as a background image for later squirrel detection
-            if (BaselinePic.Image){
-                free(BaselinePic.Image);
-            }
-            BaselinePic = LastPics[2];
-            if (!PrintFlag){
-                printf("Baselining\n");
-                PrintFlag = 1;
-            }
-        }else{
-            free(LastPics[2].Image);
-            if (SinceMotionMs < 1000) PrintFlag = 0;
-        }
+        free(LastPics[2].Image);
+        if (SinceMotionMs < 1000) PrintFlag = 0;
     }
 
     if (DeleteProcessed){
