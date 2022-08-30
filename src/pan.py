@@ -30,13 +30,11 @@ def init_stepper():
 
 def move_stepper(steps):
     global g_enable, g_dir, g_clk
-    if steps == 0: return
-
-    open("/ramdisk/angle", 'a').close() # Tell imgcomp that angle was adjusted
 
     delay = 0.6 # miliseconds
-    GPIO.output(g_enable, 0) # enable
-
+    GPIO.output(g_enable, 0) # enable stepper driver
+    time.sleep(0.01)
+    
     if steps < 0:
         steps = -steps
         GPIO.output(g_dir, 1)
@@ -54,17 +52,25 @@ def move_stepper(steps):
         GPIO.output(g_clk,0)
         time.sleep(duse)
 
+       
     time.sleep(0.01)
-    open("/ramdisk/panned", 'a').close() # In case panning took a long time, set flag again.
-    GPIO.output(g_enable, 1) # disable
+    GPIO.output(g_enable, 1) # turn stepper driver off again.
 
 
+#===========================================================================================
+# Re=-aim the camera
+#===========================================================================================
 def move_to_deg(deg):
     steps_per_deg = 400.0*8/365
     global steppos;
     newstep = int(deg * steps_per_deg)
+    
+    if newstep == steppos: return
+    
+    open("/ramdisk/angle", 'a').close() # Tell imgcomp that angle was adjusted
     move_stepper(newstep-steppos)
     steppos = newstep
+    open("/ramdisk/panned", 'a').close() # In case panning took a long time, tell imgcomp again.
 
 def cleanAndExit():
     GPIO.output(g_enable, 1) # turn off stepper
@@ -107,8 +113,10 @@ def Process_UDP():
     y = data[6] + data[7]*0x100
     if y >= 32768: y = y - 65536 # sign extend
 
+    other_cam = 0
     print("UDP from:",addr[0], "x,y=",x,y)# "T=",time.perf_counter())
-    return x,y
+    if addr[0] != "192.168.0.22": other_cam = 1
+    return x,y, other_cam
 
 init_stepper()
 
@@ -120,32 +128,34 @@ steppos = 0 # this is now the zero position.
 
 print("Open socket")
 
-#move_to_deg(135) # This aims it at entrance to basement.
-
 Open_Socket()
 
-
-MotionBins = [0]*5
-BinDegs = [-50,-25,0,25,50]
-BinAimed = 2
-MotionBins[BinAimed] = 200
-
-#print(MotionBins)
+MotionBins = [0]*10
+MainView = 0
+BinDegs = [-75,-50,-25,0,25,50,75,105,135,160]
+BinAimed = 3
 
 while 1:
     ready = select.select([rxSocket], [], [], 4)
 
     if ready[0]:
-        x,y = Process_UDP()
-        if x < -250:
-            BinAdd = BinAimed - 1
-        elif x > 250:
-            BinAdd = BinAimed + 1
-        else:
-            BinAdd = BinAimed
+        x,y, other = Process_UDP()
 
-        if BinAdd >= 0 and BinAdd < len(MotionBins):
-            MotionBins[BinAdd] += 100
+        print("other = ",other)
+        if other:
+            # Perhaps should assume which way the camera is aimed and be more fine grained
+            # about angle suggestion
+            MainView += 100
+        else:
+            if x < -250:
+                BinAdd = BinAimed - 1
+            elif x > 250:
+                BinAdd = BinAimed + 1
+            else:
+                BinAdd = BinAimed
+
+            if BinAdd >= 0 and BinAdd < len(MotionBins):
+                MotionBins[BinAdd] += 100
 
     #else:
         #print("time...")#nothing.  t=",time.perf_counter())
@@ -153,8 +163,9 @@ while 1:
     for x in range(0, len(MotionBins)):
         # decay the motion bins.
         MotionBins[x] = int(MotionBins[x] * 0.8) # Store integer, easier to read
+    MainView = int(MainView * 0.85)
 
-    print("   ",MotionBins)
+    print("   ",MotionBins," M:",MainView)
 
     max = 0
     maxp = -1
@@ -163,25 +174,21 @@ while 1:
             max = MotionBins[x]
             maxp = x
 
-    if max < 25 and BinAimed != 2:
+    if max < 25:
         # No significant motion for a while.  Return to center.
-        print("Pan back to center")
-        BinAimed = 2
+        if (MainView > 250):
+            print("Front action, pan to main view")
+            BinAimed = 3
+        else:
+            print("Pan back to rear")
+            BinAimed = 8
+            
         move_to_deg(BinDegs[BinAimed])
-        # Also signal to imgcomp.
+            
 
     elif maxp != BinAimed and max > 200 and max > MotionBins[BinAimed]*1.2:
         print("Pan to ",maxp)
         BinAimed = maxp
         move_to_deg(BinDegs[BinAimed])
-        # Also signal to imgcomp.
 
-
-# Notes:
-# To do next: Start pan script from crontab.
-# Get signals from main basement camera, suggest to turn to 0 degrees.
-# Move to 135 degrees if there has been no motion for a long time (montitor other side)
-# If motion was off to one side and no further motion, give that one extra score after a delay.
-#
-# Does it make sense to have bins for all the way around?  Also slow down how often we pan.
 
