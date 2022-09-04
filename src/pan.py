@@ -58,11 +58,11 @@ def move_stepper(steps):
 
 
 #===========================================================================================
-# Re=-aim the camera
+# Re-aim the camera
 #===========================================================================================
-def move_to_deg(deg):
+def move_to_deg(deg, Bin=-1):
     steps_per_deg = 400.0*8/365
-    global steppos;
+    global steppos, MotionBins
     newstep = int(deg * steps_per_deg)
     
     if newstep == steppos: return
@@ -70,7 +70,9 @@ def move_to_deg(deg):
     open("/ramdisk/angle", 'a').close() # Tell imgcomp that angle was adjusted
     move_stepper(newstep-steppos)
     steppos = newstep
-    open("/ramdisk/panned", 'a').close() # In case panning took a long time, tell imgcomp again.
+    with open("/ramdisk/panned", 'a') as f:
+        print("Pan[%d]=%d"%(Bin,deg)," Bins=",MotionBins,file=f)
+        f.close() # In case panning took a long time, tell imgcomp again.
 
 def cleanAndExit():
     GPIO.output(g_enable, 1) # turn off stepper
@@ -120,17 +122,17 @@ def Process_UDP():
 
 init_stepper()
 
+MotionBins = [0]*10
 print("Homing camera angle")
 # Reset motor position by bainging against the stop.
 move_to_deg(360)
-move_to_deg(180)
+move_to_deg(185)
 steppos = 0 # this is now the zero position.
 
 print("Open socket")
 
 Open_Socket()
 
-MotionBins = [0]*10
 MainView = 0
 BinDegs = [-75,-50,-25,0,25,50,75,105,135,160]
 BinAimed = 3
@@ -183,7 +185,7 @@ while 1:
             print("Pan back to rear")
             BinAimed = 8
             
-        move_to_deg(BinDegs[BinAimed])
+        move_to_deg(BinDegs[BinAimed], BinAimed)
             
 
     elif maxp != BinAimed and max > 200 and max > MotionBins[BinAimed]*1.2:
