@@ -26,7 +26,7 @@ static TriggerInfo_t AnalyzeDifferences(Region_t Region, int threshold, int Upda
 // Compare two images in memory
 // Pic1 is previous pic, pic2 is latest pic.
 //----------------------------------------------------------------------------------------
-TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, 
+TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2,
     int UpdateFatigue, int SkipFatigue, char * DebugImgName)
 {
     int width, height, bPerRow;
@@ -47,7 +47,7 @@ TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2,
         printf("\ncompare pictures %dx%d %d\n", pic1->width, pic1->height, pic1->components);
     }
 
-    if (pic1->width != pic2->width || pic1->height != pic2->height 
+    if (pic1->width != pic2->width || pic1->height != pic2->height
         || pic1->components != pic2->components){
         fprintf(stderr, "pic size mismatch (maybe clear ramdisk?)\n  %dx%d vs %dx%d\n",pic1->width, pic1->height, pic2->width, pic2->height);
         exit(-1);
@@ -55,10 +55,10 @@ TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2,
     }
     width = pic1->width;
     height = pic1->height;
-    bPerRow = width * 3;    
+    bPerRow = width * 3;
 
-	// Make sure we have an allocated working array and weight map.
-	
+    // Make sure we have an allocated working array and weight map.
+
     if (DiffVal != NULL && (width != DiffVal->w || height != DiffVal->h)){
         // DiffVal allocated size is wrong.
         free(DiffVal);
@@ -66,8 +66,8 @@ TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2,
         DiffVal = NULL;
     }
     if (DiffVal == NULL){
-		DiffVal = MakeImgMap(width,height);
-		
+        DiffVal = MakeImgMap(width,height);
+
         if (!WeightMap){
             FillWeightMap(width,height);
         }else{
@@ -80,14 +80,14 @@ TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2,
     memset(DiffVal->values, 0,  sizeof(DiffVal->values)*width*height);
 
     if (DebugImgName){
-		// Create image for writing difference to.
+        // Create image for writing difference to.
         int data_size;
         data_size = height * bPerRow;
         DiffOut = malloc(data_size+offsetof(MemImage_t, pixels));
         memcpy(DiffOut, pic1, offsetof(MemImage_t, pixels));
         memset(DiffOut->pixels, 0, data_size);
     }
-	
+
     MainReg = Regions.DetectReg;
     if (MainReg.y2 > height) MainReg.y2 = height;
     if (MainReg.x2 > width) MainReg.x2 = width;
@@ -153,7 +153,7 @@ TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2,
     }
 
     // Compute differences
-	memset(DiffHist, 0, sizeof(DiffHist));
+    memset(DiffHist, 0, sizeof(DiffHist));
     for (row=MainReg.y1;row<MainReg.y2;){
         unsigned char * p1, *p2, *pd = NULL;
         int * ExRow;
@@ -190,18 +190,18 @@ TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2,
                 dr = (p1[0]*m1i - p2[0]*m2i);
                 dg = (p1[1]*m1i - p2[1]*m2i);
                 db = (p1[2]*m1i - p2[2]*m2i);
-                
-				// Make differences absolute values.
+
+                // Make differences absolute values.
                 if (dr < 0) dr = -dr;
                 if (dg < 0) dg = -dg;
                 if (db < 0) db = -db;
-				
-				// compute composite difference.
+
+                // compute composite difference.
                 dcomp = (dr + dg*2 + db) >> 8; // Put more emphasis on green
                 dcomp = dcomp * 120/max;       // Normalize difference to local brightness.
 
 
-				// Add computed difference value to histogram bins.
+                // Add computed difference value to histogram bins.
                 if (dcomp >= 256) dcomp = 255;
                 if (dcomp < 0){
                     fprintf(stderr,"Internal error dcomp\n");
@@ -209,7 +209,7 @@ TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2,
                 }
                 DiffHist[dcomp] += 1;
                 diffrow[col] = dcomp;
-        
+
                 if (DebugImgName){
                     // Save the difference image, scale brightness up 4x
                     dr=(dr*60/max)>> 6; if (dr > 255) dr = 255;
@@ -221,7 +221,7 @@ TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2,
                 }
             }
 
-			// Advance pointers to next pixel.
+            // Advance pointers to next pixel.
             pd += 3;
             p1 += 3;
             p2 += 3;
@@ -234,7 +234,7 @@ TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2,
         WritePpmFile(DebugImgName,DiffOut);
         free(DiffOut);
     }
-   
+
 
     if (Verbosity > 1){
         printf("Difference histogram\n");
@@ -247,10 +247,10 @@ TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2,
     int threshold;
     {
         // Gauge the difference noise level of the difference maps using the built histogram.
-		// assuming two thirds of the image has not changed
+        // assuming two thirds of the image has not changed
         int cumsum = 0;
         int twothirds = DetectionPixels*2/3;
-        
+
         for (a=0;a<256;a++){
             if (cumsum >= twothirds) break;
             cumsum += DiffHist[a];
@@ -258,20 +258,82 @@ TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2,
 
         threshold = a*3+12;
         if (threshold < 30) threshold = 30;
-		
+
         int maxth = 180 + BrightnessRatio*5;
         if (threshold > maxth){
-			threshold = maxth;
-			if (Verbosity) printf("Using limit threshold of %d\n", threshold);			
-		}else{
-			if (Verbosity) printf("2/3 of image is below %d diff.  Using %d threshold\n",a, threshold);
-		}
+            threshold = maxth;
+            if (Verbosity) printf("Using limit threshold of %d\n", threshold);
+        }else{
+            if (Verbosity) printf("2/3 of image is below %d diff.  Using %d threshold\n",a, threshold);
+        }
     }
 
     // Apply motion fatigure and search for a window with the largest difference in it
     Trigger = AnalyzeDifferences(MainReg, threshold, UpdateFatigue, SkipFatigue);
     return Trigger;
 }
+
+// Scale down by this factor before applying windowing algorithm to look for max localized change
+// Thee factors work well with source images that are 1000-2000 pixels across.
+static const int scalef = 5;
+
+// these determine the window over which to look for the change (after scaling)
+static const int wind_w = 4, wind_h = 7;
+
+
+//----------------------------------------------------------------------------------------
+// Do the final bit of analysis after fatigue stuff to figure out where the motion was.
+//----------------------------------------------------------------------------------------
+static TriggerInfo_t LocateMotion(ImgMap_t * DiffScaled)
+{
+    static ImgMap_t * DiffScaledBf = NULL;
+
+    if (DiffScaledBf == NULL){
+        DiffScaledBf = MakeImgMap(DiffScaled->w, DiffScaled->h);
+    }
+
+    TriggerInfo_t retval;
+    int widthSc = DiffScaled->w;
+    //int heightSc = DiffScaled->h;
+
+    int maxc, maxr, maxval;
+
+    maxval = BlockFilterImgMap(DiffScaled, DiffScaledBf, wind_w, wind_h, &maxc, &maxr);
+
+    // Now search for the maximum inside a rectangular window.
+    retval.DiffLevel = maxval/100;
+    retval.x = retval.y = 0;
+
+    // Work out where most of the motion was found inside the search window.
+    if (Verbosity) printf("Window contents.  Cols %d-%d Rows %d-%d\n",maxc,maxc+wind_w-1,maxr, maxr+wind_h-1);
+    if (maxval > 0){
+        double xsum, ysum;
+        int sum;
+        int row = maxr;
+        if (row < 0) row = 0;
+
+        xsum = ysum = sum = 0;
+        for (;row<maxr+wind_h;row++){
+            int col = maxc;
+            if (col < 0) col = 0;
+            for(;col<maxc+wind_w;col++){
+                int v = DiffScaled->values[row*widthSc+col];
+                xsum += col*v;
+                ysum += row*v;
+                sum += v;
+                //printf("%5d",DiffScaled->values[row*widthSc+col]);
+            }
+            //printf("\n");
+        }
+        if (Verbosity) printf("Exact col=%5.1f, row=%5.1f\n",xsum*1.0/sum, ysum*1.0/sum);
+        retval.x = (int)(xsum*scalef*ScaleDenom/sum)+scalef*ScaleDenom/2;
+        retval.y = (int)(ysum*scalef*ScaleDenom/sum)+scalef*ScaleDenom/2;
+        if (Verbosity) printf("Picture coordinates: x,y = %d,%d\n",retval.x, retval.y);
+    }
+
+    return retval;
+}
+
 
 //----------------------------------------------------------------------------------------
 // Compute and apply motion fatigue then  Search for an N x N window
@@ -281,38 +343,27 @@ TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2,
 //----------------------------------------------------------------------------------------
 static TriggerInfo_t AnalyzeDifferences(Region_t Region, int threshold, int UpdateFatigue, int SkipFatigue)
 {
-    TriggerInfo_t retval;
-            
-    // Scale down by this factor before applying windowing algorithm to look for max localized change
-    // Thee factors work well with source images that are 1000-2000 pixels across.
-    const int scalef = 5;
-
-    // these determine the window over which to look for the change (after scaling)    
-    const int wind_w = 4, wind_h = 7;
-    
-	static int widthSc, heightSc;
-	static ImgMap_t * DiffScaled = NULL;
-	static ImgMap_t * DiffScaledBf = NULL;
+    static int widthSc, heightSc;
+    static ImgMap_t * DiffScaled = NULL;
     static ImgMap_t * Fatigue = NULL;
-	static ImgMap_t * FatigueBl = NULL;
-	
-	// Allocate working arrays if necessary.
+    static ImgMap_t * FatigueBl = NULL;
+
+    // Allocate working arrays if necessary.
     if (DiffScaled == NULL){
-        #define ROOF(x) ((x+scalef-1)/scalef)
-        widthSc = ROOF(DiffVal->w);
-        heightSc = ROOF(DiffVal->h);
-		DiffScaled = MakeImgMap(widthSc, heightSc);
-		DiffScaledBf = MakeImgMap(widthSc, heightSc);
+        #define ROOF_SC(x) ((x+scalef-1)/scalef)
+        widthSc = ROOF_SC(DiffVal->w);
+        heightSc = ROOF_SC(DiffVal->h);
+        DiffScaled = MakeImgMap(widthSc, heightSc);
         Fatigue = MakeImgMap(widthSc, heightSc);
-		FatigueBl = MakeImgMap(widthSc, heightSc);
+        FatigueBl = MakeImgMap(widthSc, heightSc);
     }else{
-        if (widthSc != ROOF(DiffVal->w) || heightSc != ROOF(DiffVal->h)){
+        if (widthSc != ROOF_SC(DiffVal->w) || heightSc != ROOF_SC(DiffVal->h)){
             fprintf(stderr, "image size changed, error!");
             // Could reallocate, but probably other code doesn't handle resizing anyway.
             exit(-1);
         }
     }
-    
+
     // Compute scaled down array of differences.  Destination: DiffScaled[]
     int width = DiffVal->w;
     memset(DiffScaled->values, 0, sizeof(int)*widthSc*heightSc);
@@ -329,29 +380,32 @@ static TriggerInfo_t AnalyzeDifferences(Region_t Region, int threshold, int Upda
             if (d > 0){
                 widthScrow[col/scalef] += d;
                 if (ExRow[col] > 1){
-                    
+
                     // Double weight region
                     widthScrow[col/scalef] += d;
                 }
             }
         }
     }
-    
+
 
     if (Verbosity > 1){
         printf("Scaled difference array (%d x %d)\n", widthSc, heightSc);
-		ShowImgMap(DiffScaled, 100);
+        ShowImgMap(DiffScaled, 100);
     }
+
+    //TriggerInfo_t no_fatigue_motion = LocateMotion(DiffScaled);
+    //printf("(nf %4d)",no_fatigue_motion.DiffLevel);
 
     if (MotionFatigueTc > 0){
         if (SkipFatigue == 0){
             // Make a bloomed copy of the fatigue map *before* applying current image fatigue.
             // Blooming the map is using the max of the cell and it's eight neighbours for each cell.
-            BloomImgMap(Fatigue, FatigueBl); 
+            BloomImgMap(Fatigue, FatigueBl);
             // Possibly bloom the fatigue map a bit more (may or may not want that)
             //BloomImgMap(FatigueBl, FatigueBl2); // Use max of cell and eight neighbours for motion fatigue.
         }
-        
+
         if (UpdateFatigue){
             static int SinceFatiguePrint = 0;
             int FatigueAverage;
@@ -393,42 +447,9 @@ static TriggerInfo_t AnalyzeDifferences(Region_t Region, int threshold, int Upda
         }
     }
 
-	int maxc, maxr, maxval;
-	
-	// Now search for the maximum inside a rectangular window.
-	maxval = BlockFilterImgMap(DiffScaled, DiffScaledBf, wind_w, wind_h, &maxc, &maxr);
-	retval.DiffLevel = maxval/100;
-    retval.x = retval.x * scalef - maxc * scalef / 2;
-    retval.y = retval.y * scalef - maxr * scalef / 2;
-	
-	// Work out where most of the motion was found inside the search window.
-    if (Verbosity) printf("Window contents.  Cols %d-%d Rows %d-%d\n",maxc,maxc+wind_w-1,maxr, maxr+wind_h-1);
-    if (maxval > 0){
-        double xsum, ysum;
-        int sum;
-		int row = maxr;
-		if (row < 0) row = 0;
-		
-        xsum = ysum = sum = 0;
-        for (;row<maxr+wind_h;row++){
-            int col = maxc; 
-            if (col < 0) col = 0;
-            for(;col<maxc+wind_w;col++){
-                int v = DiffScaled->values[row*widthSc+col];
-                xsum += col*v;
-                ysum += row*v;
-                sum += v;
-                //printf("%5d",DiffScaled->values[row*widthSc+col]);
-            }
-            //printf("\n");
-        }
-        if (Verbosity) printf("Exact col=%5.1f, row=%5.1f\n",xsum*1.0/sum, ysum*1.0/sum);
-        retval.x = (int)(xsum*scalef*ScaleDenom/sum)+scalef*ScaleDenom/2;
-        retval.y = (int)(ysum*scalef*ScaleDenom/sum)+scalef*ScaleDenom/2;
-        if (Verbosity) printf("Picture coordinates: x,y = %d,%d\n",retval.x, retval.y);
-    }
-   
+
+    TriggerInfo_t retval = LocateMotion(DiffScaled);
+
     return retval;
 }
 
-  
