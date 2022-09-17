@@ -173,7 +173,7 @@ void DoMotionRun(int SawMotion)
     }
     //printf("Ma = %4d\n",MotionAccumulate);    
         
-    if (SinceLightChange > 4 && SawMotion){
+    if (SinceLightChange > 3 && SawMotion){
 		//if (!LightOn && NowSec - LastMotion > 2) fprintf(Log, "delayed light on\n");
         if (!LightOn && NowSec - LastMotion <= 2){
 			// Want two motion events close together to avoid false triggers
@@ -210,7 +210,7 @@ void DoMotionRun(int SawMotion)
                     SinceLightChange = 0;
                     LightOn = 0;
                 }else{
-                    fprintf(Log,"Turn lgiht OFF (wait for child exit first)\n");
+                    fprintf(Log,"Turn light OFF (wait for child exit first)\n");
                 }
             }else{
                 LightOn = 0;

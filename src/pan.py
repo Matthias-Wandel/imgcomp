@@ -143,7 +143,6 @@ while 1:
     if ready[0]:
         x,y, other = Process_UDP()
 
-        print("other = ",other)
         if other:
             # Perhaps should assume which way the camera is aimed and be more fine grained
             # about angle suggestion
@@ -176,14 +175,15 @@ while 1:
             max = MotionBins[x]
             maxp = x
 
-    if max < 25:
+    if max < 20:
         # No significant motion for a while.  Return to center.
         if (MainView > 250):
             print("Front action, pan to main view")
             BinAimed = 3
         else:
-            print("Pan back to rear")
-            BinAimed = 8
+            if BinAimed != 8:
+                print("Pan back to rear")
+                BinAimed = 8
             
         move_to_deg(BinDegs[BinAimed], BinAimed)
             

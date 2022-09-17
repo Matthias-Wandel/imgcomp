@@ -87,7 +87,7 @@ void BloomImgMap(ImgMap_t * src, ImgMap_t * dst);
 int BlockFilterImgMap(ImgMap_t * src, ImgMap_t * dst, int fw, int fh, int * pmaxc, int * pmaxr);
 
 // compare.c function
-TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, int UpdateFatigue, int SkipFatigue, char * DebugImgName);
+TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, int UpdateFatigue, int SkipFatigue, char * DebugImgName, TriggerInfo_t * no_fatigue_motion);
 
 
 // jpeg2mem.c functions

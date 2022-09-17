@@ -19,7 +19,7 @@ int NewestAverageBright;
 static ImgMap_t * DiffVal = NULL;
 ImgMap_t * WeightMap = NULL;
 
-static TriggerInfo_t AnalyzeDifferences(Region_t Region, int threshold, int UpdateFatigue, int SubtractFatigue);
+static TriggerInfo_t AnalyzeDifferences(Region_t Region, int threshold, int UpdateFatigue, int SubtractFatigue, TriggerInfo_t * no_fatigue_motion);
 
 
 //----------------------------------------------------------------------------------------
@@ -27,7 +27,7 @@ static TriggerInfo_t AnalyzeDifferences(Region_t Region, int threshold, int Upda
 // Pic1 is previous pic, pic2 is latest pic.
 //----------------------------------------------------------------------------------------
 TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2,
-    int UpdateFatigue, int SkipFatigue, char * DebugImgName)
+    int UpdateFatigue, int SkipFatigue, char * DebugImgName, TriggerInfo_t * no_fatigue_motion)
 {
     int width, height, bPerRow;
     int row, col;
@@ -269,7 +269,7 @@ TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2,
     }
 
     // Apply motion fatigure and search for a window with the largest difference in it
-    Trigger = AnalyzeDifferences(MainReg, threshold, UpdateFatigue, SkipFatigue);
+    Trigger = AnalyzeDifferences(MainReg, threshold, UpdateFatigue, SkipFatigue, no_fatigue_motion);
     return Trigger;
 }
 
@@ -341,7 +341,9 @@ static TriggerInfo_t LocateMotion(ImgMap_t * DiffScaled)
 // This for rejecting spurious differences outdoors where we dont want grass and leaves
 // moving in the wind (covering large parts of the image) to trigger motion events.
 //----------------------------------------------------------------------------------------
-static TriggerInfo_t AnalyzeDifferences(Region_t Region, int threshold, int UpdateFatigue, int SkipFatigue)
+static TriggerInfo_t AnalyzeDifferences(Region_t Region, int threshold, int UpdateFatigue, int SkipFatigue,
+        TriggerInfo_t * no_fatigue_motion // In addition detect motion without fatigue and put it here.
+    )
 {
     static int widthSc, heightSc;
     static ImgMap_t * DiffScaled = NULL;
@@ -394,8 +396,11 @@ static TriggerInfo_t AnalyzeDifferences(Region_t Region, int threshold, int Upda
         ShowImgMap(DiffScaled, 100);
     }
 
-    //TriggerInfo_t no_fatigue_motion = LocateMotion(DiffScaled);
-    //printf("(nf %4d)",no_fatigue_motion.DiffLevel);
+    if (no_fatigue_motion){
+        // Additional detection without motion fatigue.
+        *no_fatigue_motion = LocateMotion(DiffScaled);
+        printf("(nf %4d)",no_fatigue_motion->DiffLevel);
+    }
 
     if (MotionFatigueTc > 0){
         if (SkipFatigue == 0){

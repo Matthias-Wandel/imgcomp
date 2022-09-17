@@ -69,8 +69,17 @@ static int ProcessImage(LastPic_t * New, int DeleteProcessed)
     LastPics[0] = *New;
     LastPics[0].IsMotion = LastPics[0].IsTimelapse = 0;
 
+// if lights, or motion report, also do motion detect without fatigue.
+// But DoMotionRun is called from parent function to do the lights.
+
+    TriggerInfo_t Trig;
+    TriggerInfo_t Trig_nf;
+    Trig_nf.DiffLevel = Trig.DiffLevel = 0;
+    TriggerInfo_t* Trig_nf_p = NULL;
+    if (UdpDest[0] || lighton_run[0]) Trig_nf_p = &Trig_nf;
+
+
     if (LastPics[1].Image != NULL){
-        TriggerInfo_t Trig;
         // Handle timelapsing.
         if (TimelapseInterval >= 1){
             if (LastPics[0].mtime >= NextTimelapsePix){
@@ -92,7 +101,7 @@ static int ProcessImage(LastPic_t * New, int DeleteProcessed)
         }
 
         if (LastPics[1].Image){
-            Trig = ComparePix(LastPics[1].Image, LastPics[0].Image, 1, SkipFatigue, NULL);
+            Trig = ComparePix(LastPics[1].Image, LastPics[0].Image, 1, SkipFatigue, NULL, Trig_nf_p);
         }
 
         LastPics[0].DiffMag = Trig.DiffLevel;
@@ -122,7 +131,7 @@ static int ProcessImage(LastPic_t * New, int DeleteProcessed)
             LastPics[0].IsMotion && LastPics[1].IsMotion
             && LastPics[2].DiffMag < Sensitivity/2){
             // Compare to picture before last picture.
-            Trig = ComparePix(LastPics[2].Image, LastPics[0].Image, 0, 1, NULL);
+            Trig = ComparePix(LastPics[2].Image, LastPics[0].Image, 0, 1, NULL, NULL);
 
             //printf("Diff with pix before last: %d\n",Trig.DiffLevel);
             if (Trig.DiffLevel < Sensitivity){
@@ -159,8 +168,8 @@ static int ProcessImage(LastPic_t * New, int DeleteProcessed)
         SinceMotionPix += 1;
 
 
-        if (Trig.DiffLevel >= Sensitivity && UdpDest[0]){
-            // For my cap shooter experiment.  Not useful for anything else.
+        if (UdpDest[0] && Trig_nf.DiffLevel >= Sensitivity){
+            // Use un-fatigued diff level for reporting motion via UDP.
             int a;
 
             GeometryConvert(&Trig);
@@ -186,17 +195,18 @@ static int ProcessImage(LastPic_t * New, int DeleteProcessed)
     }
 
     if (LastPics[2].Image){
-        static int PrintFlag;
         // Third picture now falls out of the window.  Free it and delete it.
-
         free(LastPics[2].Image);
-        if (SinceMotionMs < 1000) PrintFlag = 0;
     }
 
     if (DeleteProcessed){
         unlink(LastPics[2].Name);
     }
-    return LastPics[0].IsMotion;
+    if (Trig_nf.DiffLevel >= Sensitivity || Trig.DiffLevel >= Sensitivity){
+        // Return un-fatigued motion (if we have it) -- used for turning on lights.
+        return 1;
+    }
+    return 0;
 }
 
 //-----------------------------------------------------------------------------------
@@ -631,7 +641,7 @@ int main(int argc, char **argv)
 
         if (pic1 && pic2){
             Verbosity = 2;
-            ComparePix(pic1, pic2, 0, 0,"diff.ppm");
+            ComparePix(pic1, pic2, 0, 0,"diff.ppm", NULL);
         }
         free(pic1);
         free(pic2);
