@@ -170,25 +170,11 @@ static int ProcessImage(LastPic_t * New, int DeleteProcessed)
 
         if (UdpDest[0] && Trig_nf.DiffLevel >= Sensitivity){
             // Use un-fatigued diff level for reporting motion via UDP.
-            int a;
-
             GeometryConvert(&Trig);
 
-            const int colwidth=120;
-            char showx[200];
-            for (a=0;a<colwidth+3;a++){
-                showx[a] = '.';
-            }
-            showx[colwidth+3] = '\0';
-            int xs = ((Trig.x+500)*colwidth)/(1000);
-            if (xs < 0) xs = 0;
-            if (xs > colwidth) xs = colwidth;
+            printf("Send UDP motion %d,%d\n", Trig_nf.x, Trig_nf.y);
 
-            showx[xs] = '#';
-            showx[xs+1] = '#';
-            printf("%s %d,%d\n",showx, Trig.x, Trig.y);
-
-            SendUDP(Trig.x, Trig.y, Trig.DiffLevel, Trig.Motion);
+            SendUDP(Trig_nf.x, Trig_nf.y, Trig_nf.DiffLevel, Trig_nf.Motion);
         }
 
         Raspistill_restarted = 0;
