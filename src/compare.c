@@ -1,6 +1,6 @@
 //-----------------------------------------------------------------------------------
 // imgcomp image comparison main module
-// Matthias Wandel 2015-2020
+// Matthias Wandel 2015-2022
 //
 // Imgcomp is licensed under GPL v2 (see README.txt)
 //-----------------------------------------------------------------------------------
@@ -286,19 +286,12 @@ static const int wind_w = 4, wind_h = 7;
 //----------------------------------------------------------------------------------------
 static TriggerInfo_t LocateMotion(ImgMap_t * DiffScaled)
 {
-    static ImgMap_t * DiffScaledBf = NULL;
-
-    if (DiffScaledBf == NULL){
-        DiffScaledBf = MakeImgMap(DiffScaled->w, DiffScaled->h);
-    }
-
     TriggerInfo_t retval;
     int widthSc = DiffScaled->w;
-    //int heightSc = DiffScaled->h;
 
     int maxc, maxr, maxval;
 
-    maxval = BlockFilterImgMap(DiffScaled, DiffScaledBf, wind_w, wind_h, &maxc, &maxr);
+    maxval = BlockFilterImgMap(DiffScaled, wind_w, wind_h, &maxc, &maxr);
 
     // Now search for the maximum inside a rectangular window.
     retval.DiffLevel = maxval/100;
@@ -396,58 +389,62 @@ static TriggerInfo_t AnalyzeDifferences(Region_t Region, int threshold, int Upda
         ShowImgMap(DiffScaled, 100);
     }
 
-    if (no_fatigue_motion){
-        // Additional detection without motion fatigue.
-        *no_fatigue_motion = LocateMotion(DiffScaled);
-        printf("(nf %4d)",no_fatigue_motion->DiffLevel);
+    if (MotionFatigueTc == 0){
+        // No motion fatigure applid, both returns are identical.
+        TriggerInfo_t retval = LocateMotion(DiffScaled);
+        if (no_fatigue_motion) *no_fatigue_motion = retval;
+        return retval;
+    }else{
+        if (no_fatigue_motion){
+            // Additional detection prior to motion fatigue.
+            *no_fatigue_motion = LocateMotion(DiffScaled);
+        }
     }
 
-    if (MotionFatigueTc > 0){
-        if (SkipFatigue == 0){
-            // Make a bloomed copy of the fatigue map *before* applying current image fatigue.
-            // Blooming the map is using the max of the cell and it's eight neighbours for each cell.
-            BloomImgMap(Fatigue, FatigueBl);
-            // Possibly bloom the fatigue map a bit more (may or may not want that)
-            //BloomImgMap(FatigueBl, FatigueBl2); // Use max of cell and eight neighbours for motion fatigue.
-        }
+    if (SkipFatigue == 0){
+        // Make a bloomed copy of the fatigue map *before* applying current image fatigue.
+        // Blooming the map is using the max of the cell and it's eight neighbours for each cell.
+        BloomImgMap(Fatigue, FatigueBl);
+        // Possibly bloom the fatigue map a bit more (may or may not want that)
+        //BloomImgMap(FatigueBl, FatigueBl2); // Use max of cell and eight neighbours for motion fatigue.
+    }
 
-        if (UpdateFatigue){
-            static int SinceFatiguePrint = 0;
-            int FatigueAverage;
-            // Compute motion fatigue
-            FatigueAverage = 0;
-            for (int row=0;row<heightSc;row++){
-                for (int col=0;col<widthSc;col++){
-                    int ds, nFat;
-                    ds = DiffScaled->values[row*widthSc+col];
-                    nFat = (Fatigue->values[row*widthSc+col]*(MotionFatigueTc-1) + ds)/MotionFatigueTc; // Expontential decay on it.
-                    Fatigue->values[row*widthSc+col] = nFat;
-                    FatigueAverage += nFat;
-                }
+    if (UpdateFatigue){
+        static int SinceFatiguePrint = 0;
+        int FatigueAverage;
+        // Compute motion fatigue
+        FatigueAverage = 0;
+        for (int row=0;row<heightSc;row++){
+            for (int col=0;col<widthSc;col++){
+                int ds, nFat;
+                ds = DiffScaled->values[row*widthSc+col];
+                nFat = (Fatigue->values[row*widthSc+col]*(MotionFatigueTc-1) + ds)/MotionFatigueTc; // Expontential decay on it.
+                Fatigue->values[row*widthSc+col] = nFat;
+                FatigueAverage += nFat;
             }
-            FatigueAverage = FatigueAverage/(heightSc*widthSc); // Divide by array size to get average.
-
-            // Print fatigue map to log from time to time.
-            if (Verbosity > 1 || (FatigueAverage > 50 && SinceFatiguePrint > 60)){
-                // Print the fatigure array every minuts if there is stuff in it.
-                fprintf(Log, "Fatigue map (%d x %d) sum=%d<small>\n", widthSc, heightSc, FatigueAverage);
-                ShowImgMap(Fatigue, 50);
-                fprintf(Log, "</small>\n");
-                SinceFatiguePrint = 0;
-            }
-            SinceFatiguePrint++;
         }
+        FatigueAverage = FatigueAverage/(heightSc*widthSc); // Divide by array size to get average.
 
-        if (SkipFatigue == 0){
-            // Subtract out motion fatigue
-            int fatmult = FatigueGainPercent * 3 * 256 / 100;
-            for (int row=0;row<heightSc;row++){
-                for (int col=0;col<widthSc;col++){
-                    int FatSub = (FatigueBl->values[row*widthSc+col] * fatmult) >> 8;
-                    int ds = DiffScaled->values[row*widthSc+col] - FatSub;
-                    if (ds < 0) ds = 0;
-                    DiffScaled->values[row*widthSc+col] = ds;
-                }
+        // Print fatigue map to log from time to time.
+        if (Verbosity > 1 || (FatigueAverage > 50 && SinceFatiguePrint > 60)){
+            // Print the fatigure array every minuts if there is stuff in it.
+            fprintf(Log, "Fatigue map (%d x %d) sum=%d<small>\n", widthSc, heightSc, FatigueAverage);
+            ShowImgMap(Fatigue, 50);
+            fprintf(Log, "</small>\n");
+            SinceFatiguePrint = 0;
+        }
+        SinceFatiguePrint++;
+    }
+ 
+    if (SkipFatigue == 0){
+        // Subtract out motion fatigue
+        int fatmult = FatigueGainPercent * 3 * 256 / 100;
+        for (int row=0;row<heightSc;row++){
+            for (int col=0;col<widthSc;col++){
+                int FatSub = (FatigueBl->values[row*widthSc+col] * fatmult) >> 8;
+                int ds = DiffScaled->values[row*widthSc+col] - FatSub;
+                if (ds < 0) ds = 0;
+                DiffScaled->values[row*widthSc+col] = ds;
             }
         }
     }

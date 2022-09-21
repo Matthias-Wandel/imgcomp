@@ -1,6 +1,6 @@
 //-----------------------------------------------------------------------------------
 // Comparison module helper functions
-// Matthias Wandel 2015-2020
+// Matthias Wandel 2015-2022
 //
 // Imgcomp is licensed under GPL v2 (see README.txt)
 //-----------------------------------------------------------------------------------
@@ -15,7 +15,6 @@
 #include "config.h"
 
 //#define Log stdout
-//#if 0
 //----------------------------------------------------------------------------------------
 // Show detection weight map array.
 //----------------------------------------------------------------------------------------
@@ -180,28 +179,6 @@ double AverageBright(MemImage_t * pic, Region_t Region, ImgMap_t* WeightMap)
     return baverage * 0.25 / DetectionPixels; // Multiply by 4 again.
 }
 
-//#endif
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 //----------------------------------------------------------------------------------------
@@ -210,6 +187,7 @@ double AverageBright(MemImage_t * pic, Region_t Region, ImgMap_t* WeightMap)
 ImgMap_t * MakeImgMap(int w,int h)
 {
 	ImgMap_t * ImgMap = malloc(sizeof(int)*w*h+sizeof(ImgMap_t));
+	memset(ImgMap, 0, sizeof(int)*w*h+sizeof(ImgMap_t));
 	ImgMap->w = w;
 	ImgMap->h = h;
 	return ImgMap;
@@ -290,7 +268,7 @@ void BloomImgMap(ImgMap_t * src, ImgMap_t * dst)
 //----------------------------------------------------------------------------------------
 // Block filter an image.  Modifies in place.
 //----------------------------------------------------------------------------------------
-int BlockFilterImgMap(ImgMap_t * src, ImgMap_t * dst, int fw, int fh, int * pmaxc, int * pmaxr)
+int BlockFilterImgMap(const ImgMap_t * src, int fw, int fh, int * pmaxc, int * pmaxr)
 {
 	int w = src->w;
 	int h = src->h;
@@ -298,13 +276,19 @@ int BlockFilterImgMap(ImgMap_t * src, ImgMap_t * dst, int fw, int fh, int * pmax
 		fprintf(stderr, "filter too big\n");
 		return 0;
 	}
+    
+    static ImgMap_t * dst_tmp = NULL;
+    if (dst_tmp == NULL){
+        dst_tmp = MakeImgMap(src->w, src->h); // All subsequent images same size.
+    }
+    
 
-	// Sum horizontally and copy to dst.
+	// Sum horizontally and copy to dst_tmp
 	fw -= 1;
 	for (int r=0;r<h;r++){
 		int sum=0;
-		int * row = &src->values[r*w];
-		int * dstrow = &dst->values[r*w];
+		const int * row = &src->values[r*w];
+		int * dstrow = &dst_tmp->values[r*w];
 		int c;
 		for (c=0;c<fw;c++){
 			sum += row[c];
@@ -326,14 +310,14 @@ int BlockFilterImgMap(ImgMap_t * src, ImgMap_t * dst, int fw, int fh, int * pmax
 	int sums[w];
 	memset(sums, 0, sizeof(sums));
 	for (int r=0;r<fh;r++){
-		int * row = &dst->values[r*w];
+		int * row = &dst_tmp->values[r*w];
 		for (int c=0;c<w;c++){
 			sums[c] += row[c];
 		}
 	}
 	for (int r=0;r<h-fh;r++){
-		int * row = &dst->values[r*w];
-		int * rowp = &dst->values[(r+fh)*w];
+		int * row = &dst_tmp->values[r*w];
+		int * rowp = &dst_tmp->values[(r+fh)*w];
 		for (int c=0;c<w;c++){
 			int ov = row[c];
 			int sum = sums[c]+rowp[c];
@@ -347,7 +331,7 @@ int BlockFilterImgMap(ImgMap_t * src, ImgMap_t * dst, int fw, int fh, int * pmax
 		}
 	}
 	// Clear out unused rows.
-	memset(&dst->values[(h-fh)*w],0,sizeof(dst->values[0])*w*fh);
+	memset(&dst_tmp->values[(h-fh)*w],0,sizeof(dst_tmp->values[0])*w*fh);
 	
 	
 	// Return location of peak

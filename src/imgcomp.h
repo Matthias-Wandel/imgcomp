@@ -84,7 +84,7 @@ double AverageBright(MemImage_t * pic, Region_t Region, ImgMap_t* WeightMap);
 ImgMap_t * MakeImgMap(int w,int h);
 void ShowImgMap(ImgMap_t * map, int divisor);
 void BloomImgMap(ImgMap_t * src, ImgMap_t * dst);
-int BlockFilterImgMap(ImgMap_t * src, ImgMap_t * dst, int fw, int fh, int * pmaxc, int * pmaxr);
+int BlockFilterImgMap(const ImgMap_t * src, int fw, int fh, int * pmaxc, int * pmaxr);
 
 // compare.c function
 TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, int UpdateFatigue, int SkipFatigue, char * DebugImgName, TriggerInfo_t * no_fatigue_motion);

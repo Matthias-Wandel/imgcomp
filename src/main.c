@@ -1,7 +1,7 @@
 //-----------------------------------------------------------------------------------
 // Tool for monitor continuously captured images for changes
 // and saving changed images, as well as an image every N seconds for timelapses.
-// Matthias Wandel 2015-2020
+// Matthias Wandel 2015-2022
 //
 // Imgcomp is licensed under GPL v2 (see README.txt)
 //-----------------------------------------------------------------------------------
@@ -76,7 +76,10 @@ static int ProcessImage(LastPic_t * New, int DeleteProcessed)
     TriggerInfo_t Trig_nf;
     Trig_nf.DiffLevel = Trig.DiffLevel = 0;
     TriggerInfo_t* Trig_nf_p = NULL;
-    if (UdpDest[0] || lighton_run[0]) Trig_nf_p = &Trig_nf;
+    if (UdpDest[0] || lighton_run[0]){
+        // Also need unfatigued motion detection for triggering stuff.
+        Trig_nf_p = &Trig_nf;
+    }
 
 
     if (LastPics[1].Image != NULL){
@@ -189,7 +192,7 @@ static int ProcessImage(LastPic_t * New, int DeleteProcessed)
         unlink(LastPics[2].Name);
     }
     if (Trig_nf.DiffLevel >= Sensitivity || Trig.DiffLevel >= Sensitivity){
-        // Return un-fatigued motion (if we have it) -- used for turning on lights.
+        // Return un-fatigued motion detection (if we have it) -- used for turning on lights.
         return 1;
     }
     return 0;

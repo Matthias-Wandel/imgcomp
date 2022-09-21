@@ -158,20 +158,8 @@ int InitUDP(char * HostName)
         }
 
         if (bind(sockUDP,(struct sockaddr*)&local,sizeof(local) ) == SOCKET_ERROR) {
-            #ifdef _WIN32
-                int err;
-                err = WSAGetLastError();
-                if (err != WSAEADDRINUSE){
-                    perror("bind() failed with error");
-                    WSACleanup();
-                    exit(-1);
-                }else{
-                    printf("Listen port already in use\n");
-                }
-            #else
-                perror("bind failed");
-                exit(-1);
-            #endif
+            perror("UDP socket open failed");
+            exit(-1);
         }
     }
 
