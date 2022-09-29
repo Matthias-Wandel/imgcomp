@@ -108,7 +108,7 @@ int InitUDP(char * HostName)
 
     //-------------------------------------------------------------------
     // Resolve the remote address
-    printf("Init UDP to %s",HostName);
+    printf("Init UDP to %s\n",HostName);
 
     memset(&dest,0,sizeof(struct sockaddr_in));
 
@@ -142,14 +142,15 @@ int InitUDP(char * HostName)
     dest.sin_port = htons(PortNum);
 
     //-------------------------------------------------------------------
-    // Open socket for reception of regular UDP packets.
+    // Open socket (though we don't need to receive any packets, just send)
     {
         struct sockaddr_in local;
 
         local.sin_family = AF_INET;
         local.sin_addr.s_addr = INADDR_ANY;
 
-        local.sin_port = htons(PortNum+2);
+        // Use a different port so pan program can still use this port.
+        local.sin_port = htons(PortNum+1); 
         sockUDP = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 
         if (sockUDP == INVALID_SOCKET){

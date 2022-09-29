@@ -135,7 +135,9 @@ Open_Socket()
 
 MainView = 0
 BinDegs = [-75,-50,-25,0,25,50,75,105,135,160]
-BinAimed = 3
+
+BinAimed = 8
+MotionBins[8] = 350
 
 while 1:
     ready = select.select([rxSocket], [], [], 4)
@@ -158,15 +160,14 @@ while 1:
             if BinAdd >= 0 and BinAdd < len(MotionBins):
                 MotionBins[BinAdd] += 100
 
-    #else:
-        #print("time...")#nothing.  t=",time.perf_counter())
 
     for x in range(0, len(MotionBins)):
         # decay the motion bins.
         MotionBins[x] = int(MotionBins[x] * 0.8) # Store integer, easier to read
+
     MainView = int(MainView * 0.85)
 
-    print("   ",MotionBins," M:",MainView)
+    print(" "," ".join(map(str,MotionBins))," M:",MainView)
 
     max = 0
     maxp = -1

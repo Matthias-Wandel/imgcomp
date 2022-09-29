@@ -173,7 +173,7 @@ static int ProcessImage(LastPic_t * New, int DeleteProcessed)
 
         if (UdpDest[0] && Trig_nf.DiffLevel >= Sensitivity){
             // Use un-fatigued diff level for reporting motion via UDP.
-            GeometryConvert(&Trig);
+            GeometryConvert(&Trig_nf);
 
             printf("Send UDP motion %d,%d\n", Trig_nf.x, Trig_nf.y);
 
