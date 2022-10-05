@@ -70,7 +70,7 @@ def move_to_deg(deg, Bin=-1):
     open("/ramdisk/angle", 'a').close() # Tell imgcomp that angle was adjusted
     move_stepper(newstep-steppos)
     steppos = newstep
-    with open("/ramdisk/panned", 'a') as f:
+    with open("/ramdisk/angle", 'a') as f:
         print("Pan[%d]=%d"%(Bin,deg)," Bins=",MotionBins,file=f)
         f.close() # In case panning took a long time, tell imgcomp again.
 
