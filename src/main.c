@@ -228,9 +228,7 @@ static int DoDirectoryFunc(char * Directory, int DeleteProcessed)
         if (ThisName[0] == 0) continue; // We already did this one.
 
         if (strcmp(ThisName, "angle") == 0){
-			// For my hack of panning the camera with a stepper motor.
-            printf("Panned, ignore next image\n");
-            unlink (CatPath(Directory, "angle"));
+            // For my hack of panning the camera with a stepper motor.
             AngleAdjusted = 1;
         }
 
@@ -268,11 +266,21 @@ static int DoDirectoryFunc(char * Directory, int DeleteProcessed)
             continue;
         }
 
-        if (AngleAdjusted && DeleteProcessed){
-            printf("Discard latest image (panning)\n");
-            unlink(NewPic.Name);
-            FileNames[a].FileName[0] = 0;
-            AngleAdjusted -= 1;
+        if (AngleAdjusted){
+            char PanMessage[200];
+            FILE * PanFile;
+            char * FileName = CatPath(Directory, "angle");
+            PanFile = fopen(FileName,"r");
+            PanMessage[fread(PanMessage, 1, 199, PanFile)] = 0;
+            fprintf(Log,"Pan: %s",PanMessage);
+            fclose(PanFile);
+            unlink (FileName);
+            if (DeleteProcessed){
+                unlink(NewPic.Name); //Not using this image, cause it's panned.
+                FileNames[a].FileName[0] = 0;
+                AngleAdjusted = 0;
+            }
+            // Should also reset the motion fatigue map if it's in use, cause everything has now moved.
             continue;
         }
 
