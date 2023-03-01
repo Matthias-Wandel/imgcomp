@@ -66,7 +66,7 @@ static Dir_t * CollectDir(char * HtmlPath, int ImagesOnly)
         Siblings.NumEntries = Siblings.NumAllocated = 0;
         Siblings.Entries = NULL;
 
-        for (a=0;HtmlPath[a] && a < 99;a++){
+        for (a=1;HtmlPath[a] && a < 99;a++){
             if (HtmlPath[a-1] == '/' && HtmlPath[a]) LastSlash = a;
         }
         memcpy(Dir->Parent, HtmlPath, LastSlash);
