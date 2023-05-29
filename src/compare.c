@@ -134,11 +134,11 @@ TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2,
             }
             BrightnessRatio = maxm/minm;
 
-            if (maxm > 4.0){
-                // Don't allow multiplier to get bigger than 4.  Otherwise, for dark images
+            if (maxm > 2.5){
+                // Don't allow multiplier to get bigger than 2.5.  Otherwise, for dark images
                 // we just end up multiplying pixel noise!
-                m1 = m1 * 4 / maxm;
-                m2 = m2 * 4 / maxm;
+                m1 = m1 * 2.5 / maxm;
+                m2 = m2 * 2.5 / maxm;
             }else if (maxm < 1.0){
                 // And there's no point in scaling down both images either.
                 m1 = m1 * 1 / maxm;
