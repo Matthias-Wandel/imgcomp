@@ -1,7 +1,11 @@
 //----------------------------------------------------------------------------------------
-// Code to launch or relaunch raspistill as a separately program.
-// monitors that raspistill is still producing images, restarts it if it stops.
-// Matthias Wandel 2015
+// Code to launch or relaunch image aquire command, which can be:
+//    raspistill        For older raspierry pi OS, or if you prefer to use legacy camera
+//    libcamera-still   For Raspierry pi os buster (11) or newer
+//    libcamera-vid     For Raspierry pi os buster (11) or newer and frame rates higher than 1.
+//
+// monitors that raspistill or libcamera is still producing images, restarts it if it stops.
+// Matthias Wandel 2023
 //
 // Imgcomp is licensed under GPL v2 (see README.txt)
 //----------------------------------------------------------------------------------------
@@ -23,8 +27,8 @@ static int raspistill_pid = 0;
 
 static char OutNameSeq = 'a';
 
-int relaunch_timeout = 6;
-int give_up_timeout = 18;
+int relaunch_timeout = 10;
+int give_up_timeout = 20;
 
 int kill(pid_t pid, int sig);
 //-----------------------------------------------------------------------------------
