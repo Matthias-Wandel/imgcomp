@@ -61,12 +61,12 @@ static void PrintNavLinks(Dir_t * Dir, int IsRoot)
     }
     
     if (strstr(Dir->HtmlPath, "saved") == NULL){
-        char SavedDir[50];
+        char SavedDir[100];
         struct stat sb;
         if (IsRoot){
             strcpy(SavedDir, "pix/saved");
         }else{
-            sprintf(SavedDir, "pix/saved/%.4s",Dir->HtmlPath);
+            snprintf(SavedDir, 99, "pix/saved/%.4s",Dir->HtmlPath);
         }
 
         if (stat(SavedDir, &sb) == 0 && S_ISDIR(sb.st_mode)){
@@ -363,7 +363,8 @@ void MakeHtmlOutput(Dir_t * Dir)
         char * Name = Images.Entries[a].Name;
         if (!NameIsImage(Name)) continue;
         char HtmlPath[500];
-        sprintf(HtmlPath, "pix/%s/%s", Dir->HtmlPath, Name);
+		#pragma GCC diagnostic ignored "-Wformat-truncation"
+        snprintf(HtmlPath, 499, "pix/%s/%s", Dir->HtmlPath, Name);
         float AspectRatio = ReadExifHeader(HtmlPath, NULL, NULL);
         ThumbnailHeight = (int)(320/AspectRatio);
         break;
