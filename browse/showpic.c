@@ -108,7 +108,7 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
     //printf("</center>dbg:[<span id='dbg'>xxx</span>]\n");
     // check how many characters all the filenames have in common (typically 7)
     int npic = 0;
-    char * Prefix = NULL;
+    char * Prefix = "";
     int prefixlen = 0;
 
     for (int a=0;a<(int)Images.NumEntries;a++){
