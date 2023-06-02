@@ -233,7 +233,8 @@ void DoSaveImage(char * QueryString, char * HtmlPath)
     for (a=0,wi=0;HtmlPath[a];a++){
         if (HtmlPath[a] == '/'){
             wi = 0;
-        }else if (HtmlPath[a] == ' ' || HtmlPath[a] == '.' || HtmlPath[a] == '\0' || wi >= 19){
+        }else if (HtmlPath[a] == ' ' || HtmlPath[a] == 'a' || HtmlPath[a] == 'b' 
+		          || HtmlPath[a] == '.' || HtmlPath[a] == '\0' || wi >= 19){
             TempString[wi++] = '\0';
             break;
         }else{
