@@ -1,17 +1,19 @@
 # Imgcomp test configruation file
 # Please see docs/config.html for more details on cofiguring Imgcomp
 
-# The command to start aquiring
-# Tell rapistill to aquire a 1600x1200 image every second
-aquire_cmd = raspistill -q 10 -ex antishake -n -th none -p 1000,0,600,450 -w 1600 -h 1200 -o /ramdisk/out%05d.jpg -t 0 -tl 1000
-
 # For Raspberry pi OS 11 (bullseye) or later, you can use legacy camera support, or libcamera
 # For frame rate of 1 fps or slower, use libcamera-still
-#     aquire_cmd = libcamera-still -n --width 1600 --height 1200 -t 0 --timelapse 1000 --quality 75 -o /ramdisk/out%05d.jpg
-#
-# libcamera-still doesn't support burst mode for faster frame rates.  But fast frame rates can be achieved using libcamera-vid.
+aquire_cmd = libcamera-still -v 0 -n --width 1600 --height 1200 -t 0 --timelapse 800 --quality 75 -o /ramdisk/out%05d.jpg
+
+# Higher frame rates can be achieved with libcamera-vidd, as libcamera-still doesn't support burst mode for faster frame rates.  
 # The downside is that the jpeg files are just images, no exif header with metadata in it.
-#     aquire_cmd = libcamera-vid -t 0 -n --framerate 2 --denoise cdn_hq --segment 1 --codec mjpeg --width 1600 --height 1200 -quality 75 -o /ramdisk/out%05d.jpg
+# Note that when loading these images, libjpeg prints "Premature end of JPEG file", but the images are ok.
+# the copyjpgcmd line is used to add an exif header for saved images with just the date in it.
+#aquire_cmd = libcamera-vid -t 0 -n --framerate 2 --denoise cdn_hq --segment 1 --codec mjpeg --width 1600 --height 1200 --quality 75 -o /ramdisk/out%05d.jpg
+#copyjpgcmd = jhead -mkexif "&i"; cp "&i" "&o"
+
+# Aquire command for legacy camera program raspistill
+# aquire_cmd = raspistill -q 10 -ex antishake -n -th none -p 1000,0,600,450 -w 1600 -h 1200 -o /ramdisk/out%05d.jpg -t 0 -tl 1000
 
 
 # Directory to get images from as they are aquired
