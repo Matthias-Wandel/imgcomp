@@ -217,10 +217,6 @@ If this is given as part of the command line parameters, it overrides the defaul
 for the default options.  This is for running multiple imgcomp instances in the same user account
 for multiple cameras.
 
-<div class="p">wait_close_write</div>
-If this is set to nonzero, the inotify watch for new pictures to appear uses IN_CLOSE_WRITE
-rather than IN_CREATE.  This works properly with ffmpeg as as source of pictures.
-
 <div class="p">relaunch_timeout</div>
 If this is set, it replaces the default 5 seconds until imgcomp gives up on the capture
 program, kills it and restarts it.  RTSP cameras with ffmpeg benefit from a longer timeout.

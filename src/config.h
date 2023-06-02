@@ -26,7 +26,6 @@ extern int TimelapseInterval;
 extern char raspistill_cmd[200];
 extern char blink_cmd[200];
 extern char UdpDest[30];
-extern int wait_close_write;
 extern int relaunch_timeout;
 extern int give_up_timeout;
 
