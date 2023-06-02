@@ -2,7 +2,7 @@ Imgcomp makes motion triggered timelapses using a Raspberry Pi and camera module
 
 It serves a similar purpose as the software "motioneye", but operates on still frames
 instead of video.  This makes for much better image detail, but frame rate is at
-best 4 fps with a v1 camera module (v2 and hq modules are slower)
+best 4 fps with a v1 camera module.  v2 and hq modules are slower.
 
 Images are initially captured to ramdisk to minimize flash wear, then analyzed and
 if significant, saved to flash.
@@ -44,7 +44,8 @@ IMGCOMP PROGRAM
 
 To use imgcomp, you must compile it.  
 There are sample configuration files in imgcomp/conf-examples
-Imgcomp uses raspistill to dump files into /ramdisk (which is a ram disk)
+Imgcomp uses libcamera-still, libcamera-vid or raspistill to dump jpeg
+files into /ramdisk (which is a ram disk)
 Then reads and compares these files, copies them to ~/saved/.... if they
 contain relevant changes.
 
