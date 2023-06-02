@@ -1,5 +1,5 @@
 //----------------------------------------------------------------------------------------
-// Code to launch or relaunch image aquire command, which can be:
+// Code to launch or re-launch image aquire command, which can be:
 //    raspistill        For older raspierry pi OS, or if you prefer to use legacy camera
 //    libcamera-still   For Raspierry pi os buster (11) or newer
 //    libcamera-vid     For Raspierry pi os buster (11) or newer and frame rates higher than 1.
@@ -23,7 +23,7 @@
 #include "config.h"
 #include "jhead.h"
 
-static int raspistill_pid = 0;
+static int camera_prog_pid = 0;
 
 static char OutNameSeq = 'a';
 
@@ -84,15 +84,15 @@ static pid_t do_launch_program(char * cmd_string)
 }
 
 //-----------------------------------------------------------------------------------
-// Launch or re-launch raspistill.
+// Launch or re-launch raspistill or libcamera-still or libcamera-vid
 //-----------------------------------------------------------------------------------
-int relaunch_raspistill(void)
+int relaunch_camera_prog(void)
 {
-    // Kill raspistill if it's already running.
-    if (raspistill_pid){
-        kill(raspistill_pid,SIGKILL);
-        // If we launched raspistill, need to call wait() so that we dont't
-        // accumulate an army of child zombie processes
+    // Kill raspistill or libcamera if it's already running.
+    if (camera_prog_pid){
+        kill(camera_prog_pid,SIGKILL);
+        // If we launched the camera program (raspistill or libcamera), 
+		// need to call wait() so that we dont' accumulate an army of child zombie processes
         int exit_code = 123;
         int a;
         time_t then, now = time(NULL);
@@ -101,17 +101,25 @@ int relaunch_raspistill(void)
         then = time(NULL);
         fprintf(Log," At %02d:%02d (%d s)\n",(int)(then%3600)/60, (int)(then%60), (int)(then-now));
     } else {
-        // Original way of killing raspistill, still used if it was launched externally
-        // and we don't have the pid.  Cannot be used with capture programs other than raspistill
-        (void) system("killall -9 raspistill");
+        // kill libcamera or raspistill if it was already launched when we started.
+		// In that case, we don't have a PID for it.
+		char KillCmd[100];
+		for (int a=0;a<80;a++){
+			// Search for first space to get capture command name.
+			if (camera_prog_cmd[a] == ' '){ 
+				snprintf(KillCmd, 99, "killall -9 %.*s",a,camera_prog_cmd);
+				(void)system(KillCmd);
+				break;
+			}
+		}
     }
 
-    fprintf(Log,"Launching raspistill program\n");
+    fprintf(Log,"Launching camera program\n");
 
-    int DashOOption = (strstr(raspistill_cmd, " -o ") != NULL);
+    int DashOOption = (strstr(camera_prog_cmd, " -o ") != NULL);
 
     static char cmd_appended[300];
-    strncpy(cmd_appended, raspistill_cmd, 200);
+    strncpy(cmd_appended, camera_prog_cmd, 200);
 
     if (strncmp(cmd_appended, "raspistill", 10) == 0) { // check if the aquire cmd is actually a raspistill cmd
         if (ExposureManagementOn) { // Exposure managemnt by imgcomp
@@ -135,7 +143,7 @@ int relaunch_raspistill(void)
         fprintf(stderr, "aquire_cmd was not raspistill, not setting output or exposure settings\n");
     }
 
-    raspistill_pid = do_launch_program(cmd_appended);
+    camera_prog_pid = do_launch_program(cmd_appended);
     return 0;
 }
 
@@ -224,7 +232,7 @@ void DoMotionRun(int SawMotion)
 }
 
 //-----------------------------------------------------------------------------------
-// Manage raspistill - may need restarting if it dies or brightness changed too much.
+// Manage camera program (libcamera or raspistill) - may need restarting if it dies or brightness changed too much.
 //-----------------------------------------------------------------------------------
 static int MsSinceImage = 0;
 static int MsSinceLaunch = 0;
@@ -232,7 +240,7 @@ static int InitialBrSum;
 static int InitialNumBr;
 static int NumTotalImages;
 
-int manage_raspistill(int NewImages)
+int manage_camera_prog(int NewImages)
 {
     int timeout;
     time_t now = time(NULL);
@@ -249,9 +257,9 @@ int manage_raspistill(int NewImages)
         }
     }
 
-    if (raspistill_pid == 0){
-        // Raspistill has not been launched.
-        fprintf(Log,"Initial launch of raspistill\n");
+    if (camera_prog_pid == 0){
+        // Camera program has not been launched.
+        fprintf(Log,"Initial launch of camera program\n");
         goto force_restart;
     }
 
@@ -262,7 +270,7 @@ int manage_raspistill(int NewImages)
         if (MsSinceLaunch > timeout){
             if (give_up_timeout && MsSinceImage > give_up_timeout * 1000){
                 if (NumTotalImages >= 5){
-                    fprintf(Log,"Relaunch raspistill didn't fix.  Reboot!.  (%d sec since image)\n",MsSinceImage/1000);
+                    fprintf(Log,"Relaunch camera program didn't fix.  Reboot!.  (%d sec since image)\n",MsSinceImage/1000);
                     // force rotation of log.
                     LogFileMaintain(1);
                     MsSinceImage = 0; // dummy for now.
@@ -271,13 +279,13 @@ int manage_raspistill(int NewImages)
                     exit(0);
                 }else{
                     // Less than 5 images.  Probably left over from last run.
-                    fprintf(Log,"Raspistill never worked! Give up. %d sec\n",MsSinceImage/1000);
+                    fprintf(Log,"Camera program never worked! Give up. %d sec\n",MsSinceImage/1000);
                     LogFileMaintain(1);
                     // A reboot wouldn't fix this!
                     exit(0);
                 }
             }else{
-                fprintf(Log,"No images for %d sec.  Relaunch raspistill/vid\n",MsSinceImage/1000);
+                fprintf(Log,"No images for %d sec.  Relaunch camera program\n",MsSinceImage/1000);
                 goto force_restart;
             }
         }
@@ -285,7 +293,7 @@ int manage_raspistill(int NewImages)
     return 0;
 
 force_restart:
-    relaunch_raspistill();
+    relaunch_camera_prog();
     MsSinceLaunch = 0;
     InitialBrSum = InitialNumBr = 0;
     SinceLightChange = 0;

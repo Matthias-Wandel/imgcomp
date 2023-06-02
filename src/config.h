@@ -23,7 +23,7 @@ extern char MoveLogNames[200];
 extern int Sensitivity;
 extern int Raspistill_restarted;
 extern int TimelapseInterval;
-extern char raspistill_cmd[200];
+extern char camera_prog_cmd[200];
 extern char blink_cmd[200];
 extern char UdpDest[30];
 extern int relaunch_timeout;
