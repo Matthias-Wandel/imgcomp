@@ -25,7 +25,6 @@ int ScaleDenom;
 int SpuriousReject = 0;
 int PostMotionKeep = 0;
 int PreMotionKeep = 0;
-int wait_close_write = 0;
 
 int ExposureManagementOn = 0;
 int MotionFatigueTc = 30;
@@ -121,7 +120,6 @@ void usage (void)// complain about bad command line
      " -movelognames <schme> Rotate log files, scheme works just like\n"
      "                       it does for savenames\n"
      " -sendudp <ipaddr>     Send UDP packets for motion detection\n"
-     " -wait_close_write 1   Wait for IN_CLOSE_WRITE rather than IN_CREATE\n"
      " -relaunch_timeout     Timeout (in seconds) before giving up on capture\n"
      "                       command (raspistill) and re-launching\n"
      " -give_up_timeout      Timeout (in seconds) before giving up completely and\n"
@@ -339,8 +337,6 @@ static int parse_parameter (const char * tag, const char * value)
         strncpy(VidDecomposeCmd, value, sizeof(VidDecomposeCmd)-1);
     } else if (keymatch(tag, "sendudp", 7)) {
         strncpy(UdpDest,value, sizeof(UdpDest)-1);
-    } else if (keymatch(tag, "wait_close_write", 16)) {
-        if (sscanf(value, "%d", &wait_close_write) != 1) return -1;
     }else{
         fprintf(stderr,"argument '%s' not understood\n",tag);
         return -1;     // bogus switch
