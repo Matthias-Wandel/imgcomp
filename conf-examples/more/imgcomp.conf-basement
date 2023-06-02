@@ -1,12 +1,16 @@
-# Imgcomp configruation file
+# Imgcomp configuration as used on my basement camera.
 # Please see docs/config.html for more details on cofiguring Imgcomp
 
 # The command to start aquiring
-aquire_cmd = raspistill -q 10 -n -ex antishake -th none -hf -vf -w 1600 -h 1000 -o /ramdisk/out%05d.jpg -t 0 -tl 1000";
+aquire_cmd = raspistill -fli 60hz -awb incandescent -q 10 -n -th none -n -w 1920 -h 1080 -bm -t 0 -tl 1000";
 
 # Directory to get images from as they are aquired
 # (aquire_cmd must also indicate to put images there)
 followdir = /ramdisk
+
+# Make files 5% smaller by converting to progressive jpegs
+copyjpgcmd = jpegtran -progressive -copy all -outfile "&o" "&i"
+
 
 # Region of interst.  Format left-right,top-bottom 
 # Omitted left-right means full width.
@@ -15,27 +19,42 @@ followdir = /ramdisk
 # Specify a map of which parts of the image to ignore.
 # Solid blue ares are ignored, solid red is twice as sensitive.
 # any other colour in the image is treated as normal detection area.
-#diffmap = "diffmap.jpg"
+#diffmap = diffmap.jpg
+
+# Send reports to ceiling camera
+sendudp = 192.168.0.22
 
 # Turn on spurious reject
 spurious = 1
 
-# Override motion fatigue every 10 frames.
-fatigue_skip_count = 10
-
 # Where to save interesting images to
 savedir = images
 
+fatigue_skip = 8
+
+exmanage = 1
+iso = 320-320
+exposure = 0.0167-0.066
+
+# Imcomp manage brightness levels.
+exmanage = 1
+
+
+lighton_run = /home/pi/iostuff/tplink/tplink.py 111 on
+lightoff_run = /home/pi/iostuff/tplink/tplink.py 111 off
+lightoffdelay = 20-300
+
 # Where to save images that have changes.  One directory per day
 # with subdirectories for each hour.  This is also the default naming
-# scheme, and is required directory structure for the HTML image browser
+# scheme.
 savenames = %y%m%d/%H/%m%d-%H%M%S
 
 # How many seconds between images kept regardless of motion for timelapses.
-timelapse = 1200
+timelapse = 0
 
 # Sensitivity.  50 would be quite senstive.  400 is relatively insensitive.
-sensitivity = 200
+sensitivity = 400
 
-logtofile = /ramdisk/log.txt
+# Save logs.  Comment out to log to console.
+Logtofile = /ramdisk/log.txt
 movelognames = images/%y%m%d/%H/Log.html

@@ -1,0 +1,53 @@
+# Imgcomp test configruation file
+# Please see docs/config.html for more details on cofiguring Imgcomp
+
+# The command to start aquiring
+aquire_cmd = raspistill -q 10 -n -th none -hf -vf -w 1920 -h 1200 -t 0 -tl 1000
+
+# Directory to get images from as they are aquired
+# (aquire_cmd must also indicate to put images there)
+followdir = /ramdisk
+
+# Make files 5% smaller by converting to progressive jpegs
+#copyjpgcmd = jpegtran -progressive -copy all -outfile "&o" "&i"
+copyjpgcmd = ./process_file "&i" "&o"
+
+#======================================================================
+#  copyjpgcmd consists of the following shell script, so multiple
+#  copies of jpegtran can run on different cores in the background
+#  and take more than one second each to process afile.
+#
+#  jpegtran -progressive -copy all -outfile "$2" "$1" &
+#  # Delay a little so jpegtran can open the file before we
+#  # return so jpegtran opens file before imgcomp unlinks it.
+#  sleep 0.2
+#======================================================================
+
+# Specify a map of which parts of the image to ignore.
+# Solid blue ares are ignored, solid red is twice as sensitive.
+# any other colour in the image is treated as normal detection area.
+diffmap = diffmap.jpg
+
+# Turn on spurious reject
+spurious = 1
+
+# Where to save interesting images to
+savedir = images
+
+exmanage = 0
+pixsat = 230
+isooverextime = 8000
+iso = 50-1600
+
+# Where to save images that have changes.  One directory per day
+# with subdirectories for each hour.  This is also the default naming
+# scheme, and is required directory structure for the HTML image browser
+savenames = %y%m%d/%H/%m%d-%H%M%S
+
+# How many seconds between images kept regardless of motion for timelapses.
+timelapse = 1200
+
+sensitivity = 450
+
+logtofile = /ramdisk/log.txt
+movelognames = images/%y%m%d/%H/Log.html
