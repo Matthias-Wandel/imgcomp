@@ -12,6 +12,11 @@
 # 
 aquire_cmd = ffmpeg -rtsp_transport tcp -i rtsp://192.168.1.15:554/user=admin&password=&channel=1&stream=0.sdp -q:v 1 -r 2 /tmp/in2/%06d.jpg
 #
+# raspistill creates the files first with a ~ suffix, then renames.  So waiting for an IN_CREATE event is appopriate.  But
+# ffmpeg creates the files empty, then writes to them.  Without switching to IN_CLOSE_WRITE we get lots of empty or partial files.
+#
+wait_close_write = 1
+#
 # imgcomp will kill and restart the acquisition program if no pictures come.  With rapsistill, the default 6 second timeout is fine,
 # but RTSP cameras are physically remote to where the imgcomp program runs, and sometimes pause for reasons unknown to the point where
 # the 6 second timeout fires (and then recover).  So increase the timeout.

@@ -354,7 +354,7 @@ int DoDirectory(char * Directory)
     // IN_MOVED_TO triggers when the file is renamed to the final file name.
     // But when using ffmpeg for the RTSP camera hack, ffmpeg writes the files under
     // the original name, so IN_CLOSE_WRITE is needed for that.
-    wd = inotify_add_watch( fd, Directory, IN_CLOSE_WRITE | IN_MOVED_TO);
+    wd = inotify_add_watch( fd, Directory, wait_close_write ? IN_CLOSE_WRITE : IN_MOVED_TO);
     if (wd < 0){
         fprintf(Log, "add watch failed\n");
         return 0;

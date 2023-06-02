@@ -24,10 +24,10 @@ fi
 
 
 # configure apache2
-IFS='/' read -ra dir_array <<< "$(pwd)"
-web_root=/${dir_array[1]}/${dir_array[2]}
+
+web_root=$(dirname "$(dirname "$(pwd)")")/www
 echo "copying modified apache2 configuration file, using '$web_root' as web root"
-sed "s|/home/pi|$web_root|g" "000-default.conf" > /etc/apache2/sites-available/000-default.conf
+sed "s|/home/pi/www|$web_root|g" "000-default.conf" > /etc/apache2/sites-available/000-default.conf
 
 echo "enabling CGI"
 ln -s -f ../mods-available/cgi.load /etc/apache2/mods-enabled/cgi.load
