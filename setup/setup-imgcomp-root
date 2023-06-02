@@ -24,8 +24,12 @@ fi
 
 
 # configure apache2
-echo "copying apache2 configuration file, enabling CGI"
-cp 000-default.conf /etc/apache2/sites-available
+
+web_root=$(dirname "$(dirname "$(pwd)")")/www
+echo "copying modified apache2 configuration file, using '$web_root' as web root"
+sed "s|/home/pi/www|$web_root|g" "000-default.conf" > /etc/apache2/sites-available/000-default.conf
+
+echo "enabling CGI"
 ln -s -f ../mods-available/cgi.load /etc/apache2/mods-enabled/cgi.load
 
 # Restart apache2 to take new configuration

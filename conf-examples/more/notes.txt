@@ -1,0 +1,2 @@
+These are imcomp.conf files for various cameras I a have in use,
+in case you are curious about different configurations that I use

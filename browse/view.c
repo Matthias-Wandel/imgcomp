@@ -236,6 +236,12 @@ void DoSaveImage(char * QueryString, char * HtmlPath)
         }else if (HtmlPath[a] == ' ' || HtmlPath[a] == '.' || HtmlPath[a] == '\0' || wi >= 19){
             TempString[wi++] = '\0';
             break;
+        }else if (HtmlPath[a] >='a' && HtmlPath[a] <= 'e' ){
+            // If name has a letter instead of a space, that means more than one image aquired
+            // with the same second.  Keep that letter in case more than one image for that second is
+            // selected for saving.
+            TempString[wi++] = HtmlPath[a];
+            TempString[wi++] = '\0';
         }else{
             TempString[wi++] = HtmlPath[a];
         }
@@ -332,7 +338,7 @@ int main(int argc, char ** argv)
 
     if (memcmp(QueryString, "actagram", 8) == 0){
         // Disable mod-gzip for actagram view because it's slow
-		// to compute.  So people can see the page load slowly.
+        // to compute.  So people can see the page load slowly.
         printf("Content-encoding: none\n");
     }
     printf("Content-Type: text/html\n\n"); // html header

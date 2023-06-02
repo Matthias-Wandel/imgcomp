@@ -1,0 +1,61 @@
+# Imgcomp test configruation file
+# Please see docs/config.html for more details on cofiguring Imgcomp
+
+# The command to start aquiring
+
+# Tell rapistill to aquire a 1600x1200 image every second
+aquire_cmd = raspistill -fli 60hz -awb tungsten -q 10 -vf -hf -n -th none -p 950,0,700,450 -w 1920 -h 1440 -t 0 -tl 1000
+
+# Directory to get images from as they are aquired
+# (raspistill aquire_cmd must also indicate to put images there)
+followdir = /ramdisk
+
+# Make files 5% smaller by converting to progressive jpegs
+copyjpgcmd = jpegtran -progressive -copy all -outfile "&o" "&i"
+
+# Region of interst.  Format left-right,top-bottom 
+# Omitted left-right means full width.
+#region = ,390-700
+
+# Specify a map of which parts of the image to ignore.
+# Solid blue ares are ignored, solid red is twice as sensitive.
+# any other colour in the image is treated as normal detection area.
+#diffmap = "diffmap.jpg"
+
+# Test sending UDP for future stepper thingy
+sendudp = 192.168.0.22
+
+# Turn on spurious reject (change that reverts to previous after just 1 frame)
+spurious = 1
+#exmanage = 1
+#iso = 50-300
+#exposure = 0.017-0.250
+#isooverextime = 10000
+
+
+# Mark active so my dust sensor updates more regularly if I'm in the shop
+lighton_run = touch /ramdisk/active
+lightoff_run = rm /ramdisk/active
+lightoffdelay = 900-1800
+
+
+fatigue_skip = 8
+
+# Where to save interesting images to
+savedir = images
+
+# Where to save images that have changes.  One directory per day
+# with subdirectories for each hour.  This is also the default naming
+# scheme.
+savenames = %y%m%d/%H/%m%d-%H%M%S
+
+# How many seconds between images kept regardless of motion.
+timelapse = 0
+
+# Sensitivity.  50 would be quite senstive.  400 is relatively insensitive.
+sensitivity = 400
+
+# Log to file instead of console, and where to copy logs to.
+# Logging needs to be on and use /ramdisk/log.txt for realtime view mode to work.
+logtofile = /ramdisk/log.txt
+movelognames = images/%y%m%d/%H/Log.html

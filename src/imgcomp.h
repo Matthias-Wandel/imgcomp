@@ -94,11 +94,11 @@ TriggerInfo_t ComparePix(MemImage_t * pic1, MemImage_t * pic2, int UpdateFatigue
 MemImage_t * LoadJPEG(char* FileName, int scale_denom, int discard_colors, int ParseExif);
 void WritePpmFile(char * FileName, MemImage_t *MemImage);
 
-// start_raspistill functions
-int relaunch_raspistill(void);
-int manage_raspistill(int HaveNewImages);
+// start_camera_prog functions
+int relaunch_camera_prog(void);
+int manage_camera_prog(int HaveNewImages);
 void DoMotionRun(int SawMotion);
-extern char raspistill_cmd[200];
+extern char camera_prog_cmd[200];
 extern char lighton_run[200];
 extern char lightoff_run[200];
 extern int lightoff_min;

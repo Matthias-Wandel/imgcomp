@@ -1,17 +1,25 @@
-# Imgcomp test configruation file
-# Please see docs/config.html for more details on cofiguring Imgcomp
-
 # The command to start aquiring
-# Tell rapistill to aquire a 1280x720 image every 500 miliseconds.
-aquire_cmd = raspistill -q 10 -ev +5 -ex antishake -n -th none -p 480,0,800,480 -w 1920 -h 1440 -o /ramdisk/out%05d.jpg -t 0 -tl 1000";
+aquire_cmd = raspistill -q 10 -n -th none -n -w 2400 -h 1800 -t 0 -tl 0 -tl 1000";
 
 # Directory to get images from as they are aquired
 # (aquire_cmd must also indicate to put images there)
 followdir = /ramdisk
 
-# Region of interst.  Format left-right,top-bottom 
-# Omitted left-right means full width.
-#region = ,390-700
+# Make files 5% smaller by converting to progressive jpegs
+#copyjpgcmd = jpegtran -progressive -copy all -outfile "&o" "&i"
+copyjpgcmd = ./process_file "&i" "&o"
+
+#======================================================================
+#  copyjpgcmd consists of the following shell script, so multiple
+#  copies of jpegtran can run on different cores in the background
+#  and take more than one second each to process afile.
+#
+#  jpegtran -progressive -copy all -outfile "$2" "$1" &
+#  # Delay a little so jpegtran can open the file before we
+#  # return so jpegtran opens file before imgcomp unlinks it.
+#  sleep 0.2
+#======================================================================
+
 
 # Specify a map of which parts of the image to ignore.
 # Solid blue ares are ignored, solid red is twice as sensitive.
@@ -24,7 +32,8 @@ spurious = 1
 # Where to save interesting images to
 savedir = images
 
-brmonitor = 0
+#exmanage = 1
+pixsat = 225
 
 # Where to save images that have changes.  One directory per day
 # with subdirectories for each hour.  This is also the default naming
@@ -34,9 +43,8 @@ savenames = %y%m%d/%H/%m%d-%H%M%S
 # How many seconds between images kept regardless of motion for timelapses.
 timelapse = 1200
 
-# Sensitivity.  50 would be quite senstive.  400 is relatively insensitive.
-sensitivity = 450
-
+sensitivity = 320
+#sensitivity = 450
 
 logtofile = /ramdisk/log.txt
 movelognames = images/%y%m%d/%H/Log.html

@@ -41,7 +41,6 @@ If you see video, you're set.  Now you need to replace the line "aquire_cmd" wit
 following.
 <p>
 aquire_cmd = ffmpeg -rtsp_transport tcp -i rtsp://IP_ADDRESS:554/user=admin&password=&channel=1&stream=0.sdp -q:v 1 -r 2 /tmp/in2/%06d.jpg<br>
-wait_close_write = 1<br>
 relaunch_timeout = 30<br>
 give_up_timeout = 0<br>
 <p>

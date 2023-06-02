@@ -1,25 +1,31 @@
-# Imgcomp test configruation file
+# Imgcomp configruation file
 # Please see docs/config.html for more details on cofiguring Imgcomp
 
 # The command to start aquiring
-aquire_cmd = raspistill -q 10 -ex antishake -ev +4 -n -th none -hf -vf -w 1920 -h 1440 -o /ramdisk/out%05d.jpg -t 0 -tl 1000";
+aquire_cmd = raspistill -q 10 -ev 3 -ex antishake -mm matrix -n -th none -hf -vf -w 1600 -h 1000 -t 0 -tl 1000
 
 # Directory to get images from as they are aquired
 # (aquire_cmd must also indicate to put images there)
 followdir = /ramdisk
 
+# Region of interst.  Format left-right,top-bottom 
+# Omitted left-right means full width.
+#region = ,390-700
+
 # Specify a map of which parts of the image to ignore.
 # Solid blue ares are ignored, solid red is twice as sensitive.
 # any other colour in the image is treated as normal detection area.
-#diffmap = diffmap.jpg
+diffmap = diffmap.jpg
 
 # Turn on spurious reject
 spurious = 1
+#exmanage = 1
+
+lighton_run =  /home/pi/iostuff/tplink/tplink.py 104 on
+lightoff_run = /home/pi/iostuff/tplink/tplink.py 104 off
 
 # Where to save interesting images to
 savedir = images
-
-brmonitor = 0
 
 # Where to save images that have changes.  One directory per day
 # with subdirectories for each hour.  This is also the default naming
@@ -27,9 +33,11 @@ brmonitor = 0
 savenames = %y%m%d/%H/%m%d-%H%M%S
 
 # How many seconds between images kept regardless of motion for timelapses.
-timelapse = 1200
+timelapse = 0
 
-sensitivity = 750
+# Sensitivity.  50 would be quite senstive.  400 is relatively insensitive.
+sensitivity = 320
+fatigue_skip = 6
 
 logtofile = /ramdisk/log.txt
 movelognames = images/%y%m%d/%H/Log.html

@@ -25,7 +25,6 @@ int ScaleDenom;
 int SpuriousReject = 0;
 int PostMotionKeep = 0;
 int PreMotionKeep = 0;
-int wait_close_write = 0;
 
 int ExposureManagementOn = 0;
 int MotionFatigueTc = 30;
@@ -44,7 +43,7 @@ FILE * Log;
 int Sensitivity;
 int Raspistill_restarted;
 int TimelapseInterval;
-char raspistill_cmd[200];
+char camera_prog_cmd[200];
 
 char lighton_run[200];
 char lightoff_run[200];
@@ -94,7 +93,7 @@ void usage (void)// complain about bad command line
      " -spurious             Ignore any change that returns to\n"
      "                       previous image in the next frame\n"
      
-     " -aquire_cmd <command> Raspistill command line and options.\n"
+     " -aquire_cmd <command> libcamera or raspistill command line and options.\n"
      "                       -o option will be appended to this\n"
      " -exmanage <1>         When set to 1, imgcomp takes over camera exposure\n"
      "                       settings based on analyzing image and restarts\n"
@@ -121,9 +120,8 @@ void usage (void)// complain about bad command line
      " -movelognames <schme> Rotate log files, scheme works just like\n"
      "                       it does for savenames\n"
      " -sendudp <ipaddr>     Send UDP packets for motion detection\n"
-     " -wait_close_write 1   Wait for IN_CLOSE_WRITE rather than IN_CREATE\n"
      " -relaunch_timeout     Timeout (in seconds) before giving up on capture\n"
-     "                       command (raspistill) and re-launching\n"
+     "                       command (raspistill or libcamera) and re-launching\n"
      " -give_up_timeout      Timeout (in seconds) before giving up completely and\n"
      "                       attempting to reboot (set to zero to disable)\n"
      );
@@ -239,7 +237,7 @@ static int parse_parameter (const char * tag, const char * value)
         if (sscanf(value, "%d", (int *)&TimelapseInterval) != 1) return -1;
     } else if (keymatch(tag, "aquire_cmd", 4)) {
         // Set the command for raspistill command.
-        strncpy(raspistill_cmd, value, sizeof(raspistill_cmd)-1);
+        strncpy(camera_prog_cmd, value, sizeof(camera_prog_cmd)-1);
     } else if (keymatch(tag, "iso", 3)) {
         int n = sscanf(value, "%d-%d", &ex.ISOmin, &ex.ISOmax);
         if (n != 1 && n != 2) return -1;
@@ -339,8 +337,6 @@ static int parse_parameter (const char * tag, const char * value)
         strncpy(VidDecomposeCmd, value, sizeof(VidDecomposeCmd)-1);
     } else if (keymatch(tag, "sendudp", 7)) {
         strncpy(UdpDest,value, sizeof(UdpDest)-1);
-    } else if (keymatch(tag, "wait_close_write", 16)) {
-        if (sscanf(value, "%d", &wait_close_write) != 1) return -1;
     }else{
         fprintf(stderr,"argument '%s' not understood\n",tag);
         return -1;     // bogus switch

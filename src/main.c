@@ -1,7 +1,7 @@
 //-----------------------------------------------------------------------------------
 // Tool for monitor continuously captured images for changes
 // and saving changed images, as well as an image every N seconds for timelapses.
-// Matthias Wandel 2015-2022
+// Matthias Wandel 2015-2023
 //
 // Imgcomp is licensed under GPL v2 (see README.txt)
 //-----------------------------------------------------------------------------------
@@ -317,7 +317,7 @@ static int DoDirectoryFunc(char * Directory, int DeleteProcessed)
             int d = CalcExposureAdjust(NewPic.Image);
             if (d){
                 //fprintf(Log,"Restart raspistill for exposure adjust\n");
-                relaunch_raspistill();
+                relaunch_camera_prog();
             }
         }
 
@@ -354,7 +354,7 @@ int DoDirectory(char * Directory)
     // IN_MOVED_TO triggers when the file is renamed to the final file name.
     // But when using ffmpeg for the RTSP camera hack, ffmpeg writes the files under
     // the original name, so IN_CLOSE_WRITE is needed for that.
-    wd = inotify_add_watch( fd, Directory, wait_close_write ? IN_CLOSE_WRITE : IN_MOVED_TO);
+    wd = inotify_add_watch( fd, Directory, IN_CLOSE_WRITE | IN_MOVED_TO);
     if (wd < 0){
         fprintf(Log, "add watch failed\n");
         return 0;
@@ -364,7 +364,7 @@ int DoDirectory(char * Directory)
         a = DoDirectoryFunc(Directory, FollowDir);
         DoMotionRun(a);
 
-        int b = manage_raspistill(NumProcessed);
+        int b = manage_camera_prog(NumProcessed);
         if (b) Raspistill_restarted = 1;
         if (LogToFile[0] != '\0') LogFileMaintain(0);
 
@@ -498,7 +498,7 @@ int DoDirectoryVideos(char * DirName)
         FreeDir(FileNames, NumEntries); // Free up the whole directory structure.
 
         if (FollowDir){
-            int b = manage_raspistill(VideoActive);
+            int b = manage_camera_prog(VideoActive);
             if (b) Raspistill_restarted = 1;
             if (LogToFile[0] != '\0') LogFileMaintain(0);
             sleep(1);

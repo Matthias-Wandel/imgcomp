@@ -9,26 +9,30 @@ if [ "$EUID" -eq 0 ]
     exit
 fi
 
-if grep -q "start_x\=1" /boot/config.txt; then
-	echo "    camera module is already enabled"
-else	
-	echo "camera is not enabled."
-    echo "Run raspi-config to enable it under 'Interfacing Options'"
-	exit 1
+# If it's older buster, make sure camera support is enabled.
+# With bullseye (version 11) we can use libcamera-still
+# without explicitly enabling camera support
+if grep -q 'VERSION_ID="10"' /etc/os-release; then
+	if grep -q "start_x\=1" /boot/config.txt; then
+		echo "    camera module is already enabled"
+	else
+		echo "camera is not enabled."
+		echo "Run raspi-config to enable it under 'Interfacing Options'"
+		exit 1
+	fi
 fi
-
 
 # Create new web root directory.  These two commands must NOT run as root.
 echo "Make directories for apache2"
-mkdir -p /home/pi/www
-mkdir -p /home/pi/images
-ln -sTf ../images /home/pi/www/pix
+mkdir -p ~/www
+mkdir -p ~/images
+ln -sTf ../images ~/www/pix
 
 # Make sure an imgcomp.conf configuration file exists
 if [ -e ../../imgcomp.conf ] ; then
-	echo "    imcomp.conf file aready in /home/pi"
+	echo "    imcomp.conf file aready in home directory"
 else
-	echo "copy imcomp.conf.example to /home/pi/imgcomp.conf"
+	echo "copy imcomp.conf.example to ~/imgcomp.conf"
 	cp -a ../conf-examples/imgcomp.conf.example ~/imgcomp.conf
 fi
 

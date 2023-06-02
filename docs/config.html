@@ -44,17 +44,23 @@ The file "imgcomp.conf.example" contains an example imgcomp.conf file.
 I recommend you start with that file.
 
 <div class="p">aquire_cmd</div>
-Specifies the raspistill command and command line options to use.
-The "-o" option for where to put the output is appended to this command line.
-Also, the -ss and -ISO options will be appended if the exmanage option is enabled.
+Specifies the command for aquiring images, including comand line optiosn to use with it.
+<p>
+This used to be raspistill with older
+raspberry pi's, but now should be specified as libcamera-still
+<p>
+The "-o" option for where to put the output is appended to this command line if its not already part of it.
+<p>
+Also, with legacy raspistill only, the -ss and -ISO options will be appended if the exmanage option is enabled.
 
 <div class="p">exmanage 1</div>
-Set to 1 for imgcomp to manage exposure (because I found raspistill's auto exposure
-management too limiting).  When enabled, imgcomp analyzes the images to determine if
+Set to 1 for imgcomp to manage exposure because I found raspistill's auto exposure
+management too limiting.  When enabled, imgcomp analyzes the images to determine if
 exposure adjustment is needed, and restarts raspistill with new ISO and shutter
 speed settings when light levels change.  This feature is useful for not underexposing
 images that are predominantly white, such as snow on the ground or white walls.
 It also allows better compromising between grainy images and less motion blur.
+this option does not work when using libcamera
 
 <div class="p">iso &ltmin>-&ltmax></div>
 With -exmanage 1, Limits of ISO settings to use with raspistill.  Must be 25-6400
@@ -216,10 +222,6 @@ directory every hour, so that it's easy to find the log file that goes with the 
 If this is given as part of the command line parameters, it overrides the default "imgcomp.conf"
 for the default options.  This is for running multiple imgcomp instances in the same user account
 for multiple cameras.
-
-<div class="p">wait_close_write</div>
-If this is set to nonzero, the inotify watch for new pictures to appear uses IN_CLOSE_WRITE
-rather than IN_CREATE.  This works properly with ffmpeg as as source of pictures.
 
 <div class="p">relaunch_timeout</div>
 If this is set, it replaces the default 5 seconds until imgcomp gives up on the capture
