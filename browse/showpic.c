@@ -109,13 +109,13 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
     // check how many characters all the filenames have in common (typically 7)
     int npic = 0;
     char * Prefix = "";
-    int prefixlen = 0;
+    int prefixlen = -1;
 
     for (int a=0;a<(int)Images.NumEntries;a++){
         char * Name = Images.Entries[a].Name;
         if (!NameIsImage(Name)) continue;
 
-        if (Prefix == NULL){
+        if (prefixlen < 0){
             Prefix = Name;
             prefixlen = 7;
             continue;
@@ -144,9 +144,6 @@ void MakeViewPage(char * ImageName, Dir_t * dir)
         char * Name = Images.Entries[a].Name;
         if (strcmp(Name, "Log.html") == 0) HasLog = 1;
         if (!NameIsImage(Name)) continue;
-
-        int e = strlen(Name);
-        e -= 4;
 
         if (npic){
             putchar(',');
