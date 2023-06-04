@@ -31,7 +31,7 @@ int WaitForNewFile(char * Dir)
     // that will trigger on IN_CLOSE_WRITE even, and by the next time we poll,
     // the image will already be move,d so we miss it.
 
-    inotify_add_watch( fd, "/ramdisk", IN_MOVED_TO);
+    inotify_add_watch( fd, "/ramdisk", IN_CLOSE_WRITE | IN_MOVED_TO);
 
     // Wait for more files to appear.
     struct pollfd pfd = { fd, POLLIN, 0 };
