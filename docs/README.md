@@ -1,12 +1,4 @@
-<html><head>
-<meta charset="UTF-8">
-<style type=text/css>
-body { font-family: sans-serif; font-size: 16px; 
-    max-width:1160px; min-width:500px; margin: auto; padding-left:8px; padding-right:4px;}
-h1.sh {margin-bottom:2px;}
-h2 {margin-top:35px;}
-</style>
-</head>
+<html>
 <body>
 <h1>What Imgcomp does</h1>
 Imgcomp makes motion triggered timelapses using a Raspberry Pi and camera module.
@@ -20,7 +12,7 @@ Images are initially captured to ramdisk to minimize flash wear, then analyzed a
 if significant, saved to flash.
 <p>
 <h1>Setting up</h2>
-Please see <a href="setup/setting_up.txt">setup/setting_up.txt</a> for how to set up.
+Please see <a href="../setup/setting_up.txt">setup/setting_up.txt</a> for how to set up.
 There is also a "docs" directory with more information
 
 <h1>Assumed directory structure:</h1>
@@ -53,7 +45,7 @@ but the html browser must use the above directory structure.
 <h1>Imgcomp program</h1>
 
 To use imgcomp, you must compile it.  
-There are sample configuration files in imgcomp/conf-examples
+There are sample configuration files in <a href="../conf-examples/">imgcomp/conf-examples</a>
 Imgcomp uses libcamera-still, raspistill or libcamera-vid to dump jpeg
 files into /ramdisk (which is a ram disk the setup creates)
 As images are aquired, it reads and compares these files, copies them
@@ -70,6 +62,8 @@ useful to me.  Also read file "imgcomp/setup/setting_up.txt"
 <hr>
 
 <h1>Browsing program</h1>
+<img src="browse_main.jpg"><br>
+<b>Browsing by hour</b><p>
 
 The browsing program is what makes viewing the oputput from the aqusition
 program fun.  You don't have to go through video clisp to see what happened.
@@ -78,6 +72,11 @@ for the times, to see what happened, clcik on the bars to navigate there,
 and drag across the image left or right to scrub forward or backwards though
 the qauired images.
 <p>
+
+<img src="browse_day.jpg"><br>
+<b>Browsing by day</b><p>
+
+
 The browse program assumes images are stored in the www directory under
 "pix", as configured by the setup script.
 <p>
@@ -94,7 +93,8 @@ Files in each directory are expected to be named like this:<p>
 &nbsp; &nbsp; &nbsp; Log.html<br>
 <p>
 Names are MMDD-HHMMSS LLLL
-Where M is Month, D is Day, H is Hour, M is minute S is second, and L is change level.
+Where M is Month, D is Day, H is Hour, M is minute S is second, and L is 
+the detected image change level.
 Imgcomp creates this directory structure to store its files as it saves them.
 <p>
 
