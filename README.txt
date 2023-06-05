@@ -44,18 +44,14 @@ IMGCOMP PROGRAM
 
 To use imgcomp, you must compile it.  
 There are sample configuration files in imgcomp/conf-examples
-Imgcomp uses libcamera-still, libcamera-vid or raspistill to dump jpeg
-files into /ramdisk (which is a ram disk)
-Then reads and compares these files, copies them to ~/saved/.... if they
-contain relevant changes.
+Imgcomp uses libcamera-still, raspistill or libcamera-vid to dump jpeg
+files into /ramdisk (which is a ram disk the setup creates)
+As images are aquired, it reads and compares these files, copies them
+to ~/saved/.... if they contain relevant changes.
 
 In the video mode hack, it looks for video files in /ramdisk/vid and uses
 ffmpeg to extract stills to /ramdisk/tmp then uses those files as input.
 But if you want video, use the motionpi software instead.
-
-Imgcomp uses the EXIF date in the file to figure out when the photos were
-taken (not sure offhand if it will fall back to file date or current
-date/time if there is no EXIF date in the pictures.
 
 There is the imgcomp/setup directory which contains scripts that I use to
 configure it to run on a raspberry pi, plus some scripts that are only
