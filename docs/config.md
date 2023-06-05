@@ -81,7 +81,7 @@ With the same light level:<br>
 At 64000, it will pick ISO 320 with 0.005s exposure time. (more grainy but less motion blur)<p>
 
 
-<b>pixsat &ltval></b><p>
+<b>pixsat &lt;val></b><p>
 with -exmanage 1, Jpeg pixel value at which image saturates because camera
 modules v1 and v2 saturate before hitting 255.  Defaults to value appropriate
 for camera module detected\n"
