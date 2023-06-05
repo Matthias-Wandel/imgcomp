@@ -15,10 +15,13 @@ if significant changes detected, saved to flash.
 <h1>Setting up</h1>
 Setting up is done by cloning the repository onto your raspberry pi and running
 the setup scripts from the <a href="../setup/">setup</a> directory.
-these compile the code base and make necessary configuration changes.
+these compile the code base and make necessary configuration changes to
+crontab (for starting it) and apache2 (for browsing images)
 <p>
 Please see <a href="../setup/setting_up.txt">setup/setting_up.txt</a> for how to set up.
 Setup scripts are in the <a href="../setup/">setup</a> directory.
+<p>
+Also see <a href="config.md">config.md</a> for the configuration options.
 
 <h1>Directory structure used by imgcomp:</h1>
 <table>
@@ -123,12 +126,12 @@ up to 4 images can be captured per second, depending on camera model.
 Images could potentially come from different
 sources.  I have experimented with using a webcam to capture still images, but
 didn't find a sufficiently reliable still image capture solution to use with webcams.
-My brother uses it with <a href="rtsp_cams.html">images captured from RTSP cameras</a>
+My brother uses it with <a href="rtsp_cams.md">images captured from RTSP cameras</a>
 <p>
 Imgcomp tries to differentiate between important and unimportant changes.  Imgcomp
 looks for localized changes in the image from one image to the next.  Imgcomp also
 has the ability to ignore or emphasize specified regions during comparison
-using the <a href="diffmap.html">diffmap</a> feature.
+using the <a href="diffmap.md">diffmap</a> feature.
 Imgcomp also has a "motion fatigue" feature that makes it ignore changes
 in parts of an image that are changing a lot over time.  This feature is used to avoid
 triggering too often on things swaying in the wind.
