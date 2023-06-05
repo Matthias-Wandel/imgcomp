@@ -1,14 +1,9 @@
 -----------------------------------------------------------
 Setting up imgcomp.
 -----------------------------------------------------------
-From the default user pi, 
+From the default user (for example, pi), 
 put imgcomp into /home/pi/imgcomp/...
 either by git cloning it or by unzipping the archive.
-
-Make sure you can sudo.  Type:
-  sudo whoami
-
-You may be prompted for your password.  It should print "root".
 
 Start setting things up:
   cd ~/imgcomp/setup
@@ -26,9 +21,12 @@ Run setup script that needs to be run as root (sets up apache2, makes ramdisk)
   sudo ./setup-imgcomp-root
 
 You also need to make sure your camera module is connected, and enabled.
-To enable your camera module run "sudo raspi-config" and enable the camera module
-under interfacing options.  All camera modules supported by the
-"raspistill" program are supported by imgcomp.
+If you want to use legacy raspistill instead of libcamera-still for image
+aquisition, then you need to enable legacy camera support under interfacing
+options in raspi-config.  Type "sudo raspi-config" from the console to run
+raspi-config.  If you use libcamera-still (the default) you don't need to do
+this.  but libcamera-still is limited to about 1 frame per second, whereas
+legacy raspistill can capture up to 4 frames per second.
 
   
 Now try running imgcomp
@@ -59,8 +57,8 @@ if you are using wifi.  The line looks roughly like this:
         
 In this case, your IP addres would be 192.168.0.106
 
-From a browser on another computer, go to this URL 
-    (using your IP address instead of the .106 address)
+From a browser on the pi, or on another computer, go to this URL 
+    (using your IP address instead of the 192.168.0.106 address shown below)
     http://192.168.0.106/view.cgi
 
 

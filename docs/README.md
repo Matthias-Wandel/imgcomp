@@ -9,13 +9,18 @@ to about 4 frames per second, depending on Raspberry Pi camera module version.
 I typically use it at just 1 frame per second.
 <p>
 Images are initially captured to ramdisk to minimize flash wear, then analyzed and
-if significant, saved to flash.
+if significant changes detected, saved to flash.
 <p>
-<h1>Setting up</h2>
+<img src="pi_and_cam.jpg">
+<h1>Setting up</h1>
+Setting up is done by cloning the repository onto your raspberry pi and running
+the setup scripts from the <a href="../setup/">setup</a> directory.
+these compile the code base and make necessary configuration changes.
+<p>
 Please see <a href="../setup/setting_up.txt">setup/setting_up.txt</a> for how to set up.
-There is also a "docs" directory with more information
+Setup scripts are in the <a href="../setup/">setup</a> directory.
 
-<h1>Assumed directory structure:</h1>
+<h1>Directory structure used by imgcomp:</h1>
 <table>
 <tr><td>~/imgcomp/...           <td>where imgcomp source files live.
 <tr><td>~/imgcomp.conf          <td>configuration file, imgcomp should run in this directory
@@ -24,7 +29,7 @@ There is also a "docs" directory with more information
 <tr><td>~/images/200204/        <td>Root for pictures of Feb 4 2020 (one dir for each day,
                                 named YYMMDD
 <tr><td>~/images/200204/13/     <td>Pictures for 1 pm to 2 pm for Feb 4 2020
-<tr><td>~/images/200204/13/0204-131445 0494.jpg
+<tr><td>~/images/200204/13/0204-131445 0494.jpg&nbsp;
                                 <td>Picture taken Feb 4 2020 at 13:14:45, change level 494
 <tr><td>~/images/saved/         <td>Where picture are hard linked to when "saved" from image
                                 browser.  One directory for each month.
@@ -53,17 +58,15 @@ to ~/saved/.... if they contain relevant changes.
 <p>
 In the video mode hack, it looks for video files in /ramdisk/vid and uses
 ffmpeg to extract stills to /ramdisk/tmp then uses those files as input.
-But if you want video, use the motionpi software instead.
+But if you want video, look for the project "motionpi" by a different author.
 <p>
-There is the imgcomp/setup directory which contains scripts that I use to
-configure it to run on a raspberry pi, plus some scripts that are only
-useful to me.  Also read file "imgcomp/setup/setting_up.txt"
 
 <hr>
 
 <h1>Browsing program</h1>
+
+<b>Browsing by hour</b><br>
 <img src="browse_main.jpg"><br>
-<b>Browsing by hour</b><p>
 
 The browsing program is what makes viewing the oputput from the aqusition
 program fun.  You don't have to go through video clisp to see what happened.
@@ -73,8 +76,9 @@ and drag across the image left or right to scrub forward or backwards though
 the qauired images.
 <p>
 
-<img src="browse_day.jpg"><br>
-<b>Browsing by day</b><p>
+<b>Browsing by day</b><br>
+<img src="browse_day.jpg">
+<p>
 
 
 The browse program assumes images are stored in the www directory under
@@ -109,6 +113,28 @@ showpic.js is the javascript code for flipping through the images.
 <p>
 Local holidays can be set in the browse.conf file in the format YYMMDD.
 There is a sample configuration file in imgcomp/conf-examples.
+
+
+<h1>How motion detection works</h1>
+Imgcomp runs the raspberry pi camera capture program "libcamera-still" or 
+"raspistill" to capture
+still jpeg images every second.  With burst mode (-bm option in raspistill),
+up to 4 images can be captured per second, depending on camera model.
+Images could potentially come from different
+sources.  I have experimented with using a webcam to capture still images, but
+didn't find a sufficiently reliable still image capture solution to use with webcams.
+My brother uses it with <a href="rtsp_cams.html">images captured from RTSP cameras</a>
+<p>
+Imgcomp tries to differentiate between important and unimportant changes.  Imgcomp
+looks for localized changes in the image from one image to the next.  Imgcomp also
+has the ability to ignore or emphasize specified regions during comparison
+using the <a href="diffmap.html">diffmap</a> feature.
+Imgcomp also has a "motion fatigue" feature that makes it ignore changes
+in parts of an image that are changing a lot over time.  This feature is used to avoid
+triggering too often on things swaying in the wind.
+
+
+
 
 <h1>License</h1>
 
