@@ -1,21 +1,32 @@
 # Set up Samba the way I (Matthias) have it set up on my systems.
 # must run using sudo.  Also run "install-packages-extra" first to install samba.
-# 
-# After running this script on the pi, assuming pi is at 192.168.0.106, 
-# use the following this this command from the windows shell 
+#
+# After running this script on the pi, assuming pi is at 192.168.0.106,
+# use the following this this command from the windows shell
 # to map the  /home/pi directory to the drive letter X
 #
 #   net use x: \\192.168.0.106\pi /user:pi mine
+
+if [ -z "$1" ]; then
+    # Samba user name was passed as argument
+    user=pi
+else
+    # Default to pi for user if no argument
+    user=$1
+fi
+echo "configuring samba for user: $user"
 
 if [ "$EUID" -ne 0 ]
     then echo "Must run this as root"
     exit
 fi
 
-echo "[pi]" >> /etc/samba/smb.conf
-echo "path = /home/pi" >> /etc/samba/smb.conf
-echo "valid users = pi" >> /etc/samba/smb.conf
+echo "[$user]" >> /etc/samba/smb.conf
+echo "path = /home/$user" >> /etc/samba/smb.conf
+echo "valid users = $user" >> /etc/samba/smb.conf
 echo "browsable = yes" >> /etc/samba/smb.conf
 echo "read only = no" >> /etc/samba/smb.conf
-printf "mine\nmine" | smbpasswd -s -a pi
+
+# Set samba password
+printf "mine\nmine" | smbpasswd -s -a $user
 service smbd restart
