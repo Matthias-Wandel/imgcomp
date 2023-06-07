@@ -528,7 +528,7 @@ int main(int argc, char **argv)
 
     Log = stdout;
 
-    printf("Imgcomp version 0.97 (Mar 2021) by Matthias Wandel\n\n");
+    printf("Imgcomp version 1.01 (Jun 2023) by Matthias Wandel\n\n");
 
     progname = argv[0];
 
