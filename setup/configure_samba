@@ -1,3 +1,4 @@
+#!/bin/bash
 # Set up Samba the way I (Matthias) have it set up on my systems.
 # must run using sudo.  Also run "install-packages-extra" first to install samba.
 #
@@ -16,8 +17,8 @@ else
 fi
 echo "configuring samba for user: $user"
 
-if [ "$EUID" -ne 0 ]
-    then echo "Must run this as root"
+if [ "$EUID" -ne 0 ]; then
+    echo "Must run this as root"
     exit
 fi
 
