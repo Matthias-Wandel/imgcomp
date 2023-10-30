@@ -34,12 +34,12 @@ def move_stepper(steps):
     delay = 0.6 # miliseconds
     GPIO.output(g_enable, 0) # enable stepper driver
     time.sleep(0.01)
-    
+
     if steps < 0:
         steps = -steps
-        GPIO.output(g_dir, 1)
-    else:
         GPIO.output(g_dir, 0)
+    else:
+        GPIO.output(g_dir, 1)
 
     time.sleep(0.01)
 
@@ -52,7 +52,7 @@ def move_stepper(steps):
         GPIO.output(g_clk,0)
         time.sleep(duse)
 
-       
+
     time.sleep(0.01)
     GPIO.output(g_enable, 1) # turn stepper driver off again.
 
@@ -61,18 +61,22 @@ def move_stepper(steps):
 # Re-aim the camera
 #===========================================================================================
 def move_to_deg(deg, Bin=-1):
+    global LastPanTime
+    #print("Move to deg: ",deg)
     steps_per_deg = 400.0*8/365
     global steppos, MotionBins
     newstep = int(deg * steps_per_deg)
-    
+
     if newstep == steppos: return
-    
+
     open("/ramdisk/angle", 'a').close() # Tell imgcomp that angle was adjusted
     move_stepper(newstep-steppos)
     steppos = newstep
     with open("/ramdisk/angle", 'a') as f:
         print("Pan[%d]=%d"%(Bin,deg)," Bins=",MotionBins,file=f)
         f.close() # In case panning took a long time, tell imgcomp again.
+
+    LastPanTime = time.time()
 
 def cleanAndExit():
     GPIO.output(g_enable, 1) # turn off stepper
@@ -103,7 +107,8 @@ def Process_UDP():
     # First 2 bytes is ident, check that.
     if data[0] != 0xc1 or data[1] != 0x46:
         print("UDP Wrong ID from", addr)
-        return 10000,10000
+        return 0,0,-1
+
 
     # Next 2 bytes is level, ignore.
 
@@ -118,6 +123,11 @@ def Process_UDP():
     other_cam = 0
     print("UDP from:",addr[0], "x,y=",x,y)# "T=",time.perf_counter())
     if addr[0] != "192.168.0.22": other_cam = 1
+
+    if other_cam == 0 and time.time()-LastPanTime < 2:
+        print("Less than 2 sec since pan, ignore own UDP");
+        return 0,0,-1
+
     return x,y, other_cam
 
 init_stepper()
@@ -125,19 +135,17 @@ init_stepper()
 MotionBins = [0]*10
 print("Homing camera angle")
 # Reset motor position by bainging against the stop.
-move_to_deg(360)
-move_to_deg(185)
+move_to_deg(-270)
 steppos = 0 # this is now the zero position.
+BinAimed = 9
+BinAimedWas = 9
 
 print("Open socket")
 
 Open_Socket()
 
 MainView = 0
-BinDegs = [-75,-50,-25,0,25,50,75,105,135,160]
-
-BinAimed = 8
-MotionBins[8] = 350
+BinDegs = [285,210,160,160,135,85,75,50,25,0] # Pos 3 is workbench, pos 8 is default.
 
 while 1:
     ready = select.select([rxSocket], [], [], 4)
@@ -145,11 +153,11 @@ while 1:
     if ready[0]:
         x,y, other = Process_UDP()
 
-        if other:
+        if other == 1:
             # Perhaps should assume which way the camera is aimed and be more fine grained
             # about angle suggestion
             MainView += 100
-        else:
+        elif other == 0:
             if x < -250:
                 BinAdd = BinAimed - 1
             elif x > 250:
@@ -167,7 +175,9 @@ while 1:
 
     MainView = int(MainView * 0.85)
 
-    print(" "," ".join(map(str,MotionBins))," M:",MainView)
+    for num in MotionBins:
+        print(" %2d"%(num), end="")
+    print ("  M:",MainView)
 
     max = 0
     maxp = -1
@@ -178,20 +188,22 @@ while 1:
 
     if max < 20:
         # No significant motion for a while.  Return to center.
-        if (MainView > 250):
+        if MainView > 200:
             print("Front action, pan to main view")
             BinAimed = 3
-        else:
-            if BinAimed != 8:
-                print("Pan back to rear")
+        elif MainView < 150 and BinAimed != 8:
+                print("No action for a while, back to rear and re-home")
+                move_to_deg(BinDegs[9], 9) # All the way to the stop, because sometimes it loses steps.
+                # then go back to rear looking
                 BinAimed = 8
-            
-        move_to_deg(BinDegs[BinAimed], BinAimed)
-            
 
-    elif maxp != BinAimed and max > 200 and max > MotionBins[BinAimed]*1.2:
-        print("Pan to ",maxp)
+    elif max > 200 and maxp != BinAimed and max > MotionBins[BinAimed]*1.2:
+        print("More active bin is:",maxp)
         BinAimed = maxp
-        move_to_deg(BinDegs[BinAimed])
 
+    if BinAimed != BinAimedWas:
+        print("Move view ",BinAimedWas,",to",BinAimed)
+        move_to_deg(BinDegs[BinAimed])
+        BinAimedWas = BinAimed
+        
 
