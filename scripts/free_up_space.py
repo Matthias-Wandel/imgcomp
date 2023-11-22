@@ -11,7 +11,8 @@ from time import localtime, strftime, time
 
 timestr = strftime("%d-%b-%y %H:%M", localtime())
 
-xx=os.statvfs('/home/pi/images')
+images_dir = os.path.expanduser("~/images")
+xx=os.statvfs(images_dir)
 total_blocks=xx.f_blocks*xx.f_bsize/1024
 avail_blocks=xx.f_bavail*xx.f_bsize/1024
 percent_avail = avail_blocks/total_blocks*100
@@ -23,7 +24,7 @@ if percent_avail > 20:
     print()
     sys.exit();
 
-dirs = glob.glob("/home/pi/images/??????/")
+dirs = glob.glob(images_dir+"/??????/")
 dirs.sort()
 
 wipedir = ""
