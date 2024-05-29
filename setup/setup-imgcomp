@@ -28,6 +28,10 @@ mkdir -p ~/www
 mkdir -p ~/images
 ln -sTf ../images ~/www/pix
 
+echo "Make home directory readable by web server"
+# Make home directory publicly readable (so www-data process can access it)
+chmod +rx ~
+
 # Make sure an imgcomp.conf configuration file exists
 if [ -e ../../imgcomp.conf ] ; then
 	echo "    imcomp.conf file aready in home directory"

@@ -7,10 +7,10 @@ either by git cloning it or by unzipping the archive.
 
 Start setting things up:
   cd ~/imgcomp/setup
-  ./install-packages
+  sudo ./install-packages
   
 Optionally install additional packages (useful but not necessary)
-  ./install-packages-extra
+  sudo ./install-packages-extra
 
 Build imgcomp and set it up
   cd ~/imgcomp/setup
