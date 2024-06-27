@@ -30,13 +30,13 @@ def move_to_deg(pan, tilt):
     # Pan is degrees, -135 to 135 degrees, positive is clockwise
     # Tilt is in -60 to 60 degrees, positive is up
     print("set_position",pan,tilt)
-    
+
     for x in range (0,90): # need a few pulses to get going.
         # Do pan
         GPIO.output(g_pan, 1)
         time.sleep(-pan/135000+0.0015) # Pulse 1 to 2 ms in length
         GPIO.output(g_pan, 0)
-    
+
         # Do tilt
         GPIO.output(g_tilt, 1)
         time.sleep(tilt/100000+0.00105) # Pulse 1 to 2 ms in length
@@ -96,8 +96,8 @@ init_servo()
 MotionBinsH = [0]*7
 MotionBinsV = [0]*5
 
-BinDegsH = [-90,-60,-30,0,30,60,90] 
-BinDegsV = [-30,-15,0,15,30] 
+BinDegsH = [-90,-60,-30,0,30,60,90]
+BinDegsV = [-35,-20,-5,10,25]
 HomeBinHNo = 3
 HomeBinVNo = 2
 BinAimedHWas = 0
@@ -107,12 +107,14 @@ BinAimedV = HomeBinVNo
 
 Open_Socket()
 
+IsIdle = False
 
 while 1:
     ready = select.select([rxSocket], [], [], 2)
 
     if ready[0]:
         x,y, other = Process_UDP()
+        IsIdle = False
 
         if x < -250:
             BinAddH = BinAimedH - 1
@@ -142,7 +144,7 @@ while 1:
 
     for x in range(0, len(MotionBinsV)):
         # decay the motion bins.
-        MotionBinsV[x] = int(MotionBinsV[x] * 0.8) 
+        MotionBinsV[x] = int(MotionBinsV[x] * 0.8)
 
     print("H:",end="")
     for num in MotionBinsH:
@@ -168,34 +170,39 @@ while 1:
 
     if maxH < 20:
         # No significant motion for a while.  Return to center.
-        print("No action for a while, back home position")
-        BinAimedH = HomeBinHNo
-        BinAimedV = HomeBinVNo
-        RePan = True
+        if not IsIdle:
+            print("No action for a while, back home position")
+            BinAimedH = HomeBinHNo
+            BinAimedV = HomeBinVNo
+            RePan = True
+            IsIdle = True
     else:
         if maxH > 200 and maxpH != BinAimedH and maxH > MotionBinsH[BinAimedH]*1.2:
             print("Horizontal pan needed")
             RePan = True
-            
+
         if maxV > 200 and maxpV != BinAimedV and maxV > MotionBinsV[BinAimedV]*1.2:
             print("Vertical pan needed")
             RePan = True
-            
+
         if RePan:
             BinAimedH = maxpH
             BinAimedV = maxpV
-    
-    if RePan:
-        print("Move view (%d,%d)"%(BinAimedHWas,BinAimedVWas),"to (%d,%d)"%(BinAimedV,BinAimedH))
-        
-        open("/ramdisk/angle", 'a').close() # Tell imgcomp that angle was adjusted
-        move_to_deg(BinDegsH[BinAimedH],BinDegsV[BinAimedV])
-        BinAimedVWas = BinAimedV
-        BinAimedHWas = BinAimedH
-        with open("/ramdisk/angle", 'a') as f:
-            # In case panning took a long time, tell imgcomp again.
-            print("Pan=%d tilt=%d"%(BinDegsH[BinAimedH],BinDegsV[BinAimedV]),file=f)
-            f.close()
 
-        
+    if RePan:
+        if BinAimedH == BinAimedHWas and BinAimedVWas == BinAimedV:
+            print("Already aimed at (%d,%d)"%(BinAimedHWas,BinAimedVWas))
+        else:
+            print("Move view (%d,%d)"%(BinAimedHWas,BinAimedVWas),"to (%d,%d)"%(BinAimedH,BinAimedV))
+
+            open("/ramdisk/angle", 'a').close() # Tell imgcomp that angle was adjusted
+            move_to_deg(BinDegsH[BinAimedH],BinDegsV[BinAimedV])
+            BinAimedVWas = BinAimedV
+            BinAimedHWas = BinAimedH
+            with open("/ramdisk/angle", 'a') as f:
+                # In case panning took a long time, tell imgcomp again.
+                print("Pan=%d tilt=%d"%(BinDegsH[BinAimedH],BinDegsV[BinAimedV]),file=f)
+                f.close()
+
+
 
