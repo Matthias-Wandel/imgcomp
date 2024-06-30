@@ -270,12 +270,16 @@ int manage_camera_prog(int NewImages)
         if (MsSinceLaunch > timeout){
             if (give_up_timeout && MsSinceImage > give_up_timeout * 1000){
                 if (NumTotalImages >= 5){
+					// sometimes camera system just hangs.  This was rare with raspistill, 
+					// but with libcamera-still it happens more often (about every two months)
                     fprintf(Log,"Relaunch camera program didn't fix.  Reboot!.  (%d sec since image)\n",MsSinceImage/1000);
                     // force rotation of log.
                     LogFileMaintain(1);
                     MsSinceImage = 0; // dummy for now.
-                    printf("Reboot now\n");
-                    system("reboot");
+                    printf("Reboot now\n");   // Requires setuid bit of reboot to be set as reboot
+                    int r = system("reboot"); // normally requires root prviledges.
+                                              // do "sudo chmod +s /usr/sbin/reboot" so normal process can run it.
+                    fprintf(Log,"reboot returned %d (should not return -- please set the SUID bit of reboot)\n",r);
                     exit(0);
                 }else{
                     // Less than 5 images.  Probably left over from last run.
