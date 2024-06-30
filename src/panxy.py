@@ -95,7 +95,7 @@ init_servo()
 
 
 BinDegsH = [-115,-90,-65,-40,-15,10,35,60,85,110,135] # Pos 3 is workbench, 9 is default.
-BinDegsV = [-55,-41,-27]
+BinDegsV = [-55,-40,-25]
 HomeBinHNo = 9
 WorkbenchBinHNo = 3
 HomeBinVNo = 1
@@ -116,30 +116,28 @@ MotionBinsH = [0]*len(BinDegsH)
 MotionBinsV = [0]*len(BinDegsV)
 BinAimedHWas = 0
 BinAimedVWas = 0
-BinAimedH = HomeBinHNo
-BinAimedV = HomeBinVNo
+BinAimedH = 0
+BinAimedV = 0
 
 Open_Socket()
 
 IsIdle = False
-other_cam = False
 
 while 1:
-    if not other_cam:
-        for x in range(0, len(MotionBinsH)):
-            # decay the motion bins.
-            MotionBinsH[x] = int(MotionBinsH[x] * 0.8) # Store integer, easier to read
+    for x in range(0, len(MotionBinsH)):
+        # decay the motion bins.
+        MotionBinsH[x] = int(MotionBinsH[x] * 0.8) # Store integer, easier to read
 
-        for x in range(0, len(MotionBinsV)):
-            # decay the motion bins.
-            MotionBinsV[x] = int(MotionBinsV[x] * 0.8)
+    for x in range(0, len(MotionBinsV)):
+        # decay the motion bins.
+        MotionBinsV[x] = int(MotionBinsV[x] * 0.8)
 
-    other_cam = False
+
     ready = select.select([rxSocket], [], [], 4)
 
     if ready[0]:
-        x,y, other_cam = Process_UDP()
-        if other_cam == 1:
+        x,y, other = Process_UDP()
+        if other == 1:
             # My other camera saw motion near workbench
             print("other")
             if MotionBinsH[WorkbenchBinHNo] < 250:
