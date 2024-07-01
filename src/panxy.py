@@ -18,31 +18,79 @@ GPIO.setmode(GPIO.BCM)
 g_pan = 10
 g_tilt = 9
 
+current = [0,0]
 #===========================================================================================
 # Servo routines
 #===========================================================================================
 def init_servo():
     # Motor IO lines
+    print("init servo")
     GPIO.setup(g_pan, GPIO.OUT, initial=False) # pan
     GPIO.setup(g_tilt, GPIO.OUT)               # up/down tilt
 
 def move_to_deg(pan, tilt):
+    # Slowly ramp servos so they don't run as fast and make less noise.
+
     # Pan is degrees, -135 to 135 degrees, positive is clockwise
     # Tilt is in -60 to 60 degrees, positive is up
     print("set_position",pan,tilt)
 
-    for x in range (0,90): # need a few pulses to get going.
-        # Do pan
-        GPIO.output(g_pan, 1)
-        time.sleep(pan/135000+0.0015) # Pulse 1 to 2 ms in length
-        GPIO.output(g_pan, 0)
+    gp = [g_pan, g_tilt]
+    stepsize = 0.000005 # seconds
+    dwell = [5,5]
+    target = [pan/135000+0.0015, -tilt/100000+0.00105]
+    global current
+    if current[0] == 0:
+        # First invocation, don't know current angle, so just dwell a while.
+        current = target[0:2]
+        dwell = [100,100]
+    states = [0,0]
 
-        # Do tilt
-        GPIO.output(g_tilt, 1)
-        time.sleep(-tilt/100000+0.00105) # Pulse 1 to 2 ms in length
-        GPIO.output(g_tilt, 0)
-        time.sleep(0.001)
+    #print(current, target)
 
+    while True:
+        totpulse = 0
+        for ch in range(0,2):
+            state = states[ch]
+            if state == 0 or state == 2: # Initial and final dwell
+                dwell[ch] -= 1
+                if dwell[ch] <= 0:
+                    state += 1
+                    #print("        "*ch*3+"dwell end")
+                pulselen = current[ch]
+            elif state == 1: # Ramp state
+                diff = target[ch]-current[ch]
+                if abs(diff) < stepsize: # finished ramping
+                    state = 2
+                    dwell[ch] = 2
+                    current[ch] = target[ch]
+                else:
+                    if diff > 0:
+                        current[ch] += stepsize
+                    else:
+                        current[ch] -= stepsize
+                pulselen = current[ch]
+            elif state == 3: # dwell-ramp-dwell completed.
+                pulselen = 0
+                continue
+
+            #if ch: print("                        ",end="")
+            #print("c:%d s:%d p: %5.4f"%(ch,state,pulselen*1000))
+
+            #print("\t\t\t"*ch,"pulse %d %6.4f ms"%(ch, pulselen))
+            # Send the pulse to this motor
+            GPIO.output(gp[ch], 1)
+            time.sleep(pulselen)
+            GPIO.output(gp[ch], 0)
+
+            totpulse += pulselen
+            states[ch] = state
+
+        if totpulse:
+            # Sleep balance of time.
+            time.sleep(0.005-totpulse)
+        else:
+            break # done
 
 #===========================================================================================
 # Stuff for receiging motion indication via UDP
@@ -95,19 +143,19 @@ init_servo()
 
 
 BinDegsH = [-115,-90,-65,-40,-15,10,35,60,85,110,135] # Pos 3 is workbench, 9 is default.
-BinDegsV = [-55,-40,-25]
+BinDegsV = [-57,-41,-29]
 HomeBinHNo = 9
+HomeBinVNo = 2
 WorkbenchBinHNo = 3
-HomeBinVNo = 1
 
 if len(sys.argv) > 1:
+    # manual aiming, for testing.
     pan = BinDegsH[int(sys.argv[1])]
     tilt = -20
     if len(sys.argv) == 3:
         tilt = BinDegsV[int(sys.argv[2])]
 
     print("Manual aim to pan=%d tilt=%d"%(pan,tilt))
-    init_servo()
     move_to_deg(pan,tilt)
     sys.exit(0)
 
@@ -122,6 +170,7 @@ BinAimedV = 0
 Open_Socket()
 
 IsIdle = False
+LastPanTime = time.time()
 
 while 1:
     for x in range(0, len(MotionBinsH)):
@@ -140,8 +189,9 @@ while 1:
         if other == 1:
             # My other camera saw motion near workbench
             print("other")
-            if MotionBinsH[WorkbenchBinHNo] < 250:
-                MotionBinsH[WorkbenchBinHNo] = 250
+            if BinAimedH > WorkbenchBinHNo+2 and MotionBinsH[WorkbenchBinHNo] < 100:
+                MotionBinsH[WorkbenchBinHNo] += 120
+                if MotionBinsV[2] < 20: MotionBinsV[2] = 20
         else:
 
             if x < -250:
