@@ -80,12 +80,8 @@ void SendUDP(int x, int y, int level, int motion)
 
     if (wrote == SOCKET_ERROR){
         perror("UDP sendto failed");
-
-        #ifndef _WIN32
-            printf("On Linux, This eventually happens if the destination port is unreacable and Uping is not root\n");
-        #endif
-        exit(-1);
     }
+	
     if (wrote < datasize ) {
         fprintf(stdout,"Wrote %d bytes of %d\n",wrote, datasize);
     }
