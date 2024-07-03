@@ -49,7 +49,10 @@ typedef struct {
 
 #define STATUS_FAILED 0xFFFF
 
-struct sockaddr_in dest;
+#define MAX_DESTS 5
+static struct sockaddr_in dests[MAX_DESTS];
+static int NumDests = 0;
+
 static SOCKET sockUDP;
 
 //--------------------------------------------------------------------------
@@ -61,7 +64,7 @@ void SendUDP(int x, int y, int level, int motion)
     int datasize;
     Udp_t Buf;
 
-    if (!dest.sin_port){
+    if (NumDests == 0){
         fprintf(stderr, "UDP not initialized\n");
         return;
     }
@@ -76,23 +79,25 @@ void SendUDP(int x, int y, int level, int motion)
 
     datasize = sizeof(Udp_t);
 
-    wrote = sendto(sockUDP,(char *)&Buf, datasize, 0,(struct sockaddr*)&dest, sizeof(struct sockaddr_in));
+    for (int n=0;n<NumDests;n++){ // Loop through destinations -- can have targets for motion UDP
+        wrote = sendto(sockUDP,(char *)&Buf, datasize, 0,(struct sockaddr*)&dests[n], sizeof(struct sockaddr_in));
 
-    if (wrote == SOCKET_ERROR){
-        perror("UDP sendto failed");
-    }
-	
-    if (wrote < datasize ) {
-        fprintf(stdout,"Wrote %d bytes of %d\n",wrote, datasize);
-    }
+        if (wrote == SOCKET_ERROR){
+            perror("UDP sendto failed");
+        }
 
-    //printf("Sent UDP packet, x=%d\n",x);
+        if (wrote < datasize ) {
+            fprintf(stdout,"Wrote %d bytes of %d\n",wrote, datasize);
+        }
+
+        //printf("Sent UDP packet, x=%d\n",x);
+    }
 }
 
 //--------------------------------------------------------------------------
 // Main
 //--------------------------------------------------------------------------
-int InitUDP(char * HostName)
+int InitUDP(char * HostNames)
 {
     #ifdef _WIN32
         WSADATA wsaData;
@@ -104,38 +109,57 @@ int InitUDP(char * HostName)
 
     //-------------------------------------------------------------------
     // Resolve the remote address
-    printf("Init UDP to %s\n",HostName);
+    printf("Init UDP to %s\n",HostNames);
 
-    memset(&dest,0,sizeof(struct sockaddr_in));
+    memset(&dests,MAX_DESTS,sizeof(struct sockaddr_in));
 
-    if (HostName){
-        hp = gethostbyname(HostName);
+    int s = 0;
+    for (int a=0;;a++){
+        char c = HostNames[a];
+        if (c == ',' || c == '\0'){
+            HostNames[a] = '\0';
+            while (HostNames[s] == ' ' || HostNames[s] == '\t'){
+                if (HostNames[s] == '\0'){
+                    fprintf(stderr, "Empty hostname specified");
+                    exit(-1);
+                }
+                s += 1;
+            }
 
-        if (hp == NULL){
-            // If address is not a host name, assume its a x.x.x.x format address.
-            addr = inet_addr(HostName);
-            if (addr == INADDR_NONE) {
-                // Not a number format address either.  Give up.
-                fprintf(stderr,"Unable to resolve %s\n",HostName);
+            printf("Hostname: '%s'\n",HostNames+s);
+            if (NumDests >= MAX_DESTS){
+                fprintf(stderr, "Maximum %d UDP destinations",MAX_DESTS);
                 exit(-1);
             }
-            dest.sin_addr.s_addr = addr;
-            dest.sin_family = AF_INET;
 
-        }else{
-            // Resolved to a host name.
-            memcpy(&(dest.sin_addr),hp->h_addr,hp->h_length);
-            dest.sin_family = hp->h_addrtype;
+            hp = gethostbyname(HostNames+s);
+
+            if (hp == NULL){
+                // If address is not a host name, assume its a x.x.x.x format address.
+                addr = inet_addr(HostNames+s);
+                if (addr == INADDR_NONE) {
+                    // Not a number format address either.  Give up.
+                    fprintf(stderr,"Unable to resolve %s\n",HostNames);
+                    exit(-1);
+                }
+                dests[NumDests].sin_addr.s_addr = addr;
+                dests[NumDests].sin_family = AF_INET;
+                dests[NumDests].sin_port = htons(PortNum);
+                NumDests += 1;
+
+            }else{
+                // Resolved to a host name.
+                memcpy(&(dests[NumDests].sin_addr),hp->h_addr,hp->h_length);
+                dests[NumDests].sin_family = hp->h_addrtype;
+                dests[NumDests].sin_port = htons(PortNum);
+                NumDests += 1;
+            }
+
+            // Look for more host names in string
+            s = a+1;
+            if (c == '\0') break;
         }
-    }else{
-        // No host name specified.  Use loopback address by default.
-        printf("No host name specified.  Using 'loopback' as target\n");
-        addr = inet_addr("127.0.0.1");
-        dest.sin_addr.s_addr = addr;
-        dest.sin_family = AF_INET;
     }
-
-    dest.sin_port = htons(PortNum);
 
     //-------------------------------------------------------------------
     // Open socket (though we don't need to receive any packets, just send)
@@ -146,7 +170,7 @@ int InitUDP(char * HostName)
         local.sin_addr.s_addr = INADDR_ANY;
 
         // Use a different port so pan program can still use this port.
-        local.sin_port = htons(PortNum+1); 
+        local.sin_port = htons(PortNum+1);
         sockUDP = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 
         if (sockUDP == INVALID_SOCKET){
