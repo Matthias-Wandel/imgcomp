@@ -36,7 +36,7 @@ def move_to_deg(pan, tilt):
     print("set_position",pan,tilt)
 
     gp = [g_pan, g_tilt]
-    stepsize = 0.000005 # seconds
+    stepsize = 0.000005 # Duty cycle change per iteration
     dwell = [5,5]
     target = [pan/135000+0.0015, -tilt/100000+0.00105]
     global current
@@ -150,13 +150,16 @@ WorkbenchBinHNo = 3
 
 if len(sys.argv) > 1:
     # manual aiming, for testing.
-    pan = BinDegsH[int(sys.argv[1])]
-    tilt = -20
-    if len(sys.argv) == 3:
-        tilt = BinDegsV[int(sys.argv[2])]
+    for arg in sys.argv[1:]:
+        vals = [int(num) for num in arg.split(",")]
+        pan = BinDegsH[vals[0]]
 
-    print("Manual aim to pan=%d tilt=%d"%(pan,tilt))
-    move_to_deg(pan,tilt)
+        tilt = -20
+        if len(vals) > 1: tilt = BinDegsV[vals[1]]
+
+        print("Manual aim to pan=%d tilt=%d"%(pan,tilt))
+        move_to_deg(pan,tilt)
+
     sys.exit(0)
 
 
