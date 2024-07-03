@@ -1,5 +1,6 @@
 #!/usr/bin/python3
-# Script for panning using camera controlled by two little servos
+# Script for panning my super wide shop camera.  Only pans side to side, but
+# keeping the logic of my panxy script for the time being -- easier that way.
 #
 # This script receives UDP indicating where motion was seen, analyze where the
 # action is and pan the camera towards it using the servo motor gimbal.  But will
@@ -8,15 +9,15 @@
 # It's in python because I will probably tweak the parameters a lot and that makes
 # it easier.  I don't expect anyone other than me to ever use this script.
 #
-# Matthias Wandel Jun 2024
+# Matthias Wandel Jul 2024
 
 import socket, select, os, sys, signal, subprocess, time
 
 import RPi.GPIO as GPIO
 GPIO.setwarnings(False)
 GPIO.setmode(GPIO.BCM)
-g_pan = 10
-g_tilt = 9
+g_pan = 9
+g_tilt = 5
 
 current = [0,0]
 #===========================================================================================
@@ -31,14 +32,14 @@ def init_servo():
 def move_to_deg(pan, tilt):
     # Slowly ramp servos so they don't run as fast and make less noise.
 
-    # Pan is degrees, -135 to 135 degrees, positive is clockwise
-    # Tilt is in -60 to 60 degrees, positive is up
+    # Pan is degrees, -45 to 45 degrees, positive is clockwise
+    # Tilt not used
     print("set_position",pan,tilt)
 
     gp = [g_pan, g_tilt]
     stepsize = 0.000005 # Duty cycle change per iteration
     dwell = [5,5]
-    target = [pan/135000+0.0015, -tilt/100000+0.00105]
+    target = [-pan/96000+0.0015, -tilt/100000+0.00105]
     global current
     if current[0] == 0:
         # First invocation, don't know current angle, so just dwell a while.
@@ -131,7 +132,7 @@ def Process_UDP():
 
     other_cam = 0
     print("UDP from:",addr[0], "x,y=",x,y)# "T=",time.perf_counter())
-    if addr[0] != "192.168.0.22": other_cam = 1
+    if addr[0] != "192.168.0.20": other_cam = 1
 
     if other_cam == 0 and time.time()-LastPanTime < 2:
         print("Less than 2 sec since pan, ignore own UDP");
@@ -142,11 +143,10 @@ def Process_UDP():
 init_servo()
 
 
-BinDegsH = [-115,-90,-65,-40,-15,10,35,60,85,110,135] # Pos 3 is workbench, 9 is default.
-BinDegsV = [-57,-41,-29]
-HomeBinHNo = 9
-HomeBinVNo = 2
-WorkbenchBinHNo = 3
+BinDegsH = [-45,0,45]
+BinDegsV = [0,0,0]
+HomeBinHNo = 1
+HomeBinVNo = 0
 
 if len(sys.argv) > 1:
     # manual aiming, for testing.
@@ -190,11 +190,7 @@ while 1:
     if ready[0]:
         x,y, other = Process_UDP()
         if other == 1:
-            # My other camera saw motion near workbench
             print("other")
-            if BinAimedH > WorkbenchBinHNo+2 and MotionBinsH[WorkbenchBinHNo] < 100:
-                MotionBinsH[WorkbenchBinHNo] += 120
-                if MotionBinsV[2] < 20: MotionBinsV[2] = 20
         else:
 
             if x < -250:
