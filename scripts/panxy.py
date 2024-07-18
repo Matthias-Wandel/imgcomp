@@ -10,11 +10,12 @@
 #
 # Matthias Wandel Jun 2024
 
-import socket, select, os, sys, signal, subprocess, time
-
+import socket, select, sys, time, struct
 import RPi.GPIO as GPIO
-GPIO.setwarnings(False)
-GPIO.setmode(GPIO.BCM)
+
+portNum = 7777
+UdpSig = 0x46c1
+
 g_pan = 10
 g_tilt = 9
 
@@ -25,6 +26,8 @@ current = [0,0]
 def init_servo():
     # Motor IO lines
     print("init servo")
+    GPIO.setwarnings(False)
+    GPIO.setmode(GPIO.BCM)
     GPIO.setup(g_pan, GPIO.OUT, initial=False) # pan
     GPIO.setup(g_tilt, GPIO.OUT)               # up/down tilt
 
@@ -98,7 +101,6 @@ def move_to_deg(pan, tilt):
 def Open_Socket():
     global rxSocket
     print("Open socket")
-    portNum = 7777
     rxSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) #UDP
 
     # Bind to any available address on port *portNum*
@@ -112,32 +114,14 @@ def Open_Socket():
 
 def Process_UDP():
     data,addr = rxSocket.recvfrom(1024)
-
-    # First 2 bytes is ident, check that.
-    if data[0] != 0xc1 or data[1] != 0x46:
-        print("UDP Wrong ID from", addr)
-        return 0,0,-1
-
-
-    # Next 2 bytes is level, ignore.
-
-    # Next 2 bytes is X
-    x = data[4] + data[5]*0x100
-    if x >= 32768: x = x - 65536 # Sign extend
-
-    # Next 2 bytes is Y
-    y = data[6] + data[7]*0x100
-    if y >= 32768: y = y - 65536 # sign extend
+    ShortInts = list(struct.unpack('8h', data))
 
     other_cam = 0
-    print("UDP from:",addr[0], "x,y=",x,y)# "T=",time.perf_counter())
     if addr[0] != "192.168.0.22": other_cam = 1
 
-    if other_cam == 0 and time.time()-LastPanTime < 2:
-        print("Less than 2 sec since pan, ignore own UDP");
-        return 0,0,-1
+    print("UDP from:",addr[0], "x,y=",ShortInts[2], ShortInts[3])
 
-    return x,y, other_cam
+    return ShortInts, other_cam
 
 init_servo()
 
@@ -188,13 +172,35 @@ while 1:
     ready = select.select([rxSocket], [], [], 4)
 
     if ready[0]:
-        x,y, other = Process_UDP()
-        if other == 1:
+
+        ShortInts, other_cam = Process_UDP()
+
+        if ShortInts[0] != UdpSig:
+            print("UDP Wrong ID from", addr)
+            continue
+
+        if other_cam == 0 and time.time()-LastPanTime < 2:
+            print("Less than 2 sec since pan, ignore own UDP");
+            continue
+
+
+        x = ShortInts[2]
+        y = ShortInts[3]
+
+        if other_cam == 1:
             # My other camera saw motion near workbench
-            print("other")
-            if BinAimedH > WorkbenchBinHNo+2 and MotionBinsH[WorkbenchBinHNo] < 100:
-                MotionBinsH[WorkbenchBinHNo] += 120
-                if MotionBinsV[2] < 20: MotionBinsV[2] = 20
+            sector = ShortInts[6]
+            print("other, sector =",sector)
+            if sector >= 3:
+                binfillH = WorkbenchBinHNo
+                binfillV = 2
+            else:
+                binfillH = 5
+                binfillV = 1
+
+            if abs(BinAimedH-binfillH) > 2 and MotionBinsH[binfillH] < 200:
+                MotionBinsH[binfillH] = max(250, MotionBinsH[binfillH]+120)
+                if MotionBinsV[binfillV] < 20: MotionBinsV[binfillV] = 20
         else:
 
             if x < -250:
@@ -251,11 +257,11 @@ while 1:
             RePan = True
             IsIdle = True
     else:
-        if maxH >= 200 and maxpH != BinAimedH and maxH > MotionBinsH[BinAimedH]*1.2:
+        if maxH >= 150 and maxpH != BinAimedH and maxH > MotionBinsH[BinAimedH]*1.35:
             print("Horizontal pan needed")
             RePan = True
 
-        if maxV >= 200 and maxpV != BinAimedV and maxV > MotionBinsV[BinAimedV]*1.2:
+        if maxV >= 150 and maxpV != BinAimedV and maxV > MotionBinsV[BinAimedV]*1.2:
             print("Vertical pan needed")
             RePan = True
 
