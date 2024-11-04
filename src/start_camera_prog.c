@@ -277,8 +277,8 @@ int manage_camera_prog(int NewImages)
                     LogFileMaintain(1);
                     MsSinceImage = 0; // dummy for now.
                     printf("Reboot now\n");   // Requires setuid bit of reboot to be set as reboot
-                    int r = system("reboot"); // normally requires root prviledges.
-                                              // do "sudo chmod +s /usr/sbin/reboot" so normal process can run it.
+                    int r = system("/sbin/reboot"); // normally requires root prviledges.
+                                              // do "sudo chmod +s /sbin/reboot" so normal process can run it.
                     fprintf(Log,"reboot returned %d (should not return -- please set the SUID bit of reboot)\n",r);
                     exit(0);
                 }else{
