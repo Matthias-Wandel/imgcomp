@@ -119,7 +119,7 @@ def Process_UDP():
     other_cam = 0
     if addr[0] != "192.168.0.22": other_cam = 1
 
-    print("UDP from:",addr[0], "x,y=",ShortInts[2], ShortInts[3])
+    print("From:",addr[0][-3:], "x,y=%d,%d"%(ShortInts[2], ShortInts[3]),end="")
 
     return ShortInts, other_cam
 
@@ -157,30 +157,34 @@ BinAimedV = 0
 Open_Socket()
 
 IsIdle = False
-LastPanTime = time.time()
+NowTime = time.time()
+LastPanTime = NowTime
+LastDecayTime = NowTime
 
 while 1:
-    for x in range(0, len(MotionBinsH)):
+    if NowTime > LastDecayTime+2:
+        LastDecayTime = NowTime
         # decay the motion bins.
-        MotionBinsH[x] = int(MotionBinsH[x] * 0.8) # Store integer, easier to read
+        for x in range(0, len(MotionBinsH)):
+            MotionBinsH[x] = int(MotionBinsH[x] * 0.8) # Store integer, easier to read
 
-    for x in range(0, len(MotionBinsV)):
-        # decay the motion bins.
-        MotionBinsV[x] = int(MotionBinsV[x] * 0.8)
+        for x in range(0, len(MotionBinsV)):
+            MotionBinsV[x] = int(MotionBinsV[x] * 0.8)
 
 
     ready = select.select([rxSocket], [], [], 4)
+    NowTime = time.time()
 
     if ready[0]:
 
         ShortInts, other_cam = Process_UDP()
 
         if ShortInts[0] != UdpSig:
-            print("UDP Wrong ID from", addr)
+            print("  UDP Wrong ID from", addr)
             continue
 
-        if other_cam == 0 and time.time()-LastPanTime < 2:
-            print("Less than 2 sec since pan, ignore own UDP");
+        if other_cam == 0 and NowTime < LastPanTime+2:
+            print("  Less than 2 sec since pan, ignore own UDP");
             continue
 
 
@@ -190,7 +194,7 @@ while 1:
         if other_cam == 1:
             # My other camera saw motion near workbench
             sector = ShortInts[6]
-            print("other, sector =",sector)
+            print("  other, sector =",sector)
             if sector >= 3:
                 binfillH = WorkbenchBinHNo
                 binfillV = 2
@@ -199,9 +203,10 @@ while 1:
                 binfillV = 1
 
             if abs(BinAimedH-binfillH) > 2 and MotionBinsH[binfillH] < 200:
-                MotionBinsH[binfillH] = max(250, MotionBinsH[binfillH]+120)
+                MotionBinsH[binfillH] = min(250, MotionBinsH[binfillH]+120)
                 if MotionBinsV[binfillV] < 20: MotionBinsV[binfillV] = 20
         else:
+            print("") # ProcessUdp didn't finish line.
 
             if x < -250:
                 BinAddH = BinAimedH - 1
@@ -277,7 +282,7 @@ while 1:
 
             open("/ramdisk/angle", 'a').close() # Tell imgcomp that angle was adjusted
             move_to_deg(BinDegsH[BinAimedH],BinDegsV[BinAimedV])
-            LastPanTime = time.time()
+            LastPanTime = NowTime
             BinAimedVWas = BinAimedV
             BinAimedHWas = BinAimedH
             with open("/ramdisk/angle", 'a') as f:

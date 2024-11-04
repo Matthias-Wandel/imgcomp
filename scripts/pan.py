@@ -6,6 +6,8 @@
 # It's in python because I will probably tweak the parameters a lot and that makes it easier.
 # I don't think anyone other than me will ever use this script.
 #
+# Script no longer used as I switched to using servo motors instead (see panxy.py)
+#
 # Matthias Wandel August 2022
 
 import socket, select, os, sys, signal, subprocess, time
