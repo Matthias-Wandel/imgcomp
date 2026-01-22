@@ -23,7 +23,7 @@
 #include "config.h"
 #include "jhead.h"
 
-static int camera_prog_pid = 0;
+static pid_t camera_prog_pid = 0;
 
 static char OutNameSeq = 'a';
 
@@ -96,7 +96,7 @@ int relaunch_camera_prog(void)
         int exit_code = 123;
         int a;
         time_t then, now = time(NULL);
-        a = wait(&exit_code);
+        a = waitpid(camera_prog_pid, &exit_code, 0);
         fprintf(Log,"Child exit code %d, wait returned %d",exit_code, a);
         then = time(NULL);
         fprintf(Log," At %02d:%02d (%d s)\n",(int)(then%3600)/60, (int)(then%60), (int)(then-now));
@@ -171,7 +171,7 @@ void DoMotionRun(int SawMotion)
             child_pid = 0;
             fprintf(Log,"Motionrun Child exited %d\n",WEXITSTATUS(status));
         }else if (r == -1){
-            fprintf(Log,"WaitPID error\n");
+            fprintf(Log,"WaitPID error %s\n",strerror(errno));
         }else{
             fprintf(Log,"Child still running  r=%d\n",r);
         }
