@@ -165,10 +165,13 @@ void DoMotionRun(int SawMotion)
 
     if (child_pid > 0){
         // Check if child has exited.
-        pid_t r = waitpid(child_pid, NULL, WNOHANG);
-        if (r == child_pid || r == -1){
+        int status;
+        pid_t r = waitpid(child_pid, &status, WNOHANG);
+        if (r == child_pid){
             child_pid = 0;
-            fprintf(Log,"Motionrun Child exited %d\n",r);
+            fprintf(Log,"Motionrun Child exited %d\n",WEXITSTATUS(status));
+        }else if (r == -1){
+            fprintf(Log,"WaitPID error\n");
         }else{
             fprintf(Log,"Child still running  r=%d\n",r);
         }
@@ -277,8 +280,8 @@ int manage_camera_prog(int NewImages)
                     LogFileMaintain(1);
                     MsSinceImage = 0; // dummy for now.
                     printf("Reboot now\n");   // Requires setuid bit of reboot to be set as reboot
-                    int r = system("reboot"); // normally requires root prviledges.
-                                              // do "sudo chmod +s /usr/sbin/reboot" so normal process can run it.
+                    int r = system("/sbin/reboot"); // normally requires root prviledges.
+                                              // do "sudo chmod +s /sbin/reboot" so normal process can run it.
                     fprintf(Log,"reboot returned %d (should not return -- please set the SUID bit of reboot)\n",r);
                     exit(0);
                 }else{
