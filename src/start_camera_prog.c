@@ -165,10 +165,13 @@ void DoMotionRun(int SawMotion)
 
     if (child_pid > 0){
         // Check if child has exited.
-        pid_t r = waitpid(child_pid, NULL, WNOHANG);
-        if (r == child_pid || r == -1){
+        int status;
+        pid_t r = waitpid(child_pid, &status, WNOHANG);
+        if (r == child_pid){
             child_pid = 0;
-            fprintf(Log,"Motionrun Child exited %d\n",r);
+            fprintf(Log,"Motionrun Child exited %d\n",WEXITSTATUS(status));
+        }else if (r == -1){
+            fprintf(Log,"WaitPID error\n");
         }else{
             fprintf(Log,"Child still running  r=%d\n",r);
         }
