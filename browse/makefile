@@ -3,7 +3,9 @@ CC=gcc -std=c99 -Wall -DVIEWCGI
 LINKER=link
 LINKCON = /nologo
 
-all:objdir view.cgi wait_change.cgi tb.cgi ../../www/realtime.html ../../www/favicon.ico ../../www/showpic.js ../../www/styledir.css
+WWW_DIR ?= ../../www
+
+all:objdir view.cgi wait_change.cgi tb.cgi $(WWW_DIR)/realtime.html $(WWW_DIR)/favicon.ico $(WWW_DIR)/showpic.js $(WWW_DIR)/styledir.css
 
 OBJ = obj
 
@@ -29,25 +31,25 @@ objdir:
 
 view.cgi: ${OBJECTS_BROWSE} ${OBJECTS_SHARED}
 	${CC} -o view.cgi ${OBJECTS_BROWSE} ${OBJECTS_SHARED}
-	cp view.cgi ../../www
-	chmod +s ../../www/view.cgi
+	cp view.cgi $(WWW_DIR)
+	chmod +s $(WWW_DIR)/view.cgi
 
 tb.cgi:	$(OBJ)/thumb_bat.o 
 	${CC} -o tb.cgi $(OBJ)/thumb_bat.o -ljpeg
-	cp tb.cgi ../../www
+	cp tb.cgi $(WWW_DIR)
 
 wait_change.cgi:	$(OBJ)/wait_change.o 
 	${CC} -o wait_change.cgi $(OBJ)/wait_change.o 
-	cp wait_change.cgi ../../www
+	cp wait_change.cgi $(WWW_DIR)
 
-../../www/realtime.html: realtime.html
-	cp realtime.html ../../www
+$(WWW_DIR)/realtime.html: realtime.html
+	cp realtime.html $(WWW_DIR)
 
-../../www/favicon.ico: favicon.ico
-	cp favicon.ico  ../../www
+$(WWW_DIR)/favicon.ico: favicon.ico
+	cp favicon.ico  $(WWW_DIR)
 
-../../www/showpic.js: showpic.js
-	cp showpic.js ../../www
+$(WWW_DIR)/showpic.js: showpic.js
+	cp showpic.js $(WWW_DIR)
 
-../../www/styledir.css: styledir.css
-	cp styledir.css ../../www
+$(WWW_DIR)/styledir.css: styledir.css
+	cp styledir.css $(WWW_DIR)

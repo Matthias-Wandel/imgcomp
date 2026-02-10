@@ -1,4 +1,4 @@
-<Directory /home/pi/www/>
+<Directory {{WWW_DIR}}/>
 	Options Indexes FollowSymLinks ExecCGI
 	AddHandler cgi-script .cgi
 	AllowOverride None
@@ -17,7 +17,7 @@
 	#ServerName www.example.com
 
 	ServerAdmin webmaster@localhost
-	DocumentRoot /home/pi/www
+	DocumentRoot {{WWW_DIR}}
 
 	# Available loglevels: trace8, ..., trace1, debug, info, notice, warn,
 	# error, crit, alert, emerg.

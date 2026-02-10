@@ -1,6 +1,11 @@
 #! /bin/bash
 # Parts of setup that must be run as root.
 
+# ---- Configurable paths ----
+PROJECT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+WWW_DIR="${WWW_DIR:-$PROJECT_DIR/www}"
+# ---- End configurable paths ----
+
 if [ "$EUID" -ne 0 ]
     then echo "Please run this script as root"
     exit
@@ -25,9 +30,8 @@ fi
 
 # configure apache2
 
-web_root=$(dirname "$(dirname "$(pwd)")")/www
-echo "copying modified apache2 configuration file, using '$web_root' as web root"
-sed "s|/home/pi/www|$web_root|g" "000-default.conf" > /etc/apache2/sites-available/000-default.conf
+echo "copying modified apache2 configuration file, using '$WWW_DIR' as web root"
+sed "s|{{WWW_DIR}}|$WWW_DIR|g" "$PROJECT_DIR/setup/000-default.conf.template" > /etc/apache2/sites-available/000-default.conf
 
 echo "enabling CGI"
 ln -s -f ../mods-available/cgi.load /etc/apache2/mods-enabled/cgi.load
