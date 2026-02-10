@@ -1,7 +1,9 @@
 #! /bin/bash
 # This script re-launches imgcomp if it isn't running
 # because on one of my pi zero's, imgcomp segfaults inside libjpeg about once a week.
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 if ! pgrep imgcomp; then 
-	imgcomp/imgcomp &
+	"$PROJECT_DIR/imgcomp" &
 fi
 

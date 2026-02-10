@@ -1,24 +1,29 @@
 -----------------------------------------------------------
 Setting up imgcomp.
 -----------------------------------------------------------
-From the default user (for example, pi), 
-put imgcomp into /home/pi/imgcomp/...
-either by git cloning it or by unzipping the archive.
+Clone or unzip imgcomp into any directory, for example:
+  git clone <repo-url> ~/imgcomp
 
 Start setting things up:
-  cd ~/imgcomp/setup
+  cd <imgcomp-dir>/setup
   sudo ./install-packages
   
 Optionally install additional packages (useful but not necessary)
   sudo ./install-packages-extra
 
 Build imgcomp and set it up
-  cd ~/imgcomp/setup
+  cd <imgcomp-dir>/setup
   ./setup-imgcomp
 
+By default, www/ and images/ are created inside the project directory.
+To override, export environment variables before running the scripts:
+  export WWW_DIR=/path/to/www
+  export IMAGES_DIR=/path/to/images
+  export CONF_DIR=/path/to/conf    # where imgcomp.conf is placed
+
 Run setup script that needs to be run as root (sets up apache2, makes ramdisk)
-  cd ~/imgcomp/setup
-  sudo ./setup-imgcomp-root
+  cd <imgcomp-dir>/setup
+  sudo WWW_DIR=$WWW_DIR ./setup-imgcomp-root
 
 You also need to make sure your camera module is connected, and enabled.
 If you want to use legacy raspistill instead of libcamera-still for image
@@ -30,8 +35,8 @@ legacy raspistill can capture up to 4 frames per second.
 
   
 Now try running imgcomp
-  cd ~
-  imgcomp/imgcomp
+  cd <imgcomp-dir>
+  ./imgcomp
 
 After a whole bunch of initialization lines, you should see lines printed
 starting with a 6 digit number.  This number is time in HHMMSS
@@ -39,7 +44,7 @@ If there is motion, you will see lines that look roughly like this:
 
         110643  133 (1188, 617) (motion)
         
-These images will be saved in the ~/images directory.
+These images will be saved in the images/ directory (or IMAGES_DIR if overridden).
         
 
 -----------------------------------------------------------

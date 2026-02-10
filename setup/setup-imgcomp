@@ -1,8 +1,18 @@
 #! /bin/bash
 # This script setups up imgcomp, but without starting it at boot
 # For it to run at boot, plase run setup-imgcomp-autorun after this script
-# This script assumes imgcomp is in /home/pi/imgcomp
 # Make sure the camera is enabled
+
+# ---- Configurable paths ----
+# PROJECT_DIR: root of the imgcomp source tree (auto-detected from script location)
+PROJECT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+# WWW_DIR: web root served by apache2
+WWW_DIR="${WWW_DIR:-$PROJECT_DIR/www}"
+# IMAGES_DIR: where captured images are stored
+IMAGES_DIR="${IMAGES_DIR:-$PROJECT_DIR/images}"
+# CONF_DIR: where imgcomp.conf is placed
+CONF_DIR="${CONF_DIR:-$PROJECT_DIR}"
+# ---- End configurable paths ----
 
 if [ "$EUID" -eq 0 ]
     then echo "Please do NOT run this sript as root"
@@ -24,53 +34,53 @@ fi
 
 # Create new web root directory.  These two commands must NOT run as root.
 echo "Make directories for apache2"
-mkdir -p ~/www
-mkdir -p ~/images
-ln -sTf ../images ~/www/pix
+echo "  WWW_DIR=$WWW_DIR"
+echo "  IMAGES_DIR=$IMAGES_DIR"
+mkdir -p "$WWW_DIR"
+mkdir -p "$IMAGES_DIR"
+ln -sTf "$IMAGES_DIR" "$WWW_DIR/pix"
 
-echo "Make home directory readable by web server"
-# Make home directory publicly readable (so www-data process can access it)
-chmod +rx ~
+echo "Make web and image directories readable by web server"
+# Make directories publicly readable (so www-data process can access it)
+chmod +rx "$WWW_DIR"
+chmod +rx "$IMAGES_DIR"
 
 # Make sure an imgcomp.conf configuration file exists
-if [ -e ../../imgcomp.conf ] ; then
-	echo "    imcomp.conf file aready in home directory"
+if [ -e "$CONF_DIR/imgcomp.conf" ] ; then
+	echo "    imgcomp.conf file already in $CONF_DIR"
 else
-	echo "copy imcomp.conf.example to ~/imgcomp.conf"
-	cp -a ../conf-examples/imgcomp.conf.example ~/imgcomp.conf
+	echo "copy imgcomp.conf.example to $CONF_DIR/imgcomp.conf"
+	cp -a "$PROJECT_DIR/conf-examples/imgcomp.conf.example" "$CONF_DIR/imgcomp.conf"
 fi
 
 # Make sure a browse configuration file exists
-if [ -e ~/www/browse.conf ] ; then
-	echo "    browse.conf file aready in www directory"
+if [ -e "$WWW_DIR/browse.conf" ] ; then
+	echo "    browse.conf file already in www directory"
 else
-	echo "copy browse.conf.example to /home/pi/www/browse.conf"
-	cp -a ../conf-examples/browse.conf.example ~/www/browse.conf
+	echo "copy browse.conf.example to $WWW_DIR/browse.conf"
+	cp -a "$PROJECT_DIR/conf-examples/browse.conf.example" "$WWW_DIR/browse.conf"
 fi
 
-if [ ! -f ../imgcomp ]; then
+if [ ! -f "$PROJECT_DIR/imgcomp" ]; then
 	echo "Building imgcomp first."
-    echo
-    cd ..
-    make
-    cd setup
+	echo
+	make -C "$PROJECT_DIR"
 fi
 
 
-if [ ! -f ../browse/view.cgi ]; then
-	echo "Compiling imcomp/browse"
+if [ ! -f "$PROJECT_DIR/browse/view.cgi" ]; then
+	echo "Compiling imgcomp/browse"
 	echo ""
-	cd ../browse
-	make
+	make -C "$PROJECT_DIR/browse" WWW_DIR="$WWW_DIR"
 fi
 
-if crontab -l 2>/dev/null | grep -q "imgcomp/imgcomp"; then
+if crontab -l 2>/dev/null | grep -q "imgcomp"; then
         echo "    crontab entry for starting at startup already exists"
 else
         echo "Adding crontab entry to start imgcomp at startup"
         ( crontab -l 2>/dev/null; \
-            echo '@reboot imgcomp/imgcomp &'; \
-            echo '0 * * * * imgcomp/setup/relaunch_imgcomp' ) | crontab -
+            echo "@reboot $PROJECT_DIR/imgcomp &"; \
+            echo "0 * * * * $PROJECT_DIR/setup/relaunch_imgcomp" ) | crontab -
 fi
 
 if [ ! -d "/ramdisk" ]; then
