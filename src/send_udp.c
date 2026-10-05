@@ -43,6 +43,9 @@ typedef struct {
     short xpos;  // 0-1000 X coordinate
     short ypos;  // 0-1000 Y coordinate
     short IsMotion; // Did it trigger saving an image
+    short PannedSector; // Currently panned sector (-1 if absent)
+    short MotionSector; // Sector of motion (-1 if absent)
+    short GotoSector;   // For manual aiming, 1 means go to specific sector
 }Udp_t;
 
 //-------------------------------------------------------------------------------------
@@ -76,6 +79,10 @@ void SendUDP(int x, int y, int level, int motion)
     Buf.xpos = x;
     Buf.ypos = y;
     Buf.IsMotion = motion;
+    Buf.PannedSector = -1; 
+    Buf.MotionSector = -1; 
+    Buf.GotoSector = 0;
+	
 
     datasize = sizeof(Udp_t);
 

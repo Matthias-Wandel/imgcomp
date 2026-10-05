@@ -1,5 +1,6 @@
 #!/usr/bin/python3
-# Script for panning using camera controlled by two little servos
+# Script for panning my super wide shop camera.  Only pans side to side, but
+# keeping the logic of my panxy script for the time being -- easier that way.
 #
 # This script receives UDP indicating where motion was seen, analyze where the
 # action is and pan the camera towards it using the servo motor gimbal.  But will
@@ -8,16 +9,15 @@
 # It's in python because I will probably tweak the parameters a lot and that makes
 # it easier.  I don't expect anyone other than me to ever use this script.
 #
-# Matthias Wandel Jun 2024
+# Matthias Wandel Jul 2024
 
-import socket, select, sys, time, struct
+import socket, select, os, sys, signal, subprocess, time
+
 import RPi.GPIO as GPIO
-
-portNum = 7777
-UdpSig = 0x46c1
-
-g_pan = 10
-g_tilt = 9
+GPIO.setwarnings(False)
+GPIO.setmode(GPIO.BCM)
+g_pan = 9
+g_tilt = 5
 
 current = [0,0]
 #===========================================================================================
@@ -26,22 +26,20 @@ current = [0,0]
 def init_servo():
     # Motor IO lines
     print("init servo")
-    GPIO.setwarnings(False)
-    GPIO.setmode(GPIO.BCM)
     GPIO.setup(g_pan, GPIO.OUT, initial=False) # pan
     GPIO.setup(g_tilt, GPIO.OUT)               # up/down tilt
 
 def move_to_deg(pan, tilt):
     # Slowly ramp servos so they don't run as fast and make less noise.
 
-    # Pan is degrees, -135 to 135 degrees, positive is clockwise
-    # Tilt is in -60 to 60 degrees, positive is up
+    # Pan is degrees, -45 to 45 degrees, positive is clockwise
+    # Tilt not used
     print("set_position",pan,tilt)
 
     gp = [g_pan, g_tilt]
     stepsize = 0.000005 # Duty cycle change per iteration
     dwell = [5,5]
-    target = [pan/135000+0.0015, -tilt/100000+0.00105]
+    target = [-pan/96000+0.0015, -tilt/100000+0.00105]
     global current
     if current[0] == 0:
         # First invocation, don't know current angle, so just dwell a while.
@@ -101,6 +99,7 @@ def move_to_deg(pan, tilt):
 def Open_Socket():
     global rxSocket
     print("Open socket")
+    portNum = 7777
     rxSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) #UDP
 
     # Bind to any available address on port *portNum*
@@ -114,23 +113,40 @@ def Open_Socket():
 
 def Process_UDP():
     data,addr = rxSocket.recvfrom(1024)
-    ShortInts = list(struct.unpack('8h', data))
+
+    # First 2 bytes is ident, check that.
+    if data[0] != 0xc1 or data[1] != 0x46:
+        print("UDP Wrong ID from", addr)
+        return 0,0,-1
+
+
+    # Next 2 bytes is level, ignore.
+
+    # Next 2 bytes is X
+    x = data[4] + data[5]*0x100
+    if x >= 32768: x = x - 65536 # Sign extend
+
+    # Next 2 bytes is Y
+    y = data[6] + data[7]*0x100
+    if y >= 32768: y = y - 65536 # sign extend
 
     other_cam = 0
-    if addr[0] != "192.168.0.22": other_cam = 1
+    print("UDP from:",addr[0], "x,y=",x,y)# "T=",time.perf_counter())
+    if addr[0] != "192.168.0.20": other_cam = 1
 
-    print("From:",addr[0][-3:], "x,y=%d,%d"%(ShortInts[2], ShortInts[3]),end="")
+    if other_cam == 0 and time.time()-LastPanTime < 2:
+        print("Less than 2 sec since pan, ignore own UDP");
+        return 0,0,-1
 
-    return ShortInts, other_cam
+    return x,y, other_cam
 
 init_servo()
 
 
-BinDegsH = [-115,-90,-65,-40,-15,10,35,60,85,110,135] # Pos 3 is workbench, 9 is default.
-BinDegsV = [-57,-41,-29]
-HomeBinHNo = 9
-HomeBinVNo = 2
-WorkbenchBinHNo = 3
+BinDegsH = [-45,0,45]
+BinDegsV = [0,0,0]
+HomeBinHNo = 1
+HomeBinVNo = 0
 
 if len(sys.argv) > 1:
     # manual aiming, for testing.
@@ -157,56 +173,25 @@ BinAimedV = 0
 Open_Socket()
 
 IsIdle = False
-NowTime = time.time()
-LastPanTime = NowTime
-LastDecayTime = NowTime
+LastPanTime = time.time()
 
 while 1:
-    if NowTime > LastDecayTime+2:
-        LastDecayTime = NowTime
+    for x in range(0, len(MotionBinsH)):
         # decay the motion bins.
-        for x in range(0, len(MotionBinsH)):
-            MotionBinsH[x] = int(MotionBinsH[x] * 0.8) # Store integer, easier to read
+        MotionBinsH[x] = int(MotionBinsH[x] * 0.8) # Store integer, easier to read
 
-        for x in range(0, len(MotionBinsV)):
-            MotionBinsV[x] = int(MotionBinsV[x] * 0.8)
+    for x in range(0, len(MotionBinsV)):
+        # decay the motion bins.
+        MotionBinsV[x] = int(MotionBinsV[x] * 0.8)
 
 
     ready = select.select([rxSocket], [], [], 4)
-    NowTime = time.time()
 
     if ready[0]:
-
-        ShortInts, other_cam = Process_UDP()
-
-        if ShortInts[0] != UdpSig:
-            print("  UDP Wrong ID from", addr)
-            continue
-
-        if other_cam == 0 and NowTime < LastPanTime+2:
-            print("  Less than 2 sec since pan, ignore own UDP");
-            continue
-
-
-        x = ShortInts[2]
-        y = ShortInts[3]
-
-        if other_cam == 1:
-            # My other camera saw motion near workbench
-            sector = ShortInts[6]
-            print("  other, sector =",sector)
-            if sector >= 3:
-                binfillH = WorkbenchBinHNo
-                binfillV = 2
-            else:
-                binfillH = 5
-                binfillV = 1
-
-            if abs(BinAimedH-binfillH) > 2 and MotionBinsH[binfillH] < 200:
-                MotionBinsH[binfillH] = min(250, MotionBinsH[binfillH]+120)
-                if MotionBinsV[binfillV] < 20: MotionBinsV[binfillV] = 20
+        x,y, other = Process_UDP()
+        if other == 1:
+            print("other")
         else:
-            print("") # ProcessUdp didn't finish line.
 
             if x < -250:
                 BinAddH = BinAimedH - 1
@@ -262,11 +247,11 @@ while 1:
             RePan = True
             IsIdle = True
     else:
-        if maxH >= 150 and maxpH != BinAimedH and maxH > MotionBinsH[BinAimedH]*1.35:
+        if maxH >= 200 and maxpH != BinAimedH and maxH > MotionBinsH[BinAimedH]*1.2:
             print("Horizontal pan needed")
             RePan = True
 
-        if maxV >= 150 and maxpV != BinAimedV and maxV > MotionBinsV[BinAimedV]*1.2:
+        if maxV >= 200 and maxpV != BinAimedV and maxV > MotionBinsV[BinAimedV]*1.2:
             print("Vertical pan needed")
             RePan = True
 
@@ -282,7 +267,7 @@ while 1:
 
             open("/ramdisk/angle", 'a').close() # Tell imgcomp that angle was adjusted
             move_to_deg(BinDegsH[BinAimedH],BinDegsV[BinAimedV])
-            LastPanTime = NowTime
+            LastPanTime = time.time()
             BinAimedVWas = BinAimedV
             BinAimedHWas = BinAimedH
             with open("/ramdisk/angle", 'a') as f:

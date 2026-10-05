@@ -9,13 +9,15 @@
 #   net use x: \\192.168.0.106\pi /user:pi mine
 
 if [ -z "$1" ]; then
-    # Samba user name was passed as argument
-    user=pi
+    # No username passed as argument, default to current user
+    user=$(whoami)
 else
-    # Default to pi for user if no argument
+    # Use the provided username
     user=$1
 fi
+
 echo "configuring samba for user: $user"
+
 
 if [ "$EUID" -ne 0 ]; then
     echo "Must run this as root"
