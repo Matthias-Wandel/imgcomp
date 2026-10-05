@@ -10,7 +10,8 @@
 
 if [ -z "$1" ]; then
     # No username passed as argument, default to current user
-    user=$(whoami)
+    echo "Error: Must specify username." >&2
+    exit 1
 else
     # Use the provided username
     user=$1
