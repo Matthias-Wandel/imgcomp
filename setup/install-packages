@@ -1,6 +1,9 @@
 # Install needed and useful packages. 
 # Run with sudo.  type "sudo ./install-packages"
 
+# Camera app (rpicam-still) not necessarily installed already
+sudo apt install -y libcamera-apps
+
 # libjpeg is required to compile imgcomp and the browsing program.
 sudo apt-get install -y libjpeg-dev
 

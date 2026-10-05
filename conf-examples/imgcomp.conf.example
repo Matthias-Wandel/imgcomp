@@ -1,20 +1,14 @@
 # Imgcomp test configruation file
 # Please see docs/config.html for more details on cofiguring Imgcomp
 
-# For Raspberry pi OS 11 (bullseye) or later, you can use legacy camera support, or libcamera
-# For frame rate of 1 fps or slower, use libcamera-still
-aquire_cmd = libcamera-still -v 0 -n --width 1600 --height 1200 -t 0 --timelapse 800 --quality 75 -o /ramdisk/out%05d.jpg
+aquire_cmd = rpicam-still -v 0 -n --width 1600 --height 1200 -t 0 --timelapse 800 --quality 75 -o /ramdisk/out%05d.jpg
 
-# higher frame rates can be achieved by using the old raspistill using burst mode.  for Bullseye, to use raspistill, you have
-# to enable legacy camera support under interface options using raspi-config.
-# aquire_cmd = raspistill -q 10 -ex antishake -n -th none -p 1000,0,600,450 -w 1600 -h 1200 -o /ramdisk/out%05d.jpg -t 0 -tl 1000
-
-# Even higher frame rates can be achieved with libcamera-vidd, but this has several downsides.
+# Higher frame rates can be achieved with rpicam-vid, but this has several downsides.
 # Images are of lower quality, no metadata with the images, and support for this with imgcomp
 # sometimes glitches.  legacy raspistill is a much better option.
 # Note that libjpeg often pritns "Premature end of JPEG file" while imgcomp is running, as the images appear in the directory
-# before they are fully written.  I haven't bothered to work around this as libcamera-vid is not a great option.
-#aquire_cmd = libcamera-vid -t 0 -n --framerate 2 --denoise cdn_hq --segment 1 --codec mjpeg --width 1600 --height 1200 --quality 75 -o /ramdisk/out%05d.jpg
+# before they are fully written.  I haven't bothered to work around this as rpicam-vid is not a great option.
+#aquire_cmd = rpicam-vid -t 0 -n --framerate 2 --denoise cdn_hq --segment 1 --codec mjpeg --width 1600 --height 1200 --quality 75 -o /ramdisk/out%05d.jpg
 
 # Directory to get images from as they are aquired
 # (raspistill aquire_cmd must also indicate to put images there)
